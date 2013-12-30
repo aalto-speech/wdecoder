@@ -40,3 +40,19 @@ DecoderGraph::read_noway_lexicon(string lexfname)
 
 }
 
+
+int
+DecoderGraph::add_lm_unit(string unit)
+{
+    auto uit = m_unit_map.find(unit);
+    if (uit != m_unit_map.end())
+        return (*uit).second;
+
+    int index = m_units.size();
+    m_unit_map[unit] = index;
+    m_units.push_back(unit);
+
+    return index;
+}
+
+

@@ -16,6 +16,13 @@ public:
 
 private:
 
+    int add_lm_unit(std::string unit);
+
+    // Text units
+    std::vector<std::string> m_units;
+    // Mapping from text units to indices
+    std::map<std::string, int> m_unit_map;
+
     // Mapping from phones (triphones) to HMM indices.
     std::map<std::string,int> m_hmm_map;
     // The HMMs.
