@@ -3,9 +3,35 @@
 #include <sstream>
 #include <vector>
 
+#include "NowayHmmReader.hh"
 #include "DecoderGraph.hh"
 
 using namespace std;
+
+
+
+void
+DecoderGraph::read_phone_model(string phnfname)
+{
+    ifstream phnf(phnfname);
+    if (!phnf) throw string("Problem opening phone model.");
+
+    NowayHmmReader::read(phnf, m_hmms, m_hmm_map, m_num_models);
+
+    cerr << "m_hmms size: " << m_hmms.size() << endl;
+    cerr << "m_hmm_map size: " << m_hmm_map.size() << endl;
+    cerr << "m_num_models: " << m_num_models << endl;
+}
+
+
+void
+DecoderGraph::read_duration_model(string durfname)
+{
+    ifstream durf(durfname);
+    if (!durf) throw string("Problem opening duration model.");
+
+    NowayHmmReader::read_durations(durf, m_hmms);
+}
 
 
 void

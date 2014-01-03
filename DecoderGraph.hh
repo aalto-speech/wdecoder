@@ -12,6 +12,8 @@ class DecoderGraph {
 public:
     DecoderGraph() { };
 
+    void read_phone_model(std::string phnfname);
+    void read_duration_model(std::string durfname);
     void read_noway_lexicon(std::string lexfname);
 
 private:
@@ -27,6 +29,8 @@ private:
     std::map<std::string,int> m_hmm_map;
     // The HMMs.
     std::vector<Hmm> m_hmms;
+    // Number of (tied) states
+    int m_num_models;
 
 };
 
