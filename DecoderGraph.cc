@@ -60,6 +60,14 @@ DecoderGraph::read_noway_lexicon(string lexfname)
             unit = unit.substr(0, leftp);
         }
 
+        for (auto pit = phones.begin(); pit != phones.end(); ++pit) {
+            if (m_hmm_map.find(*pit) == m_hmm_map.end())
+                throw "Unknown phone " + *pit;
+        }
+
+        m_units.push_back(unit);
+        m_unit_map[unit] = m_units.size()-1;
+
         linei++;
     }
 
@@ -84,6 +92,8 @@ DecoderGraph::read_word_segmentations(string segfname)
         if (m_word_segs.find(word) != m_word_segs.end()) throw "Error, segmentation already defined";
         string concatenated;
         while (ss >> subword) {
+            if (m_unit_map.find(subword) == m_unit_map.end())
+                throw "Subword " + subword + " not found in lexicon";
             m_word_segs[word].push_back(subword);
             concatenated += subword;
         }
