@@ -17,22 +17,25 @@ int main(int argc, char* argv[])
 
     DecoderGraph dg;
 
-    string phfname = config.arguments[0];
-    cerr << "Reading hmms: " << phfname << endl;
-    dg.read_phone_model(phfname);
+    try {
+        string phfname = config.arguments[0];
+        cerr << "Reading hmms: " << phfname << endl;
+        dg.read_phone_model(phfname);
 
-    string durfname = config.arguments[1];
-    cerr << "Reading duration models: " << durfname << endl;
-    dg.read_duration_model(durfname);
+        string durfname = config.arguments[1];
+        cerr << "Reading duration models: " << durfname << endl;
+        dg.read_duration_model(durfname);
 
-    string lexfname = config.arguments[2];
-    cerr << "Reading lexicon: " << lexfname << endl;
-    dg.read_noway_lexicon(lexfname);
+        string lexfname = config.arguments[2];
+        cerr << "Reading lexicon: " << lexfname << endl;
+        dg.read_noway_lexicon(lexfname);
 
-    string segfname = config.arguments[3];
-    cerr << "Reading segmentations: " << segfname << endl;
-    dg.read_word_segmentations(segfname);
-
+        string segfname = config.arguments[3];
+        cerr << "Reading segmentations: " << segfname << endl;
+        dg.read_word_segmentations(segfname);
+    } catch (string &e) {
+        cerr << e << endl;
+    }
 
     exit(1);
 }
