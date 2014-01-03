@@ -67,6 +67,33 @@ DecoderGraph::read_noway_lexicon(string lexfname)
 }
 
 
+void
+DecoderGraph::read_word_segmentations(string segfname)
+{
+    ifstream segf(segfname);
+    if (!segf) throw string("Problem opening word segmentations.");
+
+    string line;
+    int linei = 1;
+    while (getline(segf, line)) {
+        string word;
+        string subword;
+
+        stringstream ss(line);
+        ss >> word;
+        if (m_word_segs.find(word) != m_word_segs.end()) throw "Error, segmentation already defined";
+        string concatenated;
+        while (ss >> subword) {
+            m_word_segs[word].push_back(subword);
+            concatenated += subword;
+        }
+        if (concatenated != word) throw "Erroneous segmentation: " + concatenated;
+
+        linei++;
+    }
+}
+
+
 int
 DecoderGraph::add_lm_unit(string unit)
 {
@@ -80,5 +107,4 @@ DecoderGraph::add_lm_unit(string unit)
 
     return index;
 }
-
 

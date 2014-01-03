@@ -10,10 +10,10 @@ using namespace std;
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: dgraph [OPTION...] PH DUR LEXICON\n")
+    config("usage: dgraph [OPTION...] PH DUR LEXICON WSEGS\n")
       ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 3) config.print_help(stderr, 1);
+    if (config.arguments.size() != 4) config.print_help(stderr, 1);
 
     DecoderGraph dg;
 
@@ -28,6 +28,11 @@ int main(int argc, char* argv[])
     string lexfname = config.arguments[2];
     cerr << "Reading lexicon: " << lexfname << endl;
     dg.read_noway_lexicon(lexfname);
+
+    string segfname = config.arguments[3];
+    cerr << "Reading segmentations: " << segfname << endl;
+    dg.read_word_segmentations(segfname);
+
 
     exit(1);
 }
