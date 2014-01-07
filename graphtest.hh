@@ -1,7 +1,9 @@
 #ifndef DECODER_GRAPH_CPPUNIT
 #define DECODER_GRAPH_CPPUNIT
 
+#define private public
 #include "DecoderGraph.hh"
+#undef private
 
 #include <cppunit/TestFixture.h>
 #include <cppunit/extensions/HelperMacros.h>

@@ -10,6 +10,12 @@
 class DecoderGraph {
 
 public:
+    struct SubwordNode {
+        int subword_id;
+        std::vector<std::pair<int, int> > in_arcs;  // subword id (lookahead), node id
+        std::map<int, int> out_arcs;                // subword id (lookahead), node id
+    };
+
     DecoderGraph() : m_num_models(0) { };
 
     void read_phone_model(std::string phnfname);
@@ -17,20 +23,15 @@ public:
     void read_noway_lexicon(std::string lexfname);
     void read_word_segmentations(std::string segfname);
 
-    void create_word_graph();
-
-private:
-
-    struct SubwordNode {
-        int subword_id;
-        std::vector<std::pair<int, int> > in_arcs;  // subword id (lookahead), node id
-        std::map<int, int> out_arcs;                // subword id (lookahead), node id
-    };
-
-    int add_lm_unit(std::string unit);
+    void create_word_graph(std::vector<SubwordNode> &nodes);
+    void tie_word_graph_suffixes();
     void print_word_graph(std::vector<SubwordNode> &nodes,
                           std::vector<int> path,
                           int node_idx);
+
+private:
+
+    int add_lm_unit(std::string unit);
 
     // Text units
     std::vector<std::string> m_units;

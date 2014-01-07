@@ -34,7 +34,8 @@ int main(int argc, char* argv[])
         cerr << "Reading segmentations: " << segfname << endl;
         dg.read_word_segmentations(segfname);
 
-        dg.create_word_graph();
+        vector<DecoderGraph::SubwordNode> nodes;
+        dg.create_word_graph(nodes);
     } catch (string &e) {
         cerr << e << endl;
     }

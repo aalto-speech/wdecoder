@@ -9,7 +9,6 @@
 using namespace std;
 
 
-
 void
 DecoderGraph::read_phone_model(string phnfname)
 {
@@ -17,10 +16,6 @@ DecoderGraph::read_phone_model(string phnfname)
     if (!phnf) throw string("Problem opening phone model.");
 
     NowayHmmReader::read(phnf, m_hmms, m_hmm_map, m_num_models);
-
-    cerr << "m_hmms size: " << m_hmms.size() << endl;
-    cerr << "m_hmm_map size: " << m_hmm_map.size() << endl;
-    cerr << "m_num_models: " << m_num_models << endl;
 }
 
 
@@ -103,9 +98,8 @@ DecoderGraph::read_word_segmentations(string segfname)
 
 
 void
-DecoderGraph::create_word_graph()
+DecoderGraph::create_word_graph(vector<SubwordNode> &nodes)
 {
-    std::vector<SubwordNode> nodes;
     nodes.resize(2);
     nodes[0].subword_id = -1; nodes[1].subword_id = -1;
 
@@ -133,9 +127,6 @@ DecoderGraph::create_word_graph()
         nodes[curr_nd].out_arcs[-1] = 1;
         nodes[1].in_arcs.push_back(make_pair(nodes[curr_nd].subword_id, curr_nd));
     }
-
-    std::vector<int> pth;
-    print_word_graph(nodes, pth, 0);
 }
 
 
@@ -174,4 +165,3 @@ DecoderGraph::add_lm_unit(string unit)
 
     return index;
 }
-
