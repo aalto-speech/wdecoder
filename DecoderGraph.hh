@@ -10,16 +10,27 @@
 class DecoderGraph {
 
 public:
-    DecoderGraph() { };
+    DecoderGraph() : m_num_models(0) { };
 
     void read_phone_model(std::string phnfname);
     void read_duration_model(std::string durfname);
     void read_noway_lexicon(std::string lexfname);
     void read_word_segmentations(std::string segfname);
 
+    void create_word_graph();
+
 private:
 
+    struct SubwordNode {
+        int subword_id;
+        std::vector<std::pair<int, int> > in_arcs;  // subword id (lookahead), node id
+        std::map<int, int> out_arcs;                // subword id (lookahead), node id
+    };
+
     int add_lm_unit(std::string unit);
+    void print_word_graph(std::vector<SubwordNode> &nodes,
+                          std::vector<int> path,
+                          int node_idx);
 
     // Text units
     std::vector<std::string> m_units;
@@ -33,7 +44,7 @@ private:
     // Number of (tied) states
     int m_num_models;
 
-    std::map<std::string, std::vector<std::string> >m_word_segs;
+    std::map<std::string, std::vector<std::string> > m_word_segs;
 };
 
 #endif /* DECODERGRAPH_HH */

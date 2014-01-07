@@ -70,8 +70,6 @@ DecoderGraph::read_noway_lexicon(string lexfname)
 
         linei++;
     }
-
-
 }
 
 
@@ -100,6 +98,65 @@ DecoderGraph::read_word_segmentations(string segfname)
         if (concatenated != word) throw "Erroneous segmentation: " + concatenated;
 
         linei++;
+    }
+}
+
+
+void
+DecoderGraph::create_word_graph()
+{
+    std::vector<SubwordNode> nodes;
+    nodes.resize(2);
+    nodes[0].subword_id = -1; nodes[1].subword_id = -1;
+
+    for (auto wit = m_word_segs.begin(); wit != m_word_segs.end(); ++wit) {
+
+        int curr_nd = 0;
+
+        for (int swidx = 0; swidx < wit->second.size(); ++swidx) {
+
+            string curr_subword = (wit->second)[swidx];
+            int curr_subword_idx = m_unit_map[curr_subword];
+
+            if (nodes[curr_nd].out_arcs.find(curr_subword_idx) == nodes[curr_nd].out_arcs.end()) {
+                nodes.resize(nodes.size()+1);
+                nodes.back().subword_id = curr_subword_idx;
+                nodes[curr_nd].out_arcs[curr_subword_idx] = nodes.size()-1;
+                nodes.back().in_arcs.push_back(make_pair(nodes[curr_nd].subword_id, nodes.size()-1));
+                curr_nd = nodes.size()-1;
+            }
+            else
+                curr_nd = nodes[curr_nd].out_arcs[curr_subword_idx];
+        }
+
+        // Connect to end node
+        nodes[curr_nd].out_arcs[-1] = 1;
+        nodes[1].in_arcs.push_back(make_pair(nodes[curr_nd].subword_id, curr_nd));
+    }
+
+    std::vector<int> pth;
+    print_word_graph(nodes, pth, 0);
+}
+
+
+void
+DecoderGraph::print_word_graph(std::vector<SubwordNode> &nodes,
+                               std::vector<int> path,
+                               int node_idx)
+{
+    path.push_back(nodes[node_idx].subword_id);
+
+    for (auto ait = nodes[node_idx].out_arcs.begin(); ait != nodes[node_idx].out_arcs.end(); ++ait) {
+        if (ait->second == 1) {
+            for (int i=0; i<path.size(); i++) {
+                if (path[i] >= 0) cout << m_units[path[i]];
+                if (i+1 != path.size()) cout << " ";
+            }
+            cout << endl;
+        }
+        else {
+            print_word_graph(nodes, path, ait->second);
+        }
     }
 }
 

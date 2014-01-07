@@ -33,6 +33,8 @@ int main(int argc, char* argv[])
         string segfname = config.arguments[3];
         cerr << "Reading segmentations: " << segfname << endl;
         dg.read_word_segmentations(segfname);
+
+        dg.create_word_graph();
     } catch (string &e) {
         cerr << e << endl;
     }
