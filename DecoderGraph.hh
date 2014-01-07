@@ -24,7 +24,7 @@ public:
     void read_word_segmentations(std::string segfname);
 
     void create_word_graph(std::vector<SubwordNode> &nodes);
-    void tie_word_graph_suffixes();
+    void tie_word_graph_suffixes(std::vector<SubwordNode> &nodes);
     void print_word_graph(std::vector<SubwordNode> &nodes,
                           std::vector<int> path,
                           int node_idx);

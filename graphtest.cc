@@ -43,3 +43,23 @@ void graphtest :: GraphTest1(void)
     dg.create_word_graph(nodes);
     CPPUNIT_ASSERT_EQUAL( 10, (int)nodes.size() );
 }
+
+
+void graphtest :: GraphTest2(void)
+{
+    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
+    string lexname = "data/lex";
+    string segname = "data/segs.txt";
+
+    DecoderGraph dg;
+    dg.read_phone_model(amname + ".ph");
+    dg.read_duration_model(amname + ".dur");
+    dg.read_noway_lexicon(lexname);
+    dg.read_word_segmentations(segname);
+
+    vector<DecoderGraph::SubwordNode> nodes;
+    dg.create_word_graph(nodes);
+    CPPUNIT_ASSERT_EQUAL( 10, (int)nodes.size() );
+    dg.tie_word_graph_suffixes(nodes);
+    CPPUNIT_ASSERT_EQUAL( 9, (int)nodes.size() );
+}

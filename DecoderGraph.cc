@@ -131,6 +131,13 @@ DecoderGraph::create_word_graph(vector<SubwordNode> &nodes)
 
 
 void
+DecoderGraph::tie_word_graph_suffixes(vector<SubwordNode> &nodes)
+{
+    return;
+}
+
+
+void
 DecoderGraph::print_word_graph(std::vector<SubwordNode> &nodes,
                                std::vector<int> path,
                                int node_idx)
