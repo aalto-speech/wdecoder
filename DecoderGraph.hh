@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <unordered_set>
 
 #include "Hmm.hh"
 
@@ -15,6 +16,8 @@ public:
         std::vector<std::pair<int, int> > in_arcs;  // subword id (lookahead), node id
         std::map<int, int> out_arcs;                // subword id (lookahead), node id
     };
+    static const int START_NODE = 0;
+    static const int END_NODE = 1;
 
     DecoderGraph() : m_num_models(0) { };
 
@@ -25,13 +28,18 @@ public:
 
     void create_word_graph(std::vector<SubwordNode> &nodes);
     void tie_word_graph_suffixes(std::vector<SubwordNode> &nodes);
-    void print_word_graph(std::vector<SubwordNode> &nodes,
-                          std::vector<int> path,
-                          int node_idx);
+    void print_word_graph(std::vector<SubwordNode> &nodes);
+    int reachable_word_graph_nodes(std::vector<SubwordNode> &nodes);
 
 private:
 
     int add_lm_unit(std::string unit);
+    void reachable_word_graph_nodes(std::vector<SubwordNode> &nodes,
+                                    std::unordered_set<int> &node_idxs,
+                                    int node_idx=START_NODE);
+    void print_word_graph(std::vector<SubwordNode> &nodes,
+                          std::vector<int> path,
+                          int node_idx=START_NODE);
 
     // Text units
     std::vector<std::string> m_units;

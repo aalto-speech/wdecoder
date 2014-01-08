@@ -41,7 +41,7 @@ void graphtest :: GraphTest1(void)
 
     vector<DecoderGraph::SubwordNode> nodes;
     dg.create_word_graph(nodes);
-    CPPUNIT_ASSERT_EQUAL( 10, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 10, dg.reachable_word_graph_nodes(nodes) );
 }
 
 
@@ -59,7 +59,7 @@ void graphtest :: GraphTest2(void)
 
     vector<DecoderGraph::SubwordNode> nodes;
     dg.create_word_graph(nodes);
-    CPPUNIT_ASSERT_EQUAL( 10, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 10, dg.reachable_word_graph_nodes(nodes) );
     dg.tie_word_graph_suffixes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 9, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 9, dg.reachable_word_graph_nodes(nodes) );
 }
