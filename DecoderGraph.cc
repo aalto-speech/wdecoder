@@ -188,7 +188,7 @@ DecoderGraph::print_word_graph(std::vector<SubwordNode> &nodes)
 
 void
 DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes,
-                                         std::unordered_set<int> &node_idxs,
+                                         std::set<int> &node_idxs,
                                          int node_idx)
 {
     node_idxs.insert(node_idx);
@@ -200,7 +200,7 @@ DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes,
 int
 DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes)
 {
-    std::unordered_set<int> node_idxs;
+    std::set<int> node_idxs;
     reachable_word_graph_nodes(nodes, node_idxs, START_NODE);
     return node_idxs.size();
 }

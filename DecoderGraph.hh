@@ -3,7 +3,7 @@
 
 #include <map>
 #include <vector>
-#include <unordered_set>
+#include <set>
 
 #include "Hmm.hh"
 
@@ -35,7 +35,7 @@ private:
 
     int add_lm_unit(std::string unit);
     void reachable_word_graph_nodes(std::vector<SubwordNode> &nodes,
-                                    std::unordered_set<int> &node_idxs,
+                                    std::set<int> &node_idxs,
                                     int node_idx=START_NODE);
     void print_word_graph(std::vector<SubwordNode> &nodes,
                           std::vector<int> path,
