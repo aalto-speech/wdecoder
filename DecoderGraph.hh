@@ -43,7 +43,9 @@ public:
     void tie_word_graph_suffixes(std::vector<SubwordNode> &nodes);
     void print_word_graph(std::vector<SubwordNode> &nodes);
     int reachable_word_graph_nodes(std::vector<SubwordNode> &nodes);
-    void subword_nodes_to_phones(std::vector<SubwordNode> &nodes);
+    void expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
+                              std::vector<Node> &nodes,
+                              std::vector<Arc> &arcs);
 
 private:
 
@@ -59,7 +61,8 @@ private:
     std::vector<std::string> m_units;
     // Mapping from text units to indices
     std::map<std::string, int> m_unit_map;
-
+    // Vocabulary units as phone strings
+    std::map<std::string, std::vector<std::string> > m_lexicon;
     // Mapping from phones (triphones) to HMM indices.
     std::map<std::string,int> m_hmm_map;
     // The HMMs.
@@ -67,6 +70,7 @@ private:
     // Number of (tied) states
     int m_num_models;
 
+    // Word segmentations
     std::map<std::string, std::vector<std::string> > m_word_segs;
 };
 

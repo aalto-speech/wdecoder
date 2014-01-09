@@ -60,8 +60,11 @@ DecoderGraph::read_noway_lexicon(string lexfname)
                 throw "Unknown phone " + *pit;
         }
 
-        m_units.push_back(unit);
-        m_unit_map[unit] = m_units.size()-1;
+        if (m_unit_map.find(unit) == m_unit_map.end()) {
+            m_units.push_back(unit);
+            m_unit_map[unit] = m_units.size()-1;
+        }
+        m_lexicon[unit] = phones;
 
         linei++;
     }
@@ -207,7 +210,9 @@ DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes)
 
 
 void
-DecoderGraph::subword_nodes_to_phones(std::vector<SubwordNode> &nodes)
+DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
+                                   std::vector<Node> &nodes,
+                                   std::vector<Arc> &arcs)
 {
 
 }
