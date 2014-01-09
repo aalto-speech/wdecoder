@@ -36,6 +36,9 @@ int main(int argc, char* argv[])
 
         vector<DecoderGraph::SubwordNode> nodes;
         dg.create_word_graph(nodes);
+        cerr << "node count: " << dg.reachable_word_graph_nodes(nodes) << endl;
+        dg.tie_word_graph_suffixes(nodes);
+        cerr << "node count: " << dg.reachable_word_graph_nodes(nodes) << endl;
     } catch (string &e) {
         cerr << e << endl;
     }
