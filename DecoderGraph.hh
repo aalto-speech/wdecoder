@@ -19,6 +19,18 @@ public:
     static const int START_NODE = 0;
     static const int END_NODE = 1;
 
+    struct Arc {
+        float log_prob;
+        int target_node;
+    };
+
+    class Node {
+        Node() : word_id(-1), hmm_state(-1) { }
+        int word_id; // -1 for nodes without word identity.
+        int hmm_state;  // -1 for nodes without acoustics.
+        std::vector<Arc> arcs;
+    }
+
     DecoderGraph() : m_num_models(0) { };
 
     void read_phone_model(std::string phnfname);
@@ -30,6 +42,7 @@ public:
     void tie_word_graph_suffixes(std::vector<SubwordNode> &nodes);
     void print_word_graph(std::vector<SubwordNode> &nodes);
     int reachable_word_graph_nodes(std::vector<SubwordNode> &nodes);
+    void subword_nodes_to_phones(std::vector<SubwordNode> &nodes);
 
 private:
 

@@ -206,6 +206,13 @@ DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes)
 }
 
 
+void
+DecoderGraph::subword_nodes_to_phones(std::vector<SubwordNode> &nodes)
+{
+
+}
+
+
 int
 DecoderGraph::add_lm_unit(string unit)
 {
