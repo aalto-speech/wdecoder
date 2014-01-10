@@ -61,7 +61,7 @@ private:
     std::vector<std::string> m_units;
     // Mapping from text units to indices
     std::map<std::string, int> m_unit_map;
-    // Vocabulary units as phone strings
+    // Vocabulary units as phone strings, FIXME: currently only one pronunciation
     std::map<std::string, std::vector<std::string> > m_lexicon;
     // Mapping from phones (triphones) to HMM indices.
     std::map<std::string,int> m_hmm_map;

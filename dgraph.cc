@@ -34,11 +34,15 @@ int main(int argc, char* argv[])
         cerr << "Reading segmentations: " << segfname << endl;
         dg.read_word_segmentations(segfname);
 
-        vector<DecoderGraph::SubwordNode> nodes;
-        dg.create_word_graph(nodes);
-        cerr << "node count: " << dg.reachable_word_graph_nodes(nodes) << endl;
-        dg.tie_word_graph_suffixes(nodes);
-        cerr << "node count: " << dg.reachable_word_graph_nodes(nodes) << endl;
+        vector<DecoderGraph::SubwordNode> swnodes;
+        dg.create_word_graph(swnodes);
+        cerr << "node count: " << dg.reachable_word_graph_nodes(swnodes) << endl;
+        dg.tie_word_graph_suffixes(swnodes);
+        cerr << "node count: " << dg.reachable_word_graph_nodes(swnodes) << endl;
+
+        vector<DecoderGraph::Node> nodes;
+        vector<DecoderGraph::Arc> arcs;
+        dg.expand_subword_nodes(swnodes, nodes, arcs);
     } catch (string &e) {
         cerr << e << endl;
     }

@@ -152,6 +152,9 @@ DecoderGraph::tie_word_graph_suffixes(vector<SubwordNode> &nodes)
                     int src_node_idx = nodes[ait->second].in_arcs[0].second;
                     nodes[src_node_idx].out_arcs[ait->first] = nodes.size()-1;
                     nodes.back().in_arcs.push_back(make_pair(nodes[src_node_idx].subword_id, src_node_idx));
+                    nodes[ait->second].subword_id = -1;
+                    nodes[ait->second].in_arcs.clear();
+                    nodes[ait->second].out_arcs.clear();
                 }
             }
         }
@@ -214,7 +217,14 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
                                    std::vector<Node> &nodes,
                                    std::vector<Arc> &arcs)
 {
-
+    for (auto swnit = swnodes.begin(); swnit != swnodes.end(); ++swnit) {
+        if (swnit->subword_id == -1) continue;
+        string subword = m_units[swnit->subword_id];
+        cerr << subword;
+        for (auto pit = m_lexicon[subword].begin(); pit != m_lexicon[subword].end(); ++pit)
+            cerr << " " << *pit;
+        cerr << endl;
+    }
 }
 
 
