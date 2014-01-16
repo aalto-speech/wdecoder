@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
         dg.tie_word_graph_suffixes(swnodes);
         cerr << "node count: " << dg.reachable_word_graph_nodes(swnodes) << endl;
 
-        vector<DecoderGraph::Node> nodes;
+        vector<DecoderGraph::Node> nodes(2);
         vector<DecoderGraph::Arc> arcs;
         dg.expand_subword_nodes(swnodes, nodes, arcs);
     } catch (string &e) {

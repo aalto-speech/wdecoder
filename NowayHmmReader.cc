@@ -8,7 +8,10 @@ using namespace std;
 
 
 void
-NowayHmmReader::read_hmm(std::istream &in, Hmm &hmm, int &m_num_models)
+NowayHmmReader::read_hmm(std::istream &in,
+                         Hmm &hmm,
+                         vector<HmmState> &hmm_states,
+                         int &m_num_models)
 {
     int hmm_id = 0;
     int num_states = 0;
@@ -26,6 +29,8 @@ NowayHmmReader::read_hmm(std::istream &in, Hmm &hmm, int &m_num_models)
         if (model_index + 1 > m_num_models)
             m_num_models = model_index + 1;
         states[s].model = model_index;
+        if (model_index > -1 && model_index+1 > hmm_states.size())
+            hmm_states.resize(model_index+1);
     }
 
     // Read transitions
@@ -48,6 +53,8 @@ NowayHmmReader::read_hmm(std::istream &in, Hmm &hmm, int &m_num_models)
             state.transitions[t].target = to;
             state.transitions[t].log_prob = log10(prob);
         }
+
+        if (states[s].model > -1) hmm_states[states[s].model] = state;
     }
 
     label.swap(hmm.label);
@@ -58,6 +65,7 @@ void
 NowayHmmReader::read(istream &in,
                      vector<Hmm> &m_hmms,
                      map<string, int> &m_hmm_map,
+                     vector<HmmState> &m_hmm_states,
                      int &m_num_models)
 {
     m_num_models = 0;
@@ -76,7 +84,7 @@ NowayHmmReader::read(istream &in,
         for (int h = 0; h < num_hmms; h++) {
             // FIXME: should we check that hmm_ids read from stream match
             // with 'h'?
-            read_hmm(in, m_hmms[h], m_num_models);
+            read_hmm(in, m_hmms[h], m_hmm_states, m_num_models);
             m_hmm_map[m_hmms[h].label] = h;
         }
 

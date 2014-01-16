@@ -36,7 +36,7 @@ void graphtest :: GraphTest1(void)
     CPPUNIT_ASSERT_EQUAL( 35003, (int)dg.m_unit_map.size() ); // ?
     CPPUNIT_ASSERT_EQUAL( 13252, (int)dg.m_hmms.size() );
     CPPUNIT_ASSERT_EQUAL( 13252, (int)dg.m_hmm_map.size() );
-    CPPUNIT_ASSERT_EQUAL( 1170, dg.m_num_models );
+    CPPUNIT_ASSERT_EQUAL( 1170, (int)dg.m_hmm_states.size() );
     CPPUNIT_ASSERT_EQUAL( 7, (int)dg.m_word_segs.size() );
 
     vector<DecoderGraph::SubwordNode> nodes;

@@ -20,19 +20,21 @@ public:
     static const int END_NODE = 1;
 
     class Arc {
+    public:
         Arc() : log_prob(0.0), target_node(-1) { }
         float log_prob;
         int target_node;
     };
 
     class Node {
+    public:
         Node() : word_id(-1), hmm_state(-1) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         std::vector<Arc> arcs;
     };
 
-    DecoderGraph() : m_num_models(0) { };
+    DecoderGraph() { };
 
     void read_phone_model(std::string phnfname);
     void read_duration_model(std::string durfname);
@@ -71,8 +73,8 @@ private:
     std::map<std::string,int> m_hmm_map;
     // The HMMs.
     std::vector<Hmm> m_hmms;
-    // Number of (tied) states
-    int m_num_models;
+    // Hmm states
+    std::vector<HmmState> m_hmm_states;
 
     // Word segmentations
     std::map<std::string, std::vector<std::string> > m_word_segs;

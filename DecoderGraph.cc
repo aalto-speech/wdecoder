@@ -15,7 +15,8 @@ DecoderGraph::read_phone_model(string phnfname)
     ifstream phnf(phnfname);
     if (!phnf) throw string("Problem opening phone model.");
 
-    NowayHmmReader::read(phnf, m_hmms, m_hmm_map, m_num_models);
+    int modelcount;
+    NowayHmmReader::read(phnf, m_hmms, m_hmm_map, m_hmm_states, modelcount);
 }
 
 
@@ -224,6 +225,7 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
 
     if (sw_node_idx == END_NODE) return;
     const SubwordNode &swnode = swnodes[sw_node_idx];
+    Node &source_node = nodes[node_idx];
     char last_phone = '_';
 
     if (swnode.subword_id != -1) {
@@ -231,24 +233,42 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
         if (debug) cerr << subword << "\tleft context: " << left_context << endl;
         auto triphones = m_lexicon[subword];
 
-        for (auto tidx = 0; tidx < triphones.size(); ++tidx) {
+        // Connect dummy node with subword id
+        nodes.resize(nodes.size()+1);
+        nodes.back().word_id = swnode.subword_id;
+        source_node.arcs.resize(source_node.arcs.size()+1);
+        source_node.arcs.back().target_node = nodes.size()-1;
+
+        for (int tidx = 0; tidx < triphones.size(); ++tidx) {
             string triphone = triphones[tidx];
             if (tidx == 0) triphone = left_context + triphone.substr(1);
+            int hmm_index = m_hmm_map[triphone];
+            Hmm &hmm = m_hmms[hmm_index];
+            last_phone = triphone[2];
+
             if (debug) {
-                cerr << "  " << triphone << " (" << triphone[2] << ")";
-                int hmm_index = m_hmm_map[triphone];
-                for (int sidx = 2; sidx < m_hmms[hmm_index].states.size(); ++sidx)
-                    cerr << " " << m_hmms[hmm_index].states[sidx].model;
+                cerr << "  " << triphone << " (" << triphone[2] << ")" << endl;
+                for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+                    cerr << "\t" << hmm.states[sidx].model;
+                    for (int transidx = 0; transidx<hmm.states[sidx].transitions.size(); ++transidx)
+                        cerr << "\ttarget: " << hmm.states[sidx].transitions[transidx].target
+                        << " lp: " << hmm.states[sidx].transitions[transidx].log_prob;
+                    cerr << endl;
+                }
                 cerr << endl;
             }
-            last_phone = triphone[2];
+
+            // Connect triphone state nodes
+            //for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+            //    nodes.resize(nodes.size()+1);
+            //    nodes.back().hmm_state = 1;
+            //}
         }
         if (debug) cerr << endl;
     }
 
-    for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait) {
-        expand_subword_nodes(swnodes, nodes, arcs, ait->second, 0, last_phone);
-    }
+    for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
+        expand_subword_nodes(swnodes, nodes, arcs, ait->second, nodes.size()-1, last_phone);
 
 }
 
