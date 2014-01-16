@@ -219,60 +219,85 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
                                    int sw_node_idx,
                                    int node_idx,
                                    char left_context,
+                                   char second_left_context,
                                    int debug)
 {
 
     if (sw_node_idx == END_NODE) return;
+
     const SubwordNode &swnode = swnodes[sw_node_idx];
-    Node &source_node = nodes[node_idx];
-    char last_phone = '_';
-
-    if (swnode.subword_id != -1) {
-        string subword = m_units[swnode.subword_id];
-        if (debug) cerr << subword << "\tleft context: " << left_context << endl;
-        auto triphones = m_lexicon[subword];
-
-        // Connect dummy node with subword id
-        nodes.resize(nodes.size()+1);
-        nodes.back().word_id = swnode.subword_id;
-        source_node.arcs.resize(source_node.arcs.size()+1);
-        source_node.arcs.back().target_node = nodes.size()-1;
-
-        for (int tidx = 0; tidx < triphones.size(); ++tidx) {
-            string triphone = triphones[tidx];
-            if (tidx == 0) triphone = left_context + triphone.substr(1);
-            int hmm_index = m_hmm_map[triphone];
-            Hmm &hmm = m_hmms[hmm_index];
-            last_phone = triphone[2];
-
-            if (debug) {
-                cerr << "  " << triphone << " (" << triphone[2] << ")" << endl;
-                for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
-                    cerr << "\t" << hmm.states[sidx].model;
-                    for (int transidx = 0; transidx<hmm.states[sidx].transitions.size(); ++transidx)
-                        cerr << "\ttarget: " << hmm.states[sidx].transitions[transidx].target
-                        << " lp: " << hmm.states[sidx].transitions[transidx].log_prob;
-                    cerr << endl;
-                }
-                cerr << endl;
-            }
-
-            // Connect triphone state nodes
-            int prev_node_idx = nodes.size()-1;
-            for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
-                nodes.resize(nodes.size()+1);
-                nodes.back().hmm_state = hmm.states[sidx].model;
-                nodes[prev_node_idx].arcs.resize(nodes[prev_node_idx].arcs.size()+1);
-                nodes[prev_node_idx].arcs.back().target_node = nodes.size()-1;
-            }
-        }
-        if (debug) cerr << endl;
+    if (swnode.subword_id == -1) {
+        for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
+            if (ait->second != END_NODE)
+                expand_subword_nodes(swnodes, nodes, ait->second, node_idx, left_context, second_left_context, debug);
+            // FIXME: need to handle end node case ?
+        return;
     }
 
+    string subword = m_units[swnode.subword_id];
+    if (debug) cerr << subword << "\tleft context: " << left_context << endl;
+    auto triphones = m_lexicon[subword];
+
+    // Construct the connecting triphone and expand states
+    if (second_left_context != '_' && left_context != '_') {
+        nodes.resize(nodes.size()+1);
+        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+        nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+        string triphone = string(1, second_left_context) + "-" + string(1,left_context) + "+" + string(1,triphones[0][2]);
+        int hmm_index = m_hmm_map[triphone];
+        Hmm &hmm = m_hmms[hmm_index];
+        for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+            nodes.resize(nodes.size()+1);
+            nodes.back().hmm_state = hmm.states[sidx].model; // FIXME: is this correct idx?
+            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+            nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+            node_idx = nodes.size()-1;
+        }
+    }
+
+    for (int tidx = 0; tidx < triphones.size()-1; ++tidx) {
+        string triphone = triphones[tidx];
+        if (tidx == 0) triphone = left_context + triphone.substr(1);
+        int hmm_index = m_hmm_map[triphone];
+        Hmm &hmm = m_hmms[hmm_index];
+
+        if (debug) {
+            cerr << "  " << triphone << " (" << triphone[2] << ")" << endl;
+            for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+                cerr << "\t" << hmm.states[sidx].model;
+                for (int transidx = 0; transidx<hmm.states[sidx].transitions.size(); ++transidx)
+                    cerr << "\ttarget: " << hmm.states[sidx].transitions[transidx].target
+                    << " lp: " << hmm.states[sidx].transitions[transidx].log_prob;
+                cerr << endl;
+            }
+            cerr << endl;
+        }
+
+        // Connect triphone state nodes
+        for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+            nodes.resize(nodes.size()+1);
+            nodes.back().hmm_state = hmm.states[sidx].model;
+            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+            nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+            node_idx = nodes.size()-1;
+        }
+    }
+    if (debug) cerr << endl;
+
+    // Connect dummy node with subword id
+    nodes.resize(nodes.size()+1);
+    nodes.back().word_id = swnode.subword_id;
+    nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+    nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+    node_idx = nodes.size()-1;
+
+    char last_phone = triphones[triphones.size()-1][2];
+    char second_last_phone = left_context;
+    if (triphones.size() > 1) second_last_phone = triphones[triphones.size()-2][2];
+    int curr_node = nodes.size()-1;
     for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
         if (ait->second != END_NODE)
-            expand_subword_nodes(swnodes, nodes, ait->second, nodes.size()-1, last_phone);
-
+            expand_subword_nodes(swnodes, nodes, ait->second, curr_node, last_phone, second_last_phone);
 }
 
 

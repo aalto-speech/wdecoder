@@ -50,6 +50,7 @@ public:
                               int sw_node_idx=START_NODE,
                               int node_idx=START_NODE,
                               char left_context='_',
+                              char prev_triphone='_',
                               int debug=1);
 
 private:
