@@ -224,25 +224,30 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
 
     if (sw_node_idx == END_NODE) return;
     const SubwordNode &swnode = swnodes[sw_node_idx];
+    char last_phone = '_';
 
     if (swnode.subword_id != -1) {
         string subword = m_units[swnode.subword_id];
-        if (debug) cerr << subword << endl;
+        if (debug) cerr << subword << "\tleft context: " << left_context << endl;
         auto triphones = m_lexicon[subword];
-        for (auto tit = triphones.begin(); tit != triphones.end(); ++tit) {
+
+        for (auto tidx = 0; tidx < triphones.size(); ++tidx) {
+            string triphone = triphones[tidx];
+            if (tidx == 0) triphone = left_context + triphone.substr(1);
             if (debug) {
-                cerr << "  " << *tit << " (" << (*tit)[2] << ")";
-                int hmm_index = m_hmm_map[*tit];
+                cerr << "  " << triphone << " (" << triphone[2] << ")";
+                int hmm_index = m_hmm_map[triphone];
                 for (int sidx = 2; sidx < m_hmms[hmm_index].states.size(); ++sidx)
                     cerr << " " << m_hmms[hmm_index].states[sidx].model;
                 cerr << endl;
             }
+            last_phone = triphone[2];
         }
         if (debug) cerr << endl;
     }
 
     for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait) {
-        expand_subword_nodes(swnodes, nodes, arcs, ait->second, 0, '_');
+        expand_subword_nodes(swnodes, nodes, arcs, ait->second, 0, last_phone);
     }
 
 }
