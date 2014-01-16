@@ -216,7 +216,6 @@ DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes)
 void
 DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
                                    std::vector<Node> &nodes,
-                                   std::vector<Arc> &arcs,
                                    int sw_node_idx,
                                    int node_idx,
                                    char left_context,
@@ -259,16 +258,20 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
             }
 
             // Connect triphone state nodes
-            //for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
-            //    nodes.resize(nodes.size()+1);
-            //    nodes.back().hmm_state = 1;
-            //}
+            int prev_node_idx = nodes.size()-1;
+            for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+                nodes.resize(nodes.size()+1);
+                nodes.back().hmm_state = hmm.states[sidx].model;
+                nodes[prev_node_idx].arcs.resize(nodes[prev_node_idx].arcs.size()+1);
+                nodes[prev_node_idx].arcs.back().target_node = nodes.size()-1;
+            }
         }
         if (debug) cerr << endl;
     }
 
     for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
-        expand_subword_nodes(swnodes, nodes, arcs, ait->second, nodes.size()-1, last_phone);
+        if (ait->second != END_NODE)
+            expand_subword_nodes(swnodes, nodes, ait->second, nodes.size()-1, last_phone);
 
 }
 

@@ -41,8 +41,8 @@ int main(int argc, char* argv[])
         cerr << "node count: " << dg.reachable_word_graph_nodes(swnodes) << endl;
 
         vector<DecoderGraph::Node> nodes(2);
-        vector<DecoderGraph::Arc> arcs;
-        dg.expand_subword_nodes(swnodes, nodes, arcs);
+        dg.expand_subword_nodes(swnodes, nodes);
+        cerr << "number of subword nodes: " << nodes.size() << endl;
     } catch (string &e) {
         cerr << e << endl;
     }
