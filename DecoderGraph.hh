@@ -62,6 +62,9 @@ private:
     void print_word_graph(std::vector<SubwordNode> &nodes,
                           std::vector<int> path,
                           int node_idx=START_NODE);
+    int connect_triphone(std::vector<Node> &nodes,
+                         std::string triphone,
+                         int node_idx);
 
     // Text units
     std::vector<std::string> m_units;

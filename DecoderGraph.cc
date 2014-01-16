@@ -222,7 +222,6 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
                                    char second_left_context,
                                    int debug)
 {
-
     if (sw_node_idx == END_NODE) return;
 
     const SubwordNode &swnode = swnodes[sw_node_idx];
@@ -240,19 +239,8 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
 
     // Construct the connecting triphone and expand states
     if (second_left_context != '_' && left_context != '_') {
-        nodes.resize(nodes.size()+1);
-        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-        nodes[node_idx].arcs.back().target_node = nodes.size()-1;
-        string triphone = string(1, second_left_context) + "-" + string(1,left_context) + "+" + string(1,triphones[0][2]);
-        int hmm_index = m_hmm_map[triphone];
-        Hmm &hmm = m_hmms[hmm_index];
-        for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
-            nodes.resize(nodes.size()+1);
-            nodes.back().hmm_state = hmm.states[sidx].model; // FIXME: is this correct idx?
-            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-            nodes[node_idx].arcs.back().target_node = nodes.size()-1;
-            node_idx = nodes.size()-1;
-        }
+        string triphone = string(1,second_left_context) + "-" + string(1,left_context) + "+" + string(1,triphones[0][2]);
+        node_idx = connect_triphone(nodes, triphone, node_idx);
     }
 
     for (int tidx = 0; tidx < triphones.size()-1; ++tidx) {
@@ -273,14 +261,7 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
             cerr << endl;
         }
 
-        // Connect triphone state nodes
-        for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
-            nodes.resize(nodes.size()+1);
-            nodes.back().hmm_state = hmm.states[sidx].model;
-            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-            nodes[node_idx].arcs.back().target_node = nodes.size()-1;
-            node_idx = nodes.size()-1;
-        }
+        node_idx = connect_triphone(nodes, triphone, node_idx);
     }
     if (debug) cerr << endl;
 
@@ -299,19 +280,8 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
         if (ait->second != END_NODE)
             expand_subword_nodes(swnodes, nodes, ait->second, curr_node, last_phone, second_last_phone);
         else {
-            nodes.resize(nodes.size()+1);
-            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-            nodes[node_idx].arcs.back().target_node = nodes.size()-1;
             string triphone = string(1,second_last_phone) + "-" + string(1,last_phone) + "+_";
-            int hmm_index = m_hmm_map[triphone];
-            Hmm &hmm = m_hmms[hmm_index];
-            for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
-                nodes.resize(nodes.size()+1);
-                nodes.back().hmm_state = hmm.states[sidx].model; // FIXME: is this correct idx?
-                nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-                nodes[node_idx].arcs.back().target_node = nodes.size()-1;
-                node_idx = nodes.size()-1;
-            }
+            node_idx = connect_triphone(nodes, triphone, node_idx);
             nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
             nodes[node_idx].arcs.back().target_node = END_NODE;
         }
@@ -330,4 +300,23 @@ DecoderGraph::add_lm_unit(string unit)
     m_units.push_back(unit);
 
     return index;
+}
+
+
+int
+DecoderGraph::connect_triphone(std::vector<DecoderGraph::Node> &nodes,
+                               std::string triphone,
+                               int node_idx)
+{
+    int hmm_index = m_hmm_map[triphone];
+    Hmm &hmm = m_hmms[hmm_index];
+    for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+        nodes.resize(nodes.size()+1);
+        nodes.back().hmm_state = hmm.states[sidx].model; // FIXME: is this correct idx?
+        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+        nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+        node_idx = nodes.size()-1;
+    }
+
+    return node_idx;
 }
