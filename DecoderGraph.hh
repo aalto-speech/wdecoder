@@ -64,7 +64,8 @@ private:
                           int node_idx=START_NODE);
     int connect_triphone(std::vector<Node> &nodes,
                          std::string triphone,
-                         int node_idx);
+                         int node_idx,
+                         int debug);
 
     // Text units
     std::vector<std::string> m_units;

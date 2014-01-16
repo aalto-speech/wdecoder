@@ -240,28 +240,13 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
     // Construct the connecting triphone and expand states
     if (second_left_context != '_' && left_context != '_') {
         string triphone = string(1,second_left_context) + "-" + string(1,left_context) + "+" + string(1,triphones[0][2]);
-        node_idx = connect_triphone(nodes, triphone, node_idx);
+        node_idx = connect_triphone(nodes, triphone, node_idx, debug);
     }
 
     for (int tidx = 0; tidx < triphones.size()-1; ++tidx) {
         string triphone = triphones[tidx];
         if (tidx == 0) triphone = left_context + triphone.substr(1);
-        int hmm_index = m_hmm_map[triphone];
-        Hmm &hmm = m_hmms[hmm_index];
-
-        if (debug) {
-            cerr << "  " << triphone << " (" << triphone[2] << ")" << endl;
-            for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
-                cerr << "\t" << hmm.states[sidx].model;
-                for (int transidx = 0; transidx<hmm.states[sidx].transitions.size(); ++transidx)
-                    cerr << "\ttarget: " << hmm.states[sidx].transitions[transidx].target
-                    << " lp: " << hmm.states[sidx].transitions[transidx].log_prob;
-                cerr << endl;
-            }
-            cerr << endl;
-        }
-
-        node_idx = connect_triphone(nodes, triphone, node_idx);
+        node_idx = connect_triphone(nodes, triphone, node_idx, debug);
     }
     if (debug) cerr << endl;
 
@@ -281,7 +266,7 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
             expand_subword_nodes(swnodes, nodes, ait->second, curr_node, last_phone, second_last_phone);
         else {
             string triphone = string(1,second_last_phone) + "-" + string(1,last_phone) + "+_";
-            node_idx = connect_triphone(nodes, triphone, node_idx);
+            node_idx = connect_triphone(nodes, triphone, node_idx, debug);
             nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
             nodes[node_idx].arcs.back().target_node = END_NODE;
         }
@@ -306,10 +291,23 @@ DecoderGraph::add_lm_unit(string unit)
 int
 DecoderGraph::connect_triphone(std::vector<DecoderGraph::Node> &nodes,
                                std::string triphone,
-                               int node_idx)
+                               int node_idx,
+                               int debug)
 {
     int hmm_index = m_hmm_map[triphone];
     Hmm &hmm = m_hmms[hmm_index];
+
+    if (debug) {
+        cerr << "  " << triphone << " (" << triphone[2] << ")" << endl;
+        for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+            cerr << "\t" << hmm.states[sidx].model;
+            for (int transidx = 0; transidx<hmm.states[sidx].transitions.size(); ++transidx)
+                cerr << "\ttarget: " << hmm.states[sidx].transitions[transidx].target
+                << " lp: " << hmm.states[sidx].transitions[transidx].log_prob;
+            cerr << endl;
+        }
+    }
+
     for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
         nodes.resize(nodes.size()+1);
         nodes.back().hmm_state = hmm.states[sidx].model; // FIXME: is this correct idx?
