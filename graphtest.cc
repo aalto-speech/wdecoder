@@ -32,7 +32,7 @@ void graphtest :: GraphTest1(void)
     dg.read_noway_lexicon(lexname);
     dg.read_word_segmentations(segname);
 
-    CPPUNIT_ASSERT_EQUAL( 35004, (int)dg.m_units.size() );
+    CPPUNIT_ASSERT_EQUAL( 35003, (int)dg.m_units.size() );
     CPPUNIT_ASSERT_EQUAL( 35003, (int)dg.m_unit_map.size() ); // ?
     CPPUNIT_ASSERT_EQUAL( 13252, (int)dg.m_hmms.size() );
     CPPUNIT_ASSERT_EQUAL( 13252, (int)dg.m_hmm_map.size() );

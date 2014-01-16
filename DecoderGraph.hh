@@ -45,7 +45,11 @@ public:
     int reachable_word_graph_nodes(std::vector<SubwordNode> &nodes);
     void expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
                               std::vector<Node> &nodes,
-                              std::vector<Arc> &arcs);
+                              std::vector<Arc> &arcs,
+                              int sw_node_idx=START_NODE,
+                              int node_idx=START_NODE,
+                              char left_context='_',
+                              int debug=1);
 
 private:
 

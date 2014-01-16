@@ -215,16 +215,36 @@ DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes)
 void
 DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
                                    std::vector<Node> &nodes,
-                                   std::vector<Arc> &arcs)
+                                   std::vector<Arc> &arcs,
+                                   int sw_node_idx,
+                                   int node_idx,
+                                   char left_context,
+                                   int debug)
 {
-    for (auto swnit = swnodes.begin(); swnit != swnodes.end(); ++swnit) {
-        if (swnit->subword_id == -1) continue;
-        string subword = m_units[swnit->subword_id];
-        cerr << subword;
-        for (auto pit = m_lexicon[subword].begin(); pit != m_lexicon[subword].end(); ++pit)
-            cerr << " " << *pit;
-        cerr << endl;
+
+    if (sw_node_idx == END_NODE) return;
+    const SubwordNode &swnode = swnodes[sw_node_idx];
+
+    if (swnode.subword_id != -1) {
+        string subword = m_units[swnode.subword_id];
+        if (debug) cerr << subword << endl;
+        auto triphones = m_lexicon[subword];
+        for (auto tit = triphones.begin(); tit != triphones.end(); ++tit) {
+            if (debug) {
+                cerr << "  " << *tit << " (" << (*tit)[2] << ")";
+                int hmm_index = m_hmm_map[*tit];
+                for (int sidx = 2; sidx < m_hmms[hmm_index].states.size(); ++sidx)
+                    cerr << " " << m_hmms[hmm_index].states[sidx].model;
+                cerr << endl;
+            }
+        }
+        if (debug) cerr << endl;
     }
+
+    for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait) {
+        expand_subword_nodes(swnodes, nodes, arcs, ait->second, 0, '_');
+    }
+
 }
 
 
