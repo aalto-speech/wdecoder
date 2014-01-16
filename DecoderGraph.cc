@@ -298,6 +298,23 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
     for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
         if (ait->second != END_NODE)
             expand_subword_nodes(swnodes, nodes, ait->second, curr_node, last_phone, second_last_phone);
+        else {
+            nodes.resize(nodes.size()+1);
+            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+            nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+            string triphone = string(1,second_last_phone) + "-" + string(1,last_phone) + "+_";
+            int hmm_index = m_hmm_map[triphone];
+            Hmm &hmm = m_hmms[hmm_index];
+            for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+                nodes.resize(nodes.size()+1);
+                nodes.back().hmm_state = hmm.states[sidx].model; // FIXME: is this correct idx?
+                nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+                nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+                node_idx = nodes.size()-1;
+            }
+            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+            nodes[node_idx].arcs.back().target_node = END_NODE;
+        }
 }
 
 
