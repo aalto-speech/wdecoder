@@ -260,10 +260,9 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
     char last_phone = triphones[triphones.size()-1][2];
     char second_last_phone = left_context;
     if (triphones.size() > 1) second_last_phone = triphones[triphones.size()-2][2];
-    int curr_node = nodes.size()-1;
     for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
         if (ait->second != END_NODE)
-            expand_subword_nodes(swnodes, nodes, ait->second, curr_node, last_phone, second_last_phone);
+            expand_subword_nodes(swnodes, nodes, ait->second, node_idx, last_phone, second_last_phone);
         else {
             string triphone = string(1,second_last_phone) + "-" + string(1,last_phone) + "+_";
             node_idx = connect_triphone(nodes, triphone, node_idx, debug);
