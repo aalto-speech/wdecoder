@@ -77,6 +77,7 @@ private:
     void reachable_graph_nodes(std::vector<Node> &nodes,
                                std::set<int> &node_idxs,
                                int node_idx=START_NODE);
+    void prune_unreachable_nodes(std::vector<Node> &nodes);
 
     // Text units
     std::vector<std::string> m_units;

@@ -164,8 +164,8 @@ DecoderGraph::tie_word_graph_suffixes(vector<SubwordNode> &nodes)
 
 
 void
-DecoderGraph::print_word_graph(std::vector<SubwordNode> &nodes,
-                               std::vector<int> path,
+DecoderGraph::print_word_graph(vector<SubwordNode> &nodes,
+                               vector<int> path,
                                int node_idx)
 {
     path.push_back(nodes[node_idx].subword_id);
@@ -186,16 +186,16 @@ DecoderGraph::print_word_graph(std::vector<SubwordNode> &nodes,
 
 
 void
-DecoderGraph::print_word_graph(std::vector<SubwordNode> &nodes)
+DecoderGraph::print_word_graph(vector<SubwordNode> &nodes)
 {
-    std::vector<int> path;
+    vector<int> path;
     print_word_graph(nodes, path, START_NODE);
 }
 
 
 void
-DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes,
-                                         std::set<int> &node_idxs,
+DecoderGraph::reachable_word_graph_nodes(vector<SubwordNode> &nodes,
+                                         set<int> &node_idxs,
                                          int node_idx)
 {
     node_idxs.insert(node_idx);
@@ -205,17 +205,17 @@ DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes,
 
 
 int
-DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes)
+DecoderGraph::reachable_word_graph_nodes(vector<SubwordNode> &nodes)
 {
-    std::set<int> node_idxs;
+    set<int> node_idxs;
     reachable_word_graph_nodes(nodes, node_idxs, START_NODE);
     return node_idxs.size();
 }
 
 
 void
-DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
-                                   std::vector<Node> &nodes,
+DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
+                                   vector<Node> &nodes,
                                    int debug,
                                    int sw_node_idx,
                                    int node_idx,
@@ -288,8 +288,8 @@ DecoderGraph::add_lm_unit(string unit)
 
 
 int
-DecoderGraph::connect_triphone(std::vector<DecoderGraph::Node> &nodes,
-                               std::string triphone,
+DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
+                               string triphone,
                                int node_idx,
                                int debug)
 {
@@ -320,8 +320,8 @@ DecoderGraph::connect_triphone(std::vector<DecoderGraph::Node> &nodes,
 
 
 void
-DecoderGraph::print_graph(std::vector<Node> &nodes,
-                          std::vector<int> path,
+DecoderGraph::print_graph(vector<Node> &nodes,
+                          vector<int> path,
                           int node_idx)
 {
     path.push_back(node_idx);
@@ -352,15 +352,15 @@ DecoderGraph::print_graph(std::vector<Node> &nodes,
 
 
 void
-DecoderGraph::print_graph(std::vector<Node> &nodes)
+DecoderGraph::print_graph(vector<Node> &nodes)
 {
-    std::vector<int> path;
+    vector<int> path;
     print_graph(nodes, path, START_NODE);
 }
 
 
 void
-DecoderGraph::tie_state_prefixes(std::vector<Node> &nodes,
+DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
                                  int debug,
                                  int node_idx)
 {
@@ -413,8 +413,8 @@ DecoderGraph::tie_state_prefixes(std::vector<Node> &nodes,
 
 
 void
-DecoderGraph::reachable_graph_nodes(std::vector<Node> &nodes,
-                                    std::set<int> &node_idxs,
+DecoderGraph::reachable_graph_nodes(vector<Node> &nodes,
+                                    set<int> &node_idxs,
                                     int node_idx)
 {
     node_idxs.insert(node_idx);
@@ -424,9 +424,27 @@ DecoderGraph::reachable_graph_nodes(std::vector<Node> &nodes,
 
 
 int
-DecoderGraph::reachable_graph_nodes(std::vector<Node> &nodes)
+DecoderGraph::reachable_graph_nodes(vector<Node> &nodes)
 {
-    std::set<int> node_idxs;
+    set<int> node_idxs;
     reachable_graph_nodes(nodes, node_idxs, START_NODE);
     return node_idxs.size();
 }
+
+
+void
+DecoderGraph::prune_unreachable_nodes(vector<Node> &nodes)
+{
+    vector<Node> pruned_nodes;
+    map<int,int> index_mapping;
+    set<int> old_node_idxs;
+    reachable_graph_nodes(nodes, old_node_idxs, START_NODE);
+    int new_idx = 0;
+    for (auto nit = old_node_idxs.begin(); nit != old_node_idxs.end(); ++nit) {
+        index_mapping[*nit] = new_idx;
+        new_idx++;
+    }
+
+    return;
+}
+
