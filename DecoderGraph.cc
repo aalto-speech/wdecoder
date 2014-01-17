@@ -360,9 +360,70 @@ DecoderGraph::print_graph(std::vector<Node> &nodes)
 
 
 void
-DecoderGraph::tie_state_prefixes(std::vector<Node> &nodes)
+DecoderGraph::tie_state_prefixes(std::vector<Node> &nodes,
+                                 int debug,
+                                 int node_idx)
 {
+    if (debug) cerr << endl << "tying state: " << node_idx << endl;
+    Node &nd = nodes[node_idx];
+
+    map<int, set<int> > targets;
+    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
+        int target_hmm = nodes[ait->target_node].hmm_state;
+        targets[target_hmm].insert(ait->target_node);
+    }
+
+    if (debug) {
+        cerr << "total targets: " << targets.size() << endl;
+        for (auto tit = targets.begin(); tit !=targets.end(); ++tit) {
+            cerr << tit->first << " " << tit->second.size() << endl;
+            for (auto nit = tit->second.begin(); nit != tit->second.end(); ++nit)
+                cerr << *nit << " ";
+            cerr << endl;
+        }
+    }
+
+    set<int> arcs_to_remove;
+    for (auto tit = targets.begin(); tit !=targets.end(); ++tit) {
+        if (tit->second.size() == 1) continue;
+        int tied_node_idx = *(tit->second.begin());
+        for (auto nit = tit->second.rbegin(); nit != tit->second.rend(); ++nit) {
+            int curr_node_idx = *nit;
+            if (tied_node_idx == curr_node_idx) break;
+            Node &temp_nd = nodes[curr_node_idx];
+            for (auto ait = temp_nd.arcs.begin(); ait != temp_nd.arcs.end(); ++ait)
+                nodes[tied_node_idx].arcs.push_back(*ait);
+            arcs_to_remove.insert(curr_node_idx);
+        }
+    }
+
+    if (debug) cerr << "arcs to remove: " << arcs_to_remove.size() << endl;
+    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end();) {
+        if (arcs_to_remove.find(ait->target_node) != arcs_to_remove.end()) {
+            if (debug) cerr << "erasing arc to: " << ait->target_node << endl;
+            ait = nd.arcs.erase(ait);
+        }
+        else ++ait;
+    }
     return;
 }
 
 
+void
+DecoderGraph::reachable_graph_nodes(std::vector<Node> &nodes,
+                                    std::set<int> &node_idxs,
+                                    int node_idx)
+{
+    node_idxs.insert(node_idx);
+    for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait)
+        reachable_graph_nodes(nodes, node_idxs, ait->target_node);
+}
+
+
+int
+DecoderGraph::reachable_graph_nodes(std::vector<Node> &nodes)
+{
+    std::set<int> node_idxs;
+    reachable_graph_nodes(nodes, node_idxs, START_NODE);
+    return node_idxs.size();
+}

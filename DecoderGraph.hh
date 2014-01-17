@@ -52,8 +52,11 @@ public:
                               int node_idx=START_NODE,
                               char left_context='_',
                               char prev_triphone='_');
-    void tie_state_prefixes(std::vector<Node> &nodes);
+    void tie_state_prefixes(std::vector<Node> &nodes,
+                            int debug=1,
+                            int node_idx=START_NODE);
     void print_graph(std::vector<Node> &nodes);
+    int reachable_graph_nodes(std::vector<Node> &nodes);
 
 private:
 
@@ -71,6 +74,9 @@ private:
     void print_graph(std::vector<Node> &nodes,
                      std::vector<int> path,
                      int node_idx);
+    void reachable_graph_nodes(std::vector<Node> &nodes,
+                               std::set<int> &node_idxs,
+                               int node_idx=START_NODE);
 
     // Text units
     std::vector<std::string> m_units;

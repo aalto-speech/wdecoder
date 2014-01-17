@@ -207,7 +207,11 @@ void graphtest :: GraphTest4(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 147, (int)nodes.size() );
-    dg.tie_state_prefixes(nodes);
+    int rnc = dg.reachable_graph_nodes(nodes);
+    cerr << endl << "reachable nodes: " << rnc << endl;
+    dg.tie_state_prefixes(nodes, 1, DecoderGraph::START_NODE);
+    rnc = dg.reachable_graph_nodes(nodes);
+    cerr << "reachable nodes: " << rnc << endl;
 
     for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
         vector<string> triphones;
