@@ -101,6 +101,17 @@ graphtest :: assert_path(DecoderGraph &dg,
     for (auto wit = subwords.begin(); wit != subwords.end(); ++wit)
         dwords.push_front(*wit);
 
+    if (debug) {
+        cerr << "expecting hmm states: " << endl;
+        for (auto it = dstates.rbegin(); it != dstates.rend(); ++it)
+            cerr << " " << *it;
+        cerr << endl;
+        cerr << "expecting subwords: " << endl;
+        for (auto it = subwords.begin(); it != subwords.end(); ++it)
+            cerr << " " << *it;
+        cerr << endl;
+    }
+
     return assert_path(dg, nodes, dstates, dwords, DecoderGraph::START_NODE);
 }
 
@@ -166,15 +177,13 @@ void graphtest :: GraphTest3(void)
     dg.create_word_graph(swnodes);
     dg.tie_word_graph_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes(2);
-    dg.expand_subword_nodes(swnodes, nodes);
+    dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 147, (int)nodes.size() );
 
     for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
         vector<string> triphones;
         vector<int> states;
         triphonize(sit->first, triphones);
-        cerr << "testing word: " << sit->first << endl;
-        bool result = assert_path(dg, nodes, triphones, sit->second, true);
-        cerr << "result: " << result << endl;
+        bool result = assert_path(dg, nodes, triphones, sit->second, false);
     }
 }

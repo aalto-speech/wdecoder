@@ -216,11 +216,11 @@ DecoderGraph::reachable_word_graph_nodes(std::vector<SubwordNode> &nodes)
 void
 DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
                                    std::vector<Node> &nodes,
+                                   int debug,
                                    int sw_node_idx,
                                    int node_idx,
                                    char left_context,
-                                   char second_left_context,
-                                   int debug)
+                                   char second_left_context)
 {
     if (sw_node_idx == END_NODE) return;
 
@@ -228,7 +228,7 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
     if (swnode.subword_id == -1) {
         for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
             if (ait->second != END_NODE)
-                expand_subword_nodes(swnodes, nodes, ait->second, node_idx, left_context, second_left_context, debug);
+                expand_subword_nodes(swnodes, nodes, debug, ait->second, node_idx, left_context, second_left_context);
             // FIXME: need to handle end node case ?
         return;
     }
@@ -237,7 +237,7 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
     if (debug) cerr << subword << "\tleft context: " << left_context << endl;
     auto triphones = m_lexicon[subword];
 
-    // Construct the connecting triphone and expand states
+    // Construct the left connecting triphone and expand states
     if (second_left_context != '_' && left_context != '_') {
         string triphone = string(1,second_left_context) + "-" + string(1,left_context) + "+" + string(1,triphones[0][2]);
         node_idx = connect_triphone(nodes, triphone, node_idx, debug);
@@ -262,12 +262,12 @@ DecoderGraph::expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
     if (triphones.size() > 1) second_last_phone = triphones[triphones.size()-2][2];
     for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
         if (ait->second != END_NODE)
-            expand_subword_nodes(swnodes, nodes, ait->second, node_idx, last_phone, second_last_phone);
+            expand_subword_nodes(swnodes, nodes, debug, ait->second, node_idx, last_phone, second_last_phone);
         else {
             string triphone = string(1,second_last_phone) + "-" + string(1,last_phone) + "+_";
-            node_idx = connect_triphone(nodes, triphone, node_idx, debug);
-            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-            nodes[node_idx].arcs.back().target_node = END_NODE;
+            int temp_node_idx = connect_triphone(nodes, triphone, node_idx, debug);
+            nodes[temp_node_idx].arcs.resize(nodes[temp_node_idx].arcs.size()+1);
+            nodes[temp_node_idx].arcs.back().target_node = END_NODE;
         }
 }
 
