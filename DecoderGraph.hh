@@ -52,6 +52,7 @@ public:
                               int node_idx=START_NODE,
                               char left_context='_',
                               char prev_triphone='_');
+    void tie_state_prefixes(std::vector<Node> &nodes);
     void print_graph(std::vector<Node> &nodes);
 
 private:

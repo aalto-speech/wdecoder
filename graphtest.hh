@@ -18,6 +18,7 @@ class graphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (GraphTest1);
     CPPUNIT_TEST (GraphTest2);
     CPPUNIT_TEST (GraphTest3);
+    CPPUNIT_TEST (GraphTest4);
     CPPUNIT_TEST_SUITE_END ();
 
     public:
@@ -28,6 +29,7 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         void GraphTest1(void);
         void GraphTest2(void);
         void GraphTest3(void);
+        void GraphTest4(void);
 
     private:
         void triphonize(std::string word,

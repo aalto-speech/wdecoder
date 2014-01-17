@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <ctime>
 
 #include "DecoderGraph.hh"
 #include "conf.hh"
@@ -34,17 +35,29 @@ int main(int argc, char* argv[])
         cerr << "Reading segmentations: " << segfname << endl;
         dg.read_word_segmentations(segfname);
 
+        time_t rawtime;
+        time ( &rawtime );
+        cerr << "time: " << ctime (&rawtime) << endl;
+
+        cerr << "Creating subword graph.." << endl;
         vector<DecoderGraph::SubwordNode> swnodes;
         dg.create_word_graph(swnodes);
         cerr << "node count: " << dg.reachable_word_graph_nodes(swnodes) << endl;
+
+        time ( &rawtime );
+        cerr << "time: " << ctime (&rawtime) << endl;
+
+        cerr << "Tying suffixes.." << endl;
         dg.tie_word_graph_suffixes(swnodes);
         cerr << "node count: " << dg.reachable_word_graph_nodes(swnodes) << endl;
 
-        vector<DecoderGraph::Node> nodes(2);
-        dg.expand_subword_nodes(swnodes, nodes);
-        cerr << "number of subword nodes: " << nodes.size() << endl;
+        time ( &rawtime );
+        cerr << "time: " << ctime (&rawtime) << endl;
 
-        dg.print_graph(nodes);
+        cerr << "Expanding to phone graph.." << endl;
+        vector<DecoderGraph::Node> nodes(2);
+        dg.expand_subword_nodes(swnodes, nodes, false);
+        cerr << "number of hmm state nodes: " << nodes.size() << endl;
 
     } catch (string &e) {
         cerr << e << endl;

@@ -358,3 +358,11 @@ DecoderGraph::print_graph(std::vector<Node> &nodes)
     print_graph(nodes, path, START_NODE);
 }
 
+
+void
+DecoderGraph::tie_state_prefixes(std::vector<Node> &nodes)
+{
+    return;
+}
+
+
