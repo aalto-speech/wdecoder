@@ -5,6 +5,9 @@
 #include "DecoderGraph.hh"
 #undef private
 
+#include <string>
+#include <vector>
+
 #include <cppunit/TestFixture.h>
 #include <cppunit/extensions/HelperMacros.h>
 
@@ -24,6 +27,9 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         void GraphTest1(void);
         void GraphTest2(void);
         void GraphTest3(void);
+
+    private:
+        void triphonize(std::string word, std::vector<std::string> &triphones);
 };
 
 #endif
