@@ -365,12 +365,13 @@ DecoderGraph::tie_state_prefixes(std::vector<Node> &nodes,
                                  int node_idx)
 {
     if (debug) cerr << endl << "tying state: " << node_idx << endl;
+    if (node_idx == END_NODE) return;
     Node &nd = nodes[node_idx];
 
     map<int, set<int> > targets;
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
         int target_hmm = nodes[ait->target_node].hmm_state;
-        targets[target_hmm].insert(ait->target_node);
+        if (target_hmm != -1) targets[target_hmm].insert(ait->target_node);
     }
 
     if (debug) {
@@ -405,7 +406,9 @@ DecoderGraph::tie_state_prefixes(std::vector<Node> &nodes,
         }
         else ++ait;
     }
-    return;
+
+    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
+        tie_state_prefixes(nodes, debug, ait->target_node);
 }
 
 

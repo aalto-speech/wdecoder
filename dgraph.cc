@@ -57,7 +57,17 @@ int main(int argc, char* argv[])
         cerr << "Expanding to phone graph.." << endl;
         vector<DecoderGraph::Node> nodes(2);
         dg.expand_subword_nodes(swnodes, nodes, false);
-        cerr << "number of hmm state nodes: " << nodes.size() << endl;
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        time ( &rawtime );
+        cerr << "time: " << ctime (&rawtime) << endl;
+
+        dg.tie_state_prefixes(nodes, 0, DecoderGraph::START_NODE);
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        time ( &rawtime );
+        cerr << "time: " << ctime (&rawtime) << endl;
+
 
     } catch (string &e) {
         cerr << e << endl;
