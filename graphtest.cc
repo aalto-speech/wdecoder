@@ -21,7 +21,8 @@ void graphtest :: tearDown (void)
 
 
 void graphtest :: triphonize(string word,
-                             vector<string> &triphones) {
+                             vector<string> &triphones)
+{
     string tword = "_" + word + "_";
     triphones.clear();
     for (int i=1; i<tword.length()-1; i++) {
@@ -29,6 +30,76 @@ void graphtest :: triphonize(string word,
         tstring << tword[i-1] << "-" << tword[i] << "+" << tword[i+1];
         triphones.push_back(tstring.str());
     }
+}
+
+
+void graphtest :: get_hmm_states(DecoderGraph &dg,
+                                 const vector<string> &triphones,
+                                 vector<int> &states)
+{
+    for (auto tit = triphones.begin(); tit !=triphones.end(); ++tit) {
+        int hmm_index = dg.m_hmm_map[*tit];
+        Hmm &hmm = dg.m_hmms[hmm_index];
+        for (int sidx = 2; sidx < hmm.states.size(); ++sidx)
+            states.push_back(hmm.states[sidx].model);
+    }
+}
+
+
+bool
+graphtest :: assert_path(DecoderGraph &dg,
+                         vector<DecoderGraph::Node> &nodes,
+                         deque<int> states,
+                         deque<string> words,
+                         int node_idx)
+{
+    DecoderGraph::Node &curr_node = nodes[node_idx];
+
+    if (states.size() == 0) {
+        if (words.size() > 0) return false;
+        else return true;
+    }
+
+    if (curr_node.hmm_state != -1) {
+        if (states.back() != curr_node.hmm_state) return false;
+        else states.pop_back();
+    }
+
+    if (curr_node.word_id != -1) {
+        if (words.size() == 0) return false;
+        if (words.back() != dg.m_units[curr_node.word_id]) return false;
+        else words.pop_back();
+    }
+
+    for (auto ait = curr_node.arcs.begin(); ait != curr_node.arcs.end(); ++ait) {
+        bool retval = assert_path(dg, nodes, states, words, ait->target_node);
+        if (retval) return true;
+    }
+
+    return false;
+}
+
+
+bool
+graphtest :: assert_path(DecoderGraph &dg,
+                         vector<DecoderGraph::Node> &nodes,
+                         vector<string> &triphones,
+                         vector<string> &subwords,
+                         bool debug)
+{
+    deque<int> dstates;
+    deque<string> dwords;
+
+    for (auto tit = triphones.begin(); tit != triphones.end(); ++tit) {
+        int hmm_index = dg.m_hmm_map[*tit];
+        Hmm &hmm = dg.m_hmms[hmm_index];
+        for (auto sit = hmm.states.begin(); sit != hmm.states.end(); ++sit)
+            if (sit->model >= 0) dstates.push_front(sit->model);
+    }
+    for (auto wit = subwords.begin(); wit != subwords.end(); ++wit)
+        dwords.push_front(*wit);
+
+    return assert_path(dg, nodes, dstates, dwords, DecoderGraph::START_NODE);
 }
 
 
@@ -96,5 +167,13 @@ void graphtest :: GraphTest3(void)
     dg.expand_subword_nodes(swnodes, nodes);
     CPPUNIT_ASSERT_EQUAL( 147, (int)nodes.size() );
 
-
+    for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
+        vector<string> triphones;
+        vector<int> states;
+        triphonize(sit->first, triphones);
+        get_hmm_states(dg, triphones, states);
+        cerr << "testing word: " << sit->first << endl;
+        bool result = assert_path(dg, nodes, triphones, sit->second, true);
+        cerr << "result: " << result << endl;
+    }
 }

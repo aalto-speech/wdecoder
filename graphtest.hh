@@ -5,6 +5,7 @@
 #include "DecoderGraph.hh"
 #undef private
 
+#include <deque>
 #include <string>
 #include <vector>
 
@@ -29,7 +30,21 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         void GraphTest3(void);
 
     private:
-        void triphonize(std::string word, std::vector<std::string> &triphones);
+        void triphonize(std::string word,
+                        std::vector<std::string> &triphones);
+        void get_hmm_states(DecoderGraph &dg,
+                            const std::vector<std::string> &triphones,
+                            std::vector<int> &states);
+        bool assert_path(DecoderGraph &dg,
+                         std::vector<DecoderGraph::Node> &nodes,
+                         std::deque<int> states,
+                         std::deque<std::string> subwords,
+                         int node_idx);
+        bool assert_path(DecoderGraph &dg,
+                         std::vector<DecoderGraph::Node> &nodes,
+                         std::vector<std::string> &triphones,
+                         std::vector<std::string> &subwords,
+                         bool debug);
 };
 
 #endif
