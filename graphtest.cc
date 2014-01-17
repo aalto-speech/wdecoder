@@ -50,29 +50,31 @@ bool
 graphtest :: assert_path(DecoderGraph &dg,
                          vector<DecoderGraph::Node> &nodes,
                          deque<int> states,
-                         deque<string> words,
+                         deque<string> subwords,
                          int node_idx)
 {
     DecoderGraph::Node &curr_node = nodes[node_idx];
 
     if (states.size() == 0) {
-        if (words.size() > 0) return false;
+        if (subwords.size() > 0) return false;
         else return true;
     }
 
     if (curr_node.hmm_state != -1) {
-        if (states.back() != curr_node.hmm_state) return false;
+        if (states.back() != curr_node.hmm_state) {
+            return false;
+        }
         else states.pop_back();
     }
 
     if (curr_node.word_id != -1) {
-        if (words.size() == 0) return false;
-        if (words.back() != dg.m_units[curr_node.word_id]) return false;
-        else words.pop_back();
+        if (subwords.size() == 0) return false;
+        if (subwords.back() != dg.m_units[curr_node.word_id]) return false;
+        else subwords.pop_back();
     }
 
     for (auto ait = curr_node.arcs.begin(); ait != curr_node.arcs.end(); ++ait) {
-        bool retval = assert_path(dg, nodes, states, words, ait->target_node);
+        bool retval = assert_path(dg, nodes, states, subwords, ait->target_node);
         if (retval) return true;
     }
 
@@ -171,7 +173,6 @@ void graphtest :: GraphTest3(void)
         vector<string> triphones;
         vector<int> states;
         triphonize(sit->first, triphones);
-        get_hmm_states(dg, triphones, states);
         cerr << "testing word: " << sit->first << endl;
         bool result = assert_path(dg, nodes, triphones, sit->second, true);
         cerr << "result: " << result << endl;

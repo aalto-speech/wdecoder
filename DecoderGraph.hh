@@ -52,6 +52,7 @@ public:
                               char left_context='_',
                               char prev_triphone='_',
                               int debug=1);
+    void print_graph(std::vector<Node> &nodes);
 
 private:
 
@@ -66,6 +67,9 @@ private:
                          std::string triphone,
                          int node_idx,
                          int debug);
+    void print_graph(std::vector<Node> &nodes,
+                     std::vector<int> path,
+                     int node_idx);
 
     // Text units
     std::vector<std::string> m_units;

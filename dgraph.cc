@@ -43,6 +43,9 @@ int main(int argc, char* argv[])
         vector<DecoderGraph::Node> nodes(2);
         dg.expand_subword_nodes(swnodes, nodes);
         cerr << "number of subword nodes: " << nodes.size() << endl;
+
+        dg.print_graph(nodes);
+
     } catch (string &e) {
         cerr << e << endl;
     }

@@ -317,3 +317,44 @@ DecoderGraph::connect_triphone(std::vector<DecoderGraph::Node> &nodes,
 
     return node_idx;
 }
+
+
+void
+DecoderGraph::print_graph(std::vector<Node> &nodes,
+                          std::vector<int> path,
+                          int node_idx)
+{
+    path.push_back(node_idx);
+
+    if (node_idx == END_NODE) {
+        vector<int> words;
+        cout << "hmm states:";
+        for (int i=0; i<path.size(); i++) {
+            if (nodes[path[i]].hmm_state != -1)
+                cout << " " << nodes[path[i]].hmm_state;
+            if (nodes[path[i]].word_id != -1)
+                words.push_back(nodes[path[i]].word_id);
+        }
+        cout << endl;
+        if (words.size()) {
+            cout << "subwords:";
+            for (auto it=words.begin(); it != words.end(); ++it)
+                cout << " " << m_units[*it];
+        }
+        cout << endl << endl;
+
+        return;
+    }
+
+    for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait)
+        print_graph(nodes, path, ait->target_node);
+}
+
+
+void
+DecoderGraph::print_graph(std::vector<Node> &nodes)
+{
+    std::vector<int> path;
+    print_graph(nodes, path, START_NODE);
+}
+
