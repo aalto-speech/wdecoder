@@ -115,7 +115,43 @@ graphtest :: assert_path(DecoderGraph &dg,
     return assert_path(dg, nodes, dstates, dwords, DecoderGraph::START_NODE);
 }
 
+bool
+graphtest :: assert_transitions(DecoderGraph &dg,
+                                std::vector<DecoderGraph::Node> &nodes,
+                                bool debug)
+{
+    for (int node_idx = 0; node_idx < nodes.size(); ++node_idx) {
+        if (node_idx == DecoderGraph::END_NODE) continue;
+        DecoderGraph::Node &node = nodes[node_idx];
+        if (!node.arcs.size()) return false;
 
+        if (node.hmm_state == -1) {
+            for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+                if (ait->log_prob != 0.0) return false;
+                if (ait->target_node == node_idx) return false;
+            }
+            continue;
+        }
+
+        HmmState &state = dg.m_hmm_states[node.hmm_state];
+        bool self_transition = false;
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+            if (ait->target_node == node_idx) {
+                self_transition = true;
+                if (ait->log_prob != state.transitions[0].log_prob) return false;
+            }
+            else {
+                if (ait->log_prob != state.transitions[1].log_prob) return false;
+            }
+        }
+        if (!self_transition) return false;
+    }
+    return true;
+}
+
+
+// Verify that models are correctly loaded
+// Test constructing the initial word graph on subword level
 void graphtest :: GraphTest1(void)
 {
     string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
@@ -141,6 +177,7 @@ void graphtest :: GraphTest1(void)
 }
 
 
+// Test tying word suffixes
 void graphtest :: GraphTest2(void)
 {
     string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
@@ -161,6 +198,7 @@ void graphtest :: GraphTest2(void)
 }
 
 
+// Test expanding the subwords to triphones
 void graphtest :: GraphTest3(void)
 {
     string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
@@ -189,6 +227,7 @@ void graphtest :: GraphTest3(void)
 }
 
 
+// Test tying state chain prefixes
 void graphtest :: GraphTest4(void)
 {
     string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
@@ -218,6 +257,7 @@ void graphtest :: GraphTest4(void)
 }
 
 
+// Verify adding self transitions and transition probabilities to states
 void graphtest :: GraphTest5(void)
 {
     string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
@@ -244,4 +284,6 @@ void graphtest :: GraphTest5(void)
         triphonize(sit->first, triphones);
         bool result = assert_path(dg, nodes, triphones, sit->second, false);
     }
+
+    assert_transitions(dg, nodes, true);
 }

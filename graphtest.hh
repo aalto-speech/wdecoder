@@ -49,6 +49,9 @@ class graphtest : public CPPUNIT_NS :: TestFixture
                          std::vector<std::string> &triphones,
                          std::vector<std::string> &subwords,
                          bool debug);
+        bool assert_transitions(DecoderGraph &dg,
+                                std::vector<DecoderGraph::Node> &nodes,
+                                bool debug);
 };
 
 #endif
