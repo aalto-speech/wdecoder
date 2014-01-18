@@ -123,28 +123,52 @@ graphtest :: assert_transitions(DecoderGraph &dg,
     for (int node_idx = 0; node_idx < nodes.size(); ++node_idx) {
         if (node_idx == DecoderGraph::END_NODE) continue;
         DecoderGraph::Node &node = nodes[node_idx];
-        if (!node.arcs.size()) return false;
+        if (!node.arcs.size()) {
+            if (debug) cerr << "Node " << node_idx << " has no transitions" << endl;
+            return false;
+        }
 
         if (node.hmm_state == -1) {
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-                if (ait->log_prob != 0.0) return false;
-                if (ait->target_node == node_idx) return false;
+                if (ait->log_prob != 0.0) {
+                    if (debug) cerr << "Node " << node_idx << " non hmm state out transition lp: " << ait->log_prob << endl;
+                    return false;
+                }
+                if (ait->target_node == node_idx) {
+                    if (debug) cerr << "Node " << node_idx << " self-transition in non-hmm-node " << endl;
+                    return false;
+                }
             }
             continue;
         }
 
         HmmState &state = dg.m_hmm_states[node.hmm_state];
         bool self_transition = false;
+        bool out_transition = false;
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
             if (ait->target_node == node_idx) {
                 self_transition = true;
-                if (ait->log_prob != state.transitions[0].log_prob) return false;
+                if (ait->log_prob != state.transitions[0].log_prob) {
+                    if (debug) cerr << "Node " << node_idx << " invalid self-transition prob" << endl;
+                    return false;
+                }
             }
             else {
-                if (ait->log_prob != state.transitions[1].log_prob) return false;
+                out_transition = true;
+                if (ait->log_prob != state.transitions[1].log_prob) {
+                    if (debug) cerr << "Node " << node_idx << " invalid out-transition prob" << endl;
+                    return false;
+                }
             }
         }
-        if (!self_transition) return false;
+        if (!self_transition) {
+            if (debug) cerr << "Node " << node_idx << " has no self-transition" << endl;
+            return false;
+        }
+        if (!out_transition) {
+            if (debug) cerr << "Node " << node_idx << " has no out-transition" << endl;
+            return false;
+        }
     }
     return true;
 }
@@ -285,5 +309,7 @@ void graphtest :: GraphTest5(void)
         bool result = assert_path(dg, nodes, triphones, sit->second, false);
     }
 
-    assert_transitions(dg, nodes, true);
+    dg.add_hmm_self_transitions(nodes);
+    dg.set_hmm_transition_probs(nodes);
+    CPPUNIT_ASSERT( assert_transitions(dg, nodes, true) );
 }
