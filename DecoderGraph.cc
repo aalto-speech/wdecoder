@@ -446,6 +446,17 @@ DecoderGraph::prune_unreachable_nodes(vector<Node> &nodes)
         new_idx++;
     }
 
+    pruned_nodes.resize(old_node_idxs.size());
+    for (auto nit = old_node_idxs.begin(); nit != old_node_idxs.end(); ++nit) {
+        pruned_nodes[index_mapping[*nit]] = nodes[*nit];
+        Node &new_node = pruned_nodes[index_mapping[*nit]];
+        for (auto ait = new_node.arcs.begin(); ait != new_node.arcs.end(); ++ait) {
+            ait->target_node = index_mapping[ait->target_node];
+        }
+    }
+
+    nodes.swap(pruned_nodes);
+
     return;
 }
 
