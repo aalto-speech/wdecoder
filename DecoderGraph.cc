@@ -497,3 +497,9 @@ DecoderGraph::set_hmm_transition_probs(std::vector<Node> &nodes)
     }
 }
 
+
+void
+DecoderGraph::push_word_ids_left(std::vector<Node> &nodes)
+{
+
+}

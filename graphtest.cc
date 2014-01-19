@@ -115,6 +115,7 @@ graphtest :: assert_path(DecoderGraph &dg,
     return assert_path(dg, nodes, dstates, dwords, DecoderGraph::START_NODE);
 }
 
+
 bool
 graphtest :: assert_transitions(DecoderGraph &dg,
                                 std::vector<DecoderGraph::Node> &nodes,
@@ -169,6 +170,35 @@ graphtest :: assert_transitions(DecoderGraph &dg,
             if (debug) cerr << "Node " << node_idx << " has no out-transition" << endl;
             return false;
         }
+    }
+    return true;
+}
+
+
+bool
+graphtest :: assert_subword_id_positions(DecoderGraph &dg,
+                                         std::vector<DecoderGraph::Node> &nodes,
+                                         bool debug,
+                                         int node_idx,
+                                         int nodes_wo_branching)
+{
+    if (node_idx == DecoderGraph::END_NODE) return true;
+
+    DecoderGraph::Node &node = nodes[node_idx];
+
+    if (node.word_id != -1) {
+        if (nodes_wo_branching > 0) return false;
+        else nodes_wo_branching = 0;
+    }
+    else {
+        if (node.arcs.size() == 2) nodes_wo_branching += 1;
+        else nodes_wo_branching = 0;
+    }
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        if (ait->target_node == node_idx) continue;
+        bool retval = assert_subword_id_positions(dg, nodes, debug, ait->target_node, nodes_wo_branching);
+        if (!retval) return false;
     }
     return true;
 }
@@ -346,6 +376,42 @@ void graphtest :: GraphTest6(void)
         triphonize(sit->first, triphones);
         bool result = assert_path(dg, nodes, triphones, sit->second, false);
     }
-
-
 }
+
+
+// Test pushing word ids to the leftmost possible position
+void graphtest :: GraphTest7(void)
+{
+    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
+    string lexname = "data/lex";
+    string segname = "data/segs.txt";
+
+    DecoderGraph dg;
+    dg.read_phone_model(amname + ".ph");
+    dg.read_duration_model(amname + ".dur");
+    dg.read_noway_lexicon(lexname);
+    dg.read_word_segmentations(segname);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    dg.tie_word_graph_suffixes(swnodes);
+    vector<DecoderGraph::Node> nodes(2);
+    dg.expand_subword_nodes(swnodes, nodes, 0);
+    CPPUNIT_ASSERT_EQUAL( 147, (int)dg.reachable_graph_nodes(nodes) );
+    dg.tie_state_prefixes(nodes, 0, DecoderGraph::START_NODE);
+    CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
+
+    dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 121, (int)nodes.size() );
+
+    for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
+        vector<string> triphones;
+        triphonize(sit->first, triphones);
+        bool result = assert_path(dg, nodes, triphones, sit->second, false);
+    }
+
+    dg.push_word_ids_left(nodes);
+    CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes) );
+}
+

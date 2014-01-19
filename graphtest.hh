@@ -21,6 +21,7 @@ class graphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (GraphTest4);
     CPPUNIT_TEST (GraphTest5);
     CPPUNIT_TEST (GraphTest6);
+    CPPUNIT_TEST (GraphTest7);
     CPPUNIT_TEST_SUITE_END ();
 
     public:
@@ -34,6 +35,7 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         void GraphTest4(void);
         void GraphTest5(void);
         void GraphTest6(void);
+        void GraphTest7(void);
 
     private:
         void triphonize(std::string word,
@@ -54,6 +56,11 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         bool assert_transitions(DecoderGraph &dg,
                                 std::vector<DecoderGraph::Node> &nodes,
                                 bool debug);
+        bool assert_subword_id_positions(DecoderGraph &dg,
+                                         std::vector<DecoderGraph::Node> &nodes,
+                                         bool debug=false,
+                                         int node_idx=DecoderGraph::START_NODE,
+                                         int nodes_wo_branching=0);
 };
 
 #endif
