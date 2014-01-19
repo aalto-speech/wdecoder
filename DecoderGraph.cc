@@ -419,7 +419,8 @@ DecoderGraph::reachable_graph_nodes(vector<Node> &nodes,
 {
     node_idxs.insert(node_idx);
     for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait)
-        reachable_graph_nodes(nodes, node_idxs, ait->target_node);
+        if (node_idx != ait->target_node)
+            reachable_graph_nodes(nodes, node_idxs, ait->target_node);
 }
 
 
@@ -449,6 +450,7 @@ DecoderGraph::prune_unreachable_nodes(vector<Node> &nodes)
 }
 
 
+// FIXME: refactor this to connect_triphone
 void
 DecoderGraph::add_hmm_self_transitions(std::vector<Node> &nodes)
 {
