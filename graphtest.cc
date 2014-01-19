@@ -313,3 +313,39 @@ void graphtest :: GraphTest5(void)
     dg.set_hmm_transition_probs(nodes);
     CPPUNIT_ASSERT( assert_transitions(dg, nodes, true) );
 }
+
+
+// Test pruning non-reachable nodes and reindexing nodes
+void graphtest :: GraphTest6(void)
+{
+    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
+    string lexname = "data/lex";
+    string segname = "data/segs.txt";
+
+    DecoderGraph dg;
+    dg.read_phone_model(amname + ".ph");
+    dg.read_duration_model(amname + ".dur");
+    dg.read_noway_lexicon(lexname);
+    dg.read_word_segmentations(segname);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    dg.tie_word_graph_suffixes(swnodes);
+    vector<DecoderGraph::Node> nodes(2);
+    dg.expand_subword_nodes(swnodes, nodes, 0);
+    CPPUNIT_ASSERT_EQUAL( 147, (int)dg.reachable_graph_nodes(nodes) );
+    dg.tie_state_prefixes(nodes, 0, DecoderGraph::START_NODE);
+    CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
+
+    dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 121, (int)nodes.size() );
+
+    for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
+        vector<string> triphones;
+        triphonize(sit->first, triphones);
+        bool result = assert_path(dg, nodes, triphones, sit->second, false);
+    }
+
+
+}
