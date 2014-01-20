@@ -168,12 +168,14 @@ DecoderGraph::print_word_graph(vector<SubwordNode> &nodes,
                                vector<int> path,
                                int node_idx)
 {
-    path.push_back(nodes[node_idx].subword_id);
+    path.push_back(node_idx);
 
     for (auto ait = nodes[node_idx].out_arcs.begin(); ait != nodes[node_idx].out_arcs.end(); ++ait) {
         if (ait->second == END_NODE) {
             for (int i=0; i<path.size(); i++) {
-                if (path[i] >= 0) cout << m_units[path[i]];
+                int subword_id = nodes[path[i]].subword_id;
+                if (subword_id == -1) continue;
+                if (path[i] >= 0) cout << m_units[subword_id] << " (" << path[i] << ")";
                 if (i+1 != path.size()) cout << " ";
             }
             cout << endl;
@@ -251,6 +253,8 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
     if (debug) cerr << endl;
 
     // Connect dummy node with subword id
+    if (debug) cerr << "adding dummy node for subword: " << m_units[swnode.subword_id]
+                    << " subword node idx: " << sw_node_idx << endl;
     nodes.resize(nodes.size()+1);
     nodes.back().word_id = swnode.subword_id;
     nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
@@ -499,7 +503,62 @@ DecoderGraph::set_hmm_transition_probs(std::vector<Node> &nodes)
 
 
 void
-DecoderGraph::push_word_ids_left(std::vector<Node> &nodes)
+DecoderGraph::push_word_ids_left(std::vector<Node> &nodes,
+                                 bool debug,
+                                 int node_idx,
+                                 int prev_node_idx,
+                                 int first_hmm_node_wo_branching)
 {
+    if (node_idx == END_NODE) return;
 
+    Node &node = nodes[node_idx];
+
+    if (node.word_id != -1) {
+        if (first_hmm_node_wo_branching != -1) {
+            if (debug) cerr << "Pushing subword " << m_units[node.word_id]
+                            << " from node " << node_idx << " to " << first_hmm_node_wo_branching << endl;
+            // Move the out transitions of the subword node to the last HMM node
+            nodes[prev_node_idx].arcs = node.arcs;
+            // Create a new identical HMM node for the first state
+            nodes.push_back(nodes[first_hmm_node_wo_branching]);
+            nodes[first_hmm_node_wo_branching].arcs[0].target_node = nodes.size()-1;
+            nodes[first_hmm_node_wo_branching].word_id = node.word_id;
+            nodes[first_hmm_node_wo_branching].hmm_state = -1;
+            first_hmm_node_wo_branching = -1;
+        }
+    }
+
+    if (node.arcs.size() > 1)
+        first_hmm_node_wo_branching = -1;
+    else
+        if (first_hmm_node_wo_branching == -1) first_hmm_node_wo_branching = node_idx;
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        if (ait->target_node == node_idx) throw string("Call push before setting self-transitions.");
+        push_word_ids_left(nodes, debug, ait->target_node, node_idx, first_hmm_node_wo_branching);
+    }
+}
+
+
+int
+DecoderGraph::num_hmm_states(vector<Node> &nodes)
+{
+    set<int> node_idxs;
+    reachable_graph_nodes(nodes, node_idxs, START_NODE);
+    int hmm_state_count = 0;
+    for (auto iit = node_idxs.begin(); iit != node_idxs.end(); ++iit)
+        if (nodes[*iit].hmm_state != -1) hmm_state_count++;
+    return hmm_state_count;
+}
+
+
+int
+DecoderGraph::num_subword_states(vector<Node> &nodes)
+{
+    set<int> node_idxs;
+    reachable_graph_nodes(nodes, node_idxs, START_NODE);
+    int subword_state_count = 0;
+    for (auto iit = node_idxs.begin(); iit != node_idxs.end(); ++iit)
+        if (nodes[*iit].word_id != -1) subword_state_count++;
+    return subword_state_count;
 }

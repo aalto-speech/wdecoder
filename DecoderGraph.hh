@@ -80,7 +80,13 @@ private:
     void prune_unreachable_nodes(std::vector<Node> &nodes);
     void add_hmm_self_transitions(std::vector<Node> &nodes);
     void set_hmm_transition_probs(std::vector<Node> &nodes);
-    void push_word_ids_left(std::vector<Node> &nodes);
+    void push_word_ids_left(std::vector<Node> &nodes,
+                            bool debug=false,
+                            int node_idx=START_NODE,
+                            int prev_node_idx=-1,
+                            int first_hmm_node_wo_branching=-1);
+    int num_hmm_states(std::vector<Node> &nodes);
+    int num_subword_states(std::vector<Node> &nodes);
 
     // Text units
     std::vector<std::string> m_units;

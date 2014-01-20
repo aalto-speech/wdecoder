@@ -272,6 +272,7 @@ void graphtest :: GraphTest3(void)
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 147, (int)nodes.size() );
     CPPUNIT_ASSERT_EQUAL( 147, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 9, dg.num_subword_states(nodes) );
 
     for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
         vector<string> triphones;
@@ -379,7 +380,7 @@ void graphtest :: GraphTest6(void)
 }
 
 
-// Test pushing word ids to the leftmost possible position
+// Test pushing subword ids to the leftmost possible position
 void graphtest :: GraphTest7(void)
 {
     string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
@@ -402,6 +403,7 @@ void graphtest :: GraphTest7(void)
     CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
 
     dg.prune_unreachable_nodes(nodes);
+
     CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT_EQUAL( 121, (int)nodes.size() );
 
@@ -411,7 +413,7 @@ void graphtest :: GraphTest7(void)
         bool result = assert_path(dg, nodes, triphones, sit->second, false);
     }
 
-    dg.push_word_ids_left(nodes);
-    CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes) );
+    //dg.push_word_ids_left(nodes, true);
+    //CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes) );
 }
 
