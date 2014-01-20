@@ -58,6 +58,11 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         bool assert_transitions(DecoderGraph &dg,
                                 std::vector<DecoderGraph::Node> &nodes,
                                 bool debug);
+        bool assert_word_pair_crossword(DecoderGraph &dg,
+                                        std::vector<DecoderGraph::Node> &nodes,
+                                        std::string word1,
+                                        std::string word2,
+                                        bool debug);
         bool assert_words(DecoderGraph &dg,
                           std::vector<DecoderGraph::Node> &nodes,
                           bool debug);
@@ -69,11 +74,6 @@ class graphtest : public CPPUNIT_NS :: TestFixture
                                          bool debug=false,
                                          int node_idx=DecoderGraph::START_NODE,
                                          int nodes_wo_branching=0);
-        bool assert_word_pair_crossword(DecoderGraph &dg,
-                                        std::vector<DecoderGraph::Node> &nodes,
-                                        std::string word1,
-                                        std::string word2,
-                                        bool debug=false);
 
 };
 

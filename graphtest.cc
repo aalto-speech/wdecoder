@@ -170,7 +170,13 @@ graphtest :: assert_word_pairs(DecoderGraph &dg,
                                std::vector<DecoderGraph::Node> &nodes,
                                bool debug)
 {
-    return false;
+    for (auto fit=dg.m_word_segs.begin(); fit!=dg.m_word_segs.end(); ++fit) {
+        for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
+            bool result = assert_word_pair_crossword(dg, nodes, fit->first, sit->first, debug);
+            if (!result) return false;
+        }
+    }
+    return true;
 }
 
 
