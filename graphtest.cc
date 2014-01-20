@@ -117,6 +117,64 @@ graphtest :: assert_path(DecoderGraph &dg,
 
 
 bool
+graphtest :: assert_word_pair_crossword(DecoderGraph &dg,
+                                        vector<DecoderGraph::Node> &nodes,
+                                        string word1,
+                                        string word2,
+                                        bool debug)
+{
+    if (dg.m_lexicon.find(word1) == dg.m_lexicon.end()) return false;
+    if (dg.m_lexicon.find(word2) == dg.m_lexicon.end()) return false;
+
+    char first_last = dg.m_lexicon[word1].back()[2];
+    char second_first = dg.m_lexicon[word2][0][2];
+
+    vector<string> triphones;
+    for (int i = 0; i < dg.m_lexicon[word1].size()-1; ++i)
+        triphones.push_back(dg.m_lexicon[word1][i]);
+    string last_triphone = dg.m_lexicon[word1][dg.m_lexicon[word1].size()-1].substr(0,4) + second_first;
+    triphones.push_back(last_triphone);
+
+    string first_triphone = first_last + dg.m_lexicon[word2][0].substr(1,4);
+    triphones.push_back(first_triphone);
+    for (int i = 1; i < dg.m_lexicon[word2].size(); ++i)
+        triphones.push_back(dg.m_lexicon[word2][i]);
+
+    vector<string> subwords;
+    for (auto swit = dg.m_word_segs[word1].begin(); swit != dg.m_word_segs[word1].end(); ++swit)
+        subwords.push_back(*swit);
+    for (auto swit = dg.m_word_segs[word2].begin(); swit != dg.m_word_segs[word2].end(); ++swit)
+        subwords.push_back(*swit);
+
+    return assert_path(dg, nodes, triphones, subwords, debug);
+}
+
+
+bool
+graphtest :: assert_words(DecoderGraph &dg,
+                          std::vector<DecoderGraph::Node> &nodes,
+                          bool debug)
+{
+    for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
+        vector<string> triphones;
+        triphonize(sit->first, triphones);
+        bool result = assert_path(dg, nodes, triphones, sit->second, false);
+        if (!result) return false;
+    }
+    return true;
+}
+
+
+bool
+graphtest :: assert_word_pairs(DecoderGraph &dg,
+                               std::vector<DecoderGraph::Node> &nodes,
+                               bool debug)
+{
+    return false;
+}
+
+
+bool
 graphtest :: assert_transitions(DecoderGraph &dg,
                                 std::vector<DecoderGraph::Node> &nodes,
                                 bool debug)
@@ -279,11 +337,7 @@ void graphtest :: GraphTest3(void)
     // FIXME
     // CPPUNIT_ASSERT_EQUAL( 9, dg.num_subword_states(nodes) );
 
-    for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
-        vector<string> triphones;
-        triphonize(sit->first, triphones);
-        bool result = assert_path(dg, nodes, triphones, sit->second, false);
-    }
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 }
 
 
@@ -309,11 +363,7 @@ void graphtest :: GraphTest4(void)
     dg.tie_state_prefixes(nodes, 0, DecoderGraph::START_NODE);
     CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
 
-    for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
-        vector<string> triphones;
-        triphonize(sit->first, triphones);
-        bool result = assert_path(dg, nodes, triphones, sit->second, false);
-    }
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 }
 
 
@@ -339,11 +389,7 @@ void graphtest :: GraphTest5(void)
     dg.tie_state_prefixes(nodes, 0, DecoderGraph::START_NODE);
     CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
 
-    for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
-        vector<string> triphones;
-        triphonize(sit->first, triphones);
-        bool result = assert_path(dg, nodes, triphones, sit->second, false);
-    }
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 
     dg.add_hmm_self_transitions(nodes);
     dg.set_hmm_transition_probs(nodes);
@@ -377,11 +423,7 @@ void graphtest :: GraphTest6(void)
     CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT_EQUAL( 121, (int)nodes.size() );
 
-    for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
-        vector<string> triphones;
-        triphonize(sit->first, triphones);
-        bool result = assert_path(dg, nodes, triphones, sit->second, false);
-    }
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 }
 
 
@@ -391,6 +433,7 @@ void graphtest :: GraphTest7(void)
     string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
     string lexname = "data/lex";
     string segname = "data/segs.txt";
+    //string segname = "data/iter111_35000.train.segs2";
 
     DecoderGraph dg;
     dg.read_phone_model(amname + ".ph");
@@ -414,12 +457,44 @@ void graphtest :: GraphTest7(void)
     CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT_EQUAL( 121, (int)nodes.size() );
 
-    for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
-        vector<string> triphones;
-        triphonize(sit->first, triphones);
-        bool result = assert_path(dg, nodes, triphones, sit->second, false);
-    }
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, false) );
+}
+
+
+// Test cross-word network creation
+void graphtest :: GraphTest8(void)
+{
+    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
+    string lexname = "data/lex";
+    string segname = "data/segs.txt";
+    //string segname = "data/iter111_35000.train.segs2";
+
+    DecoderGraph dg;
+    dg.read_phone_model(amname + ".ph");
+    dg.read_duration_model(amname + ".dur");
+    dg.read_noway_lexicon(lexname);
+    dg.read_word_segmentations(segname);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    dg.tie_word_graph_suffixes(swnodes);
+    vector<DecoderGraph::Node> nodes(2);
+    dg.expand_subword_nodes(swnodes, nodes, 0);
+    CPPUNIT_ASSERT_EQUAL( 147, (int)dg.reachable_graph_nodes(nodes) );
+    dg.tie_state_prefixes(nodes, 0, DecoderGraph::START_NODE);
+    CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
+
+    dg.prune_unreachable_nodes(nodes);
+    dg.push_word_ids_left(nodes, false);
+    dg.prune_unreachable_nodes(nodes);
+
+    CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 121, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, false) );
+
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
 

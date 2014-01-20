@@ -62,12 +62,32 @@ int main(int argc, char* argv[])
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
 
+        cerr << "Tying state chain prefixes.." << endl;
         dg.tie_state_prefixes(nodes, 0, DecoderGraph::START_NODE);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
 
+        cerr << "Pruning unreachable nodes.." << endl;
+        dg.prune_unreachable_nodes(nodes);
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        time ( &rawtime );
+        cerr << "time: " << ctime (&rawtime) << endl;
+
+        cerr << "Pushing subword ids.." << endl;
+        dg.push_word_ids_left(nodes);
+
+        time ( &rawtime );
+        cerr << "time: " << ctime (&rawtime) << endl;
+
+        cerr << "Pruning unreachable nodes.." << endl;
+        dg.prune_unreachable_nodes(nodes);
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        time ( &rawtime );
+        cerr << "time: " << ctime (&rawtime) << endl;
 
     } catch (string &e) {
         cerr << e << endl;

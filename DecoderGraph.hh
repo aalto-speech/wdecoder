@@ -58,7 +58,7 @@ public:
     void print_graph(std::vector<Node> &nodes);
     int reachable_graph_nodes(std::vector<Node> &nodes);
 
-private:
+//private:
 
     int add_lm_unit(std::string unit);
     void reachable_word_graph_nodes(std::vector<SubwordNode> &nodes,
