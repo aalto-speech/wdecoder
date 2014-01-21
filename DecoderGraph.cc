@@ -135,7 +135,7 @@ DecoderGraph::create_word_graph(vector<SubwordNode> &nodes)
 
 
 void
-DecoderGraph::tie_word_graph_suffixes(vector<SubwordNode> &nodes)
+DecoderGraph::tie_subword_suffixes(vector<SubwordNode> &nodes, int min_length)
 {
     map<int, int> suffix_counts;
     SubwordNode &end_node = nodes[END_NODE];
@@ -144,7 +144,7 @@ DecoderGraph::tie_word_graph_suffixes(vector<SubwordNode> &nodes)
         suffix_counts[sit->first] += 1;
 
     for (auto sit = suffix_counts.begin(); sit != suffix_counts.end(); ++sit) {
-        if (sit->second > 1) {
+        if (sit->second > 1 && m_units[sit->first].length() >= min_length) {
             nodes.resize(nodes.size()+1);
             nodes.back().subword_id = sit->first;
             nodes.back().out_arcs[-1] = END_NODE;

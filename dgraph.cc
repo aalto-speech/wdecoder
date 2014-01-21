@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
         cerr << "time: " << ctime (&rawtime) << endl;
 
         cerr << "Tying suffixes.." << endl;
-        dg.tie_word_graph_suffixes(swnodes);
+        dg.tie_subword_suffixes(swnodes);
         cerr << "node count: " << dg.reachable_word_graph_nodes(swnodes) << endl;
 
         time ( &rawtime );

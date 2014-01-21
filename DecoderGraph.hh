@@ -42,7 +42,7 @@ public:
     void read_word_segmentations(std::string segfname);
 
     void create_word_graph(std::vector<SubwordNode> &nodes);
-    void tie_word_graph_suffixes(std::vector<SubwordNode> &nodes);
+    void tie_subword_suffixes(std::vector<SubwordNode> &nodes, int min_length=2);
     void print_word_graph(std::vector<SubwordNode> &nodes);
     int reachable_word_graph_nodes(std::vector<SubwordNode> &nodes);
     void expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
