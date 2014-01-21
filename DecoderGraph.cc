@@ -218,7 +218,18 @@ DecoderGraph::reachable_word_graph_nodes(vector<SubwordNode> &nodes)
 void
 DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
                                    vector<Node> &nodes,
-                                   int debug,
+                                   bool debug)
+{
+    map<int, int> expanded_sw_node_info;
+    expand_subword_nodes(swnodes, nodes, expanded_sw_node_info, debug);
+}
+
+
+void
+DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
+                                   vector<Node> &nodes,
+                                   map<int, int> &expanded_sw_node_info,
+                                   bool debug,
                                    int sw_node_idx,
                                    int node_idx,
                                    char left_context,
@@ -230,7 +241,8 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
     if (swnode.subword_id == -1) {
         for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
             if (ait->second != END_NODE)
-                expand_subword_nodes(swnodes, nodes, debug, ait->second, node_idx, left_context, second_left_context);
+                expand_subword_nodes(swnodes, nodes, expanded_sw_node_info, debug,
+                                     ait->second, node_idx, left_context, second_left_context);
             // FIXME: need to handle end node case ?
         return;
     }
@@ -266,7 +278,8 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
     if (triphones.size() > 1) second_last_phone = triphones[triphones.size()-2][2];
     for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
         if (ait->second != END_NODE)
-            expand_subword_nodes(swnodes, nodes, debug, ait->second, node_idx, last_phone, second_last_phone);
+            expand_subword_nodes(swnodes, nodes, expanded_sw_node_info, debug,
+                                 ait->second, node_idx, last_phone, second_last_phone);
         else {
             string triphone = string(1,second_last_phone) + "-" + string(1,last_phone) + "+_";
             int temp_node_idx = connect_triphone(nodes, triphone, node_idx, debug);
