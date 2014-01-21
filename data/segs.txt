@@ -3,7 +3,10 @@ säästöillä	säästö illä
 huoli	huoli
 huolto	huolto
 huoltoa	huolto a
+huoltokin	huolto kin
 vain	vain
 vasta	vasta
 vastaisku	vasta isku
 vastaiskuna	vasta iskun a
+vastaiskukin	vasta isku kin
+
