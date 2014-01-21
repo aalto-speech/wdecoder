@@ -295,7 +295,7 @@ int
 DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
                                string triphone,
                                int node_idx,
-                               int debug)
+                               bool debug)
 {
     int hmm_index = m_hmm_map[triphone];
     Hmm &hmm = m_hmms[hmm_index];
@@ -590,8 +590,8 @@ DecoderGraph::num_subword_states(vector<Node> &nodes)
 
 void
 DecoderGraph::create_crossword_network(std::vector<Node> &nodes,
-                                       std::map<std::string, int> fanout,
-                                       std::map<std::string, int> fanin,
+                                       std::map<std::string, int> &fanout,
+                                       std::map<std::string, int> &fanin,
                                        bool debug)
 {
     set<char> phones;
@@ -622,4 +622,35 @@ DecoderGraph::create_crossword_network(std::vector<Node> &nodes,
         cerr << "number of fan in nodes: " << fanin.size() << endl;
         cerr << "number of fan out nodes: " << fanout.size() << endl;
     }
+
+    std::map<string, int> fanin_nodes;
+    for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
+        nodes.resize(nodes.size()+1);
+        foit->second = nodes.size()-1;
+        for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
+            string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
+            string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
+            int idx = connect_triphone(nodes, triphone1, foit->second);
+
+            if (fanin_nodes.find(triphone2) == fanin_nodes.end()) {
+                idx = connect_triphone(nodes, triphone2, idx);
+                fanin_nodes[triphone2] = idx-2; // Store the first state of the fanin triphone
+                if (fiit->second == -1) {
+                    nodes.resize(nodes.size()+1);
+                    fiit->second = nodes.size()-1;
+                }
+                nodes[idx].arcs.resize(nodes[idx].arcs.size()+1);
+                nodes[idx].arcs.back().target_node = fiit->second;
+            }
+            else {
+                nodes[idx].arcs.resize(nodes[idx].arcs.size()+1);
+                nodes[idx].arcs.back().target_node = fanin_nodes[triphone2];
+            }
+
+            nodes[idx].arcs.resize(nodes[idx].arcs.size()+1);
+            nodes[idx].arcs[0].target_node = nodes.size()-1;
+            fiit->second = nodes.size()-1;
+        }
+    }
+
 }

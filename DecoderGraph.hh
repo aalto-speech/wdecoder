@@ -70,7 +70,7 @@ public:
     int connect_triphone(std::vector<Node> &nodes,
                          std::string triphone,
                          int node_idx,
-                         int debug);
+                         bool debug=false);
     void print_graph(std::vector<Node> &nodes,
                      std::vector<int> path,
                      int node_idx);
@@ -94,8 +94,8 @@ public:
     int num_hmm_states(std::vector<Node> &nodes);
     int num_subword_states(std::vector<Node> &nodes);
     void create_crossword_network(std::vector<Node> &nodes,
-                                  std::map<std::string, int> fanout,
-                                  std::map<std::string, int> fanin,
+                                  std::map<std::string, int> &fanout,
+                                  std::map<std::string, int> &fanin,
                                   bool debug=false);
 
     // Text units
