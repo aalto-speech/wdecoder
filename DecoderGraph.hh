@@ -93,6 +93,10 @@ public:
                     bool debug=false);
     int num_hmm_states(std::vector<Node> &nodes);
     int num_subword_states(std::vector<Node> &nodes);
+    void create_crossword_network(std::vector<Node> &nodes,
+                                  std::map<std::string, int> fanout,
+                                  std::map<std::string, int> fanin,
+                                  bool debug=false);
 
     // Text units
     std::vector<std::string> m_units;

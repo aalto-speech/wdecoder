@@ -586,3 +586,40 @@ DecoderGraph::num_subword_states(vector<Node> &nodes)
         if (nodes[*iit].word_id != -1) subword_state_count++;
     return subword_state_count;
 }
+
+
+void
+DecoderGraph::create_crossword_network(std::vector<Node> &nodes,
+                                       std::map<std::string, int> fanout,
+                                       std::map<std::string, int> fanin,
+                                       bool debug)
+{
+    set<char> phones;
+    for (auto lit = m_lexicon.begin(); lit != m_lexicon.end(); ++lit) {
+        for (auto tit = lit->second.begin(); tit != lit->second.end(); ++tit) {
+            phones.insert((*tit)[2]);
+        }
+    }
+
+    for (auto wit = m_word_segs.begin(); wit != m_word_segs.end(); ++wit) {
+        vector<string> triphones;
+        for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit) {
+            for (auto tit = m_lexicon[*swit].begin(); tit != m_lexicon[*swit].end(); ++tit) {
+                triphones.push_back(*tit);
+            }
+        }
+        if (triphones.size() < 2) {
+            cerr << wit->first << endl;
+            throw string("Warning, word " + wit->first + " with less than two triphones");
+        }
+        string fanint = string("_-") + triphones[0][2] + string(1,'+') + triphones[1][2];
+        string fanoutt = triphones[triphones.size()-2][2] + string(1,'+') + triphones[triphones.size()-1][2] + string("+_");
+        fanout[fanoutt] = -1;
+        fanin[fanint] = -1;
+    }
+
+    if (debug) {
+        cerr << "number of fan in nodes: " << fanin.size() << endl;
+        cerr << "number of fan out nodes: " << fanout.size() << endl;
+    }
+}
