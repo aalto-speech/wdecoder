@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 
         cerr << "Expanding to phone graph.." << endl;
         vector<DecoderGraph::Node> nodes(2);
-        dg.expand_subword_nodes(swnodes, nodes, true);
+        dg.expand_subword_nodes(swnodes, nodes, false);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
 
         time ( &rawtime );
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
         cerr << "time: " << ctime (&rawtime) << endl;
 
         cerr << "Pushing subword ids.." << endl;
-        dg.push_word_ids_left(nodes);
+        //dg.push_word_ids_left(nodes);
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
@@ -85,6 +85,8 @@ int main(int argc, char* argv[])
         cerr << "Pruning unreachable nodes.." << endl;
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        dg.print_graph(nodes);
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;

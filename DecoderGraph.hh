@@ -32,6 +32,7 @@ public:
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         std::vector<Arc> arcs;
+        std::vector<Arc> reverse_arcs;
     };
 
     DecoderGraph() { };
@@ -47,18 +48,17 @@ public:
     int reachable_word_graph_nodes(std::vector<SubwordNode> &nodes);
     void expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
                               std::vector<Node> &nodes,
-                              bool debug=false);
-    void expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
-                              std::vector<Node> &nodes,
-                              std::map<int, int> &expanded_sw_node_info,
                               bool debug=false,
                               int sw_node_idx=START_NODE,
                               int node_idx=START_NODE,
                               char left_context='_',
                               char prev_triphone='_');
     void tie_state_prefixes(std::vector<Node> &nodes,
-                            int debug=1,
+                            bool debug=false,
                             int node_idx=START_NODE);
+    void tie_state_suffixes(std::vector<Node> &nodes,
+                            bool debug=false,
+                            int node_idx=END_NODE);
     void print_graph(std::vector<Node> &nodes);
     int reachable_graph_nodes(std::vector<Node> &nodes);
 
@@ -101,6 +101,9 @@ public:
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin,
                                   bool debug=false);
+    void set_reverse_arcs(std::vector<Node> &nodes,
+                          int node_idx=START_NODE);
+    void clear_reverse_arcs(std::vector<Node> &nodes);
 
     // Text units
     std::vector<std::string> m_units;
