@@ -23,11 +23,47 @@ class graphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (GraphTest6);
     CPPUNIT_TEST (GraphTest7);
     CPPUNIT_TEST (GraphTest8);
+    CPPUNIT_TEST (GraphTest9);
     CPPUNIT_TEST_SUITE_END ();
 
     public:
         void setUp(void);
         void tearDown(void);
+
+        static void triphonize(std::string word,
+                               std::vector<std::string> &triphones);
+        static void get_hmm_states(DecoderGraph &dg,
+                                   const std::vector<std::string> &triphones,
+                                   std::vector<int> &states);
+        static bool assert_path(DecoderGraph &dg,
+                                std::vector<DecoderGraph::Node> &nodes,
+                                std::deque<int> states,
+                                std::deque<std::string> subwords,
+                                int node_idx);
+        static bool assert_path(DecoderGraph &dg,
+                                std::vector<DecoderGraph::Node> &nodes,
+                                std::vector<std::string> &triphones,
+                                std::vector<std::string> &subwords,
+                                bool debug);
+        static bool assert_transitions(DecoderGraph &dg,
+                                       std::vector<DecoderGraph::Node> &nodes,
+                                       bool debug);
+        static bool assert_word_pair_crossword(DecoderGraph &dg,
+                                               std::vector<DecoderGraph::Node> &nodes,
+                                               std::string word1,
+                                               std::string word2,
+                                               bool debug);
+        static bool assert_words(DecoderGraph &dg,
+                                 std::vector<DecoderGraph::Node> &nodes,
+                                 bool debug);
+        static bool assert_word_pairs(DecoderGraph &dg,
+                                      std::vector<DecoderGraph::Node> &nodes,
+                                      bool debug);
+        static bool assert_subword_id_positions(DecoderGraph &dg,
+                                                std::vector<DecoderGraph::Node> &nodes,
+                                                bool debug=false,
+                                                int node_idx=DecoderGraph::START_NODE,
+                                                int nodes_wo_branching=0);
 
     protected:
         void GraphTest1(void);
@@ -38,6 +74,7 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         void GraphTest6(void);
         void GraphTest7(void);
         void GraphTest8(void);
+        void GraphTest9(void);
 
     private:
 
@@ -46,40 +83,6 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         std::string segname;
 
         void read_fixtures(DecoderGraph &dg);
-        void triphonize(std::string word,
-                        std::vector<std::string> &triphones);
-        void get_hmm_states(DecoderGraph &dg,
-                            const std::vector<std::string> &triphones,
-                            std::vector<int> &states);
-        bool assert_path(DecoderGraph &dg,
-                         std::vector<DecoderGraph::Node> &nodes,
-                         std::deque<int> states,
-                         std::deque<std::string> subwords,
-                         int node_idx);
-        bool assert_path(DecoderGraph &dg,
-                         std::vector<DecoderGraph::Node> &nodes,
-                         std::vector<std::string> &triphones,
-                         std::vector<std::string> &subwords,
-                         bool debug);
-        bool assert_transitions(DecoderGraph &dg,
-                                std::vector<DecoderGraph::Node> &nodes,
-                                bool debug);
-        bool assert_word_pair_crossword(DecoderGraph &dg,
-                                        std::vector<DecoderGraph::Node> &nodes,
-                                        std::string word1,
-                                        std::string word2,
-                                        bool debug);
-        bool assert_words(DecoderGraph &dg,
-                          std::vector<DecoderGraph::Node> &nodes,
-                          bool debug);
-        bool assert_word_pairs(DecoderGraph &dg,
-                               std::vector<DecoderGraph::Node> &nodes,
-                               bool debug);
-        bool assert_subword_id_positions(DecoderGraph &dg,
-                                         std::vector<DecoderGraph::Node> &nodes,
-                                         bool debug=false,
-                                         int node_idx=DecoderGraph::START_NODE,
-                                         int nodes_wo_branching=0);
 
 };
 

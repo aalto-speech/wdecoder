@@ -384,6 +384,7 @@ DecoderGraph::print_graph(vector<Node> &nodes)
 void
 DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
                                  bool debug,
+                                 bool stop_propagation,
                                  int node_idx)
 {
     if (debug) cerr << endl << "tying state: " << node_idx << endl;
@@ -419,6 +420,7 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
             arcs_to_remove.insert(curr_node_idx);
         }
     }
+    if (stop_propagation && !arcs_to_remove.size()) return;
 
     if (debug) cerr << "arcs to remove: " << arcs_to_remove.size() << endl;
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end();) {
@@ -430,7 +432,7 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
     }
 
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-        tie_state_prefixes(nodes, debug, ait->target_node);
+        tie_state_prefixes(nodes, debug, stop_propagation, ait->target_node);
 }
 
 

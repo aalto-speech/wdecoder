@@ -348,7 +348,7 @@ void graphtest :: GraphTest4(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
-    dg.tie_state_prefixes(nodes, 0, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
     CPPUNIT_ASSERT_EQUAL( 145, (int)dg.reachable_graph_nodes(nodes) );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -365,7 +365,7 @@ void graphtest :: GraphTest5(void)
     dg.create_word_graph(swnodes);
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
     dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
     dg.prune_unreachable_nodes(nodes);
 
@@ -388,7 +388,7 @@ void graphtest :: GraphTest6(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
     dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
     CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
 
@@ -404,15 +404,15 @@ void graphtest :: GraphTest6(void)
 void graphtest :: GraphTest7(void)
 {
     DecoderGraph dg;
+    //segname = "data/iter111_35000.train.segs2";
     read_fixtures(dg);
-    //string segname = "data/iter111_35000.train.segs2";
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
     dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
     CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
 
@@ -432,15 +432,15 @@ void graphtest :: GraphTest7(void)
 void graphtest :: GraphTest8(void)
 {
     DecoderGraph dg;
+    //segname = "data/iter111_35000.train.segs2";
     read_fixtures(dg);
-    //string segname = "data/iter111_35000.train.segs2";
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
     dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
     CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
 
@@ -457,3 +457,25 @@ void graphtest :: GraphTest8(void)
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
 
+
+// Test some pathological cases
+void graphtest :: GraphTest9(void)
+{
+    DecoderGraph dg;
+    segname = "data/segs2.txt";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    vector<DecoderGraph::Node> nodes(2);
+    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
+    dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
+
+    dg.prune_unreachable_nodes(nodes);
+    dg.push_word_ids_left(nodes, false);
+    dg.prune_unreachable_nodes(nodes);
+
+    CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+}

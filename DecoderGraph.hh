@@ -55,6 +55,7 @@ public:
                               char prev_triphone='_');
     void tie_state_prefixes(std::vector<Node> &nodes,
                             bool debug=false,
+                            bool stop_propagation=false,
                             int node_idx=START_NODE);
     void tie_state_suffixes(std::vector<Node> &nodes,
                             bool debug=false,
