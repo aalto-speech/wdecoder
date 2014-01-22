@@ -47,6 +47,23 @@ void graphtest :: triphonize(string word,
 }
 
 
+void graphtest :: triphonize(DecoderGraph &dg,
+                             string word,
+                             vector<string> &triphones)
+{
+    if (dg.m_word_segs.find(word) != dg.m_word_segs.end()) {
+        string tripstring;
+        for (auto swit = dg.m_word_segs[word].begin(); swit != dg.m_word_segs[word].end(); ++swit) {
+            std::vector<std::string> &triphones = dg.m_lexicon[*swit];
+            for (auto tit = triphones.begin(); tit != triphones.end(); ++tit)
+                tripstring += (*tit)[2];
+        }
+        triphonize(tripstring, triphones);
+    }
+    else triphonize(word, triphones);
+}
+
+
 void graphtest :: get_hmm_states(DecoderGraph &dg,
                                  const vector<string> &triphones,
                                  vector<int> &states)
@@ -167,7 +184,7 @@ graphtest :: assert_words(DecoderGraph &dg,
 {
     for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
         vector<string> triphones;
-        triphonize(sit->first, triphones);
+        triphonize(dg, sit->first, triphones);
         bool result = assert_path(dg, nodes, triphones, sit->second, false);
         if (!result) {
             if (debug) cerr << endl << "no path for word: " << sit->first << endl;
@@ -466,6 +483,39 @@ void graphtest :: GraphTest9(void)
 {
     DecoderGraph dg;
     segname = "data/segs2.txt";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    vector<DecoderGraph::Node> nodes(2);
+    dg.expand_subword_nodes(swnodes, nodes, false);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
+    dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
+    dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
+    dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
+    dg.push_word_ids_left(nodes, false);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
+    dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
+    CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+}
+
+
+// Some errors
+void graphtest :: GraphTest10(void)
+{
+    DecoderGraph dg;
+    segname = "data/segs3.txt";
     read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> swnodes;

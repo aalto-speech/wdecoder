@@ -24,6 +24,7 @@ class graphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (GraphTest7);
     CPPUNIT_TEST (GraphTest8);
     CPPUNIT_TEST (GraphTest9);
+    CPPUNIT_TEST (GraphTest10);
     CPPUNIT_TEST_SUITE_END ();
 
     public:
@@ -31,6 +32,9 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         void tearDown(void);
 
         static void triphonize(std::string word,
+                               std::vector<std::string> &triphones);
+        static void triphonize(DecoderGraph &dg,
+                               std::string word,
                                std::vector<std::string> &triphones);
         static void get_hmm_states(DecoderGraph &dg,
                                    const std::vector<std::string> &triphones,
@@ -75,6 +79,7 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         void GraphTest7(void);
         void GraphTest8(void);
         void GraphTest9(void);
+        void GraphTest10(void);
 
     private:
 
