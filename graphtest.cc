@@ -529,3 +529,23 @@ void graphtest :: GraphTest10(void)
     dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 }
+
+
+// Test some state suffix tying problem
+void graphtest :: GraphTest11(void)
+{
+    DecoderGraph dg;
+    segname = "data/suffix_problem.segs";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    vector<DecoderGraph::Node> nodes(2);
+    dg.expand_subword_nodes(swnodes, nodes, false);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
+    dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
+    dg.prune_unreachable_nodes(nodes);
+    dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+}
