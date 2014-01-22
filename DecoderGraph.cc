@@ -360,9 +360,9 @@ DecoderGraph::print_graph(vector<Node> &nodes,
     if (node_idx == END_NODE) {
         for (int i=0; i<path.size(); i++) {
             if (nodes[path[i]].hmm_state != -1)
-                cout << " " << nodes[path[i]].hmm_state;
+                cout << " " << path[i] << "(" << nodes[path[i]].hmm_state << ")";
             if (nodes[path[i]].word_id != -1)
-                cout << " (" << m_units[nodes[path[i]].word_id] << ")";
+                cout << " " << path[i] << "(" << m_units[nodes[path[i]].word_id] << ")";
         }
         cout << endl << endl;
         return;
@@ -463,42 +463,64 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
     if (node_idx == START_NODE) return;
 
     Node &nd = nodes[node_idx];
-    if (node_idx != END_NODE && nd.reverse_arcs.size() > 1) return;
 
     map<pair<int, int>, set<int> > targets;
     for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end(); ++ait) {
         int target_hmm = nodes[ait->target_node].hmm_state;
         int word_id = nodes[ait->target_node].word_id;
         if (word_id != -1 && m_units[word_id].length() < 2) continue;
+        if (node_idx == END_NODE && target_hmm != -1) continue;
         targets[make_pair(word_id, target_hmm)].insert(ait->target_node);
     }
 
     if (debug) {
-        cerr << "total targets: " << targets.size() << endl;
+        int target_count = 0;
+        for (auto tit = targets.begin(); tit !=targets.end(); ++tit)
+            if (tit->second.size() > 1) target_count++;
+        cerr << "total targets: " << target_count << endl;
+
         for (auto tit = targets.begin(); tit !=targets.end(); ++tit) {
+            if (tit->second.size() == 1) continue;
             cerr << "target: " << tit->first.first << " " << tit->first.second << " " << tit->second.size() << endl;
             for (auto nit = tit->second.begin(); nit != tit->second.end(); ++nit)
                 cerr << *nit << " ";
             cerr << endl;
         }
     }
-    return;
 
     set<int> arcs_to_remove;
+    set<int> nodes_to_follow;
     for (auto tit = targets.begin(); tit !=targets.end(); ++tit) {
         if (tit->second.size() == 1) continue;
         int tied_node_idx = *(tit->second.begin());
+        nodes_to_follow.insert(tied_node_idx);
+
+        if (debug) cerr << "tying states with word id: " << tit->first.first
+                        << " hmm state: " << tit->first.second << endl;
+
         for (auto nit = tit->second.rbegin(); nit != tit->second.rend(); ++nit) {
             int curr_node_idx = *nit;
-            if (tied_node_idx == curr_node_idx) break;
+            if (tied_node_idx == curr_node_idx) continue;
+
             Node &temp_nd = nodes[curr_node_idx];
-            for (auto ait = temp_nd.reverse_arcs.begin(); ait != temp_nd.reverse_arcs.end(); ++ait)
-                nodes[tied_node_idx].arcs.push_back(*ait);
+
+            for (auto ait = temp_nd.reverse_arcs.begin(); ait != temp_nd.reverse_arcs.end(); ++ait) {
+                // Add the reverse arcs from this node to the tied node
+                nodes[tied_node_idx].reverse_arcs.resize(nodes[tied_node_idx].reverse_arcs.size()+1);
+                nodes[tied_node_idx].reverse_arcs.back().target_node = ait->target_node;
+
+                // Follow all reverse arcs and set the forward arcs to point to the tied state
+                int src_node = ait->target_node;
+                for (auto sait = nodes[src_node].arcs.begin(); sait != nodes[src_node].arcs.end(); ++sait)
+                    if (sait->target_node == curr_node_idx) sait->target_node = tied_node_idx;
+            }
+
             arcs_to_remove.insert(curr_node_idx);
         }
     }
-
     if (debug) cerr << "arcs to remove: " << arcs_to_remove.size() << endl;
+    if (!arcs_to_remove.size()) return;
+
     for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end();) {
         if (arcs_to_remove.find(ait->target_node) != arcs_to_remove.end()) {
             if (debug) cerr << "erasing arc to: " << ait->target_node << endl;
@@ -507,8 +529,8 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
         else ++ait;
     }
 
-    for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end(); ++ait)
-        tie_state_suffixes(nodes, debug, ait->target_node);
+    for (auto it = nodes_to_follow.begin(); it != nodes_to_follow.end(); ++it)
+        tie_state_suffixes(nodes, debug, *it);
 }
 
 

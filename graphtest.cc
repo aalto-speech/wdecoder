@@ -446,19 +446,20 @@ void graphtest :: GraphTest7(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
-    dg.tie_subword_suffixes(swnodes);
+    //dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
-    dg.tie_state_prefixes(nodes, 0, DecoderGraph::START_NODE);
-    CPPUNIT_ASSERT_EQUAL( 145, (int)dg.reachable_graph_nodes(nodes) );
+    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
+    CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
 
     dg.prune_unreachable_nodes(nodes);
     dg.push_word_ids_left(nodes, false);
     dg.prune_unreachable_nodes(nodes);
 
-    CPPUNIT_ASSERT_EQUAL( 145, (int)dg.reachable_graph_nodes(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 145, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, false) );
