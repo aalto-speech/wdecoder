@@ -1,5 +1,7 @@
 ja	ja
 aa	a a
+aaa	a a a
 se	se
 lataa	lata a
 aili	a ili
+

@@ -169,7 +169,10 @@ graphtest :: assert_words(DecoderGraph &dg,
         vector<string> triphones;
         triphonize(sit->first, triphones);
         bool result = assert_path(dg, nodes, triphones, sit->second, false);
-        if (!result) return false;
+        if (!result) {
+            if (debug) cerr << endl << "no path for word: " << sit->first << endl;
+            return false;
+        }
     }
     return true;
 }
@@ -468,13 +471,23 @@ void graphtest :: GraphTest9(void)
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
     vector<DecoderGraph::Node> nodes(2);
-    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.expand_subword_nodes(swnodes, nodes, false);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
     dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
     dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 
     dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
     dg.push_word_ids_left(nodes, false);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+
     dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 
     CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );

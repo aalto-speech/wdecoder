@@ -222,7 +222,8 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
                                    int sw_node_idx,
                                    int node_idx,
                                    char left_context,
-                                   char second_left_context)
+                                   char second_left_context,
+                                   int delayed_subword_id)
 {
     if (sw_node_idx == END_NODE) return;
 
@@ -230,15 +231,35 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
     if (swnode.subword_id == -1) {
         for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
             if (ait->second != END_NODE)
-                expand_subword_nodes(swnodes, nodes, debug,
-                                     ait->second, node_idx, left_context, second_left_context);
-            // FIXME: need to handle end node case ?
+                expand_subword_nodes(swnodes, nodes, debug, ait->second,
+                                     node_idx, left_context, second_left_context);
         return;
     }
 
     string subword = m_units[swnode.subword_id];
-    if (debug) cerr << subword << "\tleft context: " << left_context << endl;
+    if (debug) cerr << endl << subword
+                    <<  "\tsecond left context: " << second_left_context
+                    << "\tleft context: " << left_context << endl;;
+    if (debug && delayed_subword_id != -1) cerr << "delayed subword: " << m_units[delayed_subword_id] <<endl;
+
     auto triphones = m_lexicon[subword];
+
+    // One phone subword in the beginning of word, delay expansion
+    if (triphones.size() == 1 && second_left_context == '_' && left_context == '_') {
+        if (debug) cerr << "..delay expansion" << endl;
+        second_left_context = '_';
+        left_context = triphones[0][2];
+        for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
+            if (ait->second != END_NODE)
+                expand_subword_nodes(swnodes, nodes, debug, ait->second, node_idx,
+                                     left_context, second_left_context, swnode.subword_id);
+        return;
+    }
+
+    if (delayed_subword_id != -1) {
+        string triphone = string(1,second_left_context) + "-" + string(1,left_context) + "+" + triphones[0][2];
+        node_idx = connect_triphone(nodes, triphone, node_idx, debug);
+    }
 
     // Construct the left connecting triphone and expand states
     if (second_left_context != '_' && left_context != '_') {
@@ -266,6 +287,14 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
         string triphone = string(1,second_last_phone) + "-" + string(1,last_phone) + "+_";
         int temp_node_idx = connect_triphone(nodes, triphone, node_idx, debug);
 
+        if (delayed_subword_id != -1) {
+            nodes.resize(nodes.size()+1);
+            nodes.back().word_id = delayed_subword_id;
+            nodes[temp_node_idx].arcs.resize(nodes[temp_node_idx].arcs.size()+1);
+            nodes[temp_node_idx].arcs.back().target_node = nodes.size()-1;
+            temp_node_idx = nodes.size()-1;
+        }
+
         nodes.resize(nodes.size()+1);
         nodes.back().word_id = swnode.subword_id;
         nodes[temp_node_idx].arcs.resize(nodes[temp_node_idx].arcs.size()+1);
@@ -282,6 +311,15 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
     if (debug) cerr << endl;
     if (debug) cerr << "adding dummy node for subword: " << m_units[swnode.subword_id]
                     << " subword node idx: " << sw_node_idx << endl;
+
+    if (delayed_subword_id != -1) {
+        nodes.resize(nodes.size()+1);
+        nodes.back().word_id = delayed_subword_id;
+        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+        nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+        node_idx = nodes.size()-1;
+    }
+
     nodes.resize(nodes.size()+1);
     nodes.back().word_id = swnode.subword_id;
     nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
