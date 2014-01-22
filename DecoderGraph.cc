@@ -510,6 +510,7 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
         int word_id = nodes[ait->target_node].word_id;
         if (word_id != -1 && m_units[word_id].length() < 2) continue;
         if (node_idx == END_NODE && target_hmm != -1) continue;
+        if (nodes[ait->target_node].arcs.size() > 1) continue;
         targets[make_pair(word_id, target_hmm)].insert(ait->target_node);
     }
 

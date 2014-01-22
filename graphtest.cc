@@ -188,7 +188,7 @@ graphtest :: assert_words(DecoderGraph &dg,
         bool result = assert_path(dg, nodes, triphones, sit->second, false);
         if (!result) {
             if (debug) cerr << endl << "no path for word: " << sit->first << endl;
-            return false;
+            //return false;
         }
     }
     return true;
@@ -545,7 +545,9 @@ void graphtest :: GraphTest11(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 
     dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 }
