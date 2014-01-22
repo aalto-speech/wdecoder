@@ -511,7 +511,7 @@ void graphtest :: GraphTest9(void)
 }
 
 
-// Some errors
+// Test triphonization with lexicon
 void graphtest :: GraphTest10(void)
 {
     DecoderGraph dg;
@@ -525,20 +525,7 @@ void graphtest :: GraphTest10(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 
     dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
-    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
-
+    dg.prune_unreachable_nodes(nodes);
     dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
-
-    dg.prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
-
-    dg.push_word_ids_left(nodes, false);
-    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
-
-    dg.prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
-
-    CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, false) );
-    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 }
