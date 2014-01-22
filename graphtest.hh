@@ -40,6 +40,12 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         void GraphTest8(void);
 
     private:
+
+        std::string amname;
+        std::string lexname;
+        std::string segname;
+
+        void read_fixtures(DecoderGraph &dg);
         void triphonize(std::string word,
                         std::vector<std::string> &triphones);
         void get_hmm_states(DecoderGraph &dg,

@@ -11,12 +11,26 @@ using namespace std;
 
 CPPUNIT_TEST_SUITE_REGISTRATION (graphtest);
 
+
 void graphtest :: setUp (void)
 {
+    amname = string("data/speecon_ml_gain3500_occ300_21.7.2011_22");
+    lexname = string("data/lex");
+    segname = string("data/segs.txt");
 }
+
 
 void graphtest :: tearDown (void)
 {
+}
+
+
+void graphtest :: read_fixtures(DecoderGraph &dg)
+{
+    dg.read_phone_model(amname + ".ph");
+    dg.read_duration_model(amname + ".dur");
+    dg.read_noway_lexicon(lexname);
+    dg.read_word_segmentations(segname);
 }
 
 
@@ -272,15 +286,8 @@ graphtest :: assert_subword_id_positions(DecoderGraph &dg,
 // Test constructing the initial word graph on subword level
 void graphtest :: GraphTest1(void)
 {
-    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
-    string lexname = "data/lex";
-    string segname = "data/segs.txt";
-
     DecoderGraph dg;
-    dg.read_phone_model(amname + ".ph");
-    dg.read_duration_model(amname + ".dur");
-    dg.read_noway_lexicon(lexname);
-    dg.read_word_segmentations(segname);
+    read_fixtures(dg);
 
     CPPUNIT_ASSERT_EQUAL( 35003, (int)dg.m_units.size() );
     CPPUNIT_ASSERT_EQUAL( 35003, (int)dg.m_unit_map.size() ); // ?
@@ -298,15 +305,8 @@ void graphtest :: GraphTest1(void)
 // Test tying word suffixes
 void graphtest :: GraphTest2(void)
 {
-    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
-    string lexname = "data/lex";
-    string segname = "data/segs.txt";
-
     DecoderGraph dg;
-    dg.read_phone_model(amname + ".ph");
-    dg.read_duration_model(amname + ".dur");
-    dg.read_noway_lexicon(lexname);
-    dg.read_word_segmentations(segname);
+    read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> nodes;
     dg.create_word_graph(nodes);
@@ -319,15 +319,8 @@ void graphtest :: GraphTest2(void)
 // Test expanding the subwords to triphones
 void graphtest :: GraphTest3(void)
 {
-    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
-    string lexname = "data/lex";
-    string segname = "data/segs.txt";
-
     DecoderGraph dg;
-    dg.read_phone_model(amname + ".ph");
-    dg.read_duration_model(amname + ".dur");
-    dg.read_noway_lexicon(lexname);
-    dg.read_word_segmentations(segname);
+    read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
@@ -347,15 +340,8 @@ void graphtest :: GraphTest3(void)
 // Test tying state chain prefixes
 void graphtest :: GraphTest4(void)
 {
-    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
-    string lexname = "data/lex";
-    string segname = "data/segs.txt";
-
     DecoderGraph dg;
-    dg.read_phone_model(amname + ".ph");
-    dg.read_duration_model(amname + ".dur");
-    dg.read_noway_lexicon(lexname);
-    dg.read_word_segmentations(segname);
+    read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
@@ -372,15 +358,8 @@ void graphtest :: GraphTest4(void)
 // Verify adding self transitions and transition probabilities to states
 void graphtest :: GraphTest5(void)
 {
-    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
-    string lexname = "data/lex";
-    string segname = "data/segs.txt";
-
     DecoderGraph dg;
-    dg.read_phone_model(amname + ".ph");
-    dg.read_duration_model(amname + ".dur");
-    dg.read_noway_lexicon(lexname);
-    dg.read_word_segmentations(segname);
+    read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
@@ -401,15 +380,8 @@ void graphtest :: GraphTest5(void)
 // Test pruning non-reachable nodes and reindexing nodes
 void graphtest :: GraphTest6(void)
 {
-    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
-    string lexname = "data/lex";
-    string segname = "data/segs.txt";
-
     DecoderGraph dg;
-    dg.read_phone_model(amname + ".ph");
-    dg.read_duration_model(amname + ".dur");
-    dg.read_noway_lexicon(lexname);
-    dg.read_word_segmentations(segname);
+    read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
@@ -431,16 +403,9 @@ void graphtest :: GraphTest6(void)
 // Test pushing subword ids to the leftmost possible position
 void graphtest :: GraphTest7(void)
 {
-    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
-    string lexname = "data/lex";
-    string segname = "data/segs.txt";
-    //string segname = "data/iter111_35000.train.segs2";
-
     DecoderGraph dg;
-    dg.read_phone_model(amname + ".ph");
-    dg.read_duration_model(amname + ".dur");
-    dg.read_noway_lexicon(lexname);
-    dg.read_word_segmentations(segname);
+    read_fixtures(dg);
+    //string segname = "data/iter111_35000.train.segs2";
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
@@ -466,16 +431,9 @@ void graphtest :: GraphTest7(void)
 // Test cross-word network creation
 void graphtest :: GraphTest8(void)
 {
-    string amname = "data/speecon_ml_gain3500_occ300_21.7.2011_22";
-    string lexname = "data/lex";
-    string segname = "data/segs.txt";
-    //string segname = "data/iter111_35000.train.segs2";
-
     DecoderGraph dg;
-    dg.read_phone_model(amname + ".ph");
-    dg.read_duration_model(amname + ".dur");
-    dg.read_noway_lexicon(lexname);
-    dg.read_word_segmentations(segname);
+    read_fixtures(dg);
+    //string segname = "data/iter111_35000.train.segs2";
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
