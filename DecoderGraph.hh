@@ -99,6 +99,8 @@ public:
                                    std::vector<Node> &cw_nodes,
                                    std::map<std::string, int> &fanout,
                                    std::map<std::string, int> &fanin);
+    void collect_cw_fanout_nodes(std::map<int, std::string> &nodes_to_fanout);    // node idx, triphone "a-b+_"
+    void collect_cw_fanin_nodes(std::map<int, std::string> &nodes_from_fanin);    // node idx, triphone "_-a+b"
     void set_reverse_arcs(std::vector<Node> &nodes);
     void set_reverse_arcs(std::vector<Node> &nodes,
                           int node_idx,

@@ -571,24 +571,12 @@ void graphtest :: GraphTest12(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 80, (int)dg.reachable_graph_nodes(nodes) );
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
-    dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
-    CPPUNIT_ASSERT_EQUAL( 65, (int)dg.reachable_graph_nodes(nodes) );
-
-    dg.prune_unreachable_nodes(nodes);
-    dg.push_word_ids_left(nodes);
-    dg.prune_unreachable_nodes(nodes);
-
-    CPPUNIT_ASSERT_EQUAL( 65, (int)dg.reachable_graph_nodes(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 65, (int)nodes.size() );
-
-    CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
     dg.create_crossword_network(cw_nodes, fanout, fanin);
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }

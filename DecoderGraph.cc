@@ -813,6 +813,47 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
                                         map<string, int> &fanout,
                                         map<string, int> &fanin)
 {
+    int offset = nodes.size();
+    for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {
+        nodes.push_back(*cwnit);
+        for (auto ait = nodes.back().arcs.begin(); ait != nodes.back().arcs.end(); ++ait)
+            ait->target_node += offset;
+    }
+    for (auto fonit = fanout.begin(); fonit != fanout.end(); ++fonit)
+        fonit->second += offset;
+    for (auto finit = fanout.begin(); finit != fanout.end(); ++finit)
+        finit->second += offset;
+
+    map<int, string> nodes_to_fanout;
+    collect_cw_fanout_nodes(nodes_to_fanout);
+    for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
+        int fanout_idx = fanout[fonit->second];
+        Node &node = nodes[fonit->first];
+        node.arcs.resize(node.arcs.size()+1);
+        node.arcs.back().target_node = fanout_idx;
+    }
+
+    map<int, string> nodes_to_fanin;
+    collect_cw_fanin_nodes(nodes_to_fanin);
+    for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
+        int fanin_idx = fanout[finit->second];
+        Node &fanin_node = nodes[fanin_idx];
+        int node_idx = finit->first;
+        fanin_node.arcs.resize(fanin_node.arcs.size()+1);
+        fanin_node.arcs.back().target_node = node_idx;
+    }
+}
+
+
+void
+DecoderGraph::collect_cw_fanout_nodes(map<int, string> &nodes_to_fanout)
+{
 
 }
 
+
+void
+DecoderGraph::collect_cw_fanin_nodes(map<int, string> &nodes_from_fanin)
+{
+
+}
