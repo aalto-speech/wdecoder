@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -637,7 +638,6 @@ DecoderGraph::prune_unreachable_nodes(vector<Node> &nodes)
 }
 
 
-// FIXME: refactor this to connect_triphone
 void
 DecoderGraph::add_hmm_self_transitions(std::vector<Node> &nodes)
 {
@@ -825,7 +825,7 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
         finit->second += offset;
 
     map<int, string> nodes_to_fanout;
-    collect_cw_fanout_nodes(nodes_to_fanout);
+    collect_cw_fanout_nodes(nodes, nodes_to_fanout);
     for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
         int fanout_idx = fanout[fonit->second];
         Node &node = nodes[fonit->first];
@@ -834,7 +834,7 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
     }
 
     map<int, string> nodes_to_fanin;
-    collect_cw_fanin_nodes(nodes_to_fanin);
+    collect_cw_fanin_nodes(nodes, nodes_to_fanin);
     for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
         int fanin_idx = fanin[finit->second];
         Node &fanin_node = nodes[fanin_idx];
@@ -846,35 +846,73 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
 
 
 void
-DecoderGraph::collect_cw_fanout_nodes(map<int, string> &nodes_to_fanout)
+DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
+                                      map<int, string> &nodes_to_fanout)
 {
     vector<char> phones;
-    collect_cw_fanout_nodes(nodes_to_fanout, 0, phones, END_NODE);
+    collect_cw_fanout_nodes(nodes, nodes_to_fanout, 0, phones, -1, END_NODE);
 }
 
 
 void
-DecoderGraph::collect_cw_fanin_nodes(map<int, string> &nodes_from_fanin)
+DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
+                                     map<int, string> &nodes_from_fanin)
 {
     vector<char> phones;
-    collect_cw_fanin_nodes(nodes_from_fanin, 0, phones, START_NODE);
+    collect_cw_fanin_nodes(nodes, nodes_from_fanin, 0, phones, -1, START_NODE);
 }
 
 
 void
-DecoderGraph::collect_cw_fanout_nodes(map<int, string> &nodes_to_fanout,
-                                      int hmm_states,
+DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
+                                      map<int, string> &nodes_to_fanout,
+                                      int hmm_state_count,
                                       vector<char> phones,
+                                      int node_to_connect,
                                       int node_idx)
 {
 
 }
 
+
 void
-DecoderGraph::collect_cw_fanin_nodes(map<int, string> &nodes_from_fanin,
-                                     int hmm_states,
+DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
+                                     map<int, string> &nodes_from_fanin,
+                                     int hmm_state_count,
                                      vector<char> phones,
+                                     int node_to_connect,
                                      int node_idx)
 {
+    if (node_idx == END_NODE) return;
+    Node &node = nodes[node_idx];
 
+    if (node.hmm_state != -1) hmm_state_count++;
+    if (node.word_id != -1) {
+        string &subword = m_units[node.word_id];
+        vector<string> &triphones = m_lexicon[subword];
+        int tri_idx = 0;
+        while (phones.size() < 2 && tri_idx < triphones.size()) {
+            phones.push_back(triphones[tri_idx][2]);
+            tri_idx++;
+        }
+    }
+
+    if (hmm_state_count == 6) node_to_connect = node_idx;
+
+    if (phones.size() == 2 && hmm_state_count > 5) {
+        string triphone = string("_-") + string(1,phones[0]) + string(1,'+') + string(1,phones[1]);
+        if (nodes_from_fanin.find(node_to_connect) == nodes_from_fanin.end()) {
+            nodes_from_fanin[node_to_connect] = triphone;
+            if (debug) cerr << "Connecting node " << node_to_connect
+                            << " to fanin with triphone " << triphone << endl;
+        }
+        else
+            assert(nodes_from_fanin[node_to_connect] == triphone);
+        return;
+    }
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        collect_cw_fanin_nodes(nodes, nodes_from_fanin, hmm_state_count,
+                               phones, node_to_connect, ait->target_node);
+    }
 }
