@@ -575,9 +575,9 @@ void graphtest :: GraphTest12(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
+    //dg.print_graph(nodes);
     dg.create_crossword_network(cw_nodes, fanout, fanin);
-    dg.debug=1;
-    cerr << endl;
+    dg.debug=0;
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
