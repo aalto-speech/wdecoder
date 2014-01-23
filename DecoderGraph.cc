@@ -804,5 +804,15 @@ DecoderGraph::create_crossword_network(std::vector<Node> &nodes,
             fiit->second = nodes.size()-1;
         }
     }
+}
+
+
+void
+DecoderGraph::connect_crossword_network(vector<Node> &nodes,
+                                        vector<Node> &cw_nodes,
+                                        map<string, int> &fanout,
+                                        map<string, int> &fanin)
+{
 
 }
+

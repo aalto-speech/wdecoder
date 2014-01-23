@@ -95,6 +95,10 @@ public:
     void create_crossword_network(std::vector<Node> &nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin);
+    void connect_crossword_network(std::vector<Node> &nodes,
+                                   std::vector<Node> &cw_nodes,
+                                   std::map<std::string, int> &fanout,
+                                   std::map<std::string, int> &fanin);
     void set_reverse_arcs(std::vector<Node> &nodes);
     void set_reverse_arcs(std::vector<Node> &nodes,
                           int node_idx,
