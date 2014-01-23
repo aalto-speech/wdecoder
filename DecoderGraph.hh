@@ -35,7 +35,7 @@ public:
         std::vector<Arc> reverse_arcs;
     };
 
-    DecoderGraph() { };
+    DecoderGraph() { debug = 0; };
 
     void read_phone_model(std::string phnfname);
     void read_duration_model(std::string durfname);
@@ -48,21 +48,20 @@ public:
     int reachable_word_graph_nodes(std::vector<SubwordNode> &nodes);
     void expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
                               std::vector<Node> &nodes,
-                              bool debug=false,
                               int sw_node_idx=START_NODE,
                               int node_idx=START_NODE,
                               char left_context='_',
                               char prev_triphone='_',
                               int delayed_subword_id=-1);
     void tie_state_prefixes(std::vector<Node> &nodes,
-                            bool debug=false,
                             bool stop_propagation=false,
                             int node_idx=START_NODE);
     void tie_state_suffixes(std::vector<Node> &nodes,
-                            bool debug=false,
                             int node_idx=END_NODE);
     void print_graph(std::vector<Node> &nodes);
     int reachable_graph_nodes(std::vector<Node> &nodes);
+
+    int debug;
 
 //private:
 
@@ -75,8 +74,7 @@ public:
                           int node_idx=START_NODE);
     int connect_triphone(std::vector<Node> &nodes,
                          std::string triphone,
-                         int node_idx,
-                         bool debug=false);
+                         int node_idx);
     void print_graph(std::vector<Node> &nodes,
                      std::vector<int> path,
                      int node_idx);
@@ -86,11 +84,9 @@ public:
     void prune_unreachable_nodes(std::vector<Node> &nodes);
     void add_hmm_self_transitions(std::vector<Node> &nodes);
     void set_hmm_transition_probs(std::vector<Node> &nodes);
-    void push_word_ids_left(std::vector<Node> &nodes,
-                            bool debug=false);
+    void push_word_ids_left(std::vector<Node> &nodes);
     void push_word_ids_left(std::vector<Node> &nodes,
                             int &move_count,
-                            bool debug=false,
                             int node_idx=END_NODE,
                             int prev_node_idx=-1,
                             int subword_id=-1);
@@ -98,13 +94,11 @@ public:
     int num_subword_states(std::vector<Node> &nodes);
     void create_crossword_network(std::vector<Node> &nodes,
                                   std::map<std::string, int> &fanout,
-                                  std::map<std::string, int> &fanin,
-                                  bool debug=false);
+                                  std::map<std::string, int> &fanin);
     void set_reverse_arcs(std::vector<Node> &nodes);
     void set_reverse_arcs(std::vector<Node> &nodes,
                           int node_idx,
                           std::set<int> &processed_nodes);
-
     void clear_reverse_arcs(std::vector<Node> &nodes);
 
     // Text units

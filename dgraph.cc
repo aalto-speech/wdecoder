@@ -41,6 +41,16 @@ void triphonize(DecoderGraph &dg,
 }
 
 
+void triphonize_words(DecoderGraph &dg,
+                      map<string, vector<string> > &triphonized_words) {
+    for (auto wit = dg.m_word_segs.begin(); wit != dg.m_word_segs.end(); ++wit) {
+        vector<string> triphones;
+        triphonize(dg, wit->first, triphones);
+        triphonized_words[wit->first] = triphones;
+    }
+}
+
+
 bool
 assert_path(DecoderGraph &dg,
             vector<DecoderGraph::Node> &nodes,
@@ -109,13 +119,12 @@ assert_path(DecoderGraph &dg,
 
 bool
 assert_words(DecoderGraph &dg,
-             std::vector<DecoderGraph::Node> &nodes,
+             vector<DecoderGraph::Node> &nodes,
+             map<string, vector<string> > &triphonized_words,
              bool debug)
 {
     for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
-        vector<string> triphones;
-        triphonize(dg, sit->first, triphones);
-        bool result = assert_path(dg, nodes, triphones, sit->second, false);
+        bool result = assert_path(dg, nodes, triphonized_words[sit->first], sit->second, false);
         if (!result) {
             cerr << "error, word: " << sit->first << " not found" << endl;
             return false;
@@ -153,6 +162,10 @@ int main(int argc, char* argv[])
         cerr << "Reading segmentations: " << segfname << endl;
         dg.read_word_segmentations(segfname);
 
+        cerr << "Triphonizing words" << endl;
+        map<string, vector<string> > triphonized_words;
+        triphonize_words(dg, triphonized_words);
+
         time_t rawtime;
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
@@ -176,15 +189,15 @@ int main(int argc, char* argv[])
         vector<DecoderGraph::Node> nodes(2);
         dg.expand_subword_nodes(swnodes, nodes, false);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        bool words_ok = assert_words(dg, nodes, false);
+        bool words_ok = assert_words(dg, nodes, triphonized_words, false);
         cerr << "assert_words: " << words_ok << endl;
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
         cerr << "Tying state chain prefixes.." << endl;
-        dg.tie_state_prefixes(nodes, false, false, DecoderGraph::START_NODE);
+        dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        words_ok = assert_words(dg, nodes, false);
+        words_ok = assert_words(dg, nodes, triphonized_words, false);
         cerr << "assert_words: " << words_ok << endl;
 
         time ( &rawtime );
@@ -192,15 +205,15 @@ int main(int argc, char* argv[])
         cerr << "Pruning unreachable nodes.." << endl;
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        words_ok = assert_words(dg, nodes, false);
+        words_ok = assert_words(dg, nodes, triphonized_words, false);
         cerr << "assert_words: " << words_ok << endl;
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
         cerr << "Tying state chain suffixes.." << endl;
-        dg.tie_state_suffixes(nodes, false, DecoderGraph::END_NODE);
+        dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        words_ok = assert_words(dg, nodes, false);
+        words_ok = assert_words(dg, nodes, triphonized_words, false);
         cerr << "assert_words: " << words_ok << endl;
 
         time ( &rawtime );
@@ -208,12 +221,12 @@ int main(int argc, char* argv[])
         cerr << "Pruning unreachable nodes.." << endl;
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        words_ok = assert_words(dg, nodes, false);
+        words_ok = assert_words(dg, nodes, triphonized_words, false);
         cerr << "assert_words: " << words_ok << endl;
 
         cerr << "Pushing subword ids.." << endl;
         dg.push_word_ids_left(nodes);
-        words_ok = assert_words(dg, nodes, false);
+        words_ok = assert_words(dg, nodes, triphonized_words, false);
         cerr << "assert_words: " << words_ok << endl;
 
         time ( &rawtime );
@@ -221,7 +234,7 @@ int main(int argc, char* argv[])
         cerr << "Pruning unreachable nodes.." << endl;
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        words_ok = assert_words(dg, nodes, false);
+        words_ok = assert_words(dg, nodes, triphonized_words, false);
         cerr << "assert_words: " << words_ok << endl;
 
         //dg.print_graph(nodes);
