@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream>
+#include <fstream>
 
 #include "graphtest.hh"
 
@@ -203,7 +204,10 @@ graphtest :: assert_word_pairs(DecoderGraph &dg,
     for (auto fit=dg.m_word_segs.begin(); fit!=dg.m_word_segs.end(); ++fit) {
         for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
             bool result = assert_word_pair_crossword(dg, nodes, fit->first, sit->first, debug);
-            if (!result) return false;
+            if (!result) {
+                cerr << endl << "word pair: " << fit->first << " - " << sit->first << " not found" << endl;
+                return false;
+            }
         }
     }
     return true;
@@ -578,7 +582,16 @@ void graphtest :: GraphTest12(void)
     //dg.print_graph(nodes);
     dg.create_crossword_network(cw_nodes, fanout, fanin);
     dg.debug=0;
+    //cerr << endl;
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+
+    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
+    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+
+    //ofstream outf("cw_simple.dot");
+    //dg.print_dot_digraph(nodes, outf);
+    //outf.close();
+
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }

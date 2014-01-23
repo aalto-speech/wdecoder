@@ -596,7 +596,8 @@ DecoderGraph::reachable_graph_nodes(vector<Node> &nodes,
 {
     node_idxs.insert(node_idx);
     for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait)
-        if (node_idx != ait->target_node)
+        if (node_idx != ait->target_node
+            && node_idxs.find(ait->target_node) == node_idxs.end())
             reachable_graph_nodes(nodes, node_idxs, ait->target_node);
 }
 
@@ -958,3 +959,39 @@ DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
                                phones, node_to_connect, ait->target_node);
     }
 }
+
+
+void DecoderGraph::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
+{
+    set<int> reachable_node_idxs;
+    reachable_graph_nodes(nodes, reachable_node_idxs);
+
+    fstr << "digraph {" << endl << endl;
+    fstr << "\tnode [shape=ellipse,fontsize=30,fixedsize=false,width=0.95];" << endl;
+    fstr << "\tedge [fontsize=12];" << endl;
+    fstr << "\trankdir=LR;" << endl << endl;
+
+    for (auto it=reachable_node_idxs.begin(); it != reachable_node_idxs.end(); ++it) {
+        Node &nd = nodes[*it];
+        fstr << "\t" << *it;
+        if (*it == START_NODE) fstr << " [label=\"start\"]" << endl;
+        else if (*it == END_NODE) fstr << " [label=\"end\"]" << endl;
+        else if (nd.hmm_state != -1 && nd.word_id != -1)
+            fstr << " [label=\"" << nd.hmm_state << ", " << m_units[nd.word_id] << "\"]" << endl;
+        else if (nd.hmm_state != -1 && nd.word_id == -1)
+            fstr << " [label=\"" << nd.hmm_state << "\"]" << endl;
+        else if (nd.hmm_state == -1 && nd.word_id != -1)
+            fstr << " [label=\"" << m_units[nd.word_id] << "\"]" << endl;
+        else
+            fstr << " [label=\"dummy\"]" << endl;
+    }
+
+    fstr << endl;
+    for (auto nit=reachable_node_idxs.begin(); nit != reachable_node_idxs.end(); ++nit) {
+        Node &node = nodes[*nit];
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+            fstr << "\t" << *nit << " -> " << ait->target_node << endl;
+    }
+    fstr << "}" << endl;
+}
+

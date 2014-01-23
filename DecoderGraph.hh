@@ -2,6 +2,7 @@
 #define DECODERGRAPH_HH
 
 #include <map>
+#include <fstream>
 #include <vector>
 #include <set>
 
@@ -59,6 +60,7 @@ public:
     void tie_state_suffixes(std::vector<Node> &nodes,
                             int node_idx=END_NODE);
     void print_graph(std::vector<Node> &nodes);
+    void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr = std::cout);
     int reachable_graph_nodes(std::vector<Node> &nodes);
 
     int debug;
