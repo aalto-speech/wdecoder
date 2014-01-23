@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -398,8 +399,10 @@ DecoderGraph::print_graph(vector<Node> &nodes,
     if (node_idx == END_NODE) {
         for (int i=0; i<path.size(); i++) {
             if (nodes[path[i]].hmm_state != -1)
+                //cout << " " << nodes[path[i]].hmm_state;
                 cout << " " << path[i] << "(" << nodes[path[i]].hmm_state << ")";
             if (nodes[path[i]].word_id != -1)
+                //cout << " " << "(" << m_units[nodes[path[i]].word_id] << ")";
                 cout << " " << path[i] << "(" << m_units[nodes[path[i]].word_id] << ")";
         }
         cout << endl << endl;
@@ -475,12 +478,26 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
 
 
 void
-DecoderGraph::set_reverse_arcs(vector<Node> &nodes, int node_idx)
+DecoderGraph::set_reverse_arcs(vector<Node> &nodes)
 {
+    clear_reverse_arcs(nodes);
+    set<int> processed_nodes;
+    set_reverse_arcs(nodes, START_NODE, processed_nodes);
+}
+
+
+void
+DecoderGraph::set_reverse_arcs(vector<Node> &nodes,
+                               int node_idx,
+                               set<int> &processed_nodes)
+{
+    if (processed_nodes.find(node_idx) != processed_nodes.end()) return;
+    processed_nodes.insert(node_idx);
+
     for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait) {
         nodes[ait->target_node].reverse_arcs.resize(nodes[ait->target_node].reverse_arcs.size()+1);
         nodes[ait->target_node].reverse_arcs.back().target_node = node_idx;
-        set_reverse_arcs(nodes, ait->target_node);
+        set_reverse_arcs(nodes, ait->target_node, processed_nodes);
     }
 }
 
@@ -662,33 +679,39 @@ DecoderGraph::set_hmm_transition_probs(std::vector<Node> &nodes)
 
 
 void
-DecoderGraph::push_word_ids_left(vector<Node> &nodes,
-                                 map<int, pair<int, int> > &swaps,
+DecoderGraph::push_word_ids_left(std::vector<Node> &nodes,
+                                 int &move_count,
                                  bool debug,
                                  int node_idx,
                                  int prev_node_idx,
-                                 int first_hmm_node_wo_branching)
+                                 int subword_id)
 {
-    if (node_idx == END_NODE) return;
+    if (node_idx == START_NODE) return;
+    if (node_idx == END_NODE) set_reverse_arcs(nodes);
 
     Node &node = nodes[node_idx];
 
-    if (node.word_id != -1) {
-        if (first_hmm_node_wo_branching != -1) {
-            swaps[first_hmm_node_wo_branching] = make_pair(prev_node_idx, node_idx);
-            first_hmm_node_wo_branching = -1;
-        }
-    }
-    else {
-        if (node.arcs.size() > 1)
-            first_hmm_node_wo_branching = -1;
-        else
-            if (first_hmm_node_wo_branching == -1) first_hmm_node_wo_branching = node_idx;
+    if (debug && subword_id != -1) {
+        cerr << "push, node_idx: " << node_idx << " prev_node_idx: " << prev_node_idx;
+        cerr << " subword to move: " << m_units[subword_id] << endl;
+        cerr << endl;
     }
 
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+    if (subword_id != -1) {
+        Node &prev_node = nodes[prev_node_idx];
+        swap(node.word_id, prev_node.word_id);
+        swap(node.hmm_state, prev_node.hmm_state);
+        move_count++;
+    }
+
+    if (node.reverse_arcs.size() == 1) subword_id = node.word_id;
+    else subword_id = -1;
+
+    for (auto ait = node.reverse_arcs.begin(); ait != node.reverse_arcs.end(); ++ait) {
         if (ait->target_node == node_idx) throw string("Call push before setting self-transitions.");
-        push_word_ids_left(nodes, swaps, debug, ait->target_node, node_idx, first_hmm_node_wo_branching);
+        if (nodes[ait->target_node].arcs.size() > 1) subword_id = -1;
+        if (nodes[ait->target_node].word_id != -1) subword_id = -1;
+        push_word_ids_left(nodes, move_count, debug, ait->target_node, node_idx, subword_id);
     }
 }
 
@@ -697,37 +720,12 @@ void
 DecoderGraph::push_word_ids_left(vector<Node> &nodes,
                                  bool debug)
 {
-    map<int, pair<int, int> > swaps;
+    set_reverse_arcs(nodes);
+    int move_count = 0;
     while (true) {
-        swaps.clear();
-        push_word_ids_left(nodes, swaps, debug);
-        if (swaps.size() == 0) break;
-        make_swaps(nodes, swaps, debug);
-    }
-}
-
-
-void
-DecoderGraph::make_swaps(vector<Node> &nodes,
-                         map<int, pair<int, int> > &swaps,
-                         bool debug)
-{
-    if (debug) cerr << endl;
-    for (auto sit = swaps.begin(); sit != swaps.end(); ++sit) {
-        int first_hmm_node = sit->first;
-        int last_hmm_node = sit->second.first;
-        int subword_node = sit->second.second;
-        if (debug) cerr << "Pushing subword " << m_units[nodes[subword_node].word_id]
-                        << " from node " << subword_node << " to " << first_hmm_node << endl;
-        // Move the out transitions of the subword node to the HMM node
-        nodes[last_hmm_node].arcs = nodes[subword_node].arcs;
-        // Create a new identical copy of the first hmm state
-        nodes.push_back(nodes[first_hmm_node]);
-        nodes[first_hmm_node].hmm_state = -1;
-        nodes[first_hmm_node].word_id = nodes[subword_node].word_id;
-        nodes[first_hmm_node].arcs.clear();
-        nodes[first_hmm_node].arcs.resize(1);
-        nodes[first_hmm_node].arcs[0].target_node = nodes.size()-1;
+        push_word_ids_left(nodes, move_count, debug);
+        if (move_count == 0) break;
+        move_count = 0;
     }
 }
 

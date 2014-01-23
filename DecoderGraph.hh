@@ -89,22 +89,22 @@ public:
     void push_word_ids_left(std::vector<Node> &nodes,
                             bool debug=false);
     void push_word_ids_left(std::vector<Node> &nodes,
-                            std::map<int, std::pair<int, int> > &swaps,
+                            int &move_count,
                             bool debug=false,
-                            int node_idx=START_NODE,
+                            int node_idx=END_NODE,
                             int prev_node_idx=-1,
-                            int first_hmm_node_wo_branching=-1);
-    void make_swaps(std::vector<Node> &nodes,
-                    std::map<int, std::pair<int, int> > &swaps,
-                    bool debug=false);
+                            int subword_id=-1);
     int num_hmm_states(std::vector<Node> &nodes);
     int num_subword_states(std::vector<Node> &nodes);
     void create_crossword_network(std::vector<Node> &nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin,
                                   bool debug=false);
+    void set_reverse_arcs(std::vector<Node> &nodes);
     void set_reverse_arcs(std::vector<Node> &nodes,
-                          int node_idx=START_NODE);
+                          int node_idx,
+                          std::set<int> &processed_nodes);
+
     void clear_reverse_arcs(std::vector<Node> &nodes);
 
     // Text units
