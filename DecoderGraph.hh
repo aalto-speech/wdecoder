@@ -101,6 +101,14 @@ public:
                                    std::map<std::string, int> &fanin);
     void collect_cw_fanout_nodes(std::map<int, std::string> &nodes_to_fanout);    // node idx, triphone "a-b+_"
     void collect_cw_fanin_nodes(std::map<int, std::string> &nodes_from_fanin);    // node idx, triphone "_-a+b"
+    void collect_cw_fanout_nodes(std::map<int, std::string> &nodes_to_fanout,
+                                 int hmm_states,
+                                 std::vector<char> phones,
+                                 int node_idx=END_NODE);
+    void collect_cw_fanin_nodes(std::map<int, std::string> &nodes_from_fanin,
+                                int hmm_states,
+                                std::vector<char> phones,
+                                int node_idx=START_NODE);
     void set_reverse_arcs(std::vector<Node> &nodes);
     void set_reverse_arcs(std::vector<Node> &nodes,
                           int node_idx,

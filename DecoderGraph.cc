@@ -836,7 +836,7 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
     map<int, string> nodes_to_fanin;
     collect_cw_fanin_nodes(nodes_to_fanin);
     for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
-        int fanin_idx = fanout[finit->second];
+        int fanin_idx = fanin[finit->second];
         Node &fanin_node = nodes[fanin_idx];
         int node_idx = finit->first;
         fanin_node.arcs.resize(fanin_node.arcs.size()+1);
@@ -848,12 +848,33 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
 void
 DecoderGraph::collect_cw_fanout_nodes(map<int, string> &nodes_to_fanout)
 {
-
+    vector<char> phones;
+    collect_cw_fanout_nodes(nodes_to_fanout, 0, phones, END_NODE);
 }
 
 
 void
 DecoderGraph::collect_cw_fanin_nodes(map<int, string> &nodes_from_fanin)
+{
+    vector<char> phones;
+    collect_cw_fanin_nodes(nodes_from_fanin, 0, phones, START_NODE);
+}
+
+
+void
+DecoderGraph::collect_cw_fanout_nodes(map<int, string> &nodes_to_fanout,
+                                      int hmm_states,
+                                      vector<char> phones,
+                                      int node_idx)
+{
+
+}
+
+void
+DecoderGraph::collect_cw_fanin_nodes(map<int, string> &nodes_from_fanin,
+                                     int hmm_states,
+                                     vector<char> phones,
+                                     int node_idx)
 {
 
 }
