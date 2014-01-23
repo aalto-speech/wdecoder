@@ -753,13 +753,6 @@ DecoderGraph::create_crossword_network(std::vector<Node> &nodes,
                                        std::map<std::string, int> &fanout,
                                        std::map<std::string, int> &fanin)
 {
-    set<char> phones;
-    for (auto lit = m_lexicon.begin(); lit != m_lexicon.end(); ++lit) {
-        for (auto tit = lit->second.begin(); tit != lit->second.end(); ++tit) {
-            phones.insert((*tit)[2]);
-        }
-    }
-
     for (auto wit = m_word_segs.begin(); wit != m_word_segs.end(); ++wit) {
         vector<string> triphones;
         for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit) {
