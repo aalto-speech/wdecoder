@@ -476,8 +476,23 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
 
 
 void
+DecoderGraph::set_reverse_arcs_also_from_unreachable(vector<Node> &nodes)
+{
+    clear_reverse_arcs(nodes);
+    for (int i = 0; i < nodes.size(); ++i) {
+        Node &node = nodes[i];
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+            nodes[ait->target_node].reverse_arcs.resize(nodes[ait->target_node].reverse_arcs.size()+1);
+            nodes[ait->target_node].reverse_arcs.back().target_node = i;
+        }
+    }
+}
+
+
+void
 DecoderGraph::set_reverse_arcs(vector<Node> &nodes)
 {
+
     clear_reverse_arcs(nodes);
     set<int> processed_nodes;
     set_reverse_arcs(nodes, START_NODE, processed_nodes);
@@ -684,7 +699,7 @@ DecoderGraph::push_word_ids_left(vector<Node> &nodes,
                                  int subword_id)
 {
     if (node_idx == START_NODE) return;
-    if (node_idx == END_NODE) set_reverse_arcs(nodes);
+    if (node_idx == END_NODE) set_reverse_arcs_also_from_unreachable(nodes);
     processed_nodes.insert(node_idx);
 
     Node &node = nodes[node_idx];
@@ -771,7 +786,7 @@ DecoderGraph::create_crossword_network(vector<Node> &nodes,
             throw string("Warning, word " + wit->first + " with less than two phones");
         }
         string fanint = string("_-") + triphones[0][2] + string(1,'+') + triphones[1][2];
-        string fanoutt = triphones[triphones.size()-2][2] + string(1,'+') + triphones[triphones.size()-1][2] + string("+_");
+        string fanoutt = triphones[triphones.size()-2][2] + string(1,'-') + triphones[triphones.size()-1][2] + string("+_");
         fanout[fanoutt] = -1;
         fanin[fanint] = -1;
     }
@@ -832,32 +847,41 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
         for (auto ait = nodes.back().arcs.begin(); ait != nodes.back().arcs.end(); ++ait)
             ait->target_node += offset;
     }
+
     for (auto fonit = fanout.begin(); fonit != fanout.end(); ++fonit)
         fonit->second += offset;
-    for (auto finit = fanout.begin(); finit != fanout.end(); ++finit)
+    for (auto finit = fanin.begin(); finit != fanin.end(); ++finit)
         finit->second += offset;
 
     map<int, string> nodes_to_fanin;
     collect_cw_fanin_nodes(nodes, nodes_to_fanin);
 
+    map<int, string> nodes_to_fanout;
+    push_word_ids_left(nodes);
+    collect_cw_fanout_nodes(nodes, nodes_to_fanout);
+
     for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
-        if (debug) cerr << "connecting node " << finit->first
-                        << " from fanin with triphone " << finit->second << endl;
+        if (fanin.find(finit->second) == fanin.end()) {
+            cerr << "Problem, triphone: " << finit->second << " not found in fanin" << endl;
+            assert(false);
+        }
         int fanin_idx = fanin[finit->second];
+        if (debug) cerr << "connecting node " << finit->first
+                        << " from fanin node " << fanin_idx << " with triphone " << finit->second << endl;
         Node &fanin_node = nodes[fanin_idx];
         int node_idx = finit->first;
         fanin_node.arcs.resize(fanin_node.arcs.size()+1);
         fanin_node.arcs.back().target_node = node_idx;
     }
 
-    map<int, string> nodes_to_fanout;
-    push_word_ids_left(nodes);
-    collect_cw_fanout_nodes(nodes, nodes_to_fanout);
-
     for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
-        if (debug) cerr << "connecting node " << fonit->first
-                        << " to fanout with triphone " << fonit->second << endl;
+        if (fanout.find(fonit->second) == fanout.end()) {
+            cerr << "Problem, triphone: " << fonit->second << " not found in fanout" << endl;
+            assert(false);
+        }
         int fanout_idx = fanout[fonit->second];
+        if (debug) cerr << "connecting node " << fonit->first
+                        << " to fanout node " << fanout_idx << " with triphone " << fonit->second << endl;
         Node &node = nodes[fonit->first];
         node.arcs.resize(node.arcs.size()+1);
         node.arcs.back().target_node = fanout_idx;
@@ -981,9 +1005,9 @@ DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
 void DecoderGraph::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
 {
     set<int> node_idxs;
-    reachable_graph_nodes(nodes, node_idxs);
-    //for (int i=0;i<nodes.size();i++)
-    //    node_idxs.insert(i);
+    //reachable_graph_nodes(nodes, node_idxs);
+    for (int i=0;i<nodes.size();i++)
+        node_idxs.insert(i);
 
     fstr << "digraph {" << endl << endl;
     fstr << "\tnode [shape=ellipse,fontsize=30,fixedsize=false,width=0.95];" << endl;

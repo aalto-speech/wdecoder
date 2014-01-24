@@ -585,7 +585,7 @@ void graphtest :: GraphTest12(void)
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
     //dg.print_graph(nodes);
-    dg.debug=1;
+    //dg.debug=1;
     dg.create_crossword_network(cw_nodes, fanout, fanin);
 
     ofstream cwoutf("cw_simpler_cw.dot");
@@ -594,12 +594,13 @@ void graphtest :: GraphTest12(void)
     //exit(1);
 
     //cerr << endl;
-    dg.debug=1;
+    //dg.debug=1;
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
 
     nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
     nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
 
+    //dg.push_word_ids_left(nodes);
     ofstream outf("cw_simpler.dot");
     dg.print_dot_digraph(nodes, outf);
     outf.close();

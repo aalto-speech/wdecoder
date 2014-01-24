@@ -118,6 +118,7 @@ public:
                                 std::vector<char> phones,
                                 int node_to_connect=-1,
                                 int node_idx=START_NODE);
+    void set_reverse_arcs_also_from_unreachable(std::vector<Node> &nodes);
     void set_reverse_arcs(std::vector<Node> &nodes);
     void set_reverse_arcs(std::vector<Node> &nodes,
                           int node_idx,
