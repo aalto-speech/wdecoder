@@ -750,9 +750,9 @@ DecoderGraph::num_subword_states(vector<Node> &nodes)
 
 
 void
-DecoderGraph::create_crossword_network(std::vector<Node> &nodes,
-                                       std::map<std::string, int> &fanout,
-                                       std::map<std::string, int> &fanin)
+DecoderGraph::create_crossword_network(vector<Node> &nodes,
+                                       map<string, int> &fanout,
+                                       map<string, int> &fanin)
 {
     for (auto wit = m_word_segs.begin(); wit != m_word_segs.end(); ++wit) {
         vector<string> triphones;
@@ -763,7 +763,7 @@ DecoderGraph::create_crossword_network(std::vector<Node> &nodes,
         }
         if (triphones.size() < 2) {
             cerr << wit->first << endl;
-            throw string("Warning, word " + wit->first + " with less than two triphones");
+            throw string("Warning, word " + wit->first + " with less than two phones");
         }
         string fanint = string("_-") + triphones[0][2] + string(1,'+') + triphones[1][2];
         string fanoutt = triphones[triphones.size()-2][2] + string(1,'+') + triphones[triphones.size()-1][2] + string("+_");
@@ -772,37 +772,44 @@ DecoderGraph::create_crossword_network(std::vector<Node> &nodes,
     }
 
     if (debug) {
+        cerr << endl;
         cerr << "number of fan in nodes: " << fanin.size() << endl;
+        for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit)
+            cerr << "\t" << fiit->first << endl;
         cerr << "number of fan out nodes: " << fanout.size() << endl;
+        for (auto foit = fanout.begin(); foit != fanout.end(); ++foit)
+            cerr << "\t" << foit->first << endl;
     }
 
-    std::map<string, int> fanin_nodes;
+    map<string, int> connected_fanin_nodes;
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
+
         nodes.resize(nodes.size()+1);
         foit->second = nodes.size()-1;
+
         for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
             string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
             string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
             int idx = connect_triphone(nodes, triphone1, foit->second);
 
-            if (fanin_nodes.find(triphone2) == fanin_nodes.end()) {
+            if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end()) {
+                if (debug) cerr << "not found" << endl;
                 idx = connect_triphone(nodes, triphone2, idx);
-                fanin_nodes[triphone2] = idx-2; // Store the first state of the fanin triphone
+                connected_fanin_nodes[triphone2] = idx-2;
                 if (fiit->second == -1) {
                     nodes.resize(nodes.size()+1);
                     fiit->second = nodes.size()-1;
                 }
                 nodes[idx].arcs.resize(nodes[idx].arcs.size()+1);
                 nodes[idx].arcs.back().target_node = fiit->second;
+                if (debug) cerr << "triphone1: " << triphone1 << " triphone2: " << triphone2
+                                << " target node: " << fiit->second;
             }
             else {
+                if (debug) cerr << "found" << endl;
                 nodes[idx].arcs.resize(nodes[idx].arcs.size()+1);
-                nodes[idx].arcs.back().target_node = fanin_nodes[triphone2];
+                nodes[idx].arcs.back().target_node = connected_fanin_nodes[triphone2];
             }
-
-            nodes[idx].arcs.resize(nodes[idx].arcs.size()+1);
-            nodes[idx].arcs[0].target_node = nodes.size()-1;
-            fiit->second = nodes.size()-1;
         }
     }
 }
@@ -839,6 +846,8 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
     }
 
     for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
+        if (debug) cerr << "connecting node " << finit->first
+                        << " from fanin with triphone " << finit->second << endl;
         int fanin_idx = fanin[finit->second];
         Node &fanin_node = nodes[fanin_idx];
         int node_idx = finit->first;
@@ -963,31 +972,33 @@ DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
 
 void DecoderGraph::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
 {
-    set<int> reachable_node_idxs;
-    reachable_graph_nodes(nodes, reachable_node_idxs);
+    set<int> node_idxs;
+    reachable_graph_nodes(nodes, node_idxs);
+    //for (int i=0;i<nodes.size();i++)
+    //    node_idxs.insert(i);
 
     fstr << "digraph {" << endl << endl;
     fstr << "\tnode [shape=ellipse,fontsize=30,fixedsize=false,width=0.95];" << endl;
     fstr << "\tedge [fontsize=12];" << endl;
     fstr << "\trankdir=LR;" << endl << endl;
 
-    for (auto it=reachable_node_idxs.begin(); it != reachable_node_idxs.end(); ++it) {
+    for (auto it=node_idxs.begin(); it != node_idxs.end(); ++it) {
         Node &nd = nodes[*it];
         fstr << "\t" << *it;
         if (*it == START_NODE) fstr << " [label=\"start\"]" << endl;
         else if (*it == END_NODE) fstr << " [label=\"end\"]" << endl;
         else if (nd.hmm_state != -1 && nd.word_id != -1)
-            fstr << " [label=\"" << nd.hmm_state << ", " << m_units[nd.word_id] << "\"]" << endl;
+            fstr << " [label=\"" << *it << ":" << nd.hmm_state << ", " << m_units[nd.word_id] << "\"]" << endl;
         else if (nd.hmm_state != -1 && nd.word_id == -1)
-            fstr << " [label=\"" << nd.hmm_state << "\"]" << endl;
+            fstr << " [label=\"" << *it << ":"<< nd.hmm_state << "\"]" << endl;
         else if (nd.hmm_state == -1 && nd.word_id != -1)
-            fstr << " [label=\"" << m_units[nd.word_id] << "\"]" << endl;
+            fstr << " [label=\"" << *it << ":"<< m_units[nd.word_id] << "\"]" << endl;
         else
-            fstr << " [label=\"dummy\"]" << endl;
+            fstr << " [label=\"" << *it << ":dummy\"]" << endl;
     }
 
     fstr << endl;
-    for (auto nit=reachable_node_idxs.begin(); nit != reachable_node_idxs.end(); ++nit) {
+    for (auto nit=node_idxs.begin(); nit != node_idxs.end(); ++nit) {
         Node &node = nodes[*nit];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             fstr << "\t" << *nit << " -> " << ait->target_node << endl;

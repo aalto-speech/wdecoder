@@ -567,30 +567,42 @@ void graphtest :: GraphTest11(void)
 void graphtest :: GraphTest12(void)
 {
     DecoderGraph dg;
-    segname = "data/cw_simple.segs";
+    segname = "data/cw_simpler.segs";
     read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
-    CPPUNIT_ASSERT_EQUAL( 80, (int)dg.reachable_graph_nodes(nodes) );
+    dg.prune_unreachable_nodes(nodes);
+    //CPPUNIT_ASSERT_EQUAL( 80, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+
+    ofstream origoutf("cw_simpler_orig.dot");
+    dg.print_dot_digraph(nodes, origoutf);
+    origoutf.close();
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
     //dg.print_graph(nodes);
+    dg.debug=1;
     dg.create_crossword_network(cw_nodes, fanout, fanin);
-    dg.debug=0;
+
+    ofstream cwoutf("cw_simpler_cw.dot");
+    dg.print_dot_digraph(cw_nodes, cwoutf);
+    cwoutf.close();
+    //exit(1);
+
     //cerr << endl;
+    dg.debug=1;
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
 
     nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
     nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
 
-    //ofstream outf("cw_simple.dot");
-    //dg.print_dot_digraph(nodes, outf);
-    //outf.close();
+    ofstream outf("cw_simpler.dot");
+    dg.print_dot_digraph(nodes, outf);
+    outf.close();
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
