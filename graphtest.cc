@@ -140,6 +140,10 @@ graphtest :: assert_path(DecoderGraph &dg,
         cerr << endl;
     }
 
+    //for (auto dit = dstates.rbegin(); dit !=dstates.rend(); ++dit)
+    //        cerr << " " << *dit;
+    //cerr << endl;
+
     return assert_path(dg, nodes, dstates, dwords, DecoderGraph::START_NODE);
 }
 
@@ -173,6 +177,14 @@ graphtest :: assert_word_pair_crossword(DecoderGraph &dg,
         subwords.push_back(*swit);
     for (auto swit = dg.m_word_segs[word2].begin(); swit != dg.m_word_segs[word2].end(); ++swit)
         subwords.push_back(*swit);
+
+    //cerr << endl;
+    //for (auto trit = triphones.begin(); trit !=triphones.end(); ++trit)
+    //    cerr << " " << *trit;
+    //cerr << endl;
+    //for (auto swit = subwords.begin(); swit !=subwords.end(); ++swit)
+    //        cerr << " " << *swit;
+    //cerr << endl;
 
     return assert_path(dg, nodes, triphones, subwords, debug);
 }
@@ -563,7 +575,7 @@ void graphtest :: GraphTest11(void)
 }
 
 
-// Test cross-word network creation, simple case
+// Test cross-word network creation and connecting, very simple case
 void graphtest :: GraphTest12(void)
 {
     DecoderGraph dg;
@@ -575,37 +587,28 @@ void graphtest :: GraphTest12(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     dg.prune_unreachable_nodes(nodes);
-    //CPPUNIT_ASSERT_EQUAL( 80, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 34, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
-
-    ofstream origoutf("cw_simpler_orig.dot");
-    dg.print_dot_digraph(nodes, origoutf);
-    origoutf.close();
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    //dg.print_graph(nodes);
-    //dg.debug=1;
     dg.create_crossword_network(cw_nodes, fanout, fanin);
 
     ofstream cwoutf("cw_simpler_cw.dot");
     dg.print_dot_digraph(cw_nodes, cwoutf);
     cwoutf.close();
-    //exit(1);
 
-    //cerr << endl;
-    //dg.debug=1;
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-
     nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
     nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
 
-    //dg.push_word_ids_left(nodes);
-    ofstream outf("cw_simpler.dot");
-    dg.print_dot_digraph(nodes, outf);
-    outf.close();
-
+    CPPUNIT_ASSERT_EQUAL( 62, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
+
+
+//ofstream origoutf("cw_simpler_orig.dot");
+//dg.print_dot_digraph(nodes, origoutf);
+//origoutf.close();
 

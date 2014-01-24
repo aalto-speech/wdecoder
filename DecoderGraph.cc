@@ -856,10 +856,6 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
     map<int, string> nodes_to_fanin;
     collect_cw_fanin_nodes(nodes, nodes_to_fanin);
 
-    map<int, string> nodes_to_fanout;
-    push_word_ids_left(nodes);
-    collect_cw_fanout_nodes(nodes, nodes_to_fanout);
-
     for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
         if (fanin.find(finit->second) == fanin.end()) {
             cerr << "Problem, triphone: " << finit->second << " not found in fanin" << endl;
@@ -873,6 +869,10 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
         fanin_node.arcs.resize(fanin_node.arcs.size()+1);
         fanin_node.arcs.back().target_node = node_idx;
     }
+
+    map<int, string> nodes_to_fanout;
+    push_word_ids_left(nodes);
+    collect_cw_fanout_nodes(nodes, nodes_to_fanout);
 
     for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
         if (fanout.find(fonit->second) == fanout.end()) {
@@ -930,7 +930,7 @@ DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
         }
     }
 
-    if (hmm_state_count == 3) node_to_connect = node_idx;
+    if (hmm_state_count == 4) node_to_connect = node_idx;
 
     if (phones.size() == 2 && hmm_state_count > 2) {
         string triphone = string(1,phones[1]) + string(1,'-') + string(1,phones[0]) + string("+_");
