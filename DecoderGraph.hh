@@ -89,6 +89,7 @@ public:
     void push_word_ids_left(std::vector<Node> &nodes);
     void push_word_ids_left(std::vector<Node> &nodes,
                             int &move_count,
+                            std::set<int> &processed_nodes,
                             int node_idx=END_NODE,
                             int prev_node_idx=-1,
                             int subword_id=-1);

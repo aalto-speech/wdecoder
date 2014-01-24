@@ -15,7 +15,6 @@
 class graphtest : public CPPUNIT_NS :: TestFixture
 {
     CPPUNIT_TEST_SUITE (graphtest);
-    /*
     CPPUNIT_TEST (GraphTest1);
     CPPUNIT_TEST (GraphTest2);
     CPPUNIT_TEST (GraphTest3);
@@ -27,7 +26,6 @@ class graphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (GraphTest9);
     CPPUNIT_TEST (GraphTest10);
     CPPUNIT_TEST (GraphTest11);
-    */
     CPPUNIT_TEST (GraphTest12);
     CPPUNIT_TEST_SUITE_END ();
 

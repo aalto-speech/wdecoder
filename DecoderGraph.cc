@@ -676,14 +676,16 @@ DecoderGraph::set_hmm_transition_probs(std::vector<Node> &nodes)
 
 
 void
-DecoderGraph::push_word_ids_left(std::vector<Node> &nodes,
+DecoderGraph::push_word_ids_left(vector<Node> &nodes,
                                  int &move_count,
+                                 set<int> &processed_nodes,
                                  int node_idx,
                                  int prev_node_idx,
                                  int subword_id)
 {
     if (node_idx == START_NODE) return;
     if (node_idx == END_NODE) set_reverse_arcs(nodes);
+    processed_nodes.insert(node_idx);
 
     Node &node = nodes[node_idx];
 
@@ -705,9 +707,11 @@ DecoderGraph::push_word_ids_left(std::vector<Node> &nodes,
 
     for (auto ait = node.reverse_arcs.begin(); ait != node.reverse_arcs.end(); ++ait) {
         if (ait->target_node == node_idx) throw string("Call push before setting self-transitions.");
-        if (nodes[ait->target_node].arcs.size() > 1) subword_id = -1;
-        if (nodes[ait->target_node].word_id != -1) subword_id = -1;
-        push_word_ids_left(nodes, move_count, ait->target_node, node_idx, subword_id);
+        int temp_subword_id = subword_id;
+        if (nodes[ait->target_node].arcs.size() > 1) temp_subword_id = -1;
+        if (nodes[ait->target_node].word_id != -1) temp_subword_id = -1;
+        if (processed_nodes.find(ait->target_node) == processed_nodes.end())
+            push_word_ids_left(nodes, move_count, processed_nodes, ait->target_node, node_idx, temp_subword_id);
     }
 }
 
@@ -718,7 +722,8 @@ DecoderGraph::push_word_ids_left(vector<Node> &nodes)
     set_reverse_arcs(nodes);
     int move_count = 0;
     while (true) {
-        push_word_ids_left(nodes, move_count);
+        set<int> processed_nodes;
+        push_word_ids_left(nodes, move_count, processed_nodes);
         if (move_count == 0) break;
         move_count = 0;
     }
@@ -832,18 +837,8 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
     for (auto finit = fanout.begin(); finit != fanout.end(); ++finit)
         finit->second += offset;
 
-    map<int, string> nodes_to_fanout;
-    collect_cw_fanout_nodes(nodes, nodes_to_fanout);
-
     map<int, string> nodes_to_fanin;
     collect_cw_fanin_nodes(nodes, nodes_to_fanin);
-
-    for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
-        int fanout_idx = fanout[fonit->second];
-        Node &node = nodes[fonit->first];
-        node.arcs.resize(node.arcs.size()+1);
-        node.arcs.back().target_node = fanout_idx;
-    }
 
     for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
         if (debug) cerr << "connecting node " << finit->first
@@ -853,6 +848,19 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
         int node_idx = finit->first;
         fanin_node.arcs.resize(fanin_node.arcs.size()+1);
         fanin_node.arcs.back().target_node = node_idx;
+    }
+
+    map<int, string> nodes_to_fanout;
+    push_word_ids_left(nodes);
+    collect_cw_fanout_nodes(nodes, nodes_to_fanout);
+
+    for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
+        if (debug) cerr << "connecting node " << fonit->first
+                        << " to fanout with triphone " << fonit->second << endl;
+        int fanout_idx = fanout[fonit->second];
+        Node &node = nodes[fonit->first];
+        node.arcs.resize(node.arcs.size()+1);
+        node.arcs.back().target_node = fanout_idx;
     }
 }
 
