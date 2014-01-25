@@ -138,11 +138,12 @@ graphtest :: assert_path(DecoderGraph &dg,
         for (auto it = subwords.begin(); it != subwords.end(); ++it)
             cerr << " " << *it;
         cerr << endl;
-    }
 
-    //for (auto dit = dstates.rbegin(); dit !=dstates.rend(); ++dit)
-    //        cerr << " " << *dit;
-    //cerr << endl;
+        cerr << "expecting states: " << endl;
+        for (auto dit = dstates.rbegin(); dit !=dstates.rend(); ++dit)
+            cerr << " " << *dit;
+        cerr << endl;
+    }
 
     return assert_path(dg, nodes, dstates, dwords, DecoderGraph::START_NODE);
 }
@@ -155,36 +156,36 @@ graphtest :: assert_word_pair_crossword(DecoderGraph &dg,
                                         string word2,
                                         bool debug)
 {
-    if (dg.m_lexicon.find(word1) == dg.m_lexicon.end()) return false;
-    if (dg.m_lexicon.find(word2) == dg.m_lexicon.end()) return false;
+    if (dg.m_lexicon.find(word1) == dg.m_word_segs.end()) return false;
+    if (dg.m_lexicon.find(word2) == dg.m_word_segs.end()) return false;
 
-    char first_last = dg.m_lexicon[word1].back()[2];
-    char second_first = dg.m_lexicon[word2][0][2];
-
+    string phonestring;
     vector<string> triphones;
-    for (int i = 0; i < dg.m_lexicon[word1].size()-1; ++i)
-        triphones.push_back(dg.m_lexicon[word1][i]);
-    string last_triphone = dg.m_lexicon[word1][dg.m_lexicon[word1].size()-1].substr(0,4) + second_first;
-    triphones.push_back(last_triphone);
-
-    string first_triphone = first_last + dg.m_lexicon[word2][0].substr(1,4);
-    triphones.push_back(first_triphone);
-    for (int i = 1; i < dg.m_lexicon[word2].size(); ++i)
-        triphones.push_back(dg.m_lexicon[word2][i]);
-
     vector<string> subwords;
-    for (auto swit = dg.m_word_segs[word1].begin(); swit != dg.m_word_segs[word1].end(); ++swit)
-        subwords.push_back(*swit);
-    for (auto swit = dg.m_word_segs[word2].begin(); swit != dg.m_word_segs[word2].end(); ++swit)
-        subwords.push_back(*swit);
 
-    //cerr << endl;
-    //for (auto trit = triphones.begin(); trit !=triphones.end(); ++trit)
-    //    cerr << " " << *trit;
-    //cerr << endl;
-    //for (auto swit = subwords.begin(); swit !=subwords.end(); ++swit)
-    //        cerr << " " << *swit;
-    //cerr << endl;
+    for (auto swit = dg.m_word_segs[word1].begin(); swit != dg.m_word_segs[word1].end(); ++swit) {
+        subwords.push_back(*swit);
+        for (auto trit = dg.m_lexicon[*swit].begin(); trit != dg.m_lexicon[*swit].end(); ++trit)
+            phonestring += string(1,(*trit)[2]);
+    }
+
+    for (auto swit = dg.m_word_segs[word2].begin(); swit != dg.m_word_segs[word2].end(); ++swit) {
+        subwords.push_back(*swit);
+        for (auto trit = dg.m_lexicon[*swit].begin(); trit != dg.m_lexicon[*swit].end(); ++trit)
+            phonestring += string(1,(*trit)[2]);
+    }
+
+    triphonize(phonestring, triphones);
+
+    if (debug) {
+        cerr << endl;
+        for (auto trit = triphones.begin(); trit !=triphones.end(); ++trit)
+            cerr << " " << *trit;
+        cerr << endl;
+        for (auto swit = subwords.begin(); swit !=subwords.end(); ++swit)
+            cerr << " " << *swit;
+        cerr << endl;
+    }
 
     return assert_path(dg, nodes, triphones, subwords, debug);
 }
@@ -215,6 +216,7 @@ graphtest :: assert_word_pairs(DecoderGraph &dg,
 {
     for (auto fit=dg.m_word_segs.begin(); fit!=dg.m_word_segs.end(); ++fit) {
         for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
+            if (debug) cerr << endl << "checking word pair: " << fit->first << " - " << sit->first << endl;
             bool result = assert_word_pair_crossword(dg, nodes, fit->first, sit->first, debug);
             if (!result) {
                 cerr << endl << "word pair: " << fit->first << " - " << sit->first << " not found" << endl;
