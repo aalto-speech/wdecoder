@@ -664,11 +664,12 @@ void graphtest :: GraphTest14(void)
 }
 
 
-// Test cross-word network creation and connecting, 2 phone words
+// Test cross-word network creation and connecting
+// 2 phone words and other special cases
 void graphtest :: GraphTest15(void)
 {
     DecoderGraph dg;
-    segname = "data/cw_2phonewords.seg";
+    segname = "data/segs2.txt";
     read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> swnodes;
@@ -676,7 +677,7 @@ void graphtest :: GraphTest15(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     dg.prune_unreachable_nodes(nodes);
-    //CPPUNIT_ASSERT_EQUAL( 80, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 62, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 
     vector<DecoderGraph::Node> cw_nodes;
@@ -687,7 +688,7 @@ void graphtest :: GraphTest15(void)
     nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
     nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
 
-    //CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 176, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }

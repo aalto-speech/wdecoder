@@ -870,8 +870,17 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
         fanin_node.arcs.back().target_node = node_idx;
     }
 
+    ofstream outf("cw_2phone_before_fanout.dot");
+    print_dot_digraph(nodes, outf);
+    outf.close();
+
     map<int, string> nodes_to_fanout;
     push_word_ids_left(nodes);
+
+    ofstream outf2("cw_2phone_before_fanout_2.dot");
+    print_dot_digraph(nodes, outf2);
+    outf2.close();
+
     collect_cw_fanout_nodes(nodes, nodes_to_fanout);
 
     for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
@@ -930,7 +939,8 @@ DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
         }
     }
 
-    if (hmm_state_count == 4) node_to_connect = node_idx;
+    if (hmm_state_count == 4
+        || (hmm_state_count == 3 && node.word_id != -1)) node_to_connect = node_idx;
 
     if (phones.size() == 2 && hmm_state_count > 2) {
         string triphone = string(1,phones[1]) + string(1,'-') + string(1,phones[0]) + string("+_");
