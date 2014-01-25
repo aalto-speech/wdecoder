@@ -635,6 +635,63 @@ void graphtest :: GraphTest13(void)
 }
 
 
+// Test cross-word network creation and connecting, easy case
+void graphtest :: GraphTest14(void)
+{
+    DecoderGraph dg;
+    segname = "data/segs.txt";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    vector<DecoderGraph::Node> nodes(2);
+    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.prune_unreachable_nodes(nodes);
+    //CPPUNIT_ASSERT_EQUAL( 80, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    dg.create_crossword_network(cw_nodes, fanout, fanin);
+
+    dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
+    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+
+    //CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+}
+
+
+// Test cross-word network creation and connecting, 2 phone words
+void graphtest :: GraphTest15(void)
+{
+    DecoderGraph dg;
+    segname = "data/cw_2phonewords.seg";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    vector<DecoderGraph::Node> nodes(2);
+    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.prune_unreachable_nodes(nodes);
+    //CPPUNIT_ASSERT_EQUAL( 80, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    dg.create_crossword_network(cw_nodes, fanout, fanin);
+
+    dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
+    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+
+    //CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+}
+
 //ofstream origoutf("cw_simpler_orig.dot");
 //dg.print_dot_digraph(nodes, origoutf);
 //origoutf.close();
