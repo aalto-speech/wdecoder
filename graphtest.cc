@@ -693,6 +693,45 @@ void graphtest :: GraphTest15(void)
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
 
+
+// Test cross-word network creation and connecting
+// 2 phone words and other special cases
+// Tie prefixes and suffixes after connecting cw network
+void graphtest :: GraphTest16(void)
+{
+    DecoderGraph dg;
+    segname = "data/segs2.txt";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    vector<DecoderGraph::Node> nodes(2);
+    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT_EQUAL( 62, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    dg.create_crossword_network(cw_nodes, fanout, fanin);
+
+    dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
+    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+
+    CPPUNIT_ASSERT_EQUAL( 176, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+
+    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.prune_unreachable_nodes(nodes);
+    dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
+    dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT_EQUAL( 176, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+}
+
 //ofstream origoutf("cw_simpler_orig.dot");
 //dg.print_dot_digraph(nodes, origoutf);
 //origoutf.close();
