@@ -423,12 +423,24 @@ DecoderGraph::print_graph(vector<Node> &nodes)
 
 void
 DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
+                                 bool stop_propagation)
+{
+    set<int> processed_nodes;
+    tie_state_prefixes(nodes, processed_nodes, stop_propagation, START_NODE);
+}
+
+
+void
+DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
+                                 set<int> &processed_nodes,
                                  bool stop_propagation,
                                  int node_idx)
 {
     if (debug) cerr << endl << "tying state: " << node_idx << endl;
     if (node_idx == START_NODE) set_reverse_arcs(nodes);
     if (node_idx == END_NODE) return;
+    if (processed_nodes.find(node_idx) != processed_nodes.end()) return;
+    processed_nodes.insert(node_idx);
     Node &nd = nodes[node_idx];
 
     map<int, set<int> > targets;
@@ -496,7 +508,7 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
     }
 
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-        tie_state_prefixes(nodes, stop_propagation, ait->target_node);
+        tie_state_prefixes(nodes, processed_nodes, stop_propagation, ait->target_node);
 }
 
 

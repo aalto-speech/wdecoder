@@ -410,7 +410,7 @@ void graphtest :: GraphTest4(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false);
     CPPUNIT_ASSERT_EQUAL( 145, (int)dg.reachable_graph_nodes(nodes) );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -427,7 +427,7 @@ void graphtest :: GraphTest5(void)
     dg.create_word_graph(swnodes);
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false);
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
     dg.prune_unreachable_nodes(nodes);
 
@@ -450,7 +450,7 @@ void graphtest :: GraphTest6(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false);
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
     CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
 
@@ -475,7 +475,7 @@ void graphtest :: GraphTest7(void)
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
 
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false);
     dg.prune_unreachable_nodes(nodes);
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
     dg.prune_unreachable_nodes(nodes);
@@ -506,7 +506,7 @@ void graphtest :: GraphTest8(void)
     dg.expand_subword_nodes(swnodes, nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
@@ -538,7 +538,7 @@ void graphtest :: GraphTest9(void)
     dg.expand_subword_nodes(swnodes, nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
@@ -571,7 +571,7 @@ void graphtest :: GraphTest10(void)
     dg.expand_subword_nodes(swnodes, nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false);
     dg.prune_unreachable_nodes(nodes);
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
@@ -591,7 +591,7 @@ void graphtest :: GraphTest11(void)
     dg.expand_subword_nodes(swnodes, nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
@@ -749,13 +749,15 @@ void graphtest :: GraphTest16(void)
 
     dg.push_word_ids_right(nodes);
     CPPUNIT_ASSERT( assert_subword_ids_right(dg, nodes));
-    dg.tie_state_prefixes(nodes, true, DecoderGraph::START_NODE);
+    dg.tie_state_prefixes(nodes, false);
     dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT_EQUAL( 59, (int)dg.reachable_graph_nodes(nodes) );
+
     //dg.push_word_ids_left(nodes);
     //CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes));
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
     dg.prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 62, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 59, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }

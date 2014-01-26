@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
         cerr << "Tying state chain prefixes.." << endl;
-        dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+        dg.tie_state_prefixes(nodes, false);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
         if (assertions) {
             words_ok = assert_words(dg, nodes, triphonized_words, false);

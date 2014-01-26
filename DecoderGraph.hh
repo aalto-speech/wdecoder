@@ -55,6 +55,9 @@ public:
                               char prev_triphone='_',
                               int delayed_subword_id=-1);
     void tie_state_prefixes(std::vector<Node> &nodes,
+                            bool stop_propagation=false);
+    void tie_state_prefixes(std::vector<Node> &nodes,
+                            std::set<int> &processed_nodes,
                             bool stop_propagation=false,
                             int node_idx=START_NODE);
     void tie_state_suffixes(std::vector<Node> &nodes,
