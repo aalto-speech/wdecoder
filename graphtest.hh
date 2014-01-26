@@ -76,10 +76,10 @@ class graphtest : public CPPUNIT_NS :: TestFixture
                                              std::vector<DecoderGraph::Node> &nodes,
                                              bool debug=false);
         static bool assert_no_double_arcs(std::vector<DecoderGraph::Node> &nodes);
-        static bool assert_left_state_tying(DecoderGraph &dg,
-                                            std::vector<DecoderGraph::Node> &nodes);
-        static bool assert_right_state_tying(DecoderGraph &dg,
-                                             std::vector<DecoderGraph::Node> &nodes);
+        static bool assert_prefix_state_tying(DecoderGraph &dg,
+                                              std::vector<DecoderGraph::Node> &nodes);
+        static bool assert_suffix_state_tying(DecoderGraph &dg,
+                                              std::vector<DecoderGraph::Node> &nodes);
 
     protected:
         void GraphTest1(void);

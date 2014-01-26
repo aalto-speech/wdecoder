@@ -345,8 +345,8 @@ graphtest :: assert_no_double_arcs(vector<DecoderGraph::Node> &nodes)
 
 
 bool
-graphtest :: assert_left_state_tying(DecoderGraph &dg,
-                                     vector<DecoderGraph::Node> &nodes)
+graphtest :: assert_prefix_state_tying(DecoderGraph &dg,
+                                       vector<DecoderGraph::Node> &nodes)
 {
     dg.set_reverse_arcs_also_from_unreachable(nodes);
 
@@ -364,8 +364,8 @@ graphtest :: assert_left_state_tying(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_right_state_tying(DecoderGraph &dg,
-                                      vector<DecoderGraph::Node> &nodes)
+graphtest :: assert_suffix_state_tying(DecoderGraph &dg,
+                                       vector<DecoderGraph::Node> &nodes)
 {
     dg.set_reverse_arcs_also_from_unreachable(nodes);
 
@@ -786,10 +786,11 @@ void graphtest :: GraphTest16(void)
 
     dg.push_word_ids_right(nodes);
     CPPUNIT_ASSERT( assert_subword_ids_right(dg, nodes));
+
     dg.tie_state_prefixes(nodes, false);
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 102, (int)dg.reachable_graph_nodes(nodes) );
-
+    CPPUNIT_ASSERT( assert_prefix_state_tying(dg, nodes) );
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
 
     dg.push_word_ids_left(nodes);
@@ -797,18 +798,15 @@ void graphtest :: GraphTest16(void)
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
     dg.prune_unreachable_nodes(nodes);
 
-    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    CPPUNIT_ASSERT( assert_suffix_state_tying(dg, nodes) );
 
-    ofstream origoutf("cw_simple.dot");
-    dg.print_dot_digraph(nodes, origoutf);
-    origoutf.close();
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
 
     CPPUNIT_ASSERT( (int)dg.reachable_graph_nodes(nodes) < 102 );
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
 
-//ofstream origoutf("cw_simpler_orig.dot");
-//dg.print_dot_digraph(nodes, origoutf);
-//origoutf.close();
-
+// ofstream origoutf("cw_simple.dot");
+// dg.print_dot_digraph(nodes, origoutf);
+// origoutf.close();
