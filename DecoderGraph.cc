@@ -437,9 +437,9 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
                                  bool stop_propagation,
                                  int node_idx)
 {
-    if (debug) cerr << endl << "tying state: " << node_idx << endl;
     if (node_idx == END_NODE) return;
     if (processed_nodes.find(node_idx) != processed_nodes.end()) return;
+    if (debug) cerr << endl << "tying state: " << node_idx << endl;
     processed_nodes.insert(node_idx);
     Node &nd = nodes[node_idx];
 
@@ -452,72 +452,31 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
     if (debug) {
         cerr << "total targets: " << targets.size() << endl;
         for (auto tit = targets.begin(); tit !=targets.end(); ++tit) {
-            cerr << tit->first << " " << tit->second.size() << endl;
+            cerr << "hmm state: " << tit->first << " number of targets: " << tit->second.size() << endl;
+            cerr << "targets:";
             for (auto nit = tit->second.begin(); nit != tit->second.end(); ++nit)
-                cerr << *nit << " ";
+                cerr << " node: " << *nit << " ";
             cerr << endl;
         }
     }
 
-    set<int> arcs_to_remove;
+    bool arcs_removed = false;
     for (auto tit = targets.begin(); tit !=targets.end(); ++tit) {
         if (tit->second.size() == 1) continue;
-        int tied_node_idx = *(tit->second.begin());
 
-        set<int> arcs_from_tied_node;
-        for (auto tnait = nodes[tied_node_idx].arcs.begin(); tnait != nodes[tied_node_idx].arcs.end(); ++tnait)
-            arcs_from_tied_node.insert(tnait->target_node);
-
-        for (auto nit = tit->second.rbegin(); nit != tit->second.rend(); ++nit) {
+        auto nit = tit->second.begin();
+        int tied_node_idx = *nit;
+        nit++;
+        while (nit != tit->second.end()) {
             int curr_node_idx = *nit;
-            if (tied_node_idx == curr_node_idx) continue;
-            Node &temp_nd = nodes[curr_node_idx];
-            for (auto ait = temp_nd.arcs.begin(); ait != temp_nd.arcs.end(); ++ait)
-                if (arcs_from_tied_node.find(ait->target_node) == arcs_from_tied_node.end()) {
-                    nodes[tied_node_idx].arcs.push_back(*ait);
-                    arcs_from_tied_node.insert(ait->target_node);
-                }
-            for (auto rait = temp_nd.reverse_arcs.begin(); rait != temp_nd.reverse_arcs.end(); ++rait) {
-                if (rait->target_node == node_idx) continue;
-                Node &rnode = nodes[rait->target_node];
-                bool tied_node_found = false;
-                for (auto rbait = rnode.arcs.begin(); rbait != rnode.arcs.end(); ++rbait)
-                    if (rbait->target_node == tied_node_idx) tied_node_found = true;
-                for (auto rbait = rnode.arcs.begin(); rbait != rnode.arcs.end();) {
-                    if (rbait->target_node == curr_node_idx) {
-                        if (tied_node_found) rbait = rnode.arcs.erase(rbait);
-                        else {
-                            rbait->target_node = tied_node_idx;
-                            ++rbait;
-                        }
-                    }
-                    else ++rbait;
-                }
-
-            }
-            temp_nd.arcs.clear();
-            temp_nd.reverse_arcs.clear();
-            temp_nd.hmm_state = -1;
-            temp_nd.word_id = -1;
-            arcs_to_remove.insert(curr_node_idx);
+            tied_node_idx = merge_nodes(nodes, tied_node_idx, curr_node_idx);
+            nit++;
         }
-    }
-    if (stop_propagation && !arcs_to_remove.size()) return;
 
-    if (debug) cerr << "arcs to remove: " << arcs_to_remove.size() << endl;
-    if (debug) {
-        for (auto remit = arcs_to_remove.begin(); remit != arcs_to_remove.end(); ++remit)
-            cerr << "arc to remove with target node: " << *remit << endl;
+        if (debug) cerr << "\tnew tied node idx: " << tied_node_idx << endl;
     }
 
-    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end();) {
-        if (debug) cerr << "checking arc to: " << ait->target_node << endl;
-        if (arcs_to_remove.find(ait->target_node) != arcs_to_remove.end()) {
-            if (debug) cerr << "erasing arc to: " << ait->target_node << endl;
-            ait = nd.arcs.erase(ait);
-        }
-        else ++ait;
-    }
+    if (stop_propagation && !arcs_removed) return;
 
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
         tie_state_prefixes(nodes, processed_nodes, stop_propagation, ait->target_node);
@@ -1186,7 +1145,8 @@ DecoderGraph::nodes_identical(vector<Node> &nodes, int node_idx_1, int node_idx_
 int
 DecoderGraph::merge_nodes(vector<Node> &nodes, int node_idx_1, int node_idx_2)
 {
-    if (!nodes_identical(nodes, node_idx_1, node_idx_2)) throw string("Merging non-identical nodes.");
+    if (node_idx_1 == node_idx_2) throw string("Merging same nodes.");
+
     Node &merged_node = nodes[node_idx_1];
     Node &removed_node = nodes[node_idx_2];
     removed_node.hmm_state = -1;
@@ -1212,12 +1172,12 @@ DecoderGraph::merge_nodes(vector<Node> &nodes, int node_idx_1, int node_idx_2)
         merged_node.arcs.back().target_node = *ait;
         Node &target_node = nodes[*ait];
         for (auto rait = target_node.reverse_arcs.begin(); rait != target_node.reverse_arcs.end();) {
-            if (arcs.find(rait->target_node) != arcs.end())
+            if (rait->target_node == node_idx_1 || rait->target_node == node_idx_2)
                 rait = target_node.reverse_arcs.erase(rait);
             else ++rait;
         }
         target_node.reverse_arcs.resize(target_node.reverse_arcs.size()+1);
-        target_node.reverse_arcs.back().target_node = *ait;
+        target_node.reverse_arcs.back().target_node = node_idx_1;
     }
 
     for (auto ait=reverse_arcs.begin(); ait != reverse_arcs.end(); ++ait) {
@@ -1225,12 +1185,12 @@ DecoderGraph::merge_nodes(vector<Node> &nodes, int node_idx_1, int node_idx_2)
         merged_node.reverse_arcs.back().target_node = *ait;
         Node &target_node = nodes[*ait];
         for (auto rait = target_node.arcs.begin(); rait != target_node.arcs.end();) {
-            if (reverse_arcs.find(rait->target_node) != reverse_arcs.end())
+            if (rait->target_node == node_idx_1 || rait->target_node == node_idx_2)
                 rait = target_node.arcs.erase(rait);
             else ++rait;
         }
         target_node.arcs.resize(target_node.arcs.size()+1);
-        target_node.arcs.back().target_node = *ait;
+        target_node.arcs.back().target_node = node_idx_1;
     }
 
     return node_idx_1;

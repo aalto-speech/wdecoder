@@ -450,7 +450,6 @@ void graphtest :: GraphTest4(void)
     CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
     dg.tie_state_prefixes(nodes, false);
     CPPUNIT_ASSERT_EQUAL( 145, (int)dg.reachable_graph_nodes(nodes) );
-
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 }
 
