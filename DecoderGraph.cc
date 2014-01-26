@@ -453,10 +453,19 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
         int tied_node_idx = *(tit->second.begin());
         for (auto nit = tit->second.rbegin(); nit != tit->second.rend(); ++nit) {
             int curr_node_idx = *nit;
-            if (tied_node_idx == curr_node_idx) break;
+            if (tied_node_idx == curr_node_idx) continue;
             Node &temp_nd = nodes[curr_node_idx];
             for (auto ait = temp_nd.arcs.begin(); ait != temp_nd.arcs.end(); ++ait)
                 nodes[tied_node_idx].arcs.push_back(*ait);
+            for (auto rait = temp_nd.reverse_arcs.begin(); rait != temp_nd.reverse_arcs.end(); ++rait) {
+                Node &rnode = nodes[rait->target_node];
+                for (auto rbait = rnode.arcs.begin(); rbait != rnode.arcs.end(); ++rbait)
+                    if (rbait->target_node == curr_node_idx) rbait->target_node = tied_node_idx;
+            }
+            temp_nd.arcs.clear();
+            temp_nd.reverse_arcs.clear();
+            temp_nd.hmm_state = -1;
+            temp_nd.word_id = -1;
             arcs_to_remove.insert(curr_node_idx);
         }
     }
@@ -780,7 +789,7 @@ DecoderGraph::push_word_ids_right(vector<Node> &nodes,
         if (nodes[ait->target_node].reverse_arcs.size() > 1) temp_subword_id = -1;
         if (nodes[ait->target_node].word_id != -1) temp_subword_id = -1;
         if (processed_nodes.find(ait->target_node) == processed_nodes.end())
-            push_word_ids_left(nodes, move_count, processed_nodes, ait->target_node, node_idx, temp_subword_id);
+            push_word_ids_right(nodes, move_count, processed_nodes, ait->target_node, node_idx, temp_subword_id);
     }
 }
 
@@ -924,17 +933,9 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
         fanin_node.arcs.back().target_node = node_idx;
     }
 
-    ofstream outf("cw_2phone_before_fanout.dot");
-    print_dot_digraph(nodes, outf);
-    outf.close();
-
-    map<int, string> nodes_to_fanout;
     push_word_ids_left(nodes);
 
-    ofstream outf2("cw_2phone_before_fanout_2.dot");
-    print_dot_digraph(nodes, outf2);
-    outf2.close();
-
+    map<int, string> nodes_to_fanout;
     collect_cw_fanout_nodes(nodes, nodes_to_fanout);
 
     for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {

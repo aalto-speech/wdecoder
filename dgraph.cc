@@ -183,13 +183,6 @@ int main(int argc, char* argv[])
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
 
-        //cerr << "Tying suffixes.." << endl;
-        //dg.tie_subword_suffixes(swnodes);
-        //cerr << "node count: " << dg.reachable_word_graph_nodes(swnodes) << endl;
-
-        time ( &rawtime );
-        cerr << "time: " << ctime (&rawtime) << endl;
-
         cerr << "Expanding to phone graph.." << endl;
         vector<DecoderGraph::Node> nodes(2);
         dg.expand_subword_nodes(swnodes, nodes, false);
@@ -197,6 +190,23 @@ int main(int argc, char* argv[])
         if (assertions) {
             words_ok = assert_words(dg, nodes, triphonized_words, false);
             cerr << "assert_words: " << words_ok << endl;
+        }
+
+        time ( &rawtime );
+        cerr << "time: " << ctime (&rawtime) << endl;
+        cerr << "Creating crossword network.." << endl;
+        vector<DecoderGraph::Node> cw_nodes;
+        map<string, int> fanout, fanin;
+        dg.create_crossword_network(cw_nodes, fanout, fanin);
+        cerr << "Connecting crossword network.." << endl;
+        dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+        nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
+        nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        if (assertions) {
+            words_ok = assert_words(dg, nodes, triphonized_words, false);
+            cerr << "assert_words: " << words_ok << endl;
+            //bool word_pairs_ok = assert_word_pairs(dg, nodes, false) );
         }
 
         time ( &rawtime );

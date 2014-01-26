@@ -288,38 +288,43 @@ graphtest :: assert_transitions(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_subword_id_positions(DecoderGraph &dg,
-                                         std::vector<DecoderGraph::Node> &nodes,
-                                         bool debug,
-                                         int node_idx,
-                                         int nodes_wo_branching)
+graphtest :: assert_subword_ids_left(DecoderGraph &dg,
+                                     std::vector<DecoderGraph::Node> &nodes,
+                                     bool debug)
 {
-    if (node_idx == DecoderGraph::START_NODE) dg.set_reverse_arcs(nodes);
-    if (node_idx == DecoderGraph::END_NODE) return true;
+    dg.set_reverse_arcs_also_from_unreachable(nodes);
 
-    DecoderGraph::Node &node = nodes[node_idx];
-
-    if (node.word_id != -1) {
-        if (nodes_wo_branching > 0 && node.reverse_arcs.size() == 1) {
-            if (debug) cerr << endl << "problem in node " << node_idx
-                << ",subword: " << dg.m_units[node.word_id] << " nodes_wo_branching: " << nodes_wo_branching <<endl;
+    for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
+        if (nit->word_id == -1) continue;
+        if (nit->reverse_arcs.size() == 1) {
+            if (nit->reverse_arcs[0].target_node == DecoderGraph::START_NODE) continue;
+            if (nodes[nit->reverse_arcs[0].target_node].word_id != -1) continue;
+            if (nodes[nit->reverse_arcs[0].target_node].arcs.size() > 1) continue;
             return false;
         }
-        else nodes_wo_branching = 0;
-    }
-    else {
-        if (node.arcs.size() == 1) {
-            if (node.reverse_arcs.size() > 1) nodes_wo_branching = 1;
-            else nodes_wo_branching++;
-        }
-        else nodes_wo_branching = 0;
     }
 
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (ait->target_node == node_idx) throw string("Call before setting self-transitions.");
-        bool retval = assert_subword_id_positions(dg, nodes, debug, ait->target_node, nodes_wo_branching);
-        if (!retval) return false;
+    return true;
+}
+
+
+bool
+graphtest :: assert_subword_ids_right(DecoderGraph &dg,
+                                      std::vector<DecoderGraph::Node> &nodes,
+                                      bool debug)
+{
+    dg.set_reverse_arcs_also_from_unreachable(nodes);
+
+    for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
+        if (nit->word_id == -1) continue;
+        if (nit->arcs.size() == 1) {
+            if (nit->arcs[0].target_node == DecoderGraph::END_NODE) continue;
+            if (nodes[nit->arcs[0].target_node].word_id != -1) continue;
+            if (nodes[nit->arcs[0].target_node].reverse_arcs.size() > 1) continue;
+            return false;
+        }
     }
+
     return true;
 }
 
@@ -466,7 +471,7 @@ void graphtest :: GraphTest7(void)
     CPPUNIT_ASSERT_EQUAL( 135, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
-    CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes, false) );
 }
 
 
@@ -496,7 +501,7 @@ void graphtest :: GraphTest8(void)
 
     dg.push_word_ids_left(nodes);
     CPPUNIT_ASSERT_EQUAL( 4, dg.num_subword_states(nodes) );
-    CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes, true) );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 }
@@ -530,7 +535,7 @@ void graphtest :: GraphTest9(void)
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
 
-    CPPUNIT_ASSERT( assert_subword_id_positions(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 }
 
@@ -700,7 +705,8 @@ void graphtest :: GraphTest15(void)
 void graphtest :: GraphTest16(void)
 {
     DecoderGraph dg;
-    segname = "data/segs2.txt";
+    //segname = "data/segs2.txt";
+    segname = "data/cw_simpler.segs";
     read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> swnodes;
@@ -708,7 +714,7 @@ void graphtest :: GraphTest16(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     dg.prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 62, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 34, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 
     vector<DecoderGraph::Node> cw_nodes;
@@ -719,15 +725,19 @@ void graphtest :: GraphTest16(void)
     nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
     nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
 
-    CPPUNIT_ASSERT_EQUAL( 176, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 62, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 
-    dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.push_word_ids_right(nodes);
+    CPPUNIT_ASSERT( assert_subword_ids_right(dg, nodes));
+    dg.tie_state_prefixes(nodes, true, DecoderGraph::START_NODE);
     dg.prune_unreachable_nodes(nodes);
+    dg.push_word_ids_left(nodes);
+    CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes));
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
     dg.prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 176, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 62, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }

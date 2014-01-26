@@ -69,11 +69,12 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         static bool assert_word_pairs(DecoderGraph &dg,
                                       std::vector<DecoderGraph::Node> &nodes,
                                       bool debug);
-        static bool assert_subword_id_positions(DecoderGraph &dg,
-                                                std::vector<DecoderGraph::Node> &nodes,
-                                                bool debug=false,
-                                                int node_idx=DecoderGraph::START_NODE,
-                                                int nodes_wo_branching=0);
+        static bool assert_subword_ids_left(DecoderGraph &dg,
+                                            std::vector<DecoderGraph::Node> &nodes,
+                                            bool debug=false);
+        static bool assert_subword_ids_right(DecoderGraph &dg,
+                                             std::vector<DecoderGraph::Node> &nodes,
+                                             bool debug=false);
 
     protected:
         void GraphTest1(void);
