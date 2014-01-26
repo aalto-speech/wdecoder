@@ -1142,3 +1142,29 @@ void DecoderGraph::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
     fstr << "}" << endl;
 }
 
+
+bool
+DecoderGraph::nodes_identical(vector<Node> &nodes, int node_idx_1, int node_idx_2)
+{
+    Node &nd1 = nodes[node_idx_1];
+    Node &nd2 = nodes[node_idx_2];
+    if (nd1.word_id != nd2.word_id) return false;
+    if (nd1.hmm_state != nd2.hmm_state) return false;
+
+    set<int> node1_arcs; set<int> node2_arcs;
+    for (auto ait = nd1.arcs.begin(); ait != nd1.arcs.end(); ++ait)
+        node1_arcs.insert(ait->target_node);
+    for (auto ait = nd2.arcs.begin(); ait != nd2.arcs.end(); ++ait)
+        node2_arcs.insert(ait->target_node);
+    if (node1_arcs != node2_arcs) return false;
+
+    set<int> node1_reverse_arcs; set<int> node2_reverse_arcs;
+    for (auto ait = nd1.reverse_arcs.begin(); ait != nd1.reverse_arcs.end(); ++ait)
+        node1_reverse_arcs.insert(ait->target_node);
+    for (auto ait = nd2.reverse_arcs.begin(); ait != nd2.reverse_arcs.end(); ++ait)
+        node2_reverse_arcs.insert(ait->target_node);
+    if (node1_reverse_arcs != node2_reverse_arcs) return false;
+
+    return true;
+}
+

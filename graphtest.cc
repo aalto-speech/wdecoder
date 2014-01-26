@@ -344,6 +344,35 @@ graphtest :: assert_no_double_arcs(vector<DecoderGraph::Node> &nodes)
 }
 
 
+bool
+graphtest :: assert_left_state_tying(DecoderGraph &dg,
+                                     vector<DecoderGraph::Node> &nodes)
+{
+    dg.set_reverse_arcs_also_from_unreachable(nodes);
+
+    for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
+        set<int> targets;
+        for (auto ait = nit->arcs.begin(); ait != nit->arcs.end(); ++ait) {
+            if (targets.find(ait->target_node) != targets.end()) return false;
+            targets.insert(ait->target_node);
+        }
+    }
+
+    return true;
+}
+
+
+
+bool
+graphtest :: assert_right_state_tying(DecoderGraph &dg,
+                                      vector<DecoderGraph::Node> &nodes)
+{
+    dg.set_reverse_arcs_also_from_unreachable(nodes);
+
+
+}
+
+
 // Verify that models are correctly loaded
 // Test constructing the initial word graph on subword level
 void graphtest :: GraphTest1(void)
@@ -760,6 +789,10 @@ void graphtest :: GraphTest16(void)
     dg.prune_unreachable_nodes(nodes);
 
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+
+    ofstream origoutf("cw_simple.dot");
+    dg.print_dot_digraph(nodes, origoutf);
+    origoutf.close();
 
     CPPUNIT_ASSERT_EQUAL( 102, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
