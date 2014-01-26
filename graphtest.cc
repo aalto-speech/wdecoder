@@ -798,6 +798,10 @@ void graphtest :: GraphTest16(void)
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
     dg.prune_unreachable_nodes(nodes);
 
+    ofstream origoutf("cw_simple.dot");
+    dg.print_dot_digraph(nodes, origoutf);
+    origoutf.close();
+
     CPPUNIT_ASSERT( assert_suffix_state_tying(dg, nodes) );
 
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );

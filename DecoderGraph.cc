@@ -426,6 +426,7 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
                                  bool stop_propagation)
 {
     set<int> processed_nodes;
+    set_reverse_arcs_also_from_unreachable(nodes);
     tie_state_prefixes(nodes, processed_nodes, stop_propagation, START_NODE);
 }
 
@@ -437,7 +438,6 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
                                  int node_idx)
 {
     if (debug) cerr << endl << "tying state: " << node_idx << endl;
-    if (node_idx == START_NODE) set_reverse_arcs(nodes);
     if (node_idx == END_NODE) return;
     if (processed_nodes.find(node_idx) != processed_nodes.end()) return;
     processed_nodes.insert(node_idx);
@@ -1171,6 +1171,8 @@ DecoderGraph::nodes_identical(vector<Node> &nodes, int node_idx_1, int node_idx_
         Node &target_node_1 = nodes[ait->target_node];
         node1_reverse_next_states.insert(make_pair(target_node_1.word_id, target_node_1.hmm_state));
     }
+    // FIXME: in reverse case, same state or exactly same node?
+    // how about prefix vs. suffix
     for (auto ait = nd2.reverse_arcs.begin(); ait != nd2.reverse_arcs.end(); ++ait) {
         Node &target_node_2 = nodes[ait->target_node];
         node2_reverse_next_states.insert(make_pair(target_node_2.word_id, target_node_2.hmm_state));
@@ -1178,5 +1180,59 @@ DecoderGraph::nodes_identical(vector<Node> &nodes, int node_idx_1, int node_idx_
     if (node1_reverse_next_states != node2_reverse_next_states) return false;
 
     return true;
+}
+
+
+int
+DecoderGraph::merge_nodes(vector<Node> &nodes, int node_idx_1, int node_idx_2)
+{
+    if (!nodes_identical(nodes, node_idx_1, node_idx_2)) throw string("Merging non-identical nodes.");
+    Node &merged_node = nodes[node_idx_1];
+    Node &removed_node = nodes[node_idx_2];
+    removed_node.hmm_state = -1;
+    removed_node.word_id = -1;
+
+    set<int> arcs;
+    for (auto ait = merged_node.arcs.begin(); ait != merged_node.arcs.end(); ++ait)
+        arcs.insert(ait->target_node);
+    for (auto ait = removed_node.arcs.begin(); ait != removed_node.arcs.end(); ++ait)
+        arcs.insert(ait->target_node);
+
+    set<int> reverse_arcs;
+    for (auto ait = merged_node.reverse_arcs.begin(); ait != merged_node.reverse_arcs.end(); ++ait)
+        reverse_arcs.insert(ait->target_node);
+    for (auto ait = removed_node.reverse_arcs.begin(); ait != removed_node.reverse_arcs.end(); ++ait)
+        reverse_arcs.insert(ait->target_node);
+
+    merged_node.arcs.clear(); merged_node.reverse_arcs.clear();
+    removed_node.arcs.clear(); removed_node.reverse_arcs.clear();
+
+    for (auto ait=arcs.begin(); ait != arcs.end(); ++ait) {
+        merged_node.arcs.resize(merged_node.arcs.size()+1);
+        merged_node.arcs.back().target_node = *ait;
+        Node &target_node = nodes[*ait];
+        for (auto rait = target_node.reverse_arcs.begin(); rait != target_node.reverse_arcs.end();) {
+            if (arcs.find(rait->target_node) != arcs.end())
+                rait = target_node.reverse_arcs.erase(rait);
+            else ++rait;
+        }
+        target_node.reverse_arcs.resize(target_node.reverse_arcs.size()+1);
+        target_node.reverse_arcs.back().target_node = *ait;
+    }
+
+    for (auto ait=reverse_arcs.begin(); ait != reverse_arcs.end(); ++ait) {
+        merged_node.reverse_arcs.resize(merged_node.reverse_arcs.size()+1);
+        merged_node.reverse_arcs.back().target_node = *ait;
+        Node &target_node = nodes[*ait];
+        for (auto rait = target_node.arcs.begin(); rait != target_node.arcs.end();) {
+            if (reverse_arcs.find(rait->target_node) != reverse_arcs.end())
+                rait = target_node.arcs.erase(rait);
+            else ++rait;
+        }
+        target_node.arcs.resize(target_node.arcs.size()+1);
+        target_node.arcs.back().target_node = *ait;
+    }
+
+    return node_idx_1;
 }
 
