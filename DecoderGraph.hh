@@ -93,6 +93,13 @@ public:
                             int node_idx=END_NODE,
                             int prev_node_idx=-1,
                             int subword_id=-1);
+    void push_word_ids_right(std::vector<Node> &nodes);
+    void push_word_ids_right(std::vector<Node> &nodes,
+                             int &move_count,
+                             std::set<int> &processed_nodes,
+                             int node_idx=START_NODE,
+                             int prev_node_idx=-1,
+                             int subword_id=-1);
     int num_hmm_states(std::vector<Node> &nodes);
     int num_subword_states(std::vector<Node> &nodes);
     void create_crossword_network(std::vector<Node> &nodes,

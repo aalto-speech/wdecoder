@@ -427,6 +427,7 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
                                  int node_idx)
 {
     if (debug) cerr << endl << "tying state: " << node_idx << endl;
+    if (node_idx == START_NODE) set_reverse_arcs(nodes);
     if (node_idx == END_NODE) return;
     Node &nd = nodes[node_idx];
 
@@ -699,13 +700,12 @@ DecoderGraph::push_word_ids_left(vector<Node> &nodes,
                                  int subword_id)
 {
     if (node_idx == START_NODE) return;
-    if (node_idx == END_NODE) set_reverse_arcs_also_from_unreachable(nodes);
     processed_nodes.insert(node_idx);
 
     Node &node = nodes[node_idx];
 
     if (debug && subword_id != -1) {
-        cerr << "push, node_idx: " << node_idx << " prev_node_idx: " << prev_node_idx;
+        cerr << "push left, node_idx: " << node_idx << " prev_node_idx: " << prev_node_idx;
         cerr << " subword to move: " << m_units[subword_id] << endl;
         cerr << endl;
     }
@@ -734,11 +734,65 @@ DecoderGraph::push_word_ids_left(vector<Node> &nodes,
 void
 DecoderGraph::push_word_ids_left(vector<Node> &nodes)
 {
-    set_reverse_arcs(nodes);
+    set_reverse_arcs_also_from_unreachable(nodes);
     int move_count = 0;
     while (true) {
         set<int> processed_nodes;
         push_word_ids_left(nodes, move_count, processed_nodes);
+        if (move_count == 0) break;
+        move_count = 0;
+    }
+}
+
+
+void
+DecoderGraph::push_word_ids_right(vector<Node> &nodes,
+                                  int &move_count,
+                                  set<int> &processed_nodes,
+                                  int node_idx,
+                                  int prev_node_idx,
+                                  int subword_id)
+{
+    if (node_idx == END_NODE) return;
+    processed_nodes.insert(node_idx);
+
+    Node &node = nodes[node_idx];
+
+    if (debug && subword_id != -1) {
+        cerr << "push right, node_idx: " << node_idx << " prev_node_idx: " << prev_node_idx;
+        cerr << " subword to move: " << m_units[subword_id] << endl;
+        cerr << endl;
+    }
+
+    if (subword_id != -1) {
+        Node &prev_node = nodes[prev_node_idx];
+        swap(node.word_id, prev_node.word_id);
+        swap(node.hmm_state, prev_node.hmm_state);
+        move_count++;
+    }
+
+    if (node.arcs.size() == 1) subword_id = node.word_id;
+    else subword_id = -1;
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        if (ait->target_node == node_idx) throw string("Call push before setting self-transitions.");
+        int temp_subword_id = subword_id;
+        if (nodes[ait->target_node].reverse_arcs.size() > 1) temp_subword_id = -1;
+        if (nodes[ait->target_node].word_id != -1) temp_subword_id = -1;
+        if (processed_nodes.find(ait->target_node) == processed_nodes.end())
+            push_word_ids_left(nodes, move_count, processed_nodes, ait->target_node, node_idx, temp_subword_id);
+    }
+}
+
+
+void
+DecoderGraph::push_word_ids_right(vector<Node> &nodes)
+{
+    set_reverse_arcs_also_from_unreachable(nodes);
+    int move_count = 0;
+    while (true) {
+        set<int> processed_nodes;
+        push_word_ids_right(nodes, move_count, processed_nodes);
         if (move_count == 0) break;
         move_count = 0;
     }
