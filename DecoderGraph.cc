@@ -480,8 +480,20 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
             for (auto rait = temp_nd.reverse_arcs.begin(); rait != temp_nd.reverse_arcs.end(); ++rait) {
                 if (rait->target_node == node_idx) continue;
                 Node &rnode = nodes[rait->target_node];
+                bool tied_node_found = false;
                 for (auto rbait = rnode.arcs.begin(); rbait != rnode.arcs.end(); ++rbait)
-                    if (rbait->target_node == curr_node_idx) rbait->target_node = tied_node_idx;
+                    if (rbait->target_node == tied_node_idx) tied_node_found = true;
+                for (auto rbait = rnode.arcs.begin(); rbait != rnode.arcs.end();) {
+                    if (rbait->target_node == curr_node_idx) {
+                        if (tied_node_found) rbait = rnode.arcs.erase(rbait);
+                        else {
+                            rbait->target_node = tied_node_idx;
+                            ++rbait;
+                        }
+                    }
+                    else ++rbait;
+                }
+
             }
             temp_nd.arcs.clear();
             temp_nd.reverse_arcs.clear();

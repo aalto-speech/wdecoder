@@ -752,12 +752,16 @@ void graphtest :: GraphTest16(void)
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 102, (int)dg.reachable_graph_nodes(nodes) );
 
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+
     dg.push_word_ids_left(nodes);
     CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes));
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
     dg.prune_unreachable_nodes(nodes);
 
-    //CPPUNIT_ASSERT_EQUAL( 102, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+
+    CPPUNIT_ASSERT_EQUAL( 102, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
