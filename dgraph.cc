@@ -2,13 +2,13 @@
 #include <string>
 #include <ctime>
 #include <sstream>
+#include <cstdlib>
+#include <iterator>
 
 #include "DecoderGraph.hh"
 #include "conf.hh"
 
 using namespace std;
-
-
 
 
 void triphonize(string word,
@@ -133,6 +133,78 @@ assert_words(DecoderGraph &dg,
     return true;
 }
 
+
+bool
+assert_word_pair_crossword(DecoderGraph &dg,
+                           vector<DecoderGraph::Node> &nodes,
+                           string word1,
+                           string word2,
+                           bool debug)
+{
+    if (dg.m_lexicon.find(word1) == dg.m_word_segs.end()) return false;
+    if (dg.m_lexicon.find(word2) == dg.m_word_segs.end()) return false;
+
+    string phonestring;
+    vector<string> triphones;
+    vector<string> subwords;
+
+    for (auto swit = dg.m_word_segs[word1].begin(); swit != dg.m_word_segs[word1].end(); ++swit) {
+        subwords.push_back(*swit);
+        for (auto trit = dg.m_lexicon[*swit].begin(); trit != dg.m_lexicon[*swit].end(); ++trit)
+            phonestring += string(1,(*trit)[2]);
+    }
+
+    for (auto swit = dg.m_word_segs[word2].begin(); swit != dg.m_word_segs[word2].end(); ++swit) {
+        subwords.push_back(*swit);
+        for (auto trit = dg.m_lexicon[*swit].begin(); trit != dg.m_lexicon[*swit].end(); ++trit)
+            phonestring += string(1,(*trit)[2]);
+    }
+
+    triphonize(phonestring, triphones);
+
+    if (debug) {
+        cerr << endl;
+        for (auto trit = triphones.begin(); trit !=triphones.end(); ++trit)
+            cerr << " " << *trit;
+        cerr << endl;
+        for (auto swit = subwords.begin(); swit !=subwords.end(); ++swit)
+            cerr << " " << *swit;
+        cerr << endl;
+    }
+
+    return assert_path(dg, nodes, triphones, subwords, debug);
+}
+
+
+bool
+assert_word_pairs(DecoderGraph &dg,
+                  std::vector<DecoderGraph::Node> &nodes,
+                  int num_pairs=10000,
+                  bool debug=false)
+{
+    int wp_count = 0;
+    while (wp_count < num_pairs) {
+        int rand1 = rand() % dg.m_word_segs.size();
+        int rand2 = rand() % dg.m_word_segs.size();
+        auto wit1 = dg.m_word_segs.begin();
+        advance(wit1, rand1);
+        auto wit2 = dg.m_word_segs.begin();
+        advance(wit2, rand1);
+
+        string first_word = wit1->first;
+        string second_word = wit2->first;
+
+        bool result = assert_word_pair_crossword(dg, nodes, first_word, second_word, debug);
+        if (!result) {
+            cerr << endl << "word pair: " << first_word << " - " << second_word << " not found" << endl;
+            return false;
+        }
+
+        wp_count++;
+    }
+
+    return true;
+}
 
 
 int main(int argc, char* argv[])
@@ -265,6 +337,9 @@ int main(int argc, char* argv[])
             words_ok = assert_words(dg, nodes, triphonized_words, false);
             cerr << "assert_words: " << words_ok << endl;
         }
+
+        bool pairs_ok = assert_word_pairs(dg, nodes, 100000, false);
+        cerr << "assert word pairs: " << pairs_ok << endl;
 
         //dg.print_graph(nodes);
 
