@@ -75,6 +75,7 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         static bool assert_subword_ids_right(DecoderGraph &dg,
                                              std::vector<DecoderGraph::Node> &nodes,
                                              bool debug=false);
+        static bool assert_no_double_arcs(std::vector<DecoderGraph::Node> &nodes);
 
     protected:
         void GraphTest1(void);
