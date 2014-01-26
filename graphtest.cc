@@ -351,16 +351,16 @@ graphtest :: assert_left_state_tying(DecoderGraph &dg,
     dg.set_reverse_arcs_also_from_unreachable(nodes);
 
     for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
-        set<int> targets;
-        for (auto ait = nit->arcs.begin(); ait != nit->arcs.end(); ++ait) {
-            if (targets.find(ait->target_node) != targets.end()) return false;
-            targets.insert(ait->target_node);
+        for (auto ait1 = nit->arcs.begin(); ait1 != nit->arcs.end(); ++ait1) {
+            for (auto ait2 = nit->arcs.begin(); ait2 != nit->arcs.end(); ++ait2) {
+                if (ait1 == ait2) continue;
+                if (dg.nodes_identical(nodes, ait1->target_node, ait2->target_node)) return false;
+            }
         }
     }
 
     return true;
 }
-
 
 
 bool
@@ -369,7 +369,16 @@ graphtest :: assert_right_state_tying(DecoderGraph &dg,
 {
     dg.set_reverse_arcs_also_from_unreachable(nodes);
 
+    for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
+        for (auto ait1 = nit->reverse_arcs.begin(); ait1 != nit->reverse_arcs.end(); ++ait1) {
+            for (auto ait2 = nit->reverse_arcs.begin(); ait2 != nit->reverse_arcs.end(); ++ait2) {
+                if (ait1 == ait2) continue;
+                if (dg.nodes_identical(nodes, ait1->target_node, ait2->target_node)) return false;
+            }
+        }
+    }
 
+    return true;
 }
 
 
@@ -794,7 +803,7 @@ void graphtest :: GraphTest16(void)
     dg.print_dot_digraph(nodes, origoutf);
     origoutf.close();
 
-    CPPUNIT_ASSERT_EQUAL( 102, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( (int)dg.reachable_graph_nodes(nodes) < 102 );
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
