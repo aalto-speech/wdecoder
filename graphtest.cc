@@ -459,11 +459,13 @@ void graphtest :: GraphTest7(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, 0);
     CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
+
     dg.tie_state_prefixes(nodes, false, DecoderGraph::START_NODE);
+    dg.prune_unreachable_nodes(nodes);
     dg.tie_state_suffixes(nodes, DecoderGraph::END_NODE);
+    dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
 
-    dg.prune_unreachable_nodes(nodes);
     dg.push_word_ids_left(nodes);
     dg.prune_unreachable_nodes(nodes);
 

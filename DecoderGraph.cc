@@ -451,13 +451,22 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
     for (auto tit = targets.begin(); tit !=targets.end(); ++tit) {
         if (tit->second.size() == 1) continue;
         int tied_node_idx = *(tit->second.begin());
+
+        set<int> arcs_from_tied_node;
+        for (auto tnait = nodes[tied_node_idx].arcs.begin(); tnait != nodes[tied_node_idx].arcs.end(); ++tnait)
+            arcs_from_tied_node.insert(tnait->target_node);
+
         for (auto nit = tit->second.rbegin(); nit != tit->second.rend(); ++nit) {
             int curr_node_idx = *nit;
             if (tied_node_idx == curr_node_idx) continue;
             Node &temp_nd = nodes[curr_node_idx];
             for (auto ait = temp_nd.arcs.begin(); ait != temp_nd.arcs.end(); ++ait)
-                nodes[tied_node_idx].arcs.push_back(*ait);
+                if (arcs_from_tied_node.find(ait->target_node) == arcs_from_tied_node.end()) {
+                    nodes[tied_node_idx].arcs.push_back(*ait);
+                    arcs_from_tied_node.insert(ait->target_node);
+                }
             for (auto rait = temp_nd.reverse_arcs.begin(); rait != temp_nd.reverse_arcs.end(); ++rait) {
+                if (rait->target_node == node_idx) continue;
                 Node &rnode = nodes[rait->target_node];
                 for (auto rbait = rnode.arcs.begin(); rbait != rnode.arcs.end(); ++rbait)
                     if (rbait->target_node == curr_node_idx) rbait->target_node = tied_node_idx;
@@ -472,7 +481,13 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
     if (stop_propagation && !arcs_to_remove.size()) return;
 
     if (debug) cerr << "arcs to remove: " << arcs_to_remove.size() << endl;
+    if (debug) {
+        for (auto remit = arcs_to_remove.begin(); remit != arcs_to_remove.end(); ++remit)
+            cerr << "arc to remove with target node: " << *remit << endl;
+    }
+
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end();) {
+        if (debug) cerr << "checking arc to: " << ait->target_node << endl;
         if (arcs_to_remove.find(ait->target_node) != arcs_to_remove.end()) {
             if (debug) cerr << "erasing arc to: " << ait->target_node << endl;
             ait = nd.arcs.erase(ait);
