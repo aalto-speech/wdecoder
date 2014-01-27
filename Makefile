@@ -6,16 +6,16 @@ cxxflags = -O3 -march=native -std=gnu++0x -Wall -Wno-sign-compare
 
 ##################################################
 
-progs = dgraph dummy
+progs = dgraph decode
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
-srcs = conf.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc
+srcs = conf.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc Decoder.cc
 objs = $(srcs:.cc=.o)
 
 test_progs = runtests
 test_progs_srcs = $(test_progs:=.cc)
 test_progs_objs = $(test_progs:=.o)
-test_srcs = graphtest.cc
+test_srcs = graphtest.cc decodertest.cc
 test_objs = $(test_srcs:.cc=.o)
 
 ##################################################

@@ -1196,7 +1196,7 @@ DecoderGraph::write_graph(vector<Node> &nodes, string fname)
     std::ofstream outf(fname);
     outf << nodes.size() << endl;;
     for (int i=0; i<nodes.size(); i++)
-        outf << "n " << i << " " << nodes[i].hmm_state << " " << nodes[i].word_id << endl;
+        outf << "n " << i << " " << nodes[i].hmm_state << " " << nodes[i].word_id << " " << nodes[i].arcs.size() << endl;
     for (int i=0; i<nodes.size(); i++) {
         Node &node = nodes[i];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
