@@ -809,6 +809,58 @@ void graphtest :: GraphTest16(void)
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
 
+
+// Test cross-word network creation and connecting
+// Tie prefixes and suffixes after connecting cw network
+// Some problem cases, 4 phone words segmented to 2 phones + 2 phones
+void graphtest :: GraphTest17(void)
+{
+    DecoderGraph dg;
+    segname = "data/cw_problem.segs";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    vector<DecoderGraph::Node> nodes(2);
+    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT_EQUAL( 30, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    dg.create_crossword_network(cw_nodes, fanout, fanin);
+    dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
+    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+
+    CPPUNIT_ASSERT_EQUAL( 45, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+
+    /*
+    dg.push_word_ids_right(nodes);
+    CPPUNIT_ASSERT( assert_subword_ids_right(dg, nodes));
+
+    dg.tie_state_prefixes(nodes, false);
+    dg.prune_unreachable_nodes(nodes);
+    CPPUNIT_ASSERT_EQUAL( 102, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_prefix_state_tying(dg, nodes) );
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+
+    dg.push_word_ids_left(nodes);
+    CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes));
+    dg.tie_state_suffixes(nodes);
+    dg.prune_unreachable_nodes(nodes);
+
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 93, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    */
+}
+
+
 // ofstream origoutf("cw_simple.dot");
 // dg.print_dot_digraph(nodes, origoutf);
 // origoutf.close();

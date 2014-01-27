@@ -189,7 +189,7 @@ assert_word_pairs(DecoderGraph &dg,
         auto wit1 = dg.m_word_segs.begin();
         advance(wit1, rand1);
         auto wit2 = dg.m_word_segs.begin();
-        advance(wit2, rand1);
+        advance(wit2, rand2);
 
         string first_word = wit1->first;
         string second_word = wit2->first;
