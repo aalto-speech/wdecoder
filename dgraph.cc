@@ -284,6 +284,7 @@ int main(int argc, char* argv[])
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
         cerr << "Tying state chain prefixes.." << endl;
+        dg.push_word_ids_right(nodes);
         dg.tie_state_prefixes(nodes, false);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
         if (assertions) {
@@ -304,6 +305,7 @@ int main(int argc, char* argv[])
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
         cerr << "Tying state chain suffixes.." << endl;
+        dg.push_word_ids_left(nodes);
         dg.tie_state_suffixes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
         if (assertions) {
@@ -341,10 +343,10 @@ int main(int argc, char* argv[])
         dg.add_hmm_self_transitions(nodes);
         dg.set_hmm_transition_probs(nodes);
 
-        bool pairs_ok = assert_word_pairs(dg, nodes, 100000, false);
+        bool pairs_ok = assert_word_pairs(dg, nodes, 10000, false);
         cerr << "assert word pairs: " << pairs_ok << endl;
 
-        //dg.print_graph(nodes);
+        dg.write_graph(nodes, segfname + ".graph");
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
