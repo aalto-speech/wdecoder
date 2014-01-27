@@ -981,8 +981,8 @@ DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
         }
     }
 
-    if (hmm_state_count == 4
-        || (hmm_state_count == 3 && node.word_id != -1)) node_to_connect = node_idx;
+    if (node_to_connect == -1 &&
+        (hmm_state_count == 4 || (hmm_state_count == 3 && node.word_id != -1))) node_to_connect = node_idx;
 
     if (phones.size() == 2 && hmm_state_count > 2) {
         string triphone = string(1,phones[1]) + string(1,'-') + string(1,phones[0]) + string("+_");
@@ -1027,12 +1027,10 @@ DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
         }
     }
 
-    if (hmm_state_count == 4) {
-        if (debug) cerr << endl << "setting node_to_connect: " << node_idx << endl;
-        node_to_connect = node_idx;
-    }
+    if (node_to_connect == -1 &&
+        (hmm_state_count == 4 || (hmm_state_count == 3 && node.word_id != -1))) node_to_connect = node_idx;
 
-    if (phones.size() == 2 && hmm_state_count > 3) {
+    if (phones.size() == 2 && hmm_state_count > 2) {
         string triphone = string("_-") + string(1,phones[0]) + string(1,'+') + string(1,phones[1]);
         if (nodes_from_fanin.find(node_to_connect) == nodes_from_fanin.end()) {
             nodes_from_fanin[node_to_connect] = triphone;

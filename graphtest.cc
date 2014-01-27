@@ -748,7 +748,6 @@ void graphtest :: GraphTest15(void)
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
     dg.create_crossword_network(cw_nodes, fanout, fanin);
-
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
     nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
     nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
@@ -837,27 +836,6 @@ void graphtest :: GraphTest17(void)
     CPPUNIT_ASSERT_EQUAL( 45, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
-
-    /*
-    dg.push_word_ids_right(nodes);
-    CPPUNIT_ASSERT( assert_subword_ids_right(dg, nodes));
-
-    dg.tie_state_prefixes(nodes, false);
-    dg.prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 102, (int)dg.reachable_graph_nodes(nodes) );
-    CPPUNIT_ASSERT( assert_prefix_state_tying(dg, nodes) );
-    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
-
-    dg.push_word_ids_left(nodes);
-    CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes));
-    dg.tie_state_suffixes(nodes);
-    dg.prune_unreachable_nodes(nodes);
-
-    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 93, (int)dg.reachable_graph_nodes(nodes) );
-    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
-    */
 }
 
 
