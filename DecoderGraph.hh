@@ -140,6 +140,7 @@ public:
     void clear_reverse_arcs(std::vector<Node> &nodes);
     bool nodes_identical(std::vector<Node> &nodes, int node_idx_1, int node_idx_2);
     int merge_nodes(std::vector<Node> &nodes, int node_idx_1, int node_idx_2);
+    void connect_end_to_start_node(std::vector<Node> &nodes);
 
     // Text units
     std::vector<std::string> m_units;

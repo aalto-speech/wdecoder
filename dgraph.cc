@@ -75,6 +75,7 @@ assert_path(DecoderGraph &dg,
     }
 
     for (auto ait = curr_node.arcs.begin(); ait != curr_node.arcs.end(); ++ait) {
+        if (ait->target_node == node_idx) continue;
         bool retval = assert_path(dg, nodes, states, subwords, ait->target_node);
         if (retval) return true;
     }
@@ -272,8 +273,7 @@ int main(int argc, char* argv[])
         dg.create_crossword_network(cw_nodes, fanout, fanin);
         cerr << "Connecting crossword network.." << endl;
         dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-        nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
-        nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+        dg.connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
         if (assertions) {
             words_ok = assert_words(dg, nodes, triphonized_words, false);
@@ -337,6 +337,9 @@ int main(int argc, char* argv[])
             words_ok = assert_words(dg, nodes, triphonized_words, false);
             cerr << "assert_words: " << words_ok << endl;
         }
+
+        dg.add_hmm_self_transitions(nodes);
+        dg.set_hmm_transition_probs(nodes);
 
         bool pairs_ok = assert_word_pairs(dg, nodes, 100000, false);
         cerr << "assert word pairs: " << pairs_ok << endl;

@@ -662,8 +662,7 @@ void graphtest :: GraphTest12(void)
     dg.create_crossword_network(cw_nodes, fanout, fanin);
 
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
-    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+    dg.connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 62, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -691,8 +690,7 @@ void graphtest :: GraphTest13(void)
     dg.create_crossword_network(cw_nodes, fanout, fanin);
 
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
-    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+    dg.connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -720,8 +718,7 @@ void graphtest :: GraphTest14(void)
     dg.create_crossword_network(cw_nodes, fanout, fanin);
 
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
-    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+    dg.connect_end_to_start_node(nodes);
 
     //CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -749,8 +746,7 @@ void graphtest :: GraphTest15(void)
     map<string, int> fanout, fanin;
     dg.create_crossword_network(cw_nodes, fanout, fanin);
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
-    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+    dg.connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 176, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -780,8 +776,7 @@ void graphtest :: GraphTest16(void)
     dg.create_crossword_network(cw_nodes, fanout, fanin);
 
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
-    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+    dg.connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -830,8 +825,7 @@ void graphtest :: GraphTest17(void)
     map<string, int> fanout, fanin;
     dg.create_crossword_network(cw_nodes, fanout, fanin);
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-    nodes[DecoderGraph::END_NODE].arcs.resize(nodes[1].arcs.size()+1);
-    nodes[DecoderGraph::END_NODE].arcs.back().target_node = DecoderGraph::START_NODE;
+    dg.connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 45, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );

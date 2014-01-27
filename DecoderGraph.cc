@@ -1181,3 +1181,11 @@ DecoderGraph::merge_nodes(vector<Node> &nodes, int node_idx_1, int node_idx_2)
     return node_idx_1;
 }
 
+
+void
+DecoderGraph::connect_end_to_start_node(vector<Node> &nodes)
+{
+    nodes[END_NODE].arcs.resize(nodes[1].arcs.size()+1);
+    nodes[END_NODE].arcs.back().target_node = START_NODE;
+}
+
