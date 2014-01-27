@@ -80,7 +80,7 @@ Decoder::read_dgraph(string fname)
     ifstream ginf(fname);
     if (!ginf) throw string("Problem opening decoder graph.");
 
-    int node_count, arc_count;
+    int node_idx, node_count, arc_count;
     string line;
 
     getline(ginf, line);
@@ -96,7 +96,7 @@ Decoder::read_dgraph(string fname)
         nss >> ltype;
         if (ltype != "n") throw string("Problem reading graph.");
         Node &node = m_nodes[i];
-        nss >> node.hmm_state >> node.word_id >> arc_count;
+        nss >> node_idx >> node.hmm_state >> node.word_id >> arc_count;
         node.arcs.resize(arc_count);
     }
 
