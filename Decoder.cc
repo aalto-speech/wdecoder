@@ -7,8 +7,10 @@
 
 #include "NowayHmmReader.hh"
 #include "Decoder.hh"
+#include "io.hh"
 
 using namespace std;
+using namespace fsalm;
 
 
 void
@@ -71,6 +73,15 @@ Decoder::read_noway_lexicon(string lexfname)
 
         linei++;
     }
+}
+
+
+void
+Decoder::read_lm(string lmfname)
+{
+
+    lm.read_arpa(io::Stream(lmfname, "r").file, true);
+    lm.trim();
 }
 
 

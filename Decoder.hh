@@ -7,6 +7,7 @@
 #include <set>
 
 #include "Hmm.hh"
+#include "LM.hh"
 
 
 class Decoder {
@@ -35,6 +36,7 @@ public:
     void read_phone_model(std::string phnfname);
     void read_duration_model(std::string durfname);
     void read_noway_lexicon(std::string lexfname);
+    void read_lm(std::string lmfname);
     void read_dgraph(std::string graphfname);
 
     int debug;
@@ -51,6 +53,8 @@ public:
     std::vector<Hmm> m_hmms;
     // Hmm states
     std::vector<HmmState> m_hmm_states;
+    // Language model
+    fsalm::LM lm;
 
     std::vector<Node> m_nodes;
 };

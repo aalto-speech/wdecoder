@@ -1,8 +1,10 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include <climits>
 
 #include "Decoder.hh"
+#include "LM.hh"
 #include "conf.hh"
 
 using namespace std;

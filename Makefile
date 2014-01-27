@@ -9,7 +9,7 @@ cxxflags = -O3 -march=native -std=gnu++0x -Wall -Wno-sign-compare
 progs = dgraph decode
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
-srcs = conf.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc Decoder.cc
+srcs = conf.cc io.cc ArpaReader.cc LM.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc Decoder.cc
 objs = $(srcs:.cc=.o)
 
 test_progs = runtests
