@@ -102,6 +102,7 @@ graphtest :: assert_path(DecoderGraph &dg,
     }
 
     for (auto ait = curr_node.arcs.begin(); ait != curr_node.arcs.end(); ++ait) {
+        if (ait->target_node == node_idx) continue;
         bool retval = assert_path(dg, nodes, states, subwords, ait->target_node);
         if (retval) return true;
     }
