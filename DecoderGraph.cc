@@ -470,6 +470,7 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
         while (nit != tit->second.end()) {
             int curr_node_idx = *nit;
             tied_node_idx = merge_nodes(nodes, tied_node_idx, curr_node_idx);
+            arcs_removed = true;
             nit++;
         }
 
@@ -550,6 +551,8 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
     if (node_idx == START_NODE) return;
     if (processed_nodes.find(node_idx) != processed_nodes.end()) return;
     if (debug) cerr << endl << "tying state: " << node_idx << endl;
+    //if (processed_nodes.size() % 1000 == 0) cerr << "number of processed nodes: "
+    //                                             << processed_nodes.size() << "/" << nodes.size() << endl;
     processed_nodes.insert(node_idx);
     Node &nd = nodes[node_idx];
 
@@ -588,6 +591,7 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
         while (nit != tit->second.end()) {
             int curr_node_idx = *nit;
             tied_node_idx = merge_nodes(nodes, tied_node_idx, curr_node_idx);
+            arcs_removed = true;
             nit++;
         }
 
@@ -882,6 +886,9 @@ DecoderGraph::create_crossword_network(vector<Node> &nodes,
             }
         }
     }
+
+    for (auto cwnit = nodes.begin(); cwnit != nodes.end(); ++cwnit)
+        cwnit->cw_node = true;
 }
 
 

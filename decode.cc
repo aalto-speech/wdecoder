@@ -13,10 +13,10 @@ using namespace std;
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: dgraph [OPTION...] PH DUR LEXICON GRAPH\n")
+    config("usage: dgraph [OPTION...] PH DUR LEXICON LM GRAPH\n")
       ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 4) config.print_help(stderr, 1);
+    if (config.arguments.size() != 5) config.print_help(stderr, 1);
 
     try {
 
@@ -34,7 +34,11 @@ int main(int argc, char* argv[])
         cerr << "Reading lexicon: " << lexfname << endl;
         d.read_noway_lexicon(lexfname);
 
-        string graphfname = config.arguments[3];
+        string lmfname = config.arguments[3];
+        cerr << "Reading language model: " << lmfname << endl;
+        d.read_lm(lmfname);
+
+        string graphfname = config.arguments[4];
         cerr << "Reading segmentations: " << graphfname << endl;
         d.read_dgraph(graphfname);
 

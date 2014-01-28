@@ -29,11 +29,12 @@ public:
 
     class Node {
     public:
-        Node() : word_id(-1), hmm_state(-1) { }
+        Node() : word_id(-1), hmm_state(-1), cw_node(false) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         std::vector<Arc> arcs;
         std::vector<Arc> reverse_arcs;
+        bool cw_node;
     };
 
     DecoderGraph() { debug = 0; };

@@ -121,4 +121,43 @@ Decoder::read_dgraph(string fname)
         m_nodes[src_node].arcs[node_arc_counts[src_node]].target_node = tgt_node;
         node_arc_counts[src_node]++;
     }
+
+    add_hmm_self_transitions(m_nodes);
+    set_hmm_transition_probs(m_nodes);
+}
+
+
+void
+Decoder::add_hmm_self_transitions(std::vector<Node> &nodes)
+{
+    for (int i=0; i<nodes.size(); i++) {
+        if (i == START_NODE) continue;
+        if (i == END_NODE) continue;
+
+        Node &node = nodes[i];
+        if (node.hmm_state == -1) continue;
+
+        HmmState &state = m_hmm_states[node.hmm_state];
+        node.arcs.insert(node.arcs.begin(), Arc());
+        node.arcs[0].log_prob = state.transitions[0].log_prob;
+        node.arcs[0].target_node = i;
+    }
+}
+
+
+void
+Decoder::set_hmm_transition_probs(std::vector<Node> &nodes)
+{
+    for (int i=0; i<nodes.size(); i++) {
+        if (i == END_NODE) continue;
+
+        Node &node = nodes[i];
+        if (node.hmm_state == -1) continue;
+
+        HmmState &state = m_hmm_states[node.hmm_state];
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+            if (ait->target_node == i) ait->log_prob = state.transitions[0].log_prob;
+            else ait->log_prob = state.transitions[1].log_prob;
+        }
+    }
 }

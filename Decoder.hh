@@ -31,6 +31,42 @@ public:
         std::vector<Arc> arcs;
     };
 
+    /*
+    class Token {
+    public:
+      int node_idx;
+      float am_log_prob;
+      float lm_log_prob;
+      float total_log_prob;
+      LMHistory *lm_history;
+      int lm_hist_code; // Hash code for word history (up to LM order)
+      int fsa_lm_node;
+      WordHistory *word_history;
+      int word_start_frame;
+      StateHistory *state_history;
+
+      unsigned char dur;
+
+      Token():
+        node(NULL),
+        am_log_prob(0.0f),
+        lm_log_prob(0.0f),
+        cur_am_log_prob(0.0f),
+        cur_lm_log_prob(0.0f),
+        total_log_prob(0.0f),
+        lm_history(NULL),
+        lm_hist_code(0),
+        fsa_lm_node(0),
+        word_history(NULL),
+        word_start_frame(0),
+        word_count(0),
+        state_history(NULL),
+        depth(0),
+        dur(0)
+      { }
+    };
+     */
+
     Decoder() { debug = 0; };
 
     void read_phone_model(std::string phnfname);
@@ -38,6 +74,13 @@ public:
     void read_noway_lexicon(std::string lexfname);
     void read_lm(std::string lmfname);
     void read_dgraph(std::string graphfname);
+
+    void set_lm_scale(float lm_scale) { m_lm_scale = lm_scale; }
+    void set_duration_scale(float dur_scale) { m_duration_scale = dur_scale; }
+    void set_transition_scale(float trans_scale) { m_transition_scale = trans_scale; }
+    void set_max_num_tokens(int tokens) { m_max_num_tokens = tokens; }
+    void set_state_beam(float beam) { m_state_beam = beam; }
+    void set_global_beam(float beam) { m_global_beam = beam; }
 
     int debug;
 
@@ -57,6 +100,20 @@ public:
     fsalm::LM lm;
 
     std::vector<Node> m_nodes;
+
+private:
+    void add_hmm_self_transitions(std::vector<Node> &nodes);
+    void set_hmm_transition_probs(std::vector<Node> &nodes);
+
+    float m_lm_scale;
+    float m_duration_scale;
+    float m_transition_scale; // Temporary scaling used for self transitions
+    int m_max_num_tokens;
+
+    float m_global_beam;
+    float m_current_glob_beam;
+    float m_state_beam;
+
 };
 
 #endif /* DECODER_HH */

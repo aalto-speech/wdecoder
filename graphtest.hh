@@ -46,6 +46,9 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         static void get_hmm_states(DecoderGraph &dg,
                                    const std::vector<std::string> &triphones,
                                    std::vector<int> &states);
+        static void get_hmm_states(DecoderGraph &dg,
+                                   std::string word,
+                                   std::vector<int> &states);
         static bool assert_path(DecoderGraph &dg,
                                 std::vector<DecoderGraph::Node> &nodes,
                                 std::deque<int> states,
@@ -81,6 +84,11 @@ class graphtest : public CPPUNIT_NS :: TestFixture
                                               std::vector<DecoderGraph::Node> &nodes);
         static bool assert_suffix_state_tying(DecoderGraph &dg,
                                               std::vector<DecoderGraph::Node> &nodes);
+        static bool assert_only_segmented_words(DecoderGraph &dg,
+                                                std::vector<DecoderGraph::Node> &nodes,
+                                                std::deque<int> states = std::deque<int>(),
+                                                std::deque<int> subwords = std::deque<int>(),
+                                                int node_idx = DecoderGraph::START_NODE);
 
     protected:
         void GraphTest1(void);
