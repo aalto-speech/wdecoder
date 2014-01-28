@@ -36,7 +36,7 @@ void graphtest::read_fixtures(DecoderGraph &dg)
 
 
 void graphtest::triphonize(string word,
-                             vector<string> &triphones)
+                           vector<string> &triphones)
 {
     string tword = "_" + word + "_";
     triphones.clear();
@@ -49,8 +49,8 @@ void graphtest::triphonize(string word,
 
 
 void graphtest::triphonize(DecoderGraph &dg,
-                             string word,
-                             vector<string> &triphones)
+                           string word,
+                           vector<string> &triphones)
 {
     if (dg.m_word_segs.find(word) != dg.m_word_segs.end()) {
         string tripstring;
@@ -66,8 +66,8 @@ void graphtest::triphonize(DecoderGraph &dg,
 
 
 void graphtest::get_hmm_states(DecoderGraph &dg,
-                                 const vector<string> &triphones,
-                                 vector<int> &states)
+                               const vector<string> &triphones,
+                               vector<int> &states)
 {
     for (auto tit = triphones.begin(); tit !=triphones.end(); ++tit) {
         int hmm_index = dg.m_hmm_map[*tit];
@@ -79,26 +79,43 @@ void graphtest::get_hmm_states(DecoderGraph &dg,
 
 
 void graphtest::get_hmm_states(DecoderGraph &dg,
-                                 string word,
-                                 vector<int> &states)
+                               string word,
+                               vector<int> &states)
 {
     vector<string> triphones;
     triphonize(dg, word, triphones);
-    for (auto tit = triphones.begin(); tit !=triphones.end(); ++tit) {
-        int hmm_index = dg.m_hmm_map[*tit];
-        Hmm &hmm = dg.m_hmms[hmm_index];
-        for (int sidx = 2; sidx < hmm.states.size(); ++sidx)
-            states.push_back(hmm.states[sidx].model);
-    }
+    get_hmm_states(dg, triphones, states);
+}
+
+
+void
+graphtest::get_hmm_states_cw(DecoderGraph &dg,
+                             string wrd1,
+                             string wrd2,
+                             vector<int> &states)
+{
+    string phonestring;
+    vector<string> triphones;
+
+    for (auto swit = dg.m_word_segs[wrd1].begin(); swit != dg.m_word_segs[wrd1].end(); ++swit)
+        for (auto trit = dg.m_lexicon[*swit].begin(); trit != dg.m_lexicon[*swit].end(); ++trit)
+            phonestring += string(1,(*trit)[2]);
+
+    for (auto swit = dg.m_word_segs[wrd2].begin(); swit != dg.m_word_segs[wrd2].end(); ++swit)
+        for (auto trit = dg.m_lexicon[*swit].begin(); trit != dg.m_lexicon[*swit].end(); ++trit)
+            phonestring += string(1,(*trit)[2]);
+
+    triphonize(phonestring, triphones);
+    get_hmm_states(dg, triphones, states);
 }
 
 
 bool
 graphtest::assert_path(DecoderGraph &dg,
-                         vector<DecoderGraph::Node> &nodes,
-                         deque<int> states,
-                         deque<string> subwords,
-                         int node_idx)
+                       vector<DecoderGraph::Node> &nodes,
+                       deque<int> states,
+                       deque<string> subwords,
+                       int node_idx)
 {
     DecoderGraph::Node &curr_node = nodes[node_idx];
 
@@ -128,10 +145,10 @@ graphtest::assert_path(DecoderGraph &dg,
 
 bool
 graphtest::assert_path(DecoderGraph &dg,
-                         vector<DecoderGraph::Node> &nodes,
-                         vector<string> &triphones,
-                         vector<string> &subwords,
-                         bool debug)
+                       vector<DecoderGraph::Node> &nodes,
+                       vector<string> &triphones,
+                       vector<string> &subwords,
+                       bool debug)
 {
     deque<int> dstates;
     deque<string> dwords;
@@ -167,10 +184,10 @@ graphtest::assert_path(DecoderGraph &dg,
 
 bool
 graphtest::assert_word_pair_crossword(DecoderGraph &dg,
-                                        vector<DecoderGraph::Node> &nodes,
-                                        string word1,
-                                        string word2,
-                                        bool debug)
+                                      vector<DecoderGraph::Node> &nodes,
+                                      string word1,
+                                      string word2,
+                                      bool debug)
 {
     if (dg.m_lexicon.find(word1) == dg.m_word_segs.end()) return false;
     if (dg.m_lexicon.find(word2) == dg.m_word_segs.end()) return false;
@@ -209,8 +226,8 @@ graphtest::assert_word_pair_crossword(DecoderGraph &dg,
 
 bool
 graphtest::assert_words(DecoderGraph &dg,
-                          vector<DecoderGraph::Node> &nodes,
-                          bool debug)
+                        vector<DecoderGraph::Node> &nodes,
+                        bool debug)
 {
     for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
         vector<string> triphones;
@@ -227,8 +244,8 @@ graphtest::assert_words(DecoderGraph &dg,
 
 bool
 graphtest::assert_word_pairs(DecoderGraph &dg,
-                               std::vector<DecoderGraph::Node> &nodes,
-                               bool debug)
+                             std::vector<DecoderGraph::Node> &nodes,
+                             bool debug)
 {
     for (auto fit=dg.m_word_segs.begin(); fit!=dg.m_word_segs.end(); ++fit) {
         for (auto sit=dg.m_word_segs.begin(); sit!=dg.m_word_segs.end(); ++sit) {
@@ -246,8 +263,8 @@ graphtest::assert_word_pairs(DecoderGraph &dg,
 
 bool
 graphtest::assert_transitions(DecoderGraph &dg,
-                                vector<DecoderGraph::Node> &nodes,
-                                bool debug)
+                              vector<DecoderGraph::Node> &nodes,
+                              bool debug)
 {
     for (int node_idx = 0; node_idx < nodes.size(); ++node_idx) {
         if (node_idx == DecoderGraph::END_NODE) continue;
@@ -305,8 +322,8 @@ graphtest::assert_transitions(DecoderGraph &dg,
 
 bool
 graphtest::assert_subword_ids_left(DecoderGraph &dg,
-                                     vector<DecoderGraph::Node> &nodes,
-                                     bool debug)
+                                   vector<DecoderGraph::Node> &nodes,
+                                   bool debug)
 {
     dg.set_reverse_arcs_also_from_unreachable(nodes);
 
@@ -326,8 +343,8 @@ graphtest::assert_subword_ids_left(DecoderGraph &dg,
 
 bool
 graphtest::assert_subword_ids_right(DecoderGraph &dg,
-                                      vector<DecoderGraph::Node> &nodes,
-                                      bool debug)
+                                    vector<DecoderGraph::Node> &nodes,
+                                    bool debug)
 {
     dg.set_reverse_arcs_also_from_unreachable(nodes);
 
@@ -360,9 +377,10 @@ graphtest::assert_no_double_arcs(vector<DecoderGraph::Node> &nodes)
 }
 
 
+// FIXME: is this doing what is expected?
 bool
 graphtest::assert_prefix_state_tying(DecoderGraph &dg,
-                                       vector<DecoderGraph::Node> &nodes)
+                                     vector<DecoderGraph::Node> &nodes)
 {
     dg.set_reverse_arcs_also_from_unreachable(nodes);
 
@@ -382,7 +400,7 @@ graphtest::assert_prefix_state_tying(DecoderGraph &dg,
 // FIXME: is this doing what is expected?
 bool
 graphtest::assert_suffix_state_tying(DecoderGraph &dg,
-                                       vector<DecoderGraph::Node> &nodes)
+                                     vector<DecoderGraph::Node> &nodes)
 {
     dg.set_reverse_arcs_also_from_unreachable(nodes);
 
@@ -404,24 +422,12 @@ graphtest::assert_suffix_state_tying(DecoderGraph &dg,
 }
 
 
-/*
 bool
 graphtest::assert_only_segmented_words(DecoderGraph &dg,
-                                         vector<DecoderGraph::Node> &nodes)
-{
-    deque<int> states;
-    deque<int> subwords;
-    return assert_only_segmented_words(dg, nodes, states, subwords, DecoderGraph::START_NODE);
-}
-*/
-
-
-bool
-graphtest::assert_only_segmented_words(DecoderGraph &dg,
-                                         vector<DecoderGraph::Node> &nodes,
-                                         deque<int> states,
-                                         deque<int> subwords,
-                                         int node_idx)
+                                       vector<DecoderGraph::Node> &nodes,
+                                       deque<int> states,
+                                       deque<int> subwords,
+                                       int node_idx)
 {
     if (node_idx == DecoderGraph::END_NODE) {
 
@@ -456,6 +462,89 @@ graphtest::assert_only_segmented_words(DecoderGraph &dg,
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         if (nodes[ait->target_node].cw_node) continue;
         bool rv = assert_only_segmented_words(dg, nodes, states, subwords, ait->target_node);
+        if (!rv) return false;
+    }
+
+    return true;
+}
+
+
+bool
+graphtest::assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
+                                               vector<DecoderGraph::Node> &nodes,
+                                               deque<int> states,
+                                               deque<int> subwords,
+                                               int node_idx,
+                                               bool cw_visited)
+{
+    if (node_idx == DecoderGraph::END_NODE) {
+
+        string wrd1, wrd2;
+        auto swit = subwords.begin();
+        while (true) {
+            if (*swit == -1) break;
+            wrd1 += dg.m_units[*swit];
+            swit++;
+        }
+        if (dg.m_word_segs.find(wrd1) == dg.m_word_segs.end()) return false;
+        swit++;
+        while (swit != subwords.end()) {
+            wrd2 += dg.m_units[*swit];
+            swit++;
+        }
+        if (dg.m_word_segs.find(wrd2) == dg.m_word_segs.end()) return false;
+
+        swit = subwords.begin();
+        int eswi=0;
+        while (*swit != -1) {
+            if (dg.m_word_segs[wrd1][eswi] != dg.m_units[*swit]) return false;
+            swit++;
+            eswi++;
+        }
+        if (eswi != dg.m_word_segs[wrd1].size()) return false;
+        swit++;
+        eswi=0;
+        while (swit != subwords.end()) {
+            if (dg.m_word_segs[wrd2][eswi] != dg.m_units[*swit]) return false;
+            swit++;
+            eswi++;
+        }
+        if (eswi != dg.m_word_segs[wrd2].size()) return false;
+
+        vector<int> expected_states;
+        get_hmm_states_cw(dg, wrd1, wrd2, expected_states);
+        if (states.size() != expected_states.size()) return false;
+        auto sit = states.begin();
+        auto esit = expected_states.begin();
+        while (sit != states.end()) {
+            if ((*sit) != (*esit)) return false;
+            sit++; esit++;
+        }
+
+        return true;
+    }
+
+    DecoderGraph::Node &node = nodes[node_idx];
+    if (node.hmm_state != -1) states.push_back(node.hmm_state);
+    if (node.word_id != -1) subwords.push_back(node.word_id);
+    if (node.cw_node && !cw_visited) {
+        subwords.push_back(-1);
+        cw_visited = true;
+    }
+
+    bool cw_entry_found = false;
+    bool non_cw_entry_found = false;
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        if (nodes[ait->target_node].cw_node) cw_entry_found = true;
+        else non_cw_entry_found = true;
+    }
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        DecoderGraph::Node &target_node = nodes[ait->target_node];
+        if (cw_visited && non_cw_entry_found && target_node.cw_node) continue;
+        if (!cw_visited && cw_entry_found && !target_node.cw_node) continue;
+        bool rv = assert_only_segmented_cw_word_pairs(dg, nodes, states, subwords,
+                                                      ait->target_node, cw_visited);
         if (!rv) return false;
     }
 
@@ -767,6 +856,7 @@ void graphtest::GraphTest12(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
 }
 
 
@@ -796,6 +886,7 @@ void graphtest::GraphTest13(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
 }
 
 
@@ -825,6 +916,7 @@ void graphtest::GraphTest14(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
 }
 
 
@@ -854,6 +946,7 @@ void graphtest::GraphTest15(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
 }
 
 
@@ -905,6 +998,7 @@ void graphtest::GraphTest16(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
 }
 
 
@@ -935,6 +1029,7 @@ void graphtest::GraphTest17(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
 }
 
 
