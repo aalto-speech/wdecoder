@@ -13,17 +13,17 @@ using namespace std;
 CPPUNIT_TEST_SUITE_REGISTRATION (decodertest);
 
 
-void decodertest :: setUp (void)
+void decodertest::setUp (void)
 {
 }
 
 
-void decodertest :: tearDown (void)
+void decodertest::tearDown (void)
 {
 }
 
 
-void decodertest :: DecoderTest1(void)
+void decodertest::DecoderTest1(void)
 {
-    CPPUNIT_ASSERT( false );
+    CPPUNIT_ASSERT( true );
 }

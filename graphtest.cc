@@ -13,7 +13,7 @@ using namespace std;
 CPPUNIT_TEST_SUITE_REGISTRATION (graphtest);
 
 
-void graphtest :: setUp (void)
+void graphtest::setUp (void)
 {
     amname = string("data/speecon_ml_gain3500_occ300_21.7.2011_22");
     lexname = string("data/lex");
@@ -21,12 +21,12 @@ void graphtest :: setUp (void)
 }
 
 
-void graphtest :: tearDown (void)
+void graphtest::tearDown (void)
 {
 }
 
 
-void graphtest :: read_fixtures(DecoderGraph &dg)
+void graphtest::read_fixtures(DecoderGraph &dg)
 {
     dg.read_phone_model(amname + ".ph");
     dg.read_duration_model(amname + ".dur");
@@ -35,7 +35,7 @@ void graphtest :: read_fixtures(DecoderGraph &dg)
 }
 
 
-void graphtest :: triphonize(string word,
+void graphtest::triphonize(string word,
                              vector<string> &triphones)
 {
     string tword = "_" + word + "_";
@@ -48,7 +48,7 @@ void graphtest :: triphonize(string word,
 }
 
 
-void graphtest :: triphonize(DecoderGraph &dg,
+void graphtest::triphonize(DecoderGraph &dg,
                              string word,
                              vector<string> &triphones)
 {
@@ -65,7 +65,7 @@ void graphtest :: triphonize(DecoderGraph &dg,
 }
 
 
-void graphtest :: get_hmm_states(DecoderGraph &dg,
+void graphtest::get_hmm_states(DecoderGraph &dg,
                                  const vector<string> &triphones,
                                  vector<int> &states)
 {
@@ -78,7 +78,7 @@ void graphtest :: get_hmm_states(DecoderGraph &dg,
 }
 
 
-void graphtest :: get_hmm_states(DecoderGraph &dg,
+void graphtest::get_hmm_states(DecoderGraph &dg,
                                  string word,
                                  vector<int> &states)
 {
@@ -94,7 +94,7 @@ void graphtest :: get_hmm_states(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_path(DecoderGraph &dg,
+graphtest::assert_path(DecoderGraph &dg,
                          vector<DecoderGraph::Node> &nodes,
                          deque<int> states,
                          deque<string> subwords,
@@ -127,7 +127,7 @@ graphtest :: assert_path(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_path(DecoderGraph &dg,
+graphtest::assert_path(DecoderGraph &dg,
                          vector<DecoderGraph::Node> &nodes,
                          vector<string> &triphones,
                          vector<string> &subwords,
@@ -166,7 +166,7 @@ graphtest :: assert_path(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_word_pair_crossword(DecoderGraph &dg,
+graphtest::assert_word_pair_crossword(DecoderGraph &dg,
                                         vector<DecoderGraph::Node> &nodes,
                                         string word1,
                                         string word2,
@@ -208,7 +208,7 @@ graphtest :: assert_word_pair_crossword(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_words(DecoderGraph &dg,
+graphtest::assert_words(DecoderGraph &dg,
                           vector<DecoderGraph::Node> &nodes,
                           bool debug)
 {
@@ -226,7 +226,7 @@ graphtest :: assert_words(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_word_pairs(DecoderGraph &dg,
+graphtest::assert_word_pairs(DecoderGraph &dg,
                                std::vector<DecoderGraph::Node> &nodes,
                                bool debug)
 {
@@ -245,7 +245,7 @@ graphtest :: assert_word_pairs(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_transitions(DecoderGraph &dg,
+graphtest::assert_transitions(DecoderGraph &dg,
                                 vector<DecoderGraph::Node> &nodes,
                                 bool debug)
 {
@@ -304,7 +304,7 @@ graphtest :: assert_transitions(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_subword_ids_left(DecoderGraph &dg,
+graphtest::assert_subword_ids_left(DecoderGraph &dg,
                                      vector<DecoderGraph::Node> &nodes,
                                      bool debug)
 {
@@ -325,7 +325,7 @@ graphtest :: assert_subword_ids_left(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_subword_ids_right(DecoderGraph &dg,
+graphtest::assert_subword_ids_right(DecoderGraph &dg,
                                       vector<DecoderGraph::Node> &nodes,
                                       bool debug)
 {
@@ -346,7 +346,7 @@ graphtest :: assert_subword_ids_right(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_no_double_arcs(vector<DecoderGraph::Node> &nodes)
+graphtest::assert_no_double_arcs(vector<DecoderGraph::Node> &nodes)
 {
     for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
         set<int> targets;
@@ -361,7 +361,7 @@ graphtest :: assert_no_double_arcs(vector<DecoderGraph::Node> &nodes)
 
 
 bool
-graphtest :: assert_prefix_state_tying(DecoderGraph &dg,
+graphtest::assert_prefix_state_tying(DecoderGraph &dg,
                                        vector<DecoderGraph::Node> &nodes)
 {
     dg.set_reverse_arcs_also_from_unreachable(nodes);
@@ -381,7 +381,7 @@ graphtest :: assert_prefix_state_tying(DecoderGraph &dg,
 
 // FIXME: is this doing what is expected?
 bool
-graphtest :: assert_suffix_state_tying(DecoderGraph &dg,
+graphtest::assert_suffix_state_tying(DecoderGraph &dg,
                                        vector<DecoderGraph::Node> &nodes)
 {
     dg.set_reverse_arcs_also_from_unreachable(nodes);
@@ -406,7 +406,7 @@ graphtest :: assert_suffix_state_tying(DecoderGraph &dg,
 
 /*
 bool
-graphtest :: assert_only_segmented_words(DecoderGraph &dg,
+graphtest::assert_only_segmented_words(DecoderGraph &dg,
                                          vector<DecoderGraph::Node> &nodes)
 {
     deque<int> states;
@@ -417,7 +417,7 @@ graphtest :: assert_only_segmented_words(DecoderGraph &dg,
 
 
 bool
-graphtest :: assert_only_segmented_words(DecoderGraph &dg,
+graphtest::assert_only_segmented_words(DecoderGraph &dg,
                                          vector<DecoderGraph::Node> &nodes,
                                          deque<int> states,
                                          deque<int> subwords,
@@ -429,7 +429,6 @@ graphtest :: assert_only_segmented_words(DecoderGraph &dg,
         for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
             wrd += dg.m_units[*swit];
         if (dg.m_word_segs.find(wrd) == dg.m_word_segs.end()) return false;
-        cerr << wrd;
 
         auto swit = subwords.begin();
         auto eswit = dg.m_word_segs[wrd].begin();
@@ -466,7 +465,7 @@ graphtest :: assert_only_segmented_words(DecoderGraph &dg,
 
 // Verify that models are correctly loaded
 // Test constructing the initial word graph on subword level
-void graphtest :: GraphTest1(void)
+void graphtest::GraphTest1(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
@@ -485,7 +484,7 @@ void graphtest :: GraphTest1(void)
 
 
 // Test tying word suffixes
-void graphtest :: GraphTest2(void)
+void graphtest::GraphTest2(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
@@ -499,7 +498,7 @@ void graphtest :: GraphTest2(void)
 
 
 // Test expanding the subwords to triphones
-void graphtest :: GraphTest3(void)
+void graphtest::GraphTest3(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
@@ -516,11 +515,12 @@ void graphtest :: GraphTest3(void)
     CPPUNIT_ASSERT_EQUAL( 11, dg.num_subword_states(nodes) );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 }
 
 
 // Test tying state chain prefixes
-void graphtest :: GraphTest4(void)
+void graphtest::GraphTest4(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
@@ -533,11 +533,12 @@ void graphtest :: GraphTest4(void)
     dg.tie_state_prefixes(nodes, false);
     CPPUNIT_ASSERT_EQUAL( 145, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 }
 
 
 // Verify adding self transitions and transition probabilities to states
-void graphtest :: GraphTest5(void)
+void graphtest::GraphTest5(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
@@ -551,6 +552,7 @@ void graphtest :: GraphTest5(void)
     dg.prune_unreachable_nodes(nodes);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     dg.add_hmm_self_transitions(nodes);
     dg.set_hmm_transition_probs(nodes);
@@ -559,7 +561,7 @@ void graphtest :: GraphTest5(void)
 
 
 // Test pruning non-reachable nodes and reindexing nodes
-void graphtest :: GraphTest6(void)
+void graphtest::GraphTest6(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
@@ -578,11 +580,12 @@ void graphtest :: GraphTest6(void)
     CPPUNIT_ASSERT_EQUAL( 135, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 }
 
 
 // Test pushing subword ids to the leftmost possible position
-void graphtest :: GraphTest7(void)
+void graphtest::GraphTest7(void)
 {
     DecoderGraph dg;
     //segname = "data/iter111_35000.train.segs2";
@@ -608,12 +611,13 @@ void graphtest :: GraphTest7(void)
     CPPUNIT_ASSERT_EQUAL( 135, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes, false) );
 }
 
 
 // Test some subword id push problem
-void graphtest :: GraphTest8(void)
+void graphtest::GraphTest8(void)
 {
     DecoderGraph dg;
     segname = "data/push_problem.segs";
@@ -624,16 +628,21 @@ void graphtest :: GraphTest8(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     dg.tie_state_prefixes(nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     dg.tie_state_suffixes(nodes);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT_EQUAL( 4, dg.num_subword_states(nodes) );
 
     dg.push_word_ids_left(nodes);
@@ -641,11 +650,12 @@ void graphtest :: GraphTest8(void)
     CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes, true) );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 }
 
 
 // Test some pathological cases
-void graphtest :: GraphTest9(void)
+void graphtest::GraphTest9(void)
 {
     DecoderGraph dg;
     segname = "data/segs2.txt";
@@ -656,29 +666,36 @@ void graphtest :: GraphTest9(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     dg.tie_state_prefixes(nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     dg.tie_state_suffixes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     dg.push_word_ids_left(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 }
 
 
 // Test triphonization with lexicon
-void graphtest :: GraphTest10(void)
+void graphtest::GraphTest10(void)
 {
     DecoderGraph dg;
     segname = "data/segs3.txt";
@@ -689,16 +706,18 @@ void graphtest :: GraphTest10(void)
     vector<DecoderGraph::Node> nodes(2);
     dg.expand_subword_nodes(swnodes, nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     dg.tie_state_prefixes(nodes, false);
     dg.prune_unreachable_nodes(nodes);
     dg.tie_state_suffixes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 }
 
 
 // Test some state suffix tying problem
-void graphtest :: GraphTest11(void)
+void graphtest::GraphTest11(void)
 {
     DecoderGraph dg;
     segname = "data/suffix_problem.segs";
@@ -712,15 +731,18 @@ void graphtest :: GraphTest11(void)
 
     dg.tie_state_prefixes(nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     dg.tie_state_suffixes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 }
 
 
 // Test cross-word network creation and connecting, very simple case
-void graphtest :: GraphTest12(void)
+void graphtest::GraphTest12(void)
 {
     DecoderGraph dg;
     segname = "data/cw_simpler.segs";
@@ -743,12 +765,13 @@ void graphtest :: GraphTest12(void)
 
     CPPUNIT_ASSERT_EQUAL( 62, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
 
 
 // Test cross-word network creation and connecting, another simple case
-void graphtest :: GraphTest13(void)
+void graphtest::GraphTest13(void)
 {
     DecoderGraph dg;
     segname = "data/cw_simple.segs";
@@ -771,12 +794,13 @@ void graphtest :: GraphTest13(void)
 
     CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
 
 
 // Test cross-word network creation and connecting, easy case
-void graphtest :: GraphTest14(void)
+void graphtest::GraphTest14(void)
 {
     DecoderGraph dg;
     segname = "data/segs.txt";
@@ -799,13 +823,14 @@ void graphtest :: GraphTest14(void)
 
     //CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
 
 
 // Test cross-word network creation and connecting
 // 2 phone words and other special cases
-void graphtest :: GraphTest15(void)
+void graphtest::GraphTest15(void)
 {
     DecoderGraph dg;
     segname = "data/segs2.txt";
@@ -827,6 +852,7 @@ void graphtest :: GraphTest15(void)
 
     CPPUNIT_ASSERT_EQUAL( 176, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
 
@@ -834,7 +860,7 @@ void graphtest :: GraphTest15(void)
 // Test cross-word network creation and connecting
 // Normal cases
 // Tie prefixes and suffixes after connecting cw network
-void graphtest :: GraphTest16(void)
+void graphtest::GraphTest16(void)
 {
     DecoderGraph dg;
     segname = "data/cw_simple.segs";
@@ -877,6 +903,7 @@ void graphtest :: GraphTest16(void)
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
     CPPUNIT_ASSERT_EQUAL( 93, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
 }
 
@@ -884,7 +911,7 @@ void graphtest :: GraphTest16(void)
 // Test cross-word network creation and connecting
 // Tie prefixes and suffixes after connecting cw network
 // Some problem cases, 4 phone words segmented to 2 phones + 2 phones
-void graphtest :: GraphTest17(void)
+void graphtest::GraphTest17(void)
 {
     DecoderGraph dg;
     segname = "data/cw_problem.segs";
@@ -906,9 +933,8 @@ void graphtest :: GraphTest17(void)
 
     CPPUNIT_ASSERT_EQUAL( 45, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
-
-    assert_only_segmented_words(dg, nodes);
 }
 
 
