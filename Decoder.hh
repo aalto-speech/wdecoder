@@ -2,6 +2,8 @@
 #define DECODER_HH
 
 #include <map>
+#include <unordered_map>
+#include <memory>
 #include <fstream>
 #include <vector>
 #include <set>
@@ -29,6 +31,12 @@ public:
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         std::vector<Arc> arcs;
+    };
+
+    struct LMHistory {
+        int word_id;
+        std::shared_ptr<LMHistory> history;
+        std::unordered_map<int, std::shared_ptr<LMHistory> > next;
     };
 
     class Token {
