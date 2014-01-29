@@ -98,6 +98,10 @@ public:
     std::vector<Node> m_nodes;
 
 private:
+
+    void add_silence_hmms(std::vector<Node> &nodes,
+                          bool long_silence=true,
+                          bool short_silence=false);
     void add_hmm_self_transitions(std::vector<Node> &nodes);
     void set_hmm_transition_probs(std::vector<Node> &nodes);
 

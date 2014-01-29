@@ -122,8 +122,53 @@ Decoder::read_dgraph(string fname)
         node_arc_counts[src_node]++;
     }
 
+    add_silence_hmms(m_nodes);
     add_hmm_self_transitions(m_nodes);
     set_hmm_transition_probs(m_nodes);
+}
+
+
+void
+Decoder::add_silence_hmms(std::vector<Node> &nodes,
+                          bool long_silence,
+                          bool short_silence)
+{
+    Node &end_node = nodes[END_NODE];
+    end_node.arcs.clear();
+
+    if (long_silence) {
+        string long_silence("__");
+        int hmm_index = m_hmm_map[long_silence];
+        Hmm &hmm = m_hmms[hmm_index];
+
+        int node_idx = END_NODE;
+        for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+            nodes.resize(nodes.size()+1);
+            nodes.back().hmm_state = hmm.states[sidx].model;
+            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+            nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+            node_idx = nodes.size()-1;
+        }
+        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+        nodes[node_idx].arcs.back().target_node = START_NODE;
+    }
+
+    if (short_silence) {
+        string short_silence("_");
+        int hmm_index = m_hmm_map[short_silence];
+        Hmm &hmm = m_hmms[hmm_index];
+
+        int node_idx = END_NODE;
+        for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+            nodes.resize(nodes.size()+1);
+            nodes.back().hmm_state = hmm.states[sidx].model;
+            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+            nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+            node_idx = nodes.size()-1;
+        }
+        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+        nodes[node_idx].arcs.back().target_node = START_NODE;
+    }
 }
 
 
