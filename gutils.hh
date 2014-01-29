@@ -1,3 +1,6 @@
+#ifndef GUTILS_HH
+#define GUTILS_HH
+
 #include <deque>
 #include <map>
 #include <string>
@@ -6,6 +9,8 @@
 
 #include "DecoderGraph.hh"
 
+
+namespace gutils {
 
 void triphonize(std::string word,
                 std::vector<std::string> &triphones);
@@ -78,3 +83,7 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
         std::deque<int> subwords = std::deque<int>(),
         int node_idx = DecoderGraph::START_NODE,
         bool cw_visited = false);
+
+};
+
+#endif /* GUTILS_HH */

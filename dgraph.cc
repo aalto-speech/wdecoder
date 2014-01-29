@@ -10,6 +10,7 @@
 #include "gutils.hh"
 
 using namespace std;
+using namespace gutils;
 
 
 int main(int argc, char* argv[])

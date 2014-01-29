@@ -9,6 +9,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 
 using namespace std;
+using namespace gutils;
 
 
 CPPUNIT_TEST_SUITE_REGISTRATION (graphtest);

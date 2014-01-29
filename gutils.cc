@@ -5,6 +5,8 @@
 using namespace std;
 
 
+namespace gutils {
+
 void triphonize(string word,
                 vector<string> &triphones)
 {
@@ -581,3 +583,5 @@ assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
 
     return true;
 }
+
+};
