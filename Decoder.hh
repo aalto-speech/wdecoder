@@ -33,25 +33,28 @@ public:
         std::vector<Arc> arcs;
     };
 
-    struct LMHistory {
+    struct WordHistory {
         int word_id;
-        std::shared_ptr<LMHistory> history;
-        std::unordered_map<int, std::shared_ptr<LMHistory> > next;
+        std::shared_ptr<WordHistory> history;
+        std::unordered_map<int, std::shared_ptr<WordHistory> > next;
     };
 
     class Token {
     public:
       int node_idx;
       float am_log_prob;
+      float cur_am_log_prob;
       float lm_log_prob;
       float total_log_prob;
       int fsa_lm_node;
       int word_start_frame;
-      unsigned char dur;
+      unsigned short int dur;
+      std::shared_ptr<WordHistory> history;
 
       Token():
         node_idx(-1),
         am_log_prob(0.0f),
+        cur_am_log_prob(0.0f),
         lm_log_prob(0.0f),
         total_log_prob(0.0f),
         fsa_lm_node(0),
@@ -86,6 +89,10 @@ public:
     void set_state_beam(float beam) { m_state_beam = beam; }
     void set_global_beam(float beam) { m_global_beam = beam; }
 
+    void initialize();
+    void propagate_tokens();
+    void move_token_to_node(Token token, int node_idx, float transition_score);
+
     int debug;
 
     // Subwords
@@ -101,9 +108,10 @@ public:
     // Hmm states
     std::vector<HmmState> m_hmm_states;
     // Language model
-    fsalm::LM lm;
+    fsalm::LM m_lm;
 
     std::vector<Node> m_nodes;
+    std::vector<Token> m_tokens;
 
 private:
 
@@ -122,6 +130,8 @@ private:
     float m_current_glob_beam;
     float m_state_beam;
 
+    float m_best_log_prob;
+    float m_worst_log_prob;
 };
 
 #endif /* DECODER_HH */

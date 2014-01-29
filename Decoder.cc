@@ -80,8 +80,8 @@ void
 Decoder::read_lm(string lmfname)
 {
 
-    lm.read_arpa(io::Stream(lmfname, "r").file, true);
-    lm.trim();
+    m_lm.read_arpa(io::Stream(lmfname, "r").file, true);
+    m_lm.trim();
 }
 
 
@@ -205,4 +205,54 @@ Decoder::set_hmm_transition_probs(std::vector<Node> &nodes)
             else ait->log_prob = state.transitions[1].log_prob;
         }
     }
+}
+
+
+void
+Decoder::initialize(void) {
+    m_tokens.resize(1);
+    m_tokens.back().fsa_lm_node = m_lm.initial_node_id();
+    m_tokens.back().history = make_shared<WordHistory>();
+    m_tokens.back().history->word_id = -1;
+}
+
+
+void
+Decoder::propagate_tokens(void)
+{
+    m_best_log_prob = -1e20;
+    m_worst_log_prob = 0;
+
+    for (auto token = m_tokens.begin(); token != m_tokens.end(); ++token) {
+        Node &nd = m_nodes[token->node_idx];
+        for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
+            move_token_to_node(*token, ait->target_node, ait->log_prob);
+    }
+}
+
+
+void
+Decoder::move_token_to_node(Token token,
+                            int node_idx,
+                            float transition_score)
+{
+    token.am_log_prob += m_transition_scale * transition_score;
+
+    Node &node = m_nodes[node_idx];
+
+    // LM node, just update history and LM score and continue
+    if (node.word_id != -1) {
+        // FIXME
+        string blaa(m_subwords[node.word_id]);
+        int sym = m_lm.symbol_map().index(blaa);
+        float curr_prob = 0.0;
+        token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, sym, &curr_prob);
+        token.lm_log_prob += curr_prob;
+        //token.
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+            move_token_to_node(token, ait->target_node, ait->log_prob);
+        return;
+    }
+
+
 }
