@@ -255,8 +255,8 @@ Decoder::move_token_to_node(Token token,
             token.history->word_id = node.word_id;
         }
         else {
-            token.history = token.history->next[node.word_id].first;
             token.history->next[node.word_id].second++;
+            token.history = token.history->next[node.word_id].first;
         }
 
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
@@ -264,5 +264,24 @@ Decoder::move_token_to_node(Token token,
         return;
     }
 
+    // Dummy nodes start/end, crossword entry/exit points
+    if (node.hmm_state == -1) {
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+            move_token_to_node(token, ait->target_node, ait->log_prob);
+        return;
+    }
 
+    // HMM node
+    // Normal propagation
+
+    /*
+    float ac_log_prob = m_acoustics->log_prob(
+      updated_token.node->state->model);
+
+    updated_token.am_log_prob += ac_log_prob;
+    updated_token.cur_am_log_prob += ac_log_prob;
+    updated_token.total_log_prob =
+      get_token_log_prob(updated_token.cur_am_log_prob,
+                         updated_token.cur_lm_log_prob);
+    */
 }
