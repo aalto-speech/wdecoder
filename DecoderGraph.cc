@@ -949,25 +949,6 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
 
 void
 DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
-                                      map<int, string> &nodes_to_fanout)
-{
-    vector<char> phones;
-    set_reverse_arcs(nodes);
-    collect_cw_fanout_nodes(nodes, nodes_to_fanout, 0, phones, -1, END_NODE);
-}
-
-
-void
-DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
-                                     map<int, string> &nodes_from_fanin)
-{
-    vector<char> phones;
-    collect_cw_fanin_nodes(nodes, nodes_from_fanin, 0, phones, -1, START_NODE);
-}
-
-
-void
-DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
                                       map<int, string> &nodes_to_fanout,
                                       int hmm_state_count,
                                       vector<char> phones,
