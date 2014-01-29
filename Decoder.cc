@@ -248,7 +248,17 @@ Decoder::move_token_to_node(Token token,
         float curr_prob = 0.0;
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, sym, &curr_prob);
         token.lm_log_prob += curr_prob;
-        //token.
+
+        if (token.history->next.find(node.word_id) == token.history->next.end()) {
+            token.history->next[node.word_id] = make_pair(make_shared<WordHistory>(), 1);
+            token.history = token.history->next[node.word_id].first;
+            token.history->word_id = node.word_id;
+        }
+        else {
+            token.history = token.history->next[node.word_id].first;
+            token.history->next[node.word_id].second++;
+        }
+
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             move_token_to_node(token, ait->target_node, ait->log_prob);
         return;

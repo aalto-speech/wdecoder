@@ -36,7 +36,7 @@ public:
     struct WordHistory {
         int word_id;
         std::shared_ptr<WordHistory> history;
-        std::unordered_map<int, std::shared_ptr<WordHistory> > next;
+        std::unordered_map<int, std::pair<std::shared_ptr<WordHistory>, int> > next;
     };
 
     class Token {
