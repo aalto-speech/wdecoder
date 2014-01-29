@@ -31,43 +31,39 @@ public:
         std::vector<Arc> arcs;
     };
 
-    /*
     class Token {
     public:
       int node_idx;
       float am_log_prob;
       float lm_log_prob;
       float total_log_prob;
-      LMHistory *lm_history;
-      int lm_hist_code; // Hash code for word history (up to LM order)
       int fsa_lm_node;
-      WordHistory *word_history;
       int word_start_frame;
-      StateHistory *state_history;
-
       unsigned char dur;
 
       Token():
-        node(NULL),
+        node_idx(-1),
         am_log_prob(0.0f),
         lm_log_prob(0.0f),
-        cur_am_log_prob(0.0f),
-        cur_lm_log_prob(0.0f),
         total_log_prob(0.0f),
-        lm_history(NULL),
-        lm_hist_code(0),
         fsa_lm_node(0),
-        word_history(NULL),
         word_start_frame(0),
-        word_count(0),
-        state_history(NULL),
-        depth(0),
         dur(0)
       { }
     };
-     */
 
-    Decoder() { debug = 0; };
+    Decoder() {
+        debug = 0;
+
+        m_lm_scale = 0.0;
+        m_duration_scale = 0.0;
+        m_transition_scale = 0.0;
+        m_max_num_tokens = 0;
+
+        m_global_beam = 0.0;
+        m_current_glob_beam = 0.0;
+        m_state_beam = 0.0;
+    };
 
     void read_phone_model(std::string phnfname);
     void read_duration_model(std::string durfname);

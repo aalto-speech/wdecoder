@@ -226,6 +226,7 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
                                    char second_left_context,
                                    int delayed_subword_id)
 {
+    if (sw_node_idx == START_NODE) nodes.resize(2);
     if (sw_node_idx == END_NODE) return;
 
     const SubwordNode &swnode = swnodes[sw_node_idx];
