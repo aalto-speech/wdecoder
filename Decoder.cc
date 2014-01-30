@@ -225,10 +225,14 @@ Decoder::recognize_lna_file(string &lnafname)
 
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
-        if (debug) cerr << endl << "recognizing frame: " << frame_idx << endl;
+        cerr << endl << "recognizing frame: " << frame_idx << endl;
+        cerr << endl << "initial token count: " << m_tokens.size() << endl;
         propagate_tokens();
         frame_idx++;
-        if (frame_idx == 2) break;
+        cerr << "token count after propagation: " << m_tokens.size() << endl;
+        cerr << "tokens pruned by global beam: " << m_pruning_count << endl;
+        cerr << "worst log probability: " << m_worst_log_prob << endl;
+        cerr << "best log probability: " << m_best_log_prob << endl;
     }
 
     m_lna_reader.close();
@@ -249,8 +253,10 @@ Decoder::initialize(void) {
 void
 Decoder::propagate_tokens(void)
 {
+    m_current_glob_beam = m_best_log_prob-m_global_beam;
     m_best_log_prob = -1e20;
     m_worst_log_prob = 0;
+    m_pruning_count = 0;
 
     if (debug) cerr << "number of tokens: " << m_tokens.size() << endl;
     std::vector<Token> tokens;
@@ -296,6 +302,10 @@ Decoder::move_token_to_node(Token token,
     if (node.word_id != -1) {
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+        if (token.total_log_prob < m_current_glob_beam) {
+            m_pruning_count++;
+            return;
+        }
 
         if (token.history->next.find(node.word_id) == token.history->next.end())
             token.history = make_shared<WordHistory>(node.word_id, token.history);
@@ -315,6 +325,11 @@ Decoder::move_token_to_node(Token token,
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
     }
 
-    m_tokens.push_back(token);
+    m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
+    m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
+    if (token.total_log_prob > m_current_glob_beam)
+        m_tokens.push_back(token);
+    else
+        m_pruning_count++;
 }
 

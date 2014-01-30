@@ -148,6 +148,8 @@ private:
 
     float m_best_log_prob;
     float m_worst_log_prob;
+
+    int m_pruning_count;
 };
 
 #endif /* DECODER_HH */
