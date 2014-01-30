@@ -13,10 +13,10 @@ using namespace std;
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: dgraph [OPTION...] PH DUR LEXICON LM GRAPH\n")
+    config("usage: dgraph [OPTION...] PH DUR LEXICON LM GRAPH LNA\n")
       ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 5) config.print_help(stderr, 1);
+    if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
     try {
 
@@ -41,15 +41,11 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[4];
         cerr << "Reading graph: " << graphfname << endl;
         d.read_dgraph(graphfname);
-
         cerr << "node count: " << d.m_nodes.size() << endl;
 
-
-        for (int i=0; i<d.m_subwords.size(); i++) {
-            string blaa(d.m_subwords[i]);
-            int sym = d.m_lm.symbol_map().index(blaa);
-            cerr << i << " " << sym << endl;
-        }
+        string lnafname = config.arguments[5];
+        cerr << "recognizing: " << lnafname << endl;
+        d.recognize_lna_file(lnafname);
 
     } catch (string &e) {
         cerr << e << endl;
