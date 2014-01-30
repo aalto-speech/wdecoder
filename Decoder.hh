@@ -61,7 +61,7 @@ public:
         am_log_prob(0.0f),
         cur_am_log_prob(0.0f),
         lm_log_prob(0.0f),
-        total_log_prob(0.0f),
+        total_log_prob(-1e20),
         fsa_lm_node(0),
         word_start_frame(0),
         dur(0)
@@ -126,7 +126,8 @@ public:
     Acoustics *m_acoustics;
 
     std::vector<Node> m_nodes;
-    std::vector<Token> m_tokens;
+    std::vector<int> m_active_nodes;
+    std::vector<std::map<std::shared_ptr<WordHistory>, Token> > m_tokens;
 
 private:
 
@@ -136,7 +137,6 @@ private:
     void add_hmm_self_transitions(std::vector<Node> &nodes);
     void set_hmm_transition_probs(std::vector<Node> &nodes);
     void set_subword_id_fsa_symbol_mapping();
-    int prunable_by_same_state_and_history();
 
     float m_lm_scale;
     float m_duration_scale;
@@ -151,6 +151,7 @@ private:
     float m_worst_log_prob;
 
     int m_pruning_count;
+    int m_dropped_count;
 };
 
 #endif /* DECODER_HH */

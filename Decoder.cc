@@ -218,25 +218,6 @@ Decoder::set_subword_id_fsa_symbol_mapping()
 }
 
 
-int
-Decoder::prunable_by_same_state_and_history()
-{
-    map<int, map<shared_ptr<WordHistory>, int> > same;
-    for (auto tokenit = m_tokens.begin(); tokenit != m_tokens.end(); ++tokenit) {
-        same[tokenit->node_idx][tokenit->history]++;
-    }
-
-    int count = 0;
-    for (auto nit = same.begin(); nit != same.end(); ++nit) {
-        for (auto hit = nit->second.begin(); hit != nit->second.end(); ++hit) {
-            count += (hit->second - 1);
-        }
-    }
-
-    return count;
-}
-
-
 void
 Decoder::recognize_lna_file(string &lnafname)
 {
@@ -247,15 +228,14 @@ Decoder::recognize_lna_file(string &lnafname)
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
         cerr << endl << "recognizing frame: " << frame_idx << endl;
-        cerr << endl << "initial token count: " << m_tokens.size() << endl;
         propagate_tokens();
         frame_idx++;
-        int prunable = prunable_by_same_state_and_history();
-        cerr << "token count after propagation: " << m_tokens.size() << endl;
         cerr << "tokens pruned by global beam: " << m_pruning_count << endl;
-        cerr << "tokens prunable by same state and history: " << prunable << endl;
+        cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
         cerr << "worst log probability: " << m_worst_log_prob << endl;
         cerr << "best log probability: " << m_best_log_prob << endl;
+
+        if (frame_idx == 2000) break;
     }
 
     m_lna_reader.close();
@@ -263,13 +243,18 @@ Decoder::recognize_lna_file(string &lnafname)
 
 
 void
-Decoder::initialize(void) {
+Decoder::initialize()
+{
     set_subword_id_fsa_symbol_mapping();
-    m_tokens.resize(1);
-    m_tokens.back().fsa_lm_node = m_lm.initial_node_id();
-    m_tokens.back().history = make_shared<WordHistory>();
-    m_tokens.back().history->word_id = -1;
-    m_tokens.back().node_idx = END_NODE;
+    m_tokens.resize(m_nodes.size());
+    Token tok;
+    tok.fsa_lm_node = m_lm.initial_node_id();
+    tok.history = make_shared<WordHistory>();
+    tok.history->word_id = -1;
+    tok.node_idx = END_NODE;
+    m_tokens[END_NODE][tok.history] = tok;
+    m_active_nodes.clear();
+    m_active_nodes.push_back((int)END_NODE);
 }
 
 
@@ -280,20 +265,31 @@ Decoder::propagate_tokens(void)
     m_best_log_prob = -1e20;
     m_worst_log_prob = 0;
     m_pruning_count = 0;
+    m_dropped_count = 0;
 
-    if (debug) cerr << "number of tokens: " << m_tokens.size() << endl;
-    std::vector<Token> tokens;
+    vector<map<shared_ptr<WordHistory>, Token> > tokens;
+    tokens.resize(m_nodes.size());
     m_tokens.swap(tokens);
 
-    int token_idx = 0;
-    for (auto token = tokens.begin(); token != tokens.end(); ++token) {
-        if (debug) cerr << "processing token: " << token_idx << endl;
-        Node &nd = m_nodes[token->node_idx];
-        if (debug) cerr << "number of arcs: " << nd.arcs.size() << endl;
-        for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-            move_token_to_node(*token, ait->target_node, ait->log_prob);
-        token_idx++;
+    std::vector<int> active_nodes;
+    m_active_nodes.swap(active_nodes);
+
+    int token_count = 0;
+    int propagated_count = 0;
+    for (auto nit = active_nodes.begin(); nit != active_nodes.end(); ++nit) {
+        for (auto tit = tokens[*nit].begin(); tit != tokens[*nit].end(); ++tit) {
+            Node &nd = m_nodes[tit->second.node_idx];
+            if (debug) cerr << "number of arcs: " << nd.arcs.size() << endl;
+            for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
+                move_token_to_node(tit->second, ait->target_node, ait->log_prob);
+                propagated_count++;
+            }
+        }
+        token_count++;
     }
+
+    cerr << "token count before propagation: " << token_count << endl;
+    cerr << "token count after propagation: " << propagated_count << endl;
 }
 
 
@@ -348,11 +344,15 @@ Decoder::move_token_to_node(Token token,
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
     }
 
-    m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
-    m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
-    if (token.total_log_prob > m_current_glob_beam)
-        m_tokens.push_back(token);
-    else
-        m_pruning_count++;
+    if (token.total_log_prob > m_current_glob_beam) {
+        if (m_tokens[node_idx].size() == 0) m_active_nodes.push_back(node_idx);
+        if (token.total_log_prob > m_tokens[node_idx][token.history].total_log_prob) {
+            m_tokens[node_idx][token.history] = token;
+            m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
+            m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
+        }
+        else m_dropped_count++;
+    }
+    else m_pruning_count++;
 }
 
