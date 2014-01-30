@@ -209,6 +209,17 @@ Decoder::set_hmm_transition_probs(std::vector<Node> &nodes)
 
 
 void
+Decoder::set_subword_id_fsa_symbol_mapping()
+{
+    m_subword_id_to_fsa_symbol.resize(m_subwords.size(), -1);
+    for (int i=0; i<m_subwords.size(); i++) {
+        string tmp(m_subwords[i]);
+        m_subword_id_to_fsa_symbol[i] = m_lm.symbol_map().index(tmp);
+    }
+}
+
+
+void
 Decoder::recognize_lna_file(string &lnafname)
 {
     m_lna_reader.open_file(lnafname.c_str(), 1024);
@@ -227,6 +238,7 @@ Decoder::recognize_lna_file(string &lnafname)
 
 void
 Decoder::initialize(void) {
+    set_subword_id_fsa_symbol_mapping();
     m_tokens.resize(1);
     m_tokens.back().fsa_lm_node = m_lm.initial_node_id();
     m_tokens.back().history = make_shared<WordHistory>();
@@ -257,7 +269,7 @@ Decoder::move_token_to_node(Token token,
 
     if (token.node_idx == node_idx) token.dur++;
     else {
-        // Apply duration modeling if moved out from a hmm state
+        // Apply duration modeling for previous state if moved out from a hmm state
         if (m_nodes[token.node_idx].hmm_state != -1)
             token.am_log_prob += m_duration_scale
                 * m_hmm_states[m_nodes[token.node_idx].hmm_state].duration.get_log_prob(token.dur);
@@ -269,12 +281,7 @@ Decoder::move_token_to_node(Token token,
 
     // LM node, update history and LM score
     if (node.word_id != -1) {
-        // FIXME
-        string blaa(m_subwords[node.word_id]);
-        int sym = m_lm.symbol_map().index(blaa);
-        float curr_prob = 0.0;
-        token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, sym, &curr_prob);
-        token.lm_log_prob += curr_prob;
+        token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
 
         if (token.history->next.find(node.word_id) == token.history->next.end())

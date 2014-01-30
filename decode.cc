@@ -39,10 +39,17 @@ int main(int argc, char* argv[])
         d.read_lm(lmfname);
 
         string graphfname = config.arguments[4];
-        cerr << "Reading segmentations: " << graphfname << endl;
+        cerr << "Reading graph: " << graphfname << endl;
         d.read_dgraph(graphfname);
 
         cerr << "node count: " << d.m_nodes.size() << endl;
+
+
+        for (int i=0; i<d.m_subwords.size(); i++) {
+            string blaa(d.m_subwords[i]);
+            int sym = d.m_lm.symbol_map().index(blaa);
+            cerr << i << " " << sym << endl;
+        }
 
     } catch (string &e) {
         cerr << e << endl;

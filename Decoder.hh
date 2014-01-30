@@ -119,6 +119,8 @@ public:
     std::vector<HmmState> m_hmm_states;
     // Language model
     fsalm::LM m_lm;
+    std::vector<int> m_subword_id_to_fsa_symbol;
+
     // Audio reader
     LnaReaderCircular m_lna_reader;
     Acoustics *m_acoustics;
@@ -133,6 +135,7 @@ private:
                           bool short_silence=false);
     void add_hmm_self_transitions(std::vector<Node> &nodes);
     void set_hmm_transition_probs(std::vector<Node> &nodes);
+    void set_subword_id_fsa_symbol_mapping();
 
     float m_lm_scale;
     float m_duration_scale;
