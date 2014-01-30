@@ -209,6 +209,22 @@ Decoder::set_hmm_transition_probs(std::vector<Node> &nodes)
 
 
 void
+Decoder::recognize_lna_file(string &lnafname)
+{
+    m_lna_reader.open_file(lnafname.c_str(), 1024);
+    initialize();
+
+    int frame_idx = 0;
+    while (m_lna_reader.go_to(frame_idx)) {
+        propagate_tokens();
+        frame_idx++;
+    }
+
+    m_lna_reader.close();
+}
+
+
+void
 Decoder::initialize(void) {
     m_tokens.resize(1);
     m_tokens.back().fsa_lm_node = m_lm.initial_node_id();

@@ -94,6 +94,7 @@ public:
     void set_state_beam(float beam) { m_state_beam = beam; }
     void set_global_beam(float beam) { m_global_beam = beam; }
 
+    void recognize_lna_file(std::string &lnafname);
     void initialize();
     void propagate_tokens();
     void move_token_to_node(Token token, int node_idx, float transition_score);
@@ -114,6 +115,8 @@ public:
     std::vector<HmmState> m_hmm_states;
     // Language model
     fsalm::LM m_lm;
+    // Audio reader
+    LnaReaderCircular m_lna_reader;
 
     std::vector<Node> m_nodes;
     std::vector<Token> m_tokens;
