@@ -176,8 +176,6 @@ void
 Decoder::add_hmm_self_transitions(std::vector<Node> &nodes)
 {
     for (int i=0; i<nodes.size(); i++) {
-        if (i == START_NODE) continue;
-        if (i == END_NODE) continue;
 
         Node &node = nodes[i];
         if (node.hmm_state == -1) continue;
@@ -194,7 +192,6 @@ void
 Decoder::set_hmm_transition_probs(std::vector<Node> &nodes)
 {
     for (int i=0; i<nodes.size(); i++) {
-        if (i == END_NODE) continue;
 
         Node &node = nodes[i];
         if (node.hmm_state == -1) continue;
@@ -228,8 +225,10 @@ Decoder::recognize_lna_file(string &lnafname)
 
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
+        if (debug) cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
         frame_idx++;
+        break;
     }
 
     m_lna_reader.close();
@@ -243,6 +242,7 @@ Decoder::initialize(void) {
     m_tokens.back().fsa_lm_node = m_lm.initial_node_id();
     m_tokens.back().history = make_shared<WordHistory>();
     m_tokens.back().history->word_id = -1;
+    m_tokens.back().node_idx = END_NODE;
 }
 
 
@@ -252,12 +252,18 @@ Decoder::propagate_tokens(void)
     m_best_log_prob = -1e20;
     m_worst_log_prob = 0;
 
+    if (debug) cerr << "number of tokens: " << m_tokens.size() << endl;
     std::vector<Token> tokens;
     m_tokens.swap(tokens);
+
+    int token_idx = 0;
     for (auto token = tokens.begin(); token != tokens.end(); ++token) {
+        if (debug) cerr << "processing token: " << token_idx << endl;
         Node &nd = m_nodes[token->node_idx];
+        if (debug) cerr << "number of arcs: " << nd.arcs.size() << endl;
         for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
             move_token_to_node(*token, ait->target_node, ait->log_prob);
+        token_idx++;
     }
 }
 
@@ -267,6 +273,11 @@ Decoder::move_token_to_node(Token token,
                             int node_idx,
                             float transition_score)
 {
+    if (debug) cerr << "move_token_to_node:" << endl
+                    << "\tnode idx: " << node_idx << endl
+                    << "\tprevious node idx: " << token.node_idx << endl
+                    << "\ttransition score: " << transition_score << endl;
+
     token.am_log_prob += m_transition_scale * transition_score;
 
     if (token.node_idx == node_idx) token.dur++;

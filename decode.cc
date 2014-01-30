@@ -45,6 +45,7 @@ int main(int argc, char* argv[])
 
         string lnafname = config.arguments[5];
         cerr << "recognizing: " << lnafname << endl;
+        d.debug=1;
         d.recognize_lna_file(lnafname);
 
     } catch (string &e) {
