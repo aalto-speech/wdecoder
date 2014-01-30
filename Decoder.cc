@@ -228,7 +228,7 @@ Decoder::recognize_lna_file(string &lnafname)
         if (debug) cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
         frame_idx++;
-        break;
+        if (frame_idx == 2) break;
     }
 
     m_lna_reader.close();
