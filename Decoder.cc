@@ -252,7 +252,9 @@ Decoder::propagate_tokens(void)
     m_best_log_prob = -1e20;
     m_worst_log_prob = 0;
 
-    for (auto token = m_tokens.begin(); token != m_tokens.end(); ++token) {
+    std::vector<Token> tokens;
+    m_tokens.swap(tokens);
+    for (auto token = tokens.begin(); token != tokens.end(); ++token) {
         Node &nd = m_nodes[token->node_idx];
         for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
             move_token_to_node(*token, ait->target_node, ait->log_prob);
@@ -290,13 +292,18 @@ Decoder::move_token_to_node(Token token,
             token.history = token.history->next[node.word_id].lock();
     }
 
+    if (node.hmm_state == -1) {
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+            move_token_to_node(token, ait->target_node, ait->log_prob);
+        return;
+    }
+
     // HMM node
     if (node.hmm_state != -1) {
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
     }
 
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-        move_token_to_node(token, ait->target_node, ait->log_prob);
+    m_tokens.push_back(token);
 }
 
