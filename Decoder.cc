@@ -212,6 +212,7 @@ void
 Decoder::recognize_lna_file(string &lnafname)
 {
     m_lna_reader.open_file(lnafname.c_str(), 1024);
+    m_acoustics = &m_lna_reader;
     initialize();
 
     int frame_idx = 0;
@@ -254,9 +255,19 @@ Decoder::move_token_to_node(Token token,
 {
     token.am_log_prob += m_transition_scale * transition_score;
 
+    if (token.node_idx == node_idx) token.dur++;
+    else {
+        // Apply duration modeling if moved out from a hmm state
+        if (m_nodes[token.node_idx].hmm_state != -1)
+            token.am_log_prob += m_duration_scale
+                * m_hmm_states[m_nodes[token.node_idx].hmm_state].duration.get_log_prob(token.dur);
+        token.node_idx = node_idx;
+        token.dur = 1;
+    }
+
     Node &node = m_nodes[node_idx];
 
-    // LM node, just update history and LM score and continue
+    // LM node, update history and LM score
     if (node.word_id != -1) {
         // FIXME
         string blaa(m_subwords[node.word_id]);
@@ -264,35 +275,21 @@ Decoder::move_token_to_node(Token token,
         float curr_prob = 0.0;
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, sym, &curr_prob);
         token.lm_log_prob += curr_prob;
+        token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
 
         if (token.history->next.find(node.word_id) == token.history->next.end())
             token.history = make_shared<WordHistory>(node.word_id, token.history);
         else
             token.history = token.history->next[node.word_id].lock();
-
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-            move_token_to_node(token, ait->target_node, ait->log_prob);
-        return;
-    }
-
-    // Dummy nodes start/end, crossword entry/exit points
-    if (node.hmm_state == -1) {
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-            move_token_to_node(token, ait->target_node, ait->log_prob);
-        return;
     }
 
     // HMM node
-    // Normal propagation
+    if (node.hmm_state != -1) {
+        token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
+        token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+    }
 
-    /*
-    float ac_log_prob = m_acoustics->log_prob(
-      updated_token.node->state->model);
-
-    updated_token.am_log_prob += ac_log_prob;
-    updated_token.cur_am_log_prob += ac_log_prob;
-    updated_token.total_log_prob =
-      get_token_log_prob(updated_token.cur_am_log_prob,
-                         updated_token.cur_lm_log_prob);
-    */
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+        move_token_to_node(token, ait->target_node, ait->log_prob);
 }
+

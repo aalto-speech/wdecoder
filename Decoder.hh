@@ -98,6 +98,10 @@ public:
     void initialize();
     void propagate_tokens();
     void move_token_to_node(Token token, int node_idx, float transition_score);
+    inline float get_token_log_prob(float am_score, float lm_score)
+    {
+      return (am_score + m_lm_scale * lm_score);
+    }
 
     int debug;
 
@@ -117,6 +121,7 @@ public:
     fsalm::LM m_lm;
     // Audio reader
     LnaReaderCircular m_lna_reader;
+    Acoustics *m_acoustics;
 
     std::vector<Node> m_nodes;
     std::vector<Token> m_tokens;
