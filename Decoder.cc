@@ -249,15 +249,10 @@ Decoder::move_token_to_node(Token token,
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, sym, &curr_prob);
         token.lm_log_prob += curr_prob;
 
-        if (token.history->next.find(node.word_id) == token.history->next.end()) {
-            token.history->next[node.word_id] = make_pair(make_shared<WordHistory>(), 1);
-            token.history = token.history->next[node.word_id].first;
-            token.history->word_id = node.word_id;
-        }
-        else {
-            token.history->next[node.word_id].second++;
-            token.history = token.history->next[node.word_id].first;
-        }
+        if (token.history->next.find(node.word_id) == token.history->next.end())
+            token.history = make_shared<WordHistory>(node.word_id, token.history);
+        else
+            token.history = token.history->next[node.word_id].lock();
 
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             move_token_to_node(token, ait->target_node, ait->log_prob);

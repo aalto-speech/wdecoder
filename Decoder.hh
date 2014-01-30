@@ -10,6 +10,7 @@
 
 #include "Hmm.hh"
 #include "LM.hh"
+#include "LnaReaderCircular.hh"
 
 
 class Decoder {
@@ -33,10 +34,14 @@ public:
         std::vector<Arc> arcs;
     };
 
-    struct WordHistory {
+    class WordHistory {
+    public:
+        WordHistory() { }
+        WordHistory(int word_id, std::shared_ptr<WordHistory> previous)
+            : word_id(word_id), previous(previous) { }
         int word_id;
-        std::shared_ptr<WordHistory> history;
-        std::unordered_map<int, std::pair<std::shared_ptr<WordHistory>, int> > next;
+        std::shared_ptr<WordHistory> previous;
+        std::unordered_map<int, std::weak_ptr<WordHistory> > next;
     };
 
     class Token {
