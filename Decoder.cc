@@ -4,6 +4,8 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <unordered_map>
+#include <memory>
 
 #include "NowayHmmReader.hh"
 #include "Decoder.hh"
@@ -216,6 +218,25 @@ Decoder::set_subword_id_fsa_symbol_mapping()
 }
 
 
+int
+Decoder::prunable_by_same_state_and_history()
+{
+    map<int, map<shared_ptr<WordHistory>, int> > same;
+    for (auto tokenit = m_tokens.begin(); tokenit != m_tokens.end(); ++tokenit) {
+        same[tokenit->node_idx][tokenit->history]++;
+    }
+
+    int count = 0;
+    for (auto nit = same.begin(); nit != same.end(); ++nit) {
+        for (auto hit = nit->second.begin(); hit != nit->second.end(); ++hit) {
+            count += (hit->second - 1);
+        }
+    }
+
+    return count;
+}
+
+
 void
 Decoder::recognize_lna_file(string &lnafname)
 {
@@ -229,8 +250,10 @@ Decoder::recognize_lna_file(string &lnafname)
         cerr << endl << "initial token count: " << m_tokens.size() << endl;
         propagate_tokens();
         frame_idx++;
+        int prunable = prunable_by_same_state_and_history();
         cerr << "token count after propagation: " << m_tokens.size() << endl;
         cerr << "tokens pruned by global beam: " << m_pruning_count << endl;
+        cerr << "tokens prunable by same state and history: " << prunable << endl;
         cerr << "worst log probability: " << m_worst_log_prob << endl;
         cerr << "best log probability: " << m_best_log_prob << endl;
     }

@@ -136,6 +136,7 @@ private:
     void add_hmm_self_transitions(std::vector<Node> &nodes);
     void set_hmm_transition_probs(std::vector<Node> &nodes);
     void set_subword_id_fsa_symbol_mapping();
+    int prunable_by_same_state_and_history();
 
     float m_lm_scale;
     float m_duration_scale;
