@@ -19,6 +19,7 @@ public:
     static const int START_NODE = 0;
     static const int END_NODE = 1;
     int DECODE_START_NODE;
+    int SENTENCE_END_WORD_ID;
 
     class Arc {
     public:

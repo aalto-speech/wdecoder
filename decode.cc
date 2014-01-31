@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
         d.set_lm_scale(30.0);
         d.set_duration_scale(3.0);
         d.set_transition_scale(1.0);
-        d.set_global_beam(270.0);
+        d.set_global_beam(230.0);
         d.recognize_lna_file(lnafname);
 
     } catch (string &e) {
