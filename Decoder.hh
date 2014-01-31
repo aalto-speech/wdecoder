@@ -43,7 +43,7 @@ public:
             : word_id(word_id), previous(previous) { }
         int word_id;
         std::shared_ptr<WordHistory> previous;
-        std::unordered_map<int, std::weak_ptr<WordHistory> > next;
+        std::map<int, std::weak_ptr<WordHistory> > next;
     };
 
     class Token {
@@ -55,6 +55,7 @@ public:
       float total_log_prob;
       int fsa_lm_node;
       int word_start_frame;
+      int word_count;
       unsigned short int dur;
       std::shared_ptr<WordHistory> history;
 

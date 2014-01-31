@@ -248,8 +248,6 @@ Decoder::recognize_lna_file(string &lnafname)
         cerr << "best log probability: " << m_best_log_prob << endl;
         cerr << "best path: " << endl;
         print_best_word_history();
-
-        if (frame_idx == 200) break;
     }
 
     m_lna_reader.close();
@@ -292,6 +290,7 @@ Decoder::propagate_tokens(void)
     int propagated_count = 0;
     for (auto nit = active_nodes.begin(); nit != active_nodes.end(); ++nit) {
         for (auto tit = tokens[*nit].begin(); tit != tokens[*nit].end(); ++tit) {
+            token_count++;
             Node &nd = m_nodes[tit->second.node_idx];
             if (debug) cerr << "number of arcs: " << nd.arcs.size() << endl;
             for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
@@ -299,8 +298,9 @@ Decoder::propagate_tokens(void)
                 propagated_count++;
             }
         }
-        token_count++;
     }
+
+    tokens.clear();
 
     cerr << "token count before propagation: " << token_count << endl;
     cerr << "propagated token count: " << propagated_count << endl;
@@ -319,45 +319,43 @@ Decoder::move_token_to_node(Token token,
 
     token.am_log_prob += m_transition_scale * transition_score;
 
-    token.node_idx = node_idx;
-    /*
+    //token.node_idx = node_idx;
     if (token.node_idx == node_idx) token.dur++;
     else {
         // Apply duration modeling for previous state if moved out from a hmm state
-
         if (m_nodes[token.node_idx].hmm_state != -1)
             token.am_log_prob += m_duration_scale
                 * m_hmm_states[m_nodes[token.node_idx].hmm_state].duration.get_log_prob(token.dur);
         token.node_idx = node_idx;
         token.dur = 1;
     }
-    */
 
     Node &node = m_nodes[node_idx];
 
     // LM node, update history and LM score
     if (node.word_id != -1) {
         //cerr << "node: " << node_idx << " walking with: " << m_subwords[node.word_id] << endl;
-        try {
-            token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
-            if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
-        }
-        catch (exception &e) {
-            cerr << "problem" << endl;
-            cerr << "node: " << node_idx << " walking with: " << m_subwords[node.word_id] << endl;
-            print_word_history(token.history);
-            exit(1);
-        }
+        token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
+        if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < m_current_glob_beam) {
             m_pruning_count++;
             return;
         }
 
-        if (token.history->next.find(node.word_id) == token.history->next.end())
+        token.word_count++;
+        if (token.history->next.find(node.word_id) == token.history->next.end()) {
             token.history = make_shared<WordHistory>(node.word_id, token.history);
-        else
-            token.history = token.history->next[node.word_id].lock();
+            token.history->previous->next[node.word_id] = token.history;
+        }
+        else {
+            auto tmp = token.history->next[node.word_id].lock();
+            if (tmp != nullptr) token.history = tmp;
+            else {
+                token.history = make_shared<WordHistory>(node.word_id, token.history);
+                token.history->previous->next[node.word_id] = token.history;
+            }
+        }
     }
 
     if (node.hmm_state == -1) {
@@ -399,6 +397,7 @@ Decoder::print_best_word_history()
         }
     }
 
+    cerr << "path length: " << best_token->word_count << endl;
     print_word_history(best_token->history);
 }
 
@@ -406,17 +405,17 @@ Decoder::print_best_word_history()
 void
 Decoder::print_word_history(std::shared_ptr<WordHistory> &history)
 {
-    vector<string> subwords;
-    int word_id = history->word_id;
-    while (word_id != -1) {
-        subwords.push_back(m_subwords[word_id]);
+    vector<int> subwords;
+    while (true) {
+        subwords.push_back(history->word_id);
+        if (history->previous == nullptr) break;
         history = history->previous;
-        word_id = history->word_id;
     }
 
     for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
         if (swit != subwords.rbegin()) cerr << " ";
-        cerr << *swit;
+        if (*swit != -1) cerr << m_subwords[*swit];
+        cerr << "(" << *swit << ")";
     }
     cerr << endl;
 }

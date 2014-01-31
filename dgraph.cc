@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
         }
 
         cerr << "Pushing subword ids.." << endl;
-        dg.push_word_ids_left(nodes);
+        dg.push_word_ids_right(nodes);
         if (assertions) {
             words_ok = assert_words(dg, nodes, triphonized_words, false);
             cerr << "assert_words: " << words_ok << endl;
