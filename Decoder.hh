@@ -18,6 +18,7 @@ class Decoder {
 public:
     static const int START_NODE = 0;
     static const int END_NODE = 1;
+    int DECODE_START_NODE;
 
     class Arc {
     public:
@@ -102,6 +103,9 @@ public:
     {
       return (am_score + m_lm_scale * lm_score);
     }
+    void print_best_word_history();
+    void print_word_history(std::shared_ptr<WordHistory> &history);
+    void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
 
     int debug;
 

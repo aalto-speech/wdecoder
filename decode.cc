@@ -43,6 +43,11 @@ int main(int argc, char* argv[])
         d.read_dgraph(graphfname);
         cerr << "node count: " << d.m_nodes.size() << endl;
 
+//        ofstream outf("graph.dot");
+//        d.print_dot_digraph(d.m_nodes, outf);
+//        outf.close();
+//        exit(1);
+
         string lnafname = config.arguments[5];
         cerr << "recognizing: " << lnafname << endl;
         d.debug=0;

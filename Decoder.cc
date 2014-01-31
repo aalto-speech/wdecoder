@@ -5,7 +5,6 @@
 #include <sstream>
 #include <vector>
 #include <unordered_map>
-#include <memory>
 
 #include "NowayHmmReader.hh"
 #include "Decoder.hh"
@@ -143,14 +142,26 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         int hmm_index = m_hmm_map[long_silence];
         Hmm &hmm = m_hmms[hmm_index];
 
+        nodes.resize(nodes.size()+1);
+        nodes.back().hmm_state = -1;
+        nodes.back().word_id = m_subword_map[string("</s>")];
+        DECODE_START_NODE = nodes.size()-1;
+        nodes[END_NODE].arcs.resize(nodes[END_NODE].arcs.size()+1);
+        nodes[END_NODE].arcs.back().target_node = DECODE_START_NODE;
+
         int node_idx = END_NODE;
         for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             nodes.resize(nodes.size()+1);
             nodes.back().hmm_state = hmm.states[sidx].model;
             nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
             nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+            if (sidx == 2) {
+                nodes[DECODE_START_NODE].arcs.resize(1);
+                nodes[DECODE_START_NODE].arcs.back().target_node = nodes.size()-1;
+            }
             node_idx = nodes.size()-1;
         }
+
         nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
         nodes[node_idx].arcs.back().target_node = START_NODE;
     }
@@ -234,8 +245,10 @@ Decoder::recognize_lna_file(string &lnafname)
         cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
         cerr << "worst log probability: " << m_worst_log_prob << endl;
         cerr << "best log probability: " << m_best_log_prob << endl;
+        cerr << "best path: " << endl;
+        print_best_word_history();
 
-        if (frame_idx == 2000) break;
+        if (frame_idx == 200) break;
     }
 
     m_lna_reader.close();
@@ -251,10 +264,10 @@ Decoder::initialize()
     tok.fsa_lm_node = m_lm.initial_node_id();
     tok.history = make_shared<WordHistory>();
     tok.history->word_id = -1;
-    tok.node_idx = END_NODE;
-    m_tokens[END_NODE][tok.history] = tok;
+    tok.node_idx = DECODE_START_NODE;
+    m_tokens[DECODE_START_NODE][tok.history] = tok;
     m_active_nodes.clear();
-    m_active_nodes.push_back((int)END_NODE);
+    m_active_nodes.push_back((int)DECODE_START_NODE);
 }
 
 
@@ -289,7 +302,7 @@ Decoder::propagate_tokens(void)
     }
 
     cerr << "token count before propagation: " << token_count << endl;
-    cerr << "token count after propagation: " << propagated_count << endl;
+    cerr << "propagated token count: " << propagated_count << endl;
 }
 
 
@@ -305,20 +318,25 @@ Decoder::move_token_to_node(Token token,
 
     token.am_log_prob += m_transition_scale * transition_score;
 
+    token.node_idx = node_idx;
+    /*
     if (token.node_idx == node_idx) token.dur++;
     else {
         // Apply duration modeling for previous state if moved out from a hmm state
+
         if (m_nodes[token.node_idx].hmm_state != -1)
             token.am_log_prob += m_duration_scale
                 * m_hmm_states[m_nodes[token.node_idx].hmm_state].duration.get_log_prob(token.dur);
         token.node_idx = node_idx;
         token.dur = 1;
     }
+    */
 
     Node &node = m_nodes[node_idx];
 
     // LM node, update history and LM score
     if (node.word_id != -1) {
+        //cerr << "node: " << node_idx << " walking with: " << m_subwords[node.word_id] << endl;
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < m_current_glob_beam) {
@@ -356,3 +374,73 @@ Decoder::move_token_to_node(Token token,
     else m_pruning_count++;
 }
 
+
+void
+Decoder::print_best_word_history()
+{
+    Token *best_token = nullptr;
+
+    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
+        for (auto tit = m_tokens[*nit].begin(); tit != m_tokens[*nit].end(); ++tit) {
+            if (best_token == nullptr)
+                best_token = &(tit->second);
+            else if (tit->second.total_log_prob > best_token->total_log_prob)
+                best_token = &(tit->second);
+        }
+    }
+
+    print_word_history(best_token->history);
+}
+
+
+void
+Decoder::print_word_history(std::shared_ptr<WordHistory> &history)
+{
+    vector<string> subwords;
+    int word_id = history->word_id;
+    while (word_id != -1) {
+        subwords.push_back(m_subwords[word_id]);
+        history = history->previous;
+        word_id = history->word_id;
+    }
+
+    for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
+        if (swit != subwords.rbegin()) cerr << " ";
+        cerr << *swit;
+    }
+    cerr << endl;
+}
+
+
+void
+Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
+{
+    fstr << "digraph {" << endl << endl;
+    fstr << "\tnode [shape=ellipse,fontsize=30,fixedsize=false,width=0.95];" << endl;
+    fstr << "\tedge [fontsize=12];" << endl;
+    fstr << "\trankdir=LR;" << endl << endl;
+
+    for (int nidx = 0; nidx < m_nodes.size(); ++nidx) {
+        Node &nd = m_nodes[nidx];
+        fstr << "\t" << nidx;
+        if (nidx == START_NODE) fstr << " [label=\"start\"]" << endl;
+        else if (nidx == END_NODE) fstr << " [label=\"end\"]" << endl;
+        else if (nd.hmm_state != -1 && nd.word_id != -1)
+            fstr << " [label=\"" << nidx << ":" << nd.hmm_state << ", " << m_subwords[nd.word_id] << "\"]" << endl;
+        else if (nd.hmm_state != -1 && nd.word_id == -1)
+            fstr << " [label=\"" << nidx << ":"<< nd.hmm_state << "\"]" << endl;
+        else if (nd.hmm_state == -1 && nd.word_id != -1)
+            fstr << " [label=\"" << nidx << ":"<< m_subwords[nd.word_id] << "\"]" << endl;
+        else
+            fstr << " [label=\"" << nidx << ":dummy\"]" << endl;
+    }
+
+    fstr << endl;
+    for (int nidx = 0; nidx < m_nodes.size(); ++nidx) {
+        Node &node = m_nodes[nidx];
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+            fstr << "\t" << nidx << " -> " << ait->target_node
+                 << "[label=\"" << ait->log_prob << "\"];" << endl;
+    }
+    fstr << "}" << endl;
+}

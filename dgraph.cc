@@ -145,9 +145,6 @@ int main(int argc, char* argv[])
             cerr << "assert_words: " << words_ok << endl;
         }
 
-        dg.add_hmm_self_transitions(nodes);
-        dg.set_hmm_transition_probs(nodes);
-
         bool pairs_ok = assert_word_pairs(dg, nodes, 10000, false);
         cerr << "assert word pairs: " << pairs_ok << endl;
 
