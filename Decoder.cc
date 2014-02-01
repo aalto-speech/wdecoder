@@ -237,8 +237,6 @@ Decoder::recognize_lna_file(string &lnafname)
     m_lna_reader.open_file(lnafname.c_str(), 1024);
     m_acoustics = &m_lna_reader;
     initialize();
-    m_new_count = 0;
-    m_delete_count = 0;
 
     time_t start_time, end_time;
     time(&start_time);
@@ -260,9 +258,6 @@ Decoder::recognize_lna_file(string &lnafname)
     double seconds = difftime(end_time, start_time);
     cerr << "recognized " << frame_idx << " frames in " << seconds << " seconds." << endl;
     cerr << "RTF: " << seconds / ((double)frame_idx/125.0) << endl;
-
-    cerr << "m_new_count: " << m_new_count << endl;
-    cerr << "m_delete_count: " << m_delete_count << endl;
 
     clear_word_history();
     m_lna_reader.close();
@@ -361,7 +356,6 @@ Decoder::move_token_to_node(Token token,
         token.word_count++;
         if (token.history->next.find(node.word_id) == token.history->next.end()) {
             token.history = new WordHistory(node.word_id, token.history);
-            m_new_count++;
             token.history->previous->next[node.word_id] = token.history;
             m_word_history_leafs.erase(token.history->previous);
             m_word_history_leafs.insert(token.history);
@@ -477,7 +471,6 @@ Decoder::clear_word_history()
             wh = wh->previous;
             if (wh != nullptr) wh->next.erase(tmp->word_id);
             delete tmp;
-            m_delete_count++;
             if (wh != nullptr && wh->next.size() > 0) break;
         }
     }

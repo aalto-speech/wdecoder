@@ -160,8 +160,6 @@ private:
 
     int m_pruning_count;
     int m_dropped_count;
-    int m_new_count;
-    int m_delete_count;
 };
 
 #endif /* DECODER_HH */
