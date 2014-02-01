@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <ctime>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -236,6 +237,11 @@ Decoder::recognize_lna_file(string &lnafname)
     m_lna_reader.open_file(lnafname.c_str(), 1024);
     m_acoustics = &m_lna_reader;
     initialize();
+    m_new_count = 0;
+    m_delete_count = 0;
+
+    time_t start_time, end_time;
+    time(&start_time);
 
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
@@ -250,6 +256,15 @@ Decoder::recognize_lna_file(string &lnafname)
         print_best_word_history();
     }
 
+    time(&end_time);
+    double seconds = difftime(end_time, start_time);
+    cerr << "recognized " << frame_idx << " frames in " << seconds << " seconds." << endl;
+    cerr << "RTF: " << seconds / ((double)frame_idx/125.0) << endl;
+
+    cerr << "m_new_count: " << m_new_count << endl;
+    cerr << "m_delete_count: " << m_delete_count << endl;
+
+    clear_word_history();
     m_lna_reader.close();
 }
 
@@ -259,6 +274,7 @@ Decoder::initialize()
 {
     set_subword_id_fsa_symbol_mapping();
     m_tokens.resize(m_nodes.size());
+    m_word_history_leafs.clear();
     Token tok;
     tok.fsa_lm_node = m_lm.initial_node_id();
     tok.history = new WordHistory();
@@ -345,7 +361,10 @@ Decoder::move_token_to_node(Token token,
         token.word_count++;
         if (token.history->next.find(node.word_id) == token.history->next.end()) {
             token.history = new WordHistory(node.word_id, token.history);
+            m_new_count++;
             token.history->previous->next[node.word_id] = token.history;
+            m_word_history_leafs.erase(token.history->previous);
+            m_word_history_leafs.insert(token.history);
         }
         else token.history = token.history->next[node.word_id];
     }
@@ -445,3 +464,23 @@ Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
     }
     fstr << "}" << endl;
 }
+
+
+void
+Decoder::clear_word_history()
+{
+    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ++whlnit) {
+        WordHistory *wh = *whlnit;
+        WordHistory *tmp;
+        while (wh != nullptr) {
+            tmp = wh;
+            wh = wh->previous;
+            if (wh != nullptr) wh->next.erase(tmp->word_id);
+            delete tmp;
+            m_delete_count++;
+            if (wh != nullptr && wh->next.size() > 0) break;
+        }
+    }
+    m_word_history_leafs.clear();
+}
+

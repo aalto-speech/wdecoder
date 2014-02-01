@@ -134,6 +134,7 @@ public:
     std::vector<Node> m_nodes;
     std::vector<int> m_active_nodes;
     std::vector<std::map<WordHistory*, Token> > m_tokens;
+    std::set<WordHistory*> m_word_history_leafs;
 
 private:
 
@@ -143,6 +144,7 @@ private:
     void add_hmm_self_transitions(std::vector<Node> &nodes);
     void set_hmm_transition_probs(std::vector<Node> &nodes);
     void set_subword_id_fsa_symbol_mapping();
+    void clear_word_history();
 
     float m_lm_scale;
     float m_duration_scale;
@@ -158,6 +160,8 @@ private:
 
     int m_pruning_count;
     int m_dropped_count;
+    int m_new_count;
+    int m_delete_count;
 };
 
 #endif /* DECODER_HH */
