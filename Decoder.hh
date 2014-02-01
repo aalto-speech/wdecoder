@@ -38,12 +38,12 @@ public:
 
     class WordHistory {
     public:
-        WordHistory() { }
-        WordHistory(int word_id, std::shared_ptr<WordHistory> previous)
+        WordHistory() : word_id(-1), previous(nullptr) { }
+        WordHistory(int word_id, WordHistory *previous)
             : word_id(word_id), previous(previous) { }
         int word_id;
-        std::shared_ptr<WordHistory> previous;
-        std::map<int, std::weak_ptr<WordHistory> > next;
+        WordHistory *previous;
+        std::map<int, WordHistory*> next;
     };
 
     class Token {
@@ -57,7 +57,7 @@ public:
       int word_start_frame;
       int word_count;
       unsigned short int dur;
-      std::shared_ptr<WordHistory> history;
+      WordHistory *history;
 
       Token():
         node_idx(-1),
@@ -106,7 +106,7 @@ public:
       return (am_score + m_lm_scale * lm_score);
     }
     void print_best_word_history();
-    void print_word_history(std::shared_ptr<WordHistory> &history);
+    void print_word_history(WordHistory *history);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
 
     int debug;
@@ -133,7 +133,7 @@ public:
 
     std::vector<Node> m_nodes;
     std::vector<int> m_active_nodes;
-    std::vector<std::map<std::shared_ptr<WordHistory>, Token> > m_tokens;
+    std::vector<std::map<WordHistory*, Token> > m_tokens;
 
 private:
 

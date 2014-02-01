@@ -261,8 +261,7 @@ Decoder::initialize()
     m_tokens.resize(m_nodes.size());
     Token tok;
     tok.fsa_lm_node = m_lm.initial_node_id();
-    tok.history = make_shared<WordHistory>();
-    tok.history->word_id = -1;
+    tok.history = new WordHistory();
     tok.node_idx = DECODE_START_NODE;
     m_tokens[DECODE_START_NODE][tok.history] = tok;
     m_active_nodes.clear();
@@ -279,7 +278,7 @@ Decoder::propagate_tokens(void)
     m_pruning_count = 0;
     m_dropped_count = 0;
 
-    vector<map<shared_ptr<WordHistory>, Token> > tokens;
+    vector<map<WordHistory*, Token> > tokens;
     tokens.resize(m_nodes.size());
     m_tokens.swap(tokens);
 
@@ -345,17 +344,10 @@ Decoder::move_token_to_node(Token token,
 
         token.word_count++;
         if (token.history->next.find(node.word_id) == token.history->next.end()) {
-            token.history = make_shared<WordHistory>(node.word_id, token.history);
+            token.history = new WordHistory(node.word_id, token.history);
             token.history->previous->next[node.word_id] = token.history;
         }
-        else {
-            auto tmp = token.history->next[node.word_id].lock();
-            if (tmp != nullptr) token.history = tmp;
-            else {
-                token.history = make_shared<WordHistory>(node.word_id, token.history);
-                token.history->previous->next[node.word_id] = token.history;
-            }
-        }
+        else token.history = token.history->next[node.word_id];
     }
 
     if (node.hmm_state == -1) {
@@ -403,7 +395,7 @@ Decoder::print_best_word_history()
 
 
 void
-Decoder::print_word_history(std::shared_ptr<WordHistory> &history)
+Decoder::print_word_history(WordHistory *history)
 {
     vector<int> subwords;
     while (true) {
