@@ -248,6 +248,7 @@ Decoder::recognize_lna_file(string &lnafname)
         frame_idx++;
         cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
         cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
+        cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
         cerr << "worst log probability: " << m_worst_log_prob << endl;
         cerr << "best log probability: " << m_best_log_prob << endl;
         cerr << "best path: " << endl;
@@ -295,6 +296,9 @@ Decoder::propagate_tokens(void)
 
     std::vector<int> active_nodes;
     m_active_nodes.swap(active_nodes);
+
+    m_best_for_history.swap(m_new_best_for_history);
+    m_new_best_for_history.clear();
 
     int token_count = 0;
     int propagated_count = 0;
@@ -380,11 +384,25 @@ Decoder::move_token_to_node(Token token,
         return;
     }
 
+    auto best_for_history = m_best_for_history.find(token.history);
+    if (best_for_history != m_best_for_history.end()
+        && token.total_log_prob < (best_for_history->second-m_history_beam))
+    {
+        m_history_beam_pruned_count++;
+        return;
+    }
+
     if (m_tokens[node_idx].size() == 0) m_active_nodes.push_back(node_idx);
     if (token.total_log_prob > m_tokens[node_idx][token.history].total_log_prob) {
         m_tokens[node_idx][token.history] = token;
         m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
         m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
+
+        auto new_best_for_history = m_new_best_for_history.find(token.history);
+        if (new_best_for_history == m_new_best_for_history.end())
+            m_new_best_for_history[token.history] = token.total_log_prob;
+        else if (token.total_log_prob > new_best_for_history->second)
+            new_best_for_history->second = token.total_log_prob;
     }
     else m_dropped_count++;
 
