@@ -246,7 +246,7 @@ Decoder::recognize_lna_file(string &lnafname)
         cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
         frame_idx++;
-        cerr << "tokens pruned by global beam: " << m_pruning_count << endl;
+        cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
         cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
         cerr << "worst log probability: " << m_worst_log_prob << endl;
         cerr << "best log probability: " << m_best_log_prob << endl;
@@ -286,7 +286,7 @@ Decoder::propagate_tokens(void)
     m_current_glob_beam = m_best_log_prob-m_global_beam;
     m_best_log_prob = -1e20;
     m_worst_log_prob = 0;
-    m_pruning_count = 0;
+    m_global_beam_pruned_count = 0;
     m_dropped_count = 0;
 
     vector<map<WordHistory*, Token> > tokens;
@@ -349,7 +349,7 @@ Decoder::move_token_to_node(Token token,
         if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < m_current_glob_beam) {
-            m_pruning_count++;
+            m_global_beam_pruned_count++;
             return;
         }
 
@@ -374,16 +374,20 @@ Decoder::move_token_to_node(Token token,
     // HMM node
     token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
     token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
-    if (token.total_log_prob > m_current_glob_beam) {
-        if (m_tokens[node_idx].size() == 0) m_active_nodes.push_back(node_idx);
-        if (token.total_log_prob > m_tokens[node_idx][token.history].total_log_prob) {
-            m_tokens[node_idx][token.history] = token;
-            m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
-            m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
-        }
-        else m_dropped_count++;
+
+    if (token.total_log_prob < m_current_glob_beam) {
+        m_global_beam_pruned_count++;
+        return;
     }
-    else m_pruning_count++;
+
+    if (m_tokens[node_idx].size() == 0) m_active_nodes.push_back(node_idx);
+    if (token.total_log_prob > m_tokens[node_idx][token.history].total_log_prob) {
+        m_tokens[node_idx][token.history] = token;
+        m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
+        m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
+    }
+    else m_dropped_count++;
+
 }
 
 

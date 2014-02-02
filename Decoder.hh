@@ -96,6 +96,7 @@ public:
     void set_max_num_tokens(int tokens) { m_max_num_tokens = tokens; }
     void set_state_beam(float beam) { m_state_beam = beam; }
     void set_global_beam(float beam) { m_global_beam = beam; }
+    void set_history_beam(float beam) { m_history_beam = beam; }
 
     void recognize_lna_file(std::string &lnafname);
     void initialize();
@@ -135,6 +136,7 @@ public:
     std::vector<int> m_active_nodes;
     std::vector<std::map<WordHistory*, Token> > m_tokens;
     std::map<WordHistory*, float> m_best_for_history;
+    std::map<WordHistory*, float> m_new_best_for_history;
     std::set<WordHistory*> m_word_history_leafs;
 
 private:
@@ -155,11 +157,13 @@ private:
     float m_global_beam;
     float m_current_glob_beam;
     float m_state_beam;
+    float m_history_beam;
 
     float m_best_log_prob;
     float m_worst_log_prob;
 
-    int m_pruning_count;
+    int m_global_beam_pruned_count;
+    int m_history_beam_pruned_count;
     int m_dropped_count;
 };
 
