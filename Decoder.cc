@@ -354,13 +354,15 @@ Decoder::move_token_to_node(Token token,
         }
 
         token.word_count++;
-        if (token.history->next.find(node.word_id) == token.history->next.end()) {
+        auto next_history = token.history->next.find(node.word_id);
+        if (next_history != token.history->next.end())
+            token.history = next_history->second;
+        else {
             token.history = new WordHistory(node.word_id, token.history);
             token.history->previous->next[node.word_id] = token.history;
             m_word_history_leafs.erase(token.history->previous);
             m_word_history_leafs.insert(token.history);
         }
-        else token.history = token.history->next[node.word_id];
     }
 
     if (node.hmm_state == -1) {
@@ -370,11 +372,8 @@ Decoder::move_token_to_node(Token token,
     }
 
     // HMM node
-    if (node.hmm_state != -1) {
-        token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
-        token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
-    }
-
+    token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
+    token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
     if (token.total_log_prob > m_current_glob_beam) {
         if (m_tokens[node_idx].size() == 0) m_active_nodes.push_back(node_idx);
         if (token.total_log_prob > m_tokens[node_idx][token.history].total_log_prob) {

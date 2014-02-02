@@ -145,8 +145,10 @@ int main(int argc, char* argv[])
             cerr << "assert_words: " << words_ok << endl;
         }
 
-        bool pairs_ok = assert_word_pairs(dg, nodes, 10000, false);
-        cerr << "assert word pairs: " << pairs_ok << endl;
+        if (assertions) {
+            bool pairs_ok = assert_word_pairs(dg, nodes, 10000, false);
+            cerr << "assert word pairs: " << pairs_ok << endl;
+        }
 
         dg.write_graph(nodes, segfname + ".graph");
 

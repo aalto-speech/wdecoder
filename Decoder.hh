@@ -134,6 +134,7 @@ public:
     std::vector<Node> m_nodes;
     std::vector<int> m_active_nodes;
     std::vector<std::map<WordHistory*, Token> > m_tokens;
+    std::map<WordHistory*, float> m_best_for_history;
     std::set<WordHistory*> m_word_history_leafs;
 
 private:
