@@ -249,9 +249,11 @@ Decoder::recognize_lna_file(string &lnafname)
         cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
         cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
         cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
+        cerr << "tokens pruned by state beam: " << m_state_beam_pruned_count << endl;
         cerr << "worst log probability: " << m_worst_log_prob << endl;
         cerr << "best log probability: " << m_best_log_prob << endl;
-        cerr << "best path: " << endl;
+        cerr << "number of active nodes: " << m_active_nodes.size() << endl;
+        cerr << "number of different word histories: " << m_new_best_for_history.size() << endl;
         print_best_word_history();
     }
 
@@ -278,6 +280,8 @@ Decoder::initialize()
     m_tokens[DECODE_START_NODE][tok.history] = tok;
     m_active_nodes.clear();
     m_active_nodes.push_back((int)DECODE_START_NODE);
+    m_best_for_state.resize(m_nodes.size());
+    m_new_best_for_state.resize(m_nodes.size());
 }
 
 
@@ -288,6 +292,8 @@ Decoder::propagate_tokens(void)
     m_best_log_prob = -1e20;
     m_worst_log_prob = 0;
     m_global_beam_pruned_count = 0;
+    m_history_beam_pruned_count = 0;
+    m_state_beam_pruned_count = 0;
     m_dropped_count = 0;
 
     vector<map<WordHistory*, Token> > tokens;
@@ -299,6 +305,10 @@ Decoder::propagate_tokens(void)
 
     m_best_for_history.swap(m_new_best_for_history);
     m_new_best_for_history.clear();
+
+    m_best_for_state.swap(m_new_best_for_state);
+    m_new_best_for_state.clear();
+    m_new_best_for_state.resize(m_nodes.size());
 
     int token_count = 0;
     int propagated_count = 0;
@@ -392,6 +402,13 @@ Decoder::move_token_to_node(Token token,
         return;
     }
 
+    if (m_best_for_state[node_idx] != 0.0
+        && token.total_log_prob < (m_best_for_state[node_idx]-m_state_beam))
+    {
+        m_state_beam_pruned_count++;
+        return;
+    }
+
     if (m_tokens[node_idx].size() == 0) m_active_nodes.push_back(node_idx);
     if (token.total_log_prob > m_tokens[node_idx][token.history].total_log_prob) {
         m_tokens[node_idx][token.history] = token;
@@ -403,6 +420,11 @@ Decoder::move_token_to_node(Token token,
             m_new_best_for_history[token.history] = token.total_log_prob;
         else if (token.total_log_prob > new_best_for_history->second)
             new_best_for_history->second = token.total_log_prob;
+
+        if (m_new_best_for_state[node_idx] == 0.0)
+            m_new_best_for_state[node_idx] = token.total_log_prob;
+        else if (token.total_log_prob > m_new_best_for_state[node_idx])
+            m_new_best_for_state[node_idx] = token.total_log_prob;
     }
     else m_dropped_count++;
 

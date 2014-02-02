@@ -137,6 +137,8 @@ public:
     std::vector<std::map<WordHistory*, Token> > m_tokens;
     std::map<WordHistory*, float> m_best_for_history;
     std::map<WordHistory*, float> m_new_best_for_history;
+    std::vector<float> m_best_for_state;
+    std::vector<float> m_new_best_for_state;
     std::set<WordHistory*> m_word_history_leafs;
 
 private:
@@ -164,6 +166,7 @@ private:
 
     int m_global_beam_pruned_count;
     int m_history_beam_pruned_count;
+    int m_state_beam_pruned_count;
     int m_dropped_count;
 };
 
