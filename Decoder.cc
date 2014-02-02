@@ -241,11 +241,16 @@ Decoder::recognize_lna_file(string &lnafname)
     time_t start_time, end_time;
     time(&start_time);
 
+    float original_global_beam = m_global_beam;
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
+        bool sil_detected = detect_silence();
+        if (sil_detected && frame_idx > 200) m_global_beam = m_silence_beam;
+        else m_global_beam = original_global_beam;
         cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
         frame_idx++;
+        if (sil_detected) cerr << "silence_beam was used" << endl;
         cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
         cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
         cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
@@ -262,6 +267,7 @@ Decoder::recognize_lna_file(string &lnafname)
     cerr << "recognized " << frame_idx << " frames in " << seconds << " seconds." << endl;
     cerr << "RTF: " << seconds / ((double)frame_idx/125.0) << endl;
 
+    m_global_beam = original_global_beam;
     clear_word_history();
     m_lna_reader.close();
 }
@@ -284,6 +290,7 @@ Decoder::initialize()
     m_new_best_for_state.resize(m_nodes.size());
 }
 
+bool descending_sort(pair<int, float> i,pair<int, float> j) { return (i.second > j.second); }
 
 void
 Decoder::propagate_tokens(void)
@@ -520,3 +527,43 @@ Decoder::clear_word_history()
     m_word_history_leafs.clear();
 }
 
+
+bool
+Decoder::detect_silence()
+{
+    vector<pair<int, float> > sorted_hmm_states;
+    for (int i=0; i<m_hmm_states.size(); i++) {
+        float hmm_state_lp = m_acoustics->log_prob(i);
+        sorted_hmm_states.push_back(make_pair(i, hmm_state_lp));
+    }
+    sort(sorted_hmm_states.begin(), sorted_hmm_states.end(), descending_sort);
+
+    int short_sil_pos = 0;
+    int long_sil_state_1_pos = 0;
+    int long_sil_state_2_pos = 0;
+    int long_sil_state_3_pos = 0;
+    for (int i=0; i<m_hmm_states.size(); i++) {
+        if (sorted_hmm_states[i].first == 0)
+            short_sil_pos = i;
+        if (sorted_hmm_states[i].first == 1)
+            long_sil_state_1_pos = i;
+        if (sorted_hmm_states[i].first == 2)
+            long_sil_state_2_pos = i;
+        if (sorted_hmm_states[i].first == 3)
+            long_sil_state_3_pos = i;
+    }
+
+    float average_long_sil_rank = (long_sil_state_1_pos + long_sil_state_2_pos + long_sil_state_3_pos) / 3.0;
+
+    m_silence_ranks.push_front(average_long_sil_rank);
+    while (m_silence_ranks.size() > 10) m_silence_ranks.pop_back();
+
+    float sliding_rank = 0.0;
+    for (auto it = m_silence_ranks.begin(); it != m_silence_ranks.end(); ++it) {
+        sliding_rank += *it;
+    }
+    sliding_rank /= m_silence_ranks.size();
+
+    if (average_long_sil_rank < 200.0 && sliding_rank < 200.0) return true;
+    else return false;
+}

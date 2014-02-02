@@ -7,6 +7,7 @@
 #include <fstream>
 #include <vector>
 #include <set>
+#include <deque>
 
 #include "Hmm.hh"
 #include "LM.hh"
@@ -97,6 +98,7 @@ public:
     void set_state_beam(float beam) { m_state_beam = beam; }
     void set_global_beam(float beam) { m_global_beam = beam; }
     void set_history_beam(float beam) { m_history_beam = beam; }
+    void set_silence_beam(float beam) { m_silence_beam = beam; }
 
     void recognize_lna_file(std::string &lnafname);
     void initialize();
@@ -150,6 +152,7 @@ private:
     void set_hmm_transition_probs(std::vector<Node> &nodes);
     void set_subword_id_fsa_symbol_mapping();
     void clear_word_history();
+    bool detect_silence();
 
     float m_lm_scale;
     float m_duration_scale;
@@ -160,6 +163,7 @@ private:
     float m_current_glob_beam;
     float m_state_beam;
     float m_history_beam;
+    float m_silence_beam;
 
     float m_best_log_prob;
     float m_worst_log_prob;
@@ -168,6 +172,8 @@ private:
     int m_history_beam_pruned_count;
     int m_state_beam_pruned_count;
     int m_dropped_count;
+
+    std::deque<float> m_silence_ranks;
 };
 
 #endif /* DECODER_HH */
