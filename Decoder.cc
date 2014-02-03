@@ -232,7 +232,7 @@ Decoder::set_subword_id_fsa_symbol_mapping()
 
 
 void
-Decoder::recognize_lna_file(string &lnafname)
+Decoder::recognize_lna_file(string lnafname)
 {
     m_lna_reader.open_file(lnafname.c_str(), 1024);
     m_acoustics = &m_lna_reader;

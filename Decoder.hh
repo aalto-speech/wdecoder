@@ -100,7 +100,7 @@ public:
     void set_history_beam(float beam) { m_history_beam = beam; }
     void set_silence_beam(float beam) { m_silence_beam = beam; }
 
-    void recognize_lna_file(std::string &lnafname);
+    void recognize_lna_file(std::string lnafname);
     void initialize();
     void propagate_tokens();
     void move_token_to_node(Token token, int node_idx, float transition_score);
