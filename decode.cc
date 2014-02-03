@@ -48,17 +48,22 @@ int main(int argc, char* argv[])
 //        outf.close();
 //        exit(1);
 
-        string lnafname = config.arguments[5];
-        cerr << "recognizing: " << lnafname << endl;
-        d.debug=0;
         d.set_lm_scale(34.0);
         d.set_duration_scale(3.0);
         d.set_transition_scale(1.0);
         d.set_global_beam(220.0);
         d.set_history_beam(150.0);
-        d.set_state_beam(120.0);
-        d.set_silence_beam(80.0);
+        d.set_state_beam(150.0);
+        d.set_silence_beam(120.0);
+
+        string lnafname = config.arguments[5];
+        cerr << "recognizing: " << lnafname << endl;
+        d.debug=0;
         d.recognize_lna_file(lnafname);
+        //d.recognize_lna_file("data/FM1_FIN_0100_0.16khz.lna");
+        //d.recognize_lna_file("data/FF3_FIN_0001_0.16khz.lna");
+        //d.recognize_lna_file("data/FF1_FIN_0050_0_16khz.lna");
+        //d.recognize_lna_file("data/FM7_FIN_0101_0.16khz.lna");
 
     } catch (string &e) {
         cerr << e << endl;
