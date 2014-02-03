@@ -103,6 +103,7 @@ public:
     void recognize_lna_file(std::string lnafname);
     void initialize();
     void propagate_tokens();
+    void prune_tokens();
     void move_token_to_node(Token token, int node_idx, float transition_score);
     inline float get_token_log_prob(float am_score, float lm_score)
     {
@@ -135,13 +136,9 @@ public:
     Acoustics *m_acoustics;
 
     std::vector<Node> m_nodes;
-    std::vector<int> m_active_nodes;
-    std::vector<std::map<WordHistory*, Token> > m_tokens;
-    std::map<WordHistory*, float> m_best_for_history;
-    std::map<WordHistory*, float> m_new_best_for_history;
-    std::vector<float> m_best_for_state;
-    std::vector<float> m_new_best_for_state;
     std::set<WordHistory*> m_word_history_leafs;
+    std::vector<Token> m_tokens;
+
 
 private:
 
