@@ -57,6 +57,7 @@ int main(int argc, char* argv[])
         d.set_state_beam(150.0);
         d.set_silence_beam(120.0);
         d.set_history_limit(70);
+        d.set_word_boundary_penalty(-0.01);
 
         d.debug=0;
         d.stats=0;
@@ -66,6 +67,7 @@ int main(int argc, char* argv[])
         string line;
 
         while (getline(lnalistf, line)) {
+            if (!line.length()) continue;
             cerr << "recognizing: " << line << endl;
             d.recognize_lna_file(line);
         }

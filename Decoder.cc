@@ -271,8 +271,9 @@ Decoder::recognize_lna_file(string lnafname)
     time(&end_time);
     double seconds = difftime(end_time, start_time);
     double rtf = seconds / ((double)frame_idx/125.0);
-    cerr << "recognized " << frame_idx << " frames in " << seconds << " seconds."
-         << " (RTF: " << rtf << ")" << endl;
+    cerr << "\trecognized " << frame_idx << " frames in " << seconds << " seconds." << endl;
+    cerr << "\tRTF: " << rtf << endl;
+    cerr << "\tLog prob: " << get_best_token()->total_log_prob << endl;
     cout << lnafname << ":";
     print_best_word_history();
 
@@ -441,6 +442,8 @@ Decoder::move_token_to_node(Token token,
         }
         token.word_count++;
     }
+    else if (node.word_id == -2)
+        token.total_log_prob += m_word_boundary_penalty;
 
     // LM nodes and word boundaries (-2), update history
     if (node.word_id != -1) {
@@ -460,8 +463,8 @@ Decoder::move_token_to_node(Token token,
 }
 
 
-void
-Decoder::print_best_word_history()
+Decoder::Token*
+Decoder::get_best_token()
 {
     Token *best_token = nullptr;
 
@@ -475,7 +478,14 @@ Decoder::print_best_word_history()
         }
     }
 
-    print_word_history(best_token->history);
+    return best_token;
+}
+
+
+void
+Decoder::print_best_word_history()
+{
+    print_word_history(get_best_token()->history);
 }
 
 
@@ -651,6 +661,6 @@ Decoder::set_word_boundaries()
         }
     }
 
-    m_nodes[END_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
+    m_nodes[START_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
 }
 

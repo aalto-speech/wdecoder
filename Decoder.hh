@@ -93,6 +93,8 @@ public:
         m_history_limit = 5000;
 
         m_history_prune_frame_interval = 10;
+
+        m_word_boundary_penalty = 0.0;
     };
 
     void read_phone_model(std::string phnfname);
@@ -106,6 +108,7 @@ public:
     void set_transition_scale(float trans_scale) { m_transition_scale = trans_scale; }
     void set_max_num_tokens(int tokens) { m_max_num_tokens = tokens; }
     void set_history_limit(int histories) { m_history_limit = histories; }
+    void set_word_boundary_penalty(float penalty) { m_word_boundary_penalty = penalty; }
     void set_state_beam(float beam) { m_state_beam = beam; }
     void set_global_beam(float beam) { m_global_beam = beam; }
     void set_history_beam(float beam) { m_history_beam = beam; }
@@ -121,6 +124,7 @@ public:
     {
       return (am_score + m_lm_scale * lm_score);
     }
+    Token* get_best_token();
     void print_best_word_history();
     void print_word_history(WordHistory *history);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
@@ -182,6 +186,7 @@ private:
     float m_silence_beam;
     float m_word_end_beam;
     float m_current_word_end_beam;
+    float m_word_boundary_penalty;
 
     float m_best_log_prob;
     float m_worst_log_prob;
