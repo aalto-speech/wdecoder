@@ -61,6 +61,7 @@ int main(int argc, char* argv[])
         string lnafname = config.arguments[5];
         cerr << "recognizing: " << lnafname << endl;
         d.debug=0;
+        d.stats=0;
         d.recognize_lna_file(lnafname);
         //d.recognize_lna_file("data/FM1_FIN_0100_0.16khz.lna");
         //d.recognize_lna_file("data/FF3_FIN_0001_0.16khz.lna");

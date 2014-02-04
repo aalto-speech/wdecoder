@@ -127,6 +127,7 @@ Decoder::read_dgraph(string fname)
     add_silence_hmms(m_nodes);
     add_hmm_self_transitions(m_nodes);
     set_hmm_transition_probs(m_nodes);
+    set_word_boundaries();
 }
 
 
@@ -247,27 +248,32 @@ Decoder::recognize_lna_file(string lnafname)
         bool sil_detected = detect_silence();
         if (sil_detected && frame_idx > 200) m_global_beam = m_silence_beam;
         else m_global_beam = original_global_beam;
-        cerr << endl << "recognizing frame: " << frame_idx << endl;
+        if (stats) cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
         prune_tokens();
         if (frame_idx % m_history_prune_frame_interval == 0) prune_word_history();
         frame_idx++;
-        if (sil_detected) cerr << "silence_beam was used" << endl;
-        cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
-        cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
-        cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
-        cerr << "tokens pruned by history limit: " << m_histogram_pruned_count << endl;
-        cerr << "best log probability: " << m_best_log_prob << endl;
-        cerr << "worst log probability: " << m_worst_log_prob << endl;
-        cerr << "number of active nodes: " << m_tokens.size() << endl;
-        cerr << "number of active word histories: " << m_active_histories.size() << endl;
-        print_best_word_history();
+        if (stats) {
+            if (sil_detected) cerr << "silence_beam was used" << endl;
+            cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
+            cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
+            cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
+            cerr << "tokens pruned by history limit: " << m_histogram_pruned_count << endl;
+            cerr << "best log probability: " << m_best_log_prob << endl;
+            cerr << "worst log probability: " << m_worst_log_prob << endl;
+            cerr << "number of active nodes: " << m_tokens.size() << endl;
+            cerr << "number of active word histories: " << m_active_histories.size() << endl;
+            print_best_word_history();
+        }
     }
 
     time(&end_time);
     double seconds = difftime(end_time, start_time);
-    cerr << "recognized " << frame_idx << " frames in " << seconds << " seconds." << endl;
-    cerr << "RTF: " << seconds / ((double)frame_idx/125.0) << endl;
+    double rtf = seconds / ((double)frame_idx/125.0);
+    cerr << "recognized " << frame_idx << " frames in " << seconds << " seconds."
+         << " (RTF: " << rtf << ")" << endl;
+    cout << lnafname << ":";
+    print_best_word_history();
 
     m_global_beam = original_global_beam;
     clear_word_history();
@@ -310,8 +316,10 @@ Decoder::propagate_tokens(void)
         }
     }
 
-    cerr << "token count before propagation: " << token_count << endl;
-    cerr << "propagated token count: " << propagated_count << endl;
+    if (stats) {
+        cerr << "token count before propagation: " << token_count << endl;
+        cerr << "propagated token count: " << propagated_count << endl;
+    }
 }
 
 
@@ -408,9 +416,19 @@ Decoder::move_token_to_node(Token token,
 
     Node &node = m_nodes[node_idx];
 
-    // LM node, update history and LM score
-    if (node.word_id != -1) {
-        //cerr << "node: " << node_idx << " walking with: " << m_subwords[node.word_id] << endl;
+    // HMM node
+    if (node.hmm_state != -1) {
+        token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
+        token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+        m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
+        m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
+        m_raw_tokens.push_back(token);
+        return;
+    }
+
+    // LM node, update LM score
+    if (node.word_id >= 0) {
+        if (debug) cerr << "node: " << node_idx << " walking with: " << m_subwords[node.word_id] << endl;
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
         if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
@@ -418,8 +436,11 @@ Decoder::move_token_to_node(Token token,
             m_word_end_beam_pruned_count++;
             return;
         }
-
         token.word_count++;
+    }
+
+    // LM nodes and word boundaries (-2), update history
+    if (node.word_id != -1) {
         auto next_history = token.history->next.find(node.word_id);
         if (next_history != token.history->next.end())
             token.history = next_history->second;
@@ -431,18 +452,8 @@ Decoder::move_token_to_node(Token token,
         }
     }
 
-    if (node.hmm_state == -1) {
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             move_token_to_node(token, ait->target_node, ait->log_prob);
-        return;
-    }
-
-    // HMM node
-    token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
-    token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
-    m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
-    m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
-    m_raw_tokens.push_back(token);
 }
 
 
@@ -461,7 +472,6 @@ Decoder::print_best_word_history()
         }
     }
 
-    cerr << "path length: " << best_token->word_count << endl;
     print_word_history(best_token->history);
 }
 
@@ -477,11 +487,10 @@ Decoder::print_word_history(WordHistory *history)
     }
 
     for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
-        if (swit != subwords.rbegin()) cerr << " ";
-        if (*swit != -1) cerr << m_subwords[*swit];
-        cerr << "(" << *swit << ")";
+        if (*swit >= 0) cout << m_subwords[*swit];
+        else if (*swit == -2) cout << " ";
     }
-    cerr << endl;
+    cout << endl;
 }
 
 
@@ -498,12 +507,14 @@ Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
         fstr << "\t" << nidx;
         if (nidx == START_NODE) fstr << " [label=\"start\"]" << endl;
         else if (nidx == END_NODE) fstr << " [label=\"end\"]" << endl;
-        else if (nd.hmm_state != -1 && nd.word_id != -1)
+        else if (nd.hmm_state != -1 && nd.word_id >= 0)
             fstr << " [label=\"" << nidx << ":" << nd.hmm_state << ", " << m_subwords[nd.word_id] << "\"]" << endl;
         else if (nd.hmm_state != -1 && nd.word_id == -1)
             fstr << " [label=\"" << nidx << ":"<< nd.hmm_state << "\"]" << endl;
-        else if (nd.hmm_state == -1 && nd.word_id != -1)
+        else if (nd.hmm_state == -1 && nd.word_id >= 0)
             fstr << " [label=\"" << nidx << ":"<< m_subwords[nd.word_id] << "\"]" << endl;
+        else if (nd.hmm_state == -1 && nd.word_id == -2)
+            fstr << " [label=\"" << nidx << ":dummy/wb\"]" << endl;
         else
             fstr << " [label=\"" << nidx << ":dummy\"]" << endl;
     }
@@ -599,3 +610,44 @@ Decoder::detect_silence()
     if (average_long_sil_rank < 200.0 && sliding_rank < 200.0) return true;
     else return false;
 }
+
+
+void
+Decoder::collect_fan_in_connections(set<int> &indices,
+                                    int node_idx,
+                                    int depth)
+{
+    Node &node = m_nodes[node_idx];
+    if (depth == 4) {
+        indices.insert(node_idx);
+        return;
+    }
+
+    depth++;
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+        collect_fan_in_connections(indices, ait->target_node, depth);
+}
+
+
+void
+Decoder::set_word_boundaries()
+{
+    set<int> fan_in_indices;
+    collect_fan_in_connections(fan_in_indices);
+
+    int wb_count = 0;
+    for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
+        if (nit->hmm_state == -1 && nit->word_id == -1) {
+            for (auto ait = nit->arcs.begin(); ait != nit->arcs.end(); ++ait) {
+                if (fan_in_indices.find(ait->target_node) != fan_in_indices.end()) {
+                    nit->word_id = WORD_BOUNDARY_IDENTIFIER;
+                    wb_count++;
+                    break;
+                }
+            }
+        }
+    }
+
+    m_nodes[END_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
+}
+

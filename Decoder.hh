@@ -19,6 +19,7 @@ class Decoder {
 public:
     static const int START_NODE = 0;
     static const int END_NODE = 1;
+    static const int WORD_BOUNDARY_IDENTIFIER = -2;
     int DECODE_START_NODE;
     int SENTENCE_END_WORD_ID;
 
@@ -75,6 +76,7 @@ public:
 
     Decoder() {
         debug = 0;
+        stats = 0;
 
         m_lm_scale = 0.0;
         m_duration_scale = 0.0;
@@ -124,6 +126,7 @@ public:
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
 
     int debug;
+    int stats;
 
     // Subwords
     std::vector<std::string> m_subwords;
@@ -162,6 +165,10 @@ private:
     void clear_word_history();
     void prune_word_history();
     bool detect_silence();
+    void collect_fan_in_connections(std::set<int> &indices,
+                                    int node_idx=START_NODE,
+                                    int depth=0);
+    void set_word_boundaries();
 
     float m_lm_scale;
     float m_duration_scale;
