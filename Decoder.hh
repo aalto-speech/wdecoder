@@ -83,7 +83,12 @@ public:
 
         m_global_beam = 0.0;
         m_current_word_end_beam = 0.0;
+        m_history_beam = 0.0;
+        m_silence_beam = 0.0;
+        m_word_end_beam = 0.0;
         m_state_beam = 0.0;
+
+        m_history_limit = 5000;
 
         m_history_prune_frame_interval = 10;
     };
@@ -98,6 +103,7 @@ public:
     void set_duration_scale(float dur_scale) { m_duration_scale = dur_scale; }
     void set_transition_scale(float trans_scale) { m_transition_scale = trans_scale; }
     void set_max_num_tokens(int tokens) { m_max_num_tokens = tokens; }
+    void set_history_limit(int histories) { m_history_limit = histories; }
     void set_state_beam(float beam) { m_state_beam = beam; }
     void set_global_beam(float beam) { m_global_beam = beam; }
     void set_history_beam(float beam) { m_history_beam = beam; }
@@ -161,6 +167,7 @@ private:
     float m_duration_scale;
     float m_transition_scale; // Temporary scaling used for self transitions
     int m_max_num_tokens;
+    int m_history_limit;
 
     float m_global_beam;
     float m_state_beam;
@@ -174,6 +181,7 @@ private:
 
     int m_global_beam_pruned_count;
     int m_history_beam_pruned_count;
+    int m_histogram_pruned_count;
     int m_word_end_beam_pruned_count;
     int m_state_beam_pruned_count;
     int m_dropped_count;

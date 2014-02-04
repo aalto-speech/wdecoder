@@ -256,6 +256,7 @@ Decoder::recognize_lna_file(string lnafname)
         cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
         cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
         cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
+        cerr << "tokens pruned by history limit: " << m_histogram_pruned_count << endl;
         cerr << "best log probability: " << m_best_log_prob << endl;
         cerr << "worst log probability: " << m_worst_log_prob << endl;
         cerr << "number of active nodes: " << m_tokens.size() << endl;
@@ -286,7 +287,6 @@ Decoder::initialize()
     m_tokens[DECODE_START_NODE][tok.history] = tok;
 }
 
-bool descending_sort(pair<int, float> i,pair<int, float> j) { return (i.second > j.second); }
 
 void
 Decoder::propagate_tokens(void)
@@ -315,18 +315,21 @@ Decoder::propagate_tokens(void)
 }
 
 
+bool descending_whp_sort(pair<Decoder::WordHistory*, float> i, pair<Decoder::WordHistory*, float> j) { return (i.second > j.second); }
+
 void
 Decoder::prune_tokens(void)
 {
     m_global_beam_pruned_count = 0;
     m_history_beam_pruned_count = 0;
+    m_histogram_pruned_count = 0;
     m_state_beam_pruned_count = 0;
     m_dropped_count = 0;
-    std::vector<Token> pruned_tokens;
+    vector<Token> pruned_tokens;
     m_active_histories.clear();
 
     // Global beam pruning and collect stats for different histories
-    std::map<WordHistory*, float> history_beams;
+    map<WordHistory*, float> history_beams;
     float current_glob_beam = m_best_log_prob - m_global_beam;
     for (int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
@@ -340,12 +343,28 @@ Decoder::prune_tokens(void)
         else m_global_beam_pruned_count++;
     }
 
-    // History beam pruning and collect best tokens for each state/history
-    m_tokens.clear();
-    for (auto hit = history_beams.begin(); hit != history_beams.end(); ++hit)
+    vector<pair<WordHistory*, float> > descending_histories;
+    for (auto hit = history_beams.begin(); hit != history_beams.end(); ++hit) {
         hit->second -= m_history_beam;
+        descending_histories.push_back(make_pair(hit->first, hit->second));
+    }
+    sort(descending_histories.begin(), descending_histories.end(), descending_whp_sort);
+    set<WordHistory*> histories_to_prune;
+    for (int i=m_history_limit; i<descending_histories.size(); i++)
+        histories_to_prune.insert(descending_histories[i].first);
+
+    // History beam pruning
+    // Histogram pruning
+    // Collect best tokens for each state/history
+    m_tokens.clear();
     for (int i=0; i<pruned_tokens.size(); i++) {
         Token &tok = pruned_tokens[i];
+
+        if (histories_to_prune.find(tok.history) != histories_to_prune.end()) {
+            m_histogram_pruned_count++;
+            continue;
+        }
+
         if (tok.total_log_prob > history_beams[tok.history]) {
             auto nhit = m_tokens[tok.node_idx].find(tok.history);
             if (nhit == m_tokens[tok.node_idx].end()) {
@@ -539,6 +558,8 @@ Decoder::prune_word_history()
 }
 
 
+bool descending_idx_sort(pair<int, float> i, pair<int, float> j) { return (i.second > j.second); }
+
 bool
 Decoder::detect_silence()
 {
@@ -547,7 +568,7 @@ Decoder::detect_silence()
         float hmm_state_lp = m_acoustics->log_prob(i);
         sorted_hmm_states.push_back(make_pair(i, hmm_state_lp));
     }
-    sort(sorted_hmm_states.begin(), sorted_hmm_states.end(), descending_sort);
+    sort(sorted_hmm_states.begin(), sorted_hmm_states.end(), descending_idx_sort);
 
     int short_sil_pos = 0;
     int long_sil_state_1_pos = 0;

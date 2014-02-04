@@ -56,6 +56,7 @@ int main(int argc, char* argv[])
         d.set_history_beam(150.0);
         d.set_state_beam(150.0);
         d.set_silence_beam(120.0);
+        d.set_history_limit(70);
 
         string lnafname = config.arguments[5];
         cerr << "recognizing: " << lnafname << endl;
