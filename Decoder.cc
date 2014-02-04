@@ -84,6 +84,7 @@ Decoder::read_lm(string lmfname)
 
     m_lm.read_arpa(io::Stream(lmfname, "r").file, true);
     m_lm.trim();
+    set_subword_id_fsa_symbol_mapping();
 }
 
 
@@ -284,8 +285,10 @@ Decoder::recognize_lna_file(string lnafname)
 void
 Decoder::initialize()
 {
-    set_subword_id_fsa_symbol_mapping();
     m_word_history_leafs.clear();
+    m_tokens.clear();
+    m_raw_tokens.clear();
+    m_active_histories.clear();
     Token tok;
     tok.fsa_lm_node = m_lm.initial_node_id();
     tok.history = new WordHistory();

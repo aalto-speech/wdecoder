@@ -13,7 +13,7 @@ using namespace std;
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: dgraph [OPTION...] PH DUR LEXICON LM GRAPH LNA\n")
+    config("usage: dgraph [OPTION...] PH DUR LEXICON LM GRAPH LNALIST\n")
       ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
@@ -58,15 +58,18 @@ int main(int argc, char* argv[])
         d.set_silence_beam(120.0);
         d.set_history_limit(70);
 
-        string lnafname = config.arguments[5];
-        cerr << "recognizing: " << lnafname << endl;
         d.debug=0;
         d.stats=0;
-        d.recognize_lna_file(lnafname);
-        //d.recognize_lna_file("data/FM1_FIN_0100_0.16khz.lna");
-        //d.recognize_lna_file("data/FF3_FIN_0001_0.16khz.lna");
-        //d.recognize_lna_file("data/FF1_FIN_0050_0_16khz.lna");
-        //d.recognize_lna_file("data/FM7_FIN_0101_0.16khz.lna");
+
+        string lnalistfname = config.arguments[5];
+        ifstream lnalistf(lnalistfname);
+        string line;
+
+        while (getline(lnalistf, line)) {
+            cerr << "recognizing: " << line << endl;
+            d.recognize_lna_file(line);
+        }
+        lnalistf.close();
 
     } catch (string &e) {
         cerr << e << endl;
