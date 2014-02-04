@@ -250,6 +250,7 @@ Decoder::recognize_lna_file(string lnafname)
         cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
         prune_tokens();
+        if (frame_idx % m_history_prune_frame_interval == 0) prune_word_history();
         frame_idx++;
         if (sil_detected) cerr << "silence_beam was used" << endl;
         cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
@@ -514,6 +515,27 @@ Decoder::clear_word_history()
         }
     }
     m_word_history_leafs.clear();
+}
+
+
+void
+Decoder::prune_word_history()
+{
+    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ) {
+        if (m_active_histories.find(*whlnit) == m_active_histories.end()) {
+            WordHistory *wh = *whlnit;
+            WordHistory *tmp;
+            while (m_active_histories.find(wh) == m_active_histories.end()) {
+                tmp = wh;
+                wh = wh->previous;
+                if (wh != nullptr) wh->next.erase(tmp->word_id);
+                delete tmp;
+                if (wh != nullptr || wh->next.size() > 0) break;
+            }
+            m_word_history_leafs.erase(whlnit++);
+        }
+        else ++whlnit;
+    }
 }
 
 

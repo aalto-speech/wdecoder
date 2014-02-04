@@ -84,6 +84,8 @@ public:
         m_global_beam = 0.0;
         m_current_word_end_beam = 0.0;
         m_state_beam = 0.0;
+
+        m_history_prune_frame_interval = 10;
     };
 
     void read_phone_model(std::string phnfname);
@@ -152,6 +154,7 @@ private:
     void set_hmm_transition_probs(std::vector<Node> &nodes);
     void set_subword_id_fsa_symbol_mapping();
     void clear_word_history();
+    void prune_word_history();
     bool detect_silence();
 
     float m_lm_scale;
@@ -174,6 +177,8 @@ private:
     int m_word_end_beam_pruned_count;
     int m_state_beam_pruned_count;
     int m_dropped_count;
+
+    int m_history_prune_frame_interval;
 
     std::deque<float> m_silence_ranks;
 };
