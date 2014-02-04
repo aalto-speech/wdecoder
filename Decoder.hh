@@ -68,6 +68,7 @@ public:
         total_log_prob(-1e20),
         fsa_lm_node(0),
         word_start_frame(0),
+        word_count(0),
         dur(0)
       { }
     };
@@ -81,7 +82,7 @@ public:
         m_max_num_tokens = 0;
 
         m_global_beam = 0.0;
-        m_current_glob_beam = 0.0;
+        m_current_word_end_beam = 0.0;
         m_state_beam = 0.0;
     };
 
@@ -99,6 +100,7 @@ public:
     void set_global_beam(float beam) { m_global_beam = beam; }
     void set_history_beam(float beam) { m_history_beam = beam; }
     void set_silence_beam(float beam) { m_silence_beam = beam; }
+    void set_word_end_beam(float beam) { m_word_end_beam = beam; }
 
     void recognize_lna_file(std::string lnafname);
     void initialize();
@@ -157,16 +159,18 @@ private:
     int m_max_num_tokens;
 
     float m_global_beam;
-    float m_current_glob_beam;
     float m_state_beam;
     float m_history_beam;
     float m_silence_beam;
+    float m_word_end_beam;
+    float m_current_word_end_beam;
 
     float m_best_log_prob;
     float m_worst_log_prob;
 
     int m_global_beam_pruned_count;
     int m_history_beam_pruned_count;
+    int m_word_end_beam_pruned_count;
     int m_state_beam_pruned_count;
     int m_dropped_count;
 
