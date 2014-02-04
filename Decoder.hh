@@ -141,7 +141,7 @@ public:
     std::set<WordHistory*> m_word_history_leafs;
     std::map<int, std::map<WordHistory*, Token> > m_tokens;
     std::vector<Token> m_raw_tokens;
-
+    std::set<WordHistory*> m_active_histories;
 
 private:
 

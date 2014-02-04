@@ -255,11 +255,10 @@ Decoder::recognize_lna_file(string lnafname)
         cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
         cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
         cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
-//        cerr << "tokens pruned by state beam: " << m_state_beam_pruned_count << endl;
         cerr << "best log probability: " << m_best_log_prob << endl;
         cerr << "worst log probability: " << m_worst_log_prob << endl;
-//        cerr << "number of active nodes: " << m_active_nodes.size() << endl;
-//        cerr << "number of different word histories: " << m_new_best_for_history.size() << endl;
+        cerr << "number of active nodes: " << m_tokens.size() << endl;
+        cerr << "number of active word histories: " << m_active_histories.size() << endl;
         print_best_word_history();
     }
 
@@ -322,8 +321,8 @@ Decoder::prune_tokens(void)
     m_history_beam_pruned_count = 0;
     m_state_beam_pruned_count = 0;
     m_dropped_count = 0;
-
     std::vector<Token> pruned_tokens;
+    m_active_histories.clear();
 
     // Global beam pruning and collect stats for different histories
     std::map<WordHistory*, float> history_beams;
@@ -348,8 +347,10 @@ Decoder::prune_tokens(void)
         Token &tok = pruned_tokens[i];
         if (tok.total_log_prob > history_beams[tok.history]) {
             auto nhit = m_tokens[tok.node_idx].find(tok.history);
-            if (nhit == m_tokens[tok.node_idx].end())
+            if (nhit == m_tokens[tok.node_idx].end()) {
                 m_tokens[tok.node_idx][tok.history] = tok;
+                m_active_histories.insert(tok.history);
+            }
             else if (tok.total_log_prob > nhit->second.total_log_prob)
                 nhit->second = tok;
             else
