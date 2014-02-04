@@ -283,7 +283,7 @@ Decoder::initialize()
     tok.fsa_lm_node = m_lm.initial_node_id();
     tok.history = new WordHistory();
     tok.node_idx = DECODE_START_NODE;
-    m_tokens.push_back(tok);
+    m_tokens[DECODE_START_NODE][tok.history] = tok;
 }
 
 bool descending_sort(pair<int, float> i,pair<int, float> j) { return (i.second > j.second); }
@@ -294,24 +294,23 @@ Decoder::propagate_tokens(void)
     m_current_word_end_beam = m_best_log_prob-m_word_end_beam;
     m_word_end_beam_pruned_count = 0;
 
+    int token_count = 0;
     int propagated_count = 0;
     m_best_log_prob = -1e20;
     m_worst_log_prob = 0;
 
-    vector<Token> tokens;
-    m_tokens.swap(tokens);
-    if (debug) cerr << "num tokens: " << tokens.size();
-    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        Node &nd = m_nodes[tit->node_idx];
-        if (debug) cerr << "node idx: " << tit->node_idx << endl;
-        if (debug) cerr << "number of arcs: " << nd.arcs.size() << endl;
-        for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
-            move_token_to_node(*tit, ait->target_node, ait->log_prob);
-            propagated_count++;
+    for (auto sit = m_tokens.begin(); sit != m_tokens.end(); ++sit) {
+        Node &node = m_nodes[sit->first];
+        for (auto hit = sit->second.begin(); hit != sit->second.end(); ++hit) {
+            token_count++;
+            for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+                move_token_to_node(hit->second, ait->target_node, ait->log_prob);
+                propagated_count++;
+            }
         }
     }
 
-    cerr << "token count before propagation: " << tokens.size() << endl;
+    cerr << "token count before propagation: " << token_count << endl;
     cerr << "propagated token count: " << propagated_count << endl;
 }
 
@@ -329,8 +328,8 @@ Decoder::prune_tokens(void)
     // Global beam pruning and collect stats for different histories
     std::map<WordHistory*, float> history_beams;
     float current_glob_beam = m_best_log_prob - m_global_beam;
-    for (int i=0; i<m_tokens.size(); i++) {
-        Token &tok = m_tokens[i];
+    for (int i=0; i<m_raw_tokens.size(); i++) {
+        Token &tok = m_raw_tokens[i];
         if (tok.total_log_prob > current_glob_beam) {
             pruned_tokens.push_back(tok);
             if (history_beams.find(tok.history) == history_beams.end())
@@ -340,41 +339,26 @@ Decoder::prune_tokens(void)
         }
         else m_global_beam_pruned_count++;
     }
-    m_tokens.swap(pruned_tokens);
-    pruned_tokens.clear();
 
-    // History beam pruning and collect indices of best tokens for each state/history
-    std::vector<std::map<WordHistory*, float> > best_for_state(m_nodes.size());
-    std::vector<std::map<WordHistory*, int> > best_idx_for_state(m_nodes.size());
+    // History beam pruning and collect best tokens for each state/history
+    m_tokens.clear();
     for (auto hit = history_beams.begin(); hit != history_beams.end(); ++hit)
         hit->second -= m_history_beam;
-    for (int i=0; i<m_tokens.size(); i++) {
-        Token &tok = m_tokens[i];
+    for (int i=0; i<pruned_tokens.size(); i++) {
+        Token &tok = pruned_tokens[i];
         if (tok.total_log_prob > history_beams[tok.history]) {
-            pruned_tokens.push_back(tok);
-            if (best_for_state[tok.node_idx].find(tok.history) == best_for_state[tok.node_idx].end()) {
-                best_idx_for_state[tok.node_idx][tok.history] = pruned_tokens.size()-1;
-                best_for_state[tok.node_idx][tok.history] = tok.total_log_prob;
-            }
-            else if (tok.total_log_prob > best_for_state[tok.node_idx][tok.history]) {
-                best_idx_for_state[tok.node_idx][tok.history] = pruned_tokens.size()-1;
-                best_for_state[tok.node_idx][tok.history] = tok.total_log_prob;
-            }
+            auto nhit = m_tokens[tok.node_idx].find(tok.history);
+            if (nhit == m_tokens[tok.node_idx].end())
+                m_tokens[tok.node_idx][tok.history] = tok;
+            else if (tok.total_log_prob > nhit->second.total_log_prob)
+                nhit->second = tok;
+            else
+                m_dropped_count++;
         }
         else m_history_beam_pruned_count++;
     }
-    m_tokens.swap(pruned_tokens);
-    pruned_tokens.clear();
 
-    // Keep only the best token with the same node and history
-    for (int i=0; i<m_tokens.size(); i++) {
-        Token &tok = m_tokens[i];
-        if (best_idx_for_state[tok.node_idx][tok.history] == i)
-            pruned_tokens.push_back(tok);
-        else m_dropped_count++;
-    }
-    m_tokens.swap(pruned_tokens);
-    pruned_tokens.clear();
+    m_raw_tokens.clear();
 }
 
 
@@ -437,7 +421,7 @@ Decoder::move_token_to_node(Token token,
     token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
     m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
     m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
-    m_tokens.push_back(token);
+    m_raw_tokens.push_back(token);
 }
 
 
@@ -446,11 +430,14 @@ Decoder::print_best_word_history()
 {
     Token *best_token = nullptr;
 
-    for (auto tit = m_tokens.begin(); tit != m_tokens.end(); ++tit) {
-        if (best_token == nullptr)
-            best_token = &(*tit);
-        else if (tit->total_log_prob > best_token->total_log_prob)
-            best_token = &(*tit);
+    for (auto sit = m_tokens.begin(); sit != m_tokens.end(); ++sit) {
+        Node &node = m_nodes[sit->first];
+        for (auto hit = sit->second.begin(); hit != sit->second.end(); ++hit) {
+            if (best_token == nullptr)
+                best_token = &(hit->second);
+            else if (hit->second.total_log_prob > best_token->total_log_prob)
+                best_token = &(hit->second);
+        }
     }
 
     cerr << "path length: " << best_token->word_count << endl;
