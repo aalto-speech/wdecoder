@@ -81,7 +81,7 @@ Decoder::read_noway_lexicon(string lexfname)
 void
 Decoder::read_lm(string lmfname)
 {
-
+    //m_lm.read(io::Stream(lmfname, "r").file);
     m_lm.read_arpa(io::Stream(lmfname, "r").file, true);
     m_lm.trim();
     set_subword_id_fsa_symbol_mapping();
@@ -443,7 +443,7 @@ Decoder::move_token_to_node(Token token,
         token.word_count++;
     }
     else if (node.word_id == -2)
-        token.total_log_prob += m_word_boundary_penalty;
+        token.lm_log_prob += m_word_boundary_penalty;
 
     // LM nodes and word boundaries (-2), update history
     if (node.word_id != -1) {
