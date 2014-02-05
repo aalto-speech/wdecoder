@@ -107,55 +107,80 @@ void
 DecoderGraph::create_word_graph(vector<SubwordNode> &nodes)
 {
     nodes.resize(2);
-    nodes[START_NODE].subword_id = -1; nodes[END_NODE].subword_id = -1;
 
     for (auto wit = m_word_segs.begin(); wit != m_word_segs.end(); ++wit) {
 
-        int curr_nd = START_NODE;
-
+        vector<vector<int> > word_sw_nodes;
+        bool tie_first = false;
         for (int swidx = 0; swidx < wit->second.size(); ++swidx) {
 
             string curr_subword = (wit->second)[swidx];
-            int curr_subword_idx = m_unit_map[curr_subword];
+            if (swidx == 0 && m_lexicon[curr_subword].size() == 1) {
+                tie_first = true;
+            }
+            else if (swidx == 1 && tie_first) {
+                vector<int> tmp;
+                int subword_idx = m_unit_map[(wit->second)[0]];
+                tmp.push_back(subword_idx);
+                subword_idx = m_unit_map[curr_subword];
+                tmp.push_back(subword_idx);
+                word_sw_nodes.push_back(tmp);
+            }
+            else if (swidx == (wit->second.size()-1) && m_lexicon[curr_subword].size() == 1) {
+                int curr_subword_idx = m_unit_map[curr_subword];
+                word_sw_nodes.back().push_back(curr_subword_idx);
+            }
+            else {
+                vector<int> tmp;
+                int subword_idx = m_unit_map[curr_subword];
+                tmp.push_back(subword_idx);
+                word_sw_nodes.push_back(tmp);
+            }
+        }
 
-            if (nodes[curr_nd].out_arcs.find(curr_subword_idx) == nodes[curr_nd].out_arcs.end()) {
+        int curr_nd = START_NODE;
+        for (int swnidx = 0; swnidx < word_sw_nodes.size(); ++swnidx) {
+
+            if (nodes[curr_nd].out_arcs.find(word_sw_nodes[swnidx]) == nodes[curr_nd].out_arcs.end()) {
                 nodes.resize(nodes.size()+1);
-                nodes.back().subword_id = curr_subword_idx;
-                nodes[curr_nd].out_arcs[curr_subword_idx] = nodes.size()-1;
-                nodes.back().in_arcs.push_back(make_pair(nodes[curr_nd].subword_id, curr_nd));
+                nodes.back().subword_ids = word_sw_nodes[swnidx];
+                nodes[curr_nd].out_arcs[word_sw_nodes[swnidx]] = nodes.size()-1;
+                nodes.back().in_arcs.push_back(make_pair(nodes[curr_nd].subword_ids, curr_nd));
                 curr_nd = nodes.size()-1;
             }
             else
-                curr_nd = nodes[curr_nd].out_arcs[curr_subword_idx];
+                curr_nd = nodes[curr_nd].out_arcs[word_sw_nodes[swnidx]];
         }
 
         // Connect to end node
-        nodes[curr_nd].out_arcs[-1] = END_NODE;
-        nodes[END_NODE].in_arcs.push_back(make_pair(nodes[curr_nd].subword_id, curr_nd));
+        vector<int> empty;
+        nodes[curr_nd].out_arcs[empty] = END_NODE;
+        nodes[END_NODE].in_arcs.push_back(make_pair(nodes[curr_nd].subword_ids, curr_nd));
     }
 }
 
 
 void
-DecoderGraph::tie_subword_suffixes(vector<SubwordNode> &nodes, int min_length)
+DecoderGraph::tie_subword_suffixes(vector<SubwordNode> &nodes)
 {
-    map<int, int> suffix_counts;
-    SubwordNode &end_node = nodes[END_NODE];
+    map<vector<int>, int> suffix_counts;
+    SubwordNode &node = nodes[END_NODE];
 
-    for (auto sit = end_node.in_arcs.begin(); sit != end_node.in_arcs.end(); ++sit)
+    for (auto sit = node.in_arcs.begin(); sit != node.in_arcs.end(); ++sit)
         suffix_counts[sit->first] += 1;
 
     for (auto sit = suffix_counts.begin(); sit != suffix_counts.end(); ++sit) {
-        if (sit->second > 1 && m_units[sit->first].length() >= min_length) {
+        if (sit->second > 1) {
             nodes.resize(nodes.size()+1);
-            nodes.back().subword_id = sit->first;
-            nodes.back().out_arcs[-1] = END_NODE;
-            for (auto ait = end_node.in_arcs.begin(); ait != end_node.in_arcs.end(); ++ait) {
+            nodes.back().subword_ids = sit->first;
+            vector<int> empty;
+            nodes.back().out_arcs[empty] = END_NODE;
+            for (auto ait = node.in_arcs.begin(); ait != node.in_arcs.end(); ++ait) {
                 if (ait->first == sit->first) {
                     int src_node_idx = nodes[ait->second].in_arcs[0].second;
                     nodes[src_node_idx].out_arcs[ait->first] = nodes.size()-1;
-                    nodes.back().in_arcs.push_back(make_pair(nodes[src_node_idx].subword_id, src_node_idx));
-                    nodes[ait->second].subword_id = -1;
+                    nodes.back().in_arcs.push_back(make_pair(nodes[src_node_idx].subword_ids, src_node_idx));
+                    nodes[ait->second].subword_ids.clear();
                     nodes[ait->second].in_arcs.clear();
                     nodes[ait->second].out_arcs.clear();
                 }
@@ -172,6 +197,7 @@ DecoderGraph::print_word_graph(vector<SubwordNode> &nodes,
 {
     path.push_back(node_idx);
 
+    /*
     for (auto ait = nodes[node_idx].out_arcs.begin(); ait != nodes[node_idx].out_arcs.end(); ++ait) {
         if (ait->second == END_NODE) {
             for (int i=0; i<path.size(); i++) {
@@ -186,6 +212,7 @@ DecoderGraph::print_word_graph(vector<SubwordNode> &nodes,
             print_word_graph(nodes, path, ait->second);
         }
     }
+    */
 }
 
 
@@ -226,6 +253,7 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
                                    char second_left_context,
                                    int delayed_subword_id)
 {
+    /*
     if (sw_node_idx == START_NODE) nodes.resize(2);
     if (sw_node_idx == END_NODE) return;
 
@@ -340,6 +368,7 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
             expand_subword_nodes(swnodes, nodes, ait->second, node_idx,
                                  last_phone, second_last_phone);
     }
+    */
 }
 
 

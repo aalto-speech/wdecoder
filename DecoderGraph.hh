@@ -12,10 +12,11 @@
 class DecoderGraph {
 
 public:
+
     struct SubwordNode {
-        int subword_id;
-        std::vector<std::pair<int, int> > in_arcs;  // subword id (lookahead), node id
-        std::map<int, int> out_arcs;                // subword id (lookahead), node id
+        std::vector<int> subword_ids;
+        std::vector<std::pair<std::vector<int>, int> > in_arcs;  // subword ids (lookahead), node id
+        std::map<std::vector<int>, int> out_arcs;                // subword ids (lookahead), node id
     };
     static const int START_NODE = 0;
     static const int END_NODE = 1;
@@ -45,7 +46,7 @@ public:
     void read_word_segmentations(std::string segfname);
 
     void create_word_graph(std::vector<SubwordNode> &nodes);
-    void tie_subword_suffixes(std::vector<SubwordNode> &nodes, int min_length=2);
+    void tie_subword_suffixes(std::vector<SubwordNode> &nodes);
     void print_word_graph(std::vector<SubwordNode> &nodes);
     int reachable_word_graph_nodes(std::vector<SubwordNode> &nodes);
     void expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
