@@ -7,6 +7,7 @@
 
 #include "NowayHmmReader.hh"
 #include "DecoderGraph.hh"
+#include "gutils.hh"
 
 using namespace std;
 
@@ -197,13 +198,16 @@ DecoderGraph::print_word_graph(vector<SubwordNode> &nodes,
 {
     path.push_back(node_idx);
 
-    /*
     for (auto ait = nodes[node_idx].out_arcs.begin(); ait != nodes[node_idx].out_arcs.end(); ++ait) {
         if (ait->second == END_NODE) {
             for (int i=0; i<path.size(); i++) {
-                int subword_id = nodes[path[i]].subword_id;
-                if (subword_id == -1) continue;
-                if (path[i] >= 0) cout << m_units[subword_id] << " (" << path[i] << ")";
+                vector<int> subword_ids = nodes[path[i]].subword_ids;
+                if (subword_ids.size() == 0) continue;
+                for (int swi=0; swi<subword_ids.size(); ++swi) {
+                    if (swi>0) cout << " ";
+                    if (subword_ids[swi] >= 0) cout << m_units[subword_ids[swi]];
+                }
+                if (path[i] >= 0) cout << " (" << path[i] << ")";
                 if (i+1 != path.size()) cout << " ";
             }
             cout << endl;
@@ -212,7 +216,6 @@ DecoderGraph::print_word_graph(vector<SubwordNode> &nodes,
             print_word_graph(nodes, path, ait->second);
         }
     }
-    */
 }
 
 
@@ -245,13 +248,32 @@ DecoderGraph::reachable_word_graph_nodes(vector<SubwordNode> &nodes)
 
 
 void
+DecoderGraph::triphonize_subword_nodes(vector<SubwordNode> &swnodes)
+{
+    for (auto nit = swnodes.begin(); nit != swnodes.end(); ++nit) {
+
+        if (nit->subword_ids.size() == 0) return;
+
+        string tripstring;
+        for (auto swit = nit->subword_ids.begin(); swit != nit->subword_ids.end(); ++swit) {
+            string sw = m_units[*swit];
+            vector<string> &trips = m_lexicon[sw];
+            for (auto tit = trips.begin(); tit != trips.end(); ++tit)
+                tripstring += (*tit)[2];
+        }
+
+        gutils::triphonize(tripstring, nit->triphones);
+    }
+}
+
+
+void
 DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
                                    vector<Node> &nodes,
                                    int sw_node_idx,
                                    int node_idx,
                                    char left_context,
-                                   char second_left_context,
-                                   int delayed_subword_id)
+                                   char second_left_context)
 {
     /*
     if (sw_node_idx == START_NODE) nodes.resize(2);
@@ -270,26 +292,8 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
     if (debug) cerr << endl << subword
                     <<  "\tsecond left context: " << second_left_context
                     << "\tleft context: " << left_context << endl;;
-    if (debug && delayed_subword_id != -1) cerr << "delayed subword: " << m_units[delayed_subword_id] <<endl;
 
     auto triphones = m_lexicon[subword];
-
-    // One phone subword in the beginning of word, delay expansion
-    if (triphones.size() == 1 && second_left_context == '_' && left_context == '_') {
-        if (debug) cerr << "..delay expansion" << endl;
-        second_left_context = '_';
-        left_context = triphones[0][2];
-        for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
-            if (ait->second != END_NODE)
-                expand_subword_nodes(swnodes, nodes, ait->second, node_idx,
-                                     left_context, second_left_context, swnode.subword_id);
-        return;
-    }
-
-    if (delayed_subword_id != -1) {
-        string triphone = string(1,second_left_context) + "-" + string(1,left_context) + "+" + triphones[0][2];
-        node_idx = connect_triphone(nodes, triphone, node_idx);
-    }
 
     // Construct the left connecting triphone and expand states
     if (second_left_context != '_' && left_context != '_') {
@@ -317,14 +321,6 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
         string triphone = string(1,second_last_phone) + "-" + string(1,last_phone) + "+_";
         int temp_node_idx = connect_triphone(nodes, triphone, node_idx);
 
-        if (delayed_subword_id != -1) {
-            nodes.resize(nodes.size()+1);
-            nodes.back().word_id = delayed_subword_id;
-            nodes[temp_node_idx].arcs.resize(nodes[temp_node_idx].arcs.size()+1);
-            nodes[temp_node_idx].arcs.back().target_node = nodes.size()-1;
-            temp_node_idx = nodes.size()-1;
-        }
-
         nodes.resize(nodes.size()+1);
         nodes.back().word_id = swnode.subword_id;
         nodes[temp_node_idx].arcs.resize(nodes[temp_node_idx].arcs.size()+1);
@@ -341,14 +337,6 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
     if (debug) cerr << endl;
     if (debug) cerr << "adding dummy node for subword: " << m_units[swnode.subword_id]
                     << " subword node idx: " << sw_node_idx << endl;
-
-    if (delayed_subword_id != -1) {
-        nodes.resize(nodes.size()+1);
-        nodes.back().word_id = delayed_subword_id;
-        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-        nodes[node_idx].arcs.back().target_node = nodes.size()-1;
-        node_idx = nodes.size()-1;
-    }
 
     nodes.resize(nodes.size()+1);
     nodes.back().word_id = swnode.subword_id;
