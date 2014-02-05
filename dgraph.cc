@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 
         cerr << "Expanding to phone graph.." << endl;
         vector<DecoderGraph::Node> nodes;
-        dg.expand_subword_nodes(swnodes, nodes, false);
+        dg.expand_subword_nodes(swnodes, nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
         if (assertions) {
             words_ok = assert_words(dg, nodes, triphonized_words, false);

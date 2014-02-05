@@ -54,7 +54,6 @@ void graphtest::GraphTest1(void)
     vector<DecoderGraph::SubwordNode> nodes;
     dg.create_word_graph(nodes);
     CPPUNIT_ASSERT_EQUAL( 13, dg.reachable_word_graph_nodes(nodes) );
-    dg.print_word_graph(nodes);
 }
 
 
@@ -69,7 +68,6 @@ void graphtest::GraphTest2(void)
     CPPUNIT_ASSERT_EQUAL( 13, dg.reachable_word_graph_nodes(nodes) );
     dg.tie_subword_suffixes(nodes);
     CPPUNIT_ASSERT_EQUAL( 12, dg.reachable_word_graph_nodes(nodes) );
-    dg.print_word_graph(nodes);
 }
 
 
@@ -81,14 +79,12 @@ void graphtest::GraphTest3(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
     dg.expand_subword_nodes(swnodes, nodes);
-    CPPUNIT_ASSERT_EQUAL( 173, (int)nodes.size() );
-    CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 182, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 182, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT_EQUAL( 12, dg.num_subword_states(nodes) );
-
-    dg.tie_state_suffixes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 11, dg.num_subword_states(nodes) );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
@@ -103,11 +99,12 @@ void graphtest::GraphTest4(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
-    CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
+    dg.expand_subword_nodes(swnodes, nodes);
+    CPPUNIT_ASSERT_EQUAL( 182, (int)dg.reachable_graph_nodes(nodes) );
     dg.tie_state_prefixes(nodes, false);
-    CPPUNIT_ASSERT_EQUAL( 145, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 139, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 }
@@ -121,8 +118,9 @@ void graphtest::GraphTest5(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.expand_subword_nodes(swnodes, nodes);
     dg.tie_state_prefixes(nodes, false);
     dg.tie_state_suffixes(nodes);
     dg.prune_unreachable_nodes(nodes);
@@ -144,16 +142,17 @@ void graphtest::GraphTest6(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
-    CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
+    dg.expand_subword_nodes(swnodes, nodes);
+    CPPUNIT_ASSERT_EQUAL( 182, (int)dg.reachable_graph_nodes(nodes) );
     dg.tie_state_prefixes(nodes, false);
     dg.tie_state_suffixes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)dg.reachable_graph_nodes(nodes) );
 
     dg.prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 135, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
@@ -169,22 +168,23 @@ void graphtest::GraphTest7(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
-    CPPUNIT_ASSERT_EQUAL( 173, (int)dg.reachable_graph_nodes(nodes) );
+    dg.expand_subword_nodes(swnodes, nodes);
+    CPPUNIT_ASSERT_EQUAL( 182, (int)dg.reachable_graph_nodes(nodes) );
 
     dg.tie_state_prefixes(nodes, false);
     dg.prune_unreachable_nodes(nodes);
     dg.tie_state_suffixes(nodes);
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)dg.reachable_graph_nodes(nodes) );
 
     dg.push_word_ids_left(nodes);
     dg.prune_unreachable_nodes(nodes);
 
-    CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 135, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
@@ -201,8 +201,9 @@ void graphtest::GraphTest8(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, false);
+    dg.expand_subword_nodes(swnodes, nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
@@ -239,8 +240,9 @@ void graphtest::GraphTest9(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, false);
+    dg.expand_subword_nodes(swnodes, nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
@@ -279,8 +281,9 @@ void graphtest::GraphTest10(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, false);
+    dg.expand_subword_nodes(swnodes, nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
@@ -301,9 +304,11 @@ void graphtest::GraphTest11(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, false);
+    dg.expand_subword_nodes(swnodes, nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     dg.tie_state_prefixes(nodes, false);
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
@@ -326,8 +331,9 @@ void graphtest::GraphTest12(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.expand_subword_nodes(swnodes, nodes);
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 34, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -356,8 +362,9 @@ void graphtest::GraphTest13(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.expand_subword_nodes(swnodes, nodes);
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 80, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -386,10 +393,11 @@ void graphtest::GraphTest14(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.expand_subword_nodes(swnodes, nodes);
     dg.prune_unreachable_nodes(nodes);
-    //CPPUNIT_ASSERT_EQUAL( 80, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 182, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 
     vector<DecoderGraph::Node> cw_nodes;
@@ -399,7 +407,7 @@ void graphtest::GraphTest14(void)
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
     dg.connect_end_to_start_node(nodes);
 
-    //CPPUNIT_ASSERT_EQUAL( 121, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 338, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
@@ -417,10 +425,11 @@ void graphtest::GraphTest15(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.expand_subword_nodes(swnodes, nodes);
     dg.prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 62, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 67, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
 
     vector<DecoderGraph::Node> cw_nodes;
@@ -429,7 +438,7 @@ void graphtest::GraphTest15(void)
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
     dg.connect_end_to_start_node(nodes);
 
-    CPPUNIT_ASSERT_EQUAL( 176, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 181, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
@@ -448,8 +457,9 @@ void graphtest::GraphTest16(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.expand_subword_nodes(swnodes, nodes);
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 80, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -479,7 +489,6 @@ void graphtest::GraphTest16(void)
     dg.tie_state_suffixes(nodes);
     dg.prune_unreachable_nodes(nodes);
 
-    //CPPUNIT_ASSERT( assert_suffix_state_tying(dg, nodes) );
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
     CPPUNIT_ASSERT_EQUAL( 93, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
@@ -500,8 +509,9 @@ void graphtest::GraphTest17(void)
 
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.expand_subword_nodes(swnodes, nodes);
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 30, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
@@ -532,7 +542,7 @@ void graphtest::GraphTest18(void)
     vector<DecoderGraph::SubwordNode> swnodes;
     dg.create_word_graph(swnodes);
     vector<DecoderGraph::Node> nodes;
-    dg.expand_subword_nodes(swnodes, nodes, 0);
+    dg.expand_subword_nodes(swnodes, nodes);
     dg.prune_unreachable_nodes(nodes);
     cerr << endl << "real-like scenario with 500 words:" << endl;
     cerr << "initial expansion, number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
