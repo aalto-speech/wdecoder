@@ -497,10 +497,11 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
     if (processed_nodes.find(node_idx) != processed_nodes.end()) return;
     if (debug) cerr << endl << "tying state: " << node_idx << endl;
     processed_nodes.insert(node_idx);
-    Node *nd = &(nodes[node_idx]);
+    Node &nd = nodes[node_idx];
 
     map<pair<int, set<int> >, set<int> > targets;
-    for (auto ait = nd->arcs.begin(); ait != nd->arcs.end(); ++ait) {
+    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
+        if (nodes[ait->target_node].arcs.size() > 1) continue;
         int target_hmm = nodes[ait->target_node].hmm_state;
         set<int> reverse_arcs;
         for (auto rait = nodes[ait->target_node].reverse_arcs.begin();
@@ -531,7 +532,6 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
         while (nit != tit->second.end()) {
             int curr_node_idx = *nit;
             tied_node_idx = merge_nodes(nodes, tied_node_idx, curr_node_idx);
-
             arcs_removed = true;
             nit++;
         }
@@ -541,12 +541,9 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
 
     if (stop_propagation && !arcs_removed) return;
 
-    Node &nd2 = nodes[node_idx];
-    for (auto ait = nd2.arcs.begin(); ait != nd2.arcs.end(); ++ait) {
-        if (ait->target_node == -1) {
-            cerr << "targeting -1 from " << node_idx << endl;
-        }
-        tie_state_prefixes(nodes, processed_nodes, stop_propagation, ait->target_node);
+    for (int aidx = 0; aidx < nd.arcs.size(); aidx++) {
+        Arc &arc = nd.arcs[aidx];
+        tie_state_prefixes(nodes, processed_nodes, stop_propagation, arc.target_node);
     }
 }
 
@@ -627,7 +624,7 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
     for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end(); ++ait) {
         int target_hmm = nodes[ait->target_node].hmm_state;
         int word_id = nodes[ait->target_node].word_id;
-        if (word_id != -1 && m_units[word_id].length() < 2) continue;
+        //if (word_id != -1 && m_units[word_id].length() < 2) continue;
         //if (node_idx == END_NODE && target_hmm != -1) continue;
         if (nodes[ait->target_node].arcs.size() > 1) continue;
         targets[make_pair(word_id, target_hmm)].insert(ait->target_node);
