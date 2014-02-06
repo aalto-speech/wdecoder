@@ -568,10 +568,41 @@ void graphtest::GraphTest18(void)
 }
 
 
+// Error case in expanding subwords to phones
+void graphtest::GraphTest19(void)
+{
+    DecoderGraph dg;
+    segname = "data/subword_suffix_problem.segs";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
+    vector<DecoderGraph::Node> nodes;
+    dg.expand_subword_nodes(swnodes, nodes);
+    dg.prune_unreachable_nodes(nodes);
+
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
+
+    /*
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    dg.create_crossword_network(cw_nodes, fanout, fanin);
+    dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+    dg.connect_end_to_start_node(nodes);
+
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
+    */
+}
+
+
 // Test cross-word network creation and connecting
 // More like a real scenario with 500 words with all tying etc.
 // Print out some numbers
-void graphtest::GraphTest19(void)
+void graphtest::GraphTest20(void)
 {
     DecoderGraph dg;
     segname = "data/500.segs";
@@ -615,6 +646,7 @@ void graphtest::GraphTest19(void)
     cerr << "asserting only correct word pairs in the graph" << endl;
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
 }
+
 
 // ofstream origoutf("cw_simple.dot");
 // dg.print_dot_digraph(nodes, origoutf);

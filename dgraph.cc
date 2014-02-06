@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
     DecoderGraph dg;
 
     try {
-        int assertions = 0;
+        int assertions = 1;
         bool words_ok;
 
         string phfname = config.arguments[0];
