@@ -52,7 +52,6 @@ int main(int argc, char* argv[])
         time_t rawtime;
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
-
         cerr << "Creating subword graph.." << endl;
         vector<DecoderGraph::SubwordNode> swnodes;
         dg.create_word_graph(swnodes);
@@ -60,7 +59,12 @@ int main(int argc, char* argv[])
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
+        cerr << "Tying subword suffixes.." << endl;
+        dg.tie_subword_suffixes(swnodes);
+        cerr << "node count: " << dg.reachable_word_graph_nodes(swnodes) << endl;
 
+        time ( &rawtime );
+        cerr << "time: " << ctime (&rawtime) << endl;
         cerr << "Expanding to phone graph.." << endl;
         vector<DecoderGraph::Node> nodes;
         dg.expand_subword_nodes(swnodes, nodes);

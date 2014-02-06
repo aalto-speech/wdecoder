@@ -168,7 +168,7 @@ DecoderGraph::tie_subword_suffixes(vector<SubwordNode> &nodes)
     vector<int> empty;
 
     for (auto sit = node.in_arcs.begin(); sit != node.in_arcs.end(); ++sit) {
-        if (nodes[sit->second].in_arcs[0].second == START_NODE) continue;
+        //if (nodes[sit->second].in_arcs[0].second == START_NODE) continue;
         suffix_counts[sit->first] += 1;
     }
 
@@ -180,7 +180,8 @@ DecoderGraph::tie_subword_suffixes(vector<SubwordNode> &nodes)
             nodes.back().out_arcs[empty] = END_NODE;
             for (auto ait = node.in_arcs.begin(); ait != node.in_arcs.end(); ++ait) {
                 // Tie only real suffixes ie. not connected from start node
-                if (ait->first == sit->first && (nodes[sit->second].in_arcs[0].second == START_NODE)) {
+                //if (ait->first == sit->first && (nodes[sit->second].in_arcs[0].second == START_NODE)) {
+                if (ait->first == sit->first) {
                     int src_node_idx = nodes[ait->second].in_arcs[0].second;
                     nodes[src_node_idx].out_arcs[ait->first] = nodes.size()-1;
                     nodes.back().in_arcs.push_back(make_pair(nodes[src_node_idx].subword_ids, src_node_idx));
@@ -498,16 +499,21 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
     processed_nodes.insert(node_idx);
     Node &nd = nodes[node_idx];
 
-    map<int, set<int> > targets;
+    map<pair<int, set<int> >, set<int> > targets;
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
         int target_hmm = nodes[ait->target_node].hmm_state;
-        if (target_hmm != -1) targets[target_hmm].insert(ait->target_node);
+        set<int> reverse_arcs;
+        for (auto rait = nodes[ait->target_node].reverse_arcs.begin();
+                  rait != nodes[ait->target_node].reverse_arcs.end(); ++rait) {
+            reverse_arcs.insert(rait->target_node);
+        }
+        if (target_hmm != -1) targets[make_pair(target_hmm, reverse_arcs)].insert(ait->target_node);
     }
 
     if (debug) {
         cerr << "total targets: " << targets.size() << endl;
         for (auto tit = targets.begin(); tit !=targets.end(); ++tit) {
-            cerr << "hmm state: " << tit->first << " number of targets: " << tit->second.size() << endl;
+            cerr << "hmm state: " << tit->first.first << " number of targets: " << tit->second.size() << endl;
             cerr << "targets:";
             for (auto nit = tit->second.begin(); nit != tit->second.end(); ++nit)
                 cerr << " node: " << *nit << " ";
