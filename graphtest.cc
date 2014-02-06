@@ -568,11 +568,11 @@ void graphtest::GraphTest18(void)
 }
 
 
-// Error case in expanding subwords to phones
+// Verify that only true suffixes are tied
 void graphtest::GraphTest19(void)
 {
     DecoderGraph dg;
-    segname = "data/subword_suffix_problem.segs";
+    segname = "data/subword_tie_only_real_suffix.segs";
     read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> swnodes;
@@ -585,17 +585,6 @@ void graphtest::GraphTest19(void)
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
-
-    /*
-    vector<DecoderGraph::Node> cw_nodes;
-    map<string, int> fanout, fanin;
-    dg.create_crossword_network(cw_nodes, fanout, fanin);
-    dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-    dg.connect_end_to_start_node(nodes);
-
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
-    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
-    */
 }
 
 

@@ -168,7 +168,7 @@ DecoderGraph::tie_subword_suffixes(vector<SubwordNode> &nodes)
     vector<int> empty;
 
     for (auto sit = node.in_arcs.begin(); sit != node.in_arcs.end(); ++sit) {
-        //if (nodes[sit->second].in_arcs[0].second == START_NODE) continue;
+        if (nodes[sit->second].in_arcs[0].second == START_NODE) continue;
         suffix_counts[sit->first] += 1;
     }
 
@@ -180,8 +180,8 @@ DecoderGraph::tie_subword_suffixes(vector<SubwordNode> &nodes)
             nodes.back().out_arcs[empty] = END_NODE;
             for (auto ait = node.in_arcs.begin(); ait != node.in_arcs.end(); ++ait) {
                 // Tie only real suffixes ie. not connected from start node
-                //if (ait->first == sit->first && (nodes[sit->second].in_arcs[0].second == START_NODE)) {
-                if (ait->first == sit->first) {
+                if (ait->first == sit->first && (nodes[sit->second].in_arcs[0].second == START_NODE)) {
+                //if (ait->first == sit->first) {
                     int src_node_idx = nodes[ait->second].in_arcs[0].second;
                     nodes[src_node_idx].out_arcs[ait->first] = nodes.size()-1;
                     nodes.back().in_arcs.push_back(make_pair(nodes[src_node_idx].subword_ids, src_node_idx));
