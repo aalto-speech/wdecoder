@@ -588,7 +588,7 @@ void graphtest::GraphTest19(void)
 }
 
 
-// Some issue tie + expand
+// Verify that only true suffixes are tied
 void graphtest::GraphTest20(void)
 {
     DecoderGraph dg;
@@ -608,10 +608,30 @@ void graphtest::GraphTest20(void)
 }
 
 
+// Some issue tie + expand
+void graphtest::GraphTest21(void)
+{
+    DecoderGraph dg;
+    segname = "data/subword_tie_expand_problem_2.segs";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
+    vector<DecoderGraph::Node> nodes;
+    dg.expand_subword_nodes(swnodes, nodes);
+    dg.prune_unreachable_nodes(nodes);
+
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
+}
+
+
 // Test cross-word network creation and connecting
 // More like a real scenario with 500 words with all tying etc.
 // Print out some numbers
-void graphtest::GraphTest21(void)
+void graphtest::GraphTest22(void)
 {
     DecoderGraph dg;
     segname = "data/500.segs";
