@@ -602,11 +602,8 @@ void graphtest::GraphTest20(void)
     dg.expand_subword_nodes(swnodes, nodes);
     dg.prune_unreachable_nodes(nodes);
 
-    cerr << "asserting no double arcs" << endl;
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
-    cerr << "asserting all words in the graph" << endl;
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
-    cerr << "asserting only correct words in the graph" << endl;
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 }
 
