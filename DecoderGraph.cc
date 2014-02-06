@@ -501,7 +501,6 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
 
     map<pair<int, set<int> >, set<int> > targets;
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
-        if (nodes[ait->target_node].arcs.size() > 1) continue;
         int target_hmm = nodes[ait->target_node].hmm_state;
         set<int> reverse_arcs;
         for (auto rait = nodes[ait->target_node].reverse_arcs.begin();
