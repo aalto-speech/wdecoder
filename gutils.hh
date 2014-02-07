@@ -74,6 +74,7 @@ bool assert_suffix_state_tying(DecoderGraph &dg,
                                std::vector<DecoderGraph::Node> &nodes);
 bool assert_only_segmented_words(DecoderGraph &dg,
                                  std::vector<DecoderGraph::Node> &nodes,
+                                 bool debug=false,
                                  std::deque<int> states = std::deque<int>(),
                                  std::deque<int> subwords = std::deque<int>(),
                                  int node_idx = DecoderGraph::START_NODE);

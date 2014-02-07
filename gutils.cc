@@ -455,11 +455,21 @@ assert_suffix_state_tying(DecoderGraph &dg,
 bool
 assert_only_segmented_words(DecoderGraph &dg,
                             vector<DecoderGraph::Node> &nodes,
+                            bool debug,
                             deque<int> states,
                             deque<int> subwords,
                             int node_idx)
 {
     if (node_idx == DecoderGraph::END_NODE) {
+
+        if (debug) {
+            cerr << "found subwords: " << endl;
+            for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
+                cerr << dg.m_units[*swit] << " ";
+            cerr << "found states: " << endl;
+            for (auto stit = states.begin(); stit != states.end(); ++stit)
+                cerr << *stit << " ";
+        }
 
         string wrd;
         for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
@@ -493,7 +503,7 @@ assert_only_segmented_words(DecoderGraph &dg,
     if (node.word_id != -1) subwords.push_back(node.word_id);
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         if (nodes[ait->target_node].cw_node) continue;
-        bool rv = assert_only_segmented_words(dg, nodes, states, subwords, ait->target_node);
+        bool rv = assert_only_segmented_words(dg, nodes, debug, states, subwords, ait->target_node);
         if (!rv) return false;
     }
 
