@@ -124,14 +124,16 @@ int main(int argc, char* argv[])
         cerr << "Pruning unreachable nodes.." << endl;
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
         if (assertions) {
             words_ok = assert_words(dg, nodes, triphonized_words, false);
             cerr << "assert_words: " << words_ok << endl;
-        }
-
-        if (assertions) {
             bool pairs_ok = assert_word_pairs(dg, nodes, 10000, false);
             cerr << "assert word pairs: " << pairs_ok << endl;
+            //bool only_words = assert_only_segmented_words(dg, nodes);
+            //cerr << "assert only segmented words: " << only_words << endl;
+            //bool only_word_pairs = assert_only_segmented_cw_word_pairs(dg, nodes);
+            //cerr << "assert only segmented word pairs: " << only_word_pairs << endl;
         }
 
         dg.write_graph(nodes, graphfname);

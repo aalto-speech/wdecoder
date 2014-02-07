@@ -304,21 +304,21 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
         return;
     }
 
-    string subwords;
-    for (int i=0; i<swnode.subword_ids.size(); i++) {
-        if (i>0) subwords += " ";
-        subwords += m_units[swnode.subword_ids[i]];
+    if (debug) {
+        cerr << endl << "expanding subword state: " << sw_node_idx << endl;
+        cerr << "subwords: ";
+        for (int i=0; i<swnode.subword_ids.size(); i++) {
+            if (i>0) cerr << " ";
+            cerr << m_units[swnode.subword_ids[i]];
+        }
+        cerr << endl << "triphones: ";
+        for (int i=0; i<swnode.triphones.size(); i++) {
+            if (i>0) cerr << " ";
+            cerr << swnode.triphones[i];
+        }
+        cerr << endl << "\tsecond left context: " << second_left_context;
+        cerr << "\tleft context: " << left_context << endl;
     }
-    string tripstring;
-    for (int i=0; i<swnode.triphones.size(); i++) {
-        if (i>0) tripstring += " ";
-        tripstring += swnode.triphones[i];
-    }
-
-    if (debug) cerr << endl << subwords << endl
-                    << "\ttriphones:" << tripstring << endl
-                    << "\tsecond left context: " << second_left_context
-                    << "\tleft context: " << left_context << endl;
 
     vector<string> triphones = swnode.triphones;
 
@@ -373,9 +373,11 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
         return;
     }
 
+    /*
     if (debug) cerr << endl;
     if (debug) cerr << "adding dummy node for subwords: " << subwords
                     << " node idx: " << sw_node_idx << endl;
+     */
 
     for (auto swit = swnode.subword_ids.begin(); swit != swnode.subword_ids.end(); ++swit) {
         nodes.resize(nodes.size()+1);
