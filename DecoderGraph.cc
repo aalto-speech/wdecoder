@@ -1098,44 +1098,6 @@ void DecoderGraph::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
 }
 
 
-bool
-DecoderGraph::nodes_identical(vector<Node> &nodes, int node_idx_1, int node_idx_2)
-{
-    Node &nd1 = nodes[node_idx_1];
-    Node &nd2 = nodes[node_idx_2];
-    if (nd1.word_id != nd2.word_id) return false;
-    if (nd1.hmm_state != nd2.hmm_state) return false;
-    if (nd1.arcs.size() != nd2.arcs.size()) return false;
-    if (nd1.reverse_arcs.size() != nd2.reverse_arcs.size()) return false;
-
-    set<pair<int, int> > node1_next_states;
-    set<pair<int, int> > node2_next_states;
-    for (auto ait = nd1.arcs.begin(); ait != nd1.arcs.end(); ++ait) {
-        Node &target_node_1 = nodes[*ait];
-        node1_next_states.insert(make_pair(target_node_1.word_id, target_node_1.hmm_state));
-    }
-    for (auto ait = nd2.arcs.begin(); ait != nd2.arcs.end(); ++ait) {
-        Node &target_node_2 = nodes[*ait];
-        node2_next_states.insert(make_pair(target_node_2.word_id, target_node_2.hmm_state));
-    }
-    if (node1_next_states != node2_next_states) return false;
-
-    set<pair<int, int> > node1_reverse_next_states;
-    set<pair<int, int> > node2_reverse_next_states;
-    for (auto ait = nd1.reverse_arcs.begin(); ait != nd1.reverse_arcs.end(); ++ait) {
-        Node &target_node_1 = nodes[*ait];
-        node1_reverse_next_states.insert(make_pair(target_node_1.word_id, target_node_1.hmm_state));
-    }
-    for (auto ait = nd2.reverse_arcs.begin(); ait != nd2.reverse_arcs.end(); ++ait) {
-        Node &target_node_2 = nodes[*ait];
-        node2_reverse_next_states.insert(make_pair(target_node_2.word_id, target_node_2.hmm_state));
-    }
-    if (node1_reverse_next_states != node2_reverse_next_states) return false;
-
-    return true;
-}
-
-
 int
 DecoderGraph::merge_nodes(vector<Node> &nodes, int node_idx_1, int node_idx_2)
 {

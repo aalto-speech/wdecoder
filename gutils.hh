@@ -68,10 +68,6 @@ bool assert_subword_ids_right(DecoderGraph &dg,
                               std::vector<DecoderGraph::Node> &nodes,
                               bool debug=false);
 bool assert_no_double_arcs(std::vector<DecoderGraph::Node> &nodes);
-bool assert_prefix_state_tying(DecoderGraph &dg,
-                               std::vector<DecoderGraph::Node> &nodes);
-bool assert_suffix_state_tying(DecoderGraph &dg,
-                               std::vector<DecoderGraph::Node> &nodes);
 bool assert_only_segmented_words(DecoderGraph &dg,
                                  std::vector<DecoderGraph::Node> &nodes,
                                  bool debug=false,

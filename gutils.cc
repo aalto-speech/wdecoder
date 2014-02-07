@@ -391,51 +391,6 @@ assert_no_double_arcs(vector<DecoderGraph::Node> &nodes)
 }
 
 
-// FIXME: is this doing what is expected?
-bool
-assert_prefix_state_tying(DecoderGraph &dg,
-                          vector<DecoderGraph::Node> &nodes)
-{
-    dg.set_reverse_arcs_also_from_unreachable(nodes);
-
-    for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
-        for (auto ait1 = nit->arcs.begin(); ait1 != nit->arcs.end(); ++ait1) {
-            for (auto ait2 = nit->arcs.begin(); ait2 != nit->arcs.end(); ++ait2) {
-                if (ait1 == ait2) continue;
-                if (dg.nodes_identical(nodes, *ait1, *ait2)) return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-
-// FIXME: is this doing what is expected?
-bool
-assert_suffix_state_tying(DecoderGraph &dg,
-                          vector<DecoderGraph::Node> &nodes)
-{
-    dg.set_reverse_arcs_also_from_unreachable(nodes);
-
-    for (int i=0; i<nodes.size(); i++) {
-        DecoderGraph::Node &node = nodes[i];
-        for (auto ait1 = node.reverse_arcs.begin(); ait1 != node.reverse_arcs.end(); ++ait1) {
-            for (auto ait2 = node.reverse_arcs.begin(); ait2 != node.reverse_arcs.end(); ++ait2) {
-                if (ait1 == ait2) continue;
-                if (dg.nodes_identical(nodes, *ait1, *ait2)) {
-                    cerr << endl << "problem in node: " << i << endl;
-                    cerr << "targets: " << *ait1 << " " << *ait2 << endl;
-                    return false;
-                }
-            }
-        }
-    }
-
-    return true;
-}
-
-
 bool
 assert_only_segmented_words(DecoderGraph &dg,
                             vector<DecoderGraph::Node> &nodes,
