@@ -16,7 +16,7 @@ using namespace gutils;
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: dgraph [OPTION...] PH DUR LEXICON WSEGS\n")
+    config("usage: dgraph [OPTION...] PH LEXICON WSEGS GRAPH\n")
       ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
@@ -31,17 +31,16 @@ int main(int argc, char* argv[])
         cerr << "Reading hmms: " << phfname << endl;
         dg.read_phone_model(phfname);
 
-        string durfname = config.arguments[1];
-        cerr << "Reading duration models: " << durfname << endl;
-        dg.read_duration_model(durfname);
-
-        string lexfname = config.arguments[2];
+        string lexfname = config.arguments[1];
         cerr << "Reading lexicon: " << lexfname << endl;
         dg.read_noway_lexicon(lexfname);
 
-        string segfname = config.arguments[3];
+        string segfname = config.arguments[2];
         cerr << "Reading segmentations: " << segfname << endl;
         dg.read_word_segmentations(segfname);
+
+        string graphfname = config.arguments[3];
+        cerr << "Result graph file name: " << graphfname << endl;
 
         map<string, vector<string> > triphonized_words;
         if (assertions) {
@@ -87,7 +86,6 @@ int main(int argc, char* argv[])
         if (assertions) {
             words_ok = assert_words(dg, nodes, triphonized_words, false);
             cerr << "assert_words: " << words_ok << endl;
-            //bool word_pairs_ok = assert_word_pairs(dg, nodes, false) );
         }
 
         time ( &rawtime );
@@ -95,15 +93,6 @@ int main(int argc, char* argv[])
         cerr << "Tying state chain prefixes.." << endl;
         dg.push_word_ids_right(nodes);
         dg.tie_state_prefixes(nodes, false);
-        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        if (assertions) {
-            words_ok = assert_words(dg, nodes, triphonized_words, false);
-            cerr << "assert_words: " << words_ok << endl;
-        }
-
-        time ( &rawtime );
-        cerr << "time: " << ctime (&rawtime) << endl;
-        cerr << "Pruning unreachable nodes.." << endl;
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
         if (assertions) {
@@ -116,15 +105,6 @@ int main(int argc, char* argv[])
         cerr << "Tying state chain suffixes.." << endl;
         dg.push_word_ids_left(nodes);
         dg.tie_state_suffixes(nodes);
-        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        if (assertions) {
-            words_ok = assert_words(dg, nodes, triphonized_words, false);
-            cerr << "assert_words: " << words_ok << endl;
-        }
-
-        time ( &rawtime );
-        cerr << "time: " << ctime (&rawtime) << endl;
-        cerr << "Pruning unreachable nodes.." << endl;
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
         if (assertions) {
@@ -132,7 +112,7 @@ int main(int argc, char* argv[])
             cerr << "assert_words: " << words_ok << endl;
         }
 
-        cerr << "Pushing subword ids.." << endl;
+        cerr << "Pushing subword ids right.." << endl;
         dg.push_word_ids_right(nodes);
         if (assertions) {
             words_ok = assert_words(dg, nodes, triphonized_words, false);
@@ -154,7 +134,7 @@ int main(int argc, char* argv[])
             cerr << "assert word pairs: " << pairs_ok << endl;
         }
 
-        dg.write_graph(nodes, segfname + ".graph");
+        dg.write_graph(nodes, graphfname);
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
