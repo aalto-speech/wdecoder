@@ -19,23 +19,16 @@ public:
         std::map<std::vector<int>, int> out_arcs;                // subword ids (lookahead), node id
         std::vector<std::string> triphones;
     };
-    static const int START_NODE = 0;
-    static const int END_NODE = 1;
-
-    class Arc {
-    public:
-        Arc() : log_prob(0.0), target_node(-1) { }
-        float log_prob;
-        int target_node;
-    };
+    static int const START_NODE;
+    static int const END_NODE;
 
     class Node {
     public:
         Node() : word_id(-1), hmm_state(-1), cw_node(false) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
-        std::vector<Arc> arcs;
-        std::vector<Arc> reverse_arcs;
+        std::set<int> arcs;
+        std::set<int> reverse_arcs;
         bool cw_node;
     };
 
@@ -98,7 +91,7 @@ public:
                                int node_idx=START_NODE);
     void prune_unreachable_nodes(std::vector<Node> &nodes);
     void add_hmm_self_transitions(std::vector<Node> &nodes);
-    void set_hmm_transition_probs(std::vector<Node> &nodes);
+    //void set_hmm_transition_probs(std::vector<Node> &nodes);
     void push_word_ids_left(std::vector<Node> &nodes);
     void push_word_ids_left(std::vector<Node> &nodes,
                             int &move_count,

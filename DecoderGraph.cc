@@ -12,6 +12,10 @@
 using namespace std;
 
 
+int const DecoderGraph::START_NODE = 0;
+int const DecoderGraph::END_NODE = 1;
+
+
 void
 DecoderGraph::read_phone_model(string phnfname)
 {
@@ -345,8 +349,7 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
         }
     }
     else {
-        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-        nodes[node_idx].arcs.back().target_node = previous->second;
+        nodes[node_idx].arcs.insert(previous->second);
         return;
     }
 
@@ -362,28 +365,18 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
         for (auto swit = swnode.subword_ids.begin(); swit != swnode.subword_ids.end(); ++swit) {
             nodes.resize(nodes.size()+1);
             nodes.back().word_id = *swit;
-            nodes[temp_node_idx].arcs.resize(nodes[temp_node_idx].arcs.size()+1);
-            nodes[temp_node_idx].arcs.back().target_node = nodes.size()-1;
+            nodes[temp_node_idx].arcs.insert(nodes.size()-1);
             temp_node_idx = nodes.size()-1;
         }
 
-        nodes[temp_node_idx].arcs.resize(nodes[temp_node_idx].arcs.size()+1);
-        nodes[temp_node_idx].arcs.back().target_node = END_NODE;
-
+        nodes[temp_node_idx].arcs.insert(END_NODE);
         return;
     }
-
-    /*
-    if (debug) cerr << endl;
-    if (debug) cerr << "adding dummy node for subwords: " << subwords
-                    << " node idx: " << sw_node_idx << endl;
-     */
 
     for (auto swit = swnode.subword_ids.begin(); swit != swnode.subword_ids.end(); ++swit) {
         nodes.resize(nodes.size()+1);
         nodes.back().word_id = *swit;
-        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-        nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+        nodes[node_idx].arcs.insert(nodes.size()-1);
         node_idx = nodes.size()-1;
     }
 
@@ -391,8 +384,7 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
         if (ait->second == END_NODE) {
             string triphone = string(1,second_last_phone) + "-" + string(1,last_phone) + "+_";
             int temp_node_idx = connect_triphone(nodes, triphone, node_idx);
-            nodes[temp_node_idx].arcs.resize(nodes[temp_node_idx].arcs.size()+1);
-            nodes[temp_node_idx].arcs.back().target_node = END_NODE;
+            nodes[temp_node_idx].arcs.insert(END_NODE);
         }
         else
             expand_subword_nodes(swnodes, nodes, expanded_nodes, ait->second,
@@ -438,8 +430,7 @@ DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
     for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
         nodes.resize(nodes.size()+1);
         nodes.back().hmm_state = hmm.states[sidx].model;
-        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-        nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+        nodes[node_idx].arcs.insert(nodes.size()-1);
         node_idx = nodes.size()-1;
     }
 
@@ -468,7 +459,7 @@ DecoderGraph::print_graph(vector<Node> &nodes,
     }
 
     for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait)
-        print_graph(nodes, path, ait->target_node);
+        print_graph(nodes, path, *ait);
 }
 
 
@@ -501,16 +492,12 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
     if (debug) cerr << endl << "tying state: " << node_idx << endl;
     processed_nodes.insert(node_idx);
     Node &nd = nodes[node_idx];
+    set<int> temp_arcs = nd.arcs;
 
     map<pair<int, set<int> >, set<int> > targets;
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
-        int target_hmm = nodes[ait->target_node].hmm_state;
-        set<int> reverse_arcs;
-        for (auto rait = nodes[ait->target_node].reverse_arcs.begin();
-                  rait != nodes[ait->target_node].reverse_arcs.end(); ++rait) {
-            reverse_arcs.insert(rait->target_node);
-        }
-        if (target_hmm != -1) targets[make_pair(target_hmm, reverse_arcs)].insert(ait->target_node);
+        int target_hmm = nodes[*ait].hmm_state;
+        if (target_hmm != -1) targets[make_pair(target_hmm, nodes[*ait].reverse_arcs)].insert(*ait);
     }
 
     if (debug) {
@@ -543,10 +530,8 @@ DecoderGraph::tie_state_prefixes(vector<Node> &nodes,
 
     if (stop_propagation && !arcs_removed) return;
 
-    for (int aidx = 0; aidx < nd.arcs.size(); aidx++) {
-        Arc &arc = nd.arcs[aidx];
-        tie_state_prefixes(nodes, processed_nodes, stop_propagation, arc.target_node);
-    }
+    for (auto arcit = temp_arcs.begin(); arcit != temp_arcs.end(); ++arcit)
+        tie_state_prefixes(nodes, processed_nodes, stop_propagation, *arcit);
 }
 
 
@@ -556,10 +541,8 @@ DecoderGraph::set_reverse_arcs_also_from_unreachable(vector<Node> &nodes)
     clear_reverse_arcs(nodes);
     for (int i = 0; i < nodes.size(); ++i) {
         Node &node = nodes[i];
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-            nodes[ait->target_node].reverse_arcs.resize(nodes[ait->target_node].reverse_arcs.size()+1);
-            nodes[ait->target_node].reverse_arcs.back().target_node = i;
-        }
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+            nodes[*ait].reverse_arcs.insert(i);
     }
 }
 
@@ -583,9 +566,8 @@ DecoderGraph::set_reverse_arcs(vector<Node> &nodes,
     processed_nodes.insert(node_idx);
 
     for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait) {
-        nodes[ait->target_node].reverse_arcs.resize(nodes[ait->target_node].reverse_arcs.size()+1);
-        nodes[ait->target_node].reverse_arcs.back().target_node = node_idx;
-        set_reverse_arcs(nodes, ait->target_node, processed_nodes);
+        nodes[*ait].reverse_arcs.insert(node_idx);
+        set_reverse_arcs(nodes, *ait, processed_nodes);
     }
 }
 
@@ -619,13 +601,14 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
     if (debug) cerr << endl << "tying state: " << node_idx << endl;
     processed_nodes.insert(node_idx);
     Node &nd = nodes[node_idx];
+    set<int> temp_arcs = nd.reverse_arcs;
 
     map<pair<int, int>, set<int> > targets;
     for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end(); ++ait) {
-        int target_hmm = nodes[ait->target_node].hmm_state;
-        int word_id = nodes[ait->target_node].word_id;
-        if (nodes[ait->target_node].arcs.size() > 1) continue;
-        targets[make_pair(word_id, target_hmm)].insert(ait->target_node);
+        int target_hmm = nodes[*ait].hmm_state;
+        int word_id = nodes[*ait].word_id;
+        if (nodes[*ait].arcs.size() > 1) continue;
+        targets[make_pair(word_id, target_hmm)].insert(*ait);
     }
 
     if (debug) {
@@ -662,10 +645,8 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
 
     if (stop_propagation && !arcs_removed) return;
 
-    for (int raidx = 0; raidx < nd.reverse_arcs.size(); raidx++) {
-        Arc &arc = nd.reverse_arcs[raidx];
-        tie_state_suffixes(nodes, processed_nodes, stop_propagation, arc.target_node);
-    }
+    for (auto arcit = temp_arcs.begin(); arcit != temp_arcs.end(); ++arcit)
+        tie_state_suffixes(nodes, processed_nodes, stop_propagation, *arcit);
 }
 
 
@@ -676,9 +657,9 @@ DecoderGraph::reachable_graph_nodes(vector<Node> &nodes,
 {
     node_idxs.insert(node_idx);
     for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait)
-        if (node_idx != ait->target_node
-            && node_idxs.find(ait->target_node) == node_idxs.end())
-            reachable_graph_nodes(nodes, node_idxs, ait->target_node);
+        if (node_idx != *ait
+            && node_idxs.find(*ait) == node_idxs.end())
+            reachable_graph_nodes(nodes, node_idxs, *ait);
 }
 
 
@@ -707,9 +688,11 @@ DecoderGraph::prune_unreachable_nodes(vector<Node> &nodes)
     pruned_nodes.resize(old_node_idxs.size());
     for (auto nit = old_node_idxs.begin(); nit != old_node_idxs.end(); ++nit) {
         pruned_nodes[index_mapping[*nit]] = nodes[*nit];
+        Node &old_node = nodes[*nit];
         Node &new_node = pruned_nodes[index_mapping[*nit]];
-        for (auto ait = new_node.arcs.begin(); ait != new_node.arcs.end(); ++ait) {
-            ait->target_node = index_mapping[ait->target_node];
+        new_node.arcs.clear();
+        for (auto ait = old_node.arcs.begin(); ait != old_node.arcs.end(); ++ait) {
+            new_node.arcs.insert(index_mapping[*ait]);
         }
     }
 
@@ -730,13 +713,12 @@ DecoderGraph::add_hmm_self_transitions(std::vector<Node> &nodes)
         if (node.hmm_state == -1) continue;
 
         HmmState &state = m_hmm_states[node.hmm_state];
-        node.arcs.insert(node.arcs.begin(), Arc());
-        node.arcs[0].log_prob = state.transitions[0].log_prob;
-        node.arcs[0].target_node = i;
+        node.arcs.insert(i);
     }
 }
 
 
+/*
 void
 DecoderGraph::set_hmm_transition_probs(std::vector<Node> &nodes)
 {
@@ -748,11 +730,12 @@ DecoderGraph::set_hmm_transition_probs(std::vector<Node> &nodes)
 
         HmmState &state = m_hmm_states[node.hmm_state];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-            if (ait->target_node == i) ait->log_prob = state.transitions[0].log_prob;
+            if (*ait == i) ait->log_prob = state.transitions[0].log_prob;
             else ait->log_prob = state.transitions[1].log_prob;
         }
     }
 }
+*/
 
 
 void
@@ -785,12 +768,12 @@ DecoderGraph::push_word_ids_left(vector<Node> &nodes,
     else subword_id = -1;
 
     for (auto ait = node.reverse_arcs.begin(); ait != node.reverse_arcs.end(); ++ait) {
-        if (ait->target_node == node_idx) throw string("Call push before setting self-transitions.");
+        if (*ait == node_idx) throw string("Call push before setting self-transitions.");
         int temp_subword_id = subword_id;
-        if (nodes[ait->target_node].arcs.size() > 1) temp_subword_id = -1;
-        if (nodes[ait->target_node].word_id != -1) temp_subword_id = -1;
-        if (processed_nodes.find(ait->target_node) == processed_nodes.end())
-            push_word_ids_left(nodes, move_count, processed_nodes, ait->target_node, node_idx, temp_subword_id);
+        if (nodes[*ait].arcs.size() > 1) temp_subword_id = -1;
+        if (nodes[*ait].word_id != -1) temp_subword_id = -1;
+        if (processed_nodes.find(*ait) == processed_nodes.end())
+            push_word_ids_left(nodes, move_count, processed_nodes, *ait, node_idx, temp_subword_id);
     }
 }
 
@@ -839,12 +822,12 @@ DecoderGraph::push_word_ids_right(vector<Node> &nodes,
     else subword_id = -1;
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (ait->target_node == node_idx) throw string("Call push before setting self-transitions.");
+        if (*ait == node_idx) throw string("Call push before setting self-transitions.");
         int temp_subword_id = subword_id;
-        if (nodes[ait->target_node].reverse_arcs.size() > 1) temp_subword_id = -1;
-        if (nodes[ait->target_node].word_id != -1) temp_subword_id = -1;
-        if (processed_nodes.find(ait->target_node) == processed_nodes.end())
-            push_word_ids_right(nodes, move_count, processed_nodes, ait->target_node, node_idx, temp_subword_id);
+        if (nodes[*ait].reverse_arcs.size() > 1) temp_subword_id = -1;
+        if (nodes[*ait].word_id != -1) temp_subword_id = -1;
+        if (processed_nodes.find(*ait) == processed_nodes.end())
+            push_word_ids_right(nodes, move_count, processed_nodes, *ait, node_idx, temp_subword_id);
     }
 }
 
@@ -938,15 +921,13 @@ DecoderGraph::create_crossword_network(vector<Node> &nodes,
                     nodes.resize(nodes.size()+1);
                     fiit->second = nodes.size()-1;
                 }
-                nodes[idx].arcs.resize(nodes[idx].arcs.size()+1);
-                nodes[idx].arcs.back().target_node = fiit->second;
+                nodes[idx].arcs.insert(fiit->second);
                 if (debug) cerr << "triphone1: " << triphone1 << " triphone2: " << triphone2
                                 << " target node: " << fiit->second;
             }
             else {
                 if (debug) cerr << "found" << endl;
-                nodes[idx].arcs.resize(nodes[idx].arcs.size()+1);
-                nodes[idx].arcs.back().target_node = connected_fanin_nodes[triphone2];
+                nodes[idx].arcs.insert(connected_fanin_nodes[triphone2]);
             }
         }
     }
@@ -965,8 +946,10 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
     int offset = nodes.size();
     for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {
         nodes.push_back(*cwnit);
-        for (auto ait = nodes.back().arcs.begin(); ait != nodes.back().arcs.end(); ++ait)
-            ait->target_node += offset;
+        set<int> temp_arcs = nodes.back().arcs;
+        nodes.back().arcs.clear();
+        for (auto ait = temp_arcs.begin(); ait != temp_arcs.end(); ++ait)
+            nodes.back().arcs.insert(*ait + offset);
     }
 
     for (auto fonit = fanout.begin(); fonit != fanout.end(); ++fonit)
@@ -987,8 +970,7 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
                         << " from fanin node " << fanin_idx << " with triphone " << finit->second << endl;
         Node &fanin_node = nodes[fanin_idx];
         int node_idx = finit->first;
-        fanin_node.arcs.resize(fanin_node.arcs.size()+1);
-        fanin_node.arcs.back().target_node = node_idx;
+        fanin_node.arcs.insert(node_idx);
     }
 
     push_word_ids_left(nodes);
@@ -1005,8 +987,7 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
         if (debug) cerr << "connecting node " << fonit->first
                         << " to fanout node " << fanout_idx << " with triphone " << fonit->second << endl;
         Node &node = nodes[fonit->first];
-        node.arcs.resize(node.arcs.size()+1);
-        node.arcs.back().target_node = fanout_idx;
+        node.arcs.insert(fanout_idx);
     }
 }
 
@@ -1050,7 +1031,7 @@ DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
 
     for (auto ait = node.reverse_arcs.begin(); ait != node.reverse_arcs.end(); ++ait) {
         collect_cw_fanout_nodes(nodes, nodes_to_fanout, hmm_state_count,
-                                phones, node_to_connect, ait->target_node);
+                                phones, node_to_connect, *ait);
     }
 }
 
@@ -1096,10 +1077,10 @@ DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (debug) cerr << endl <<  "proceeding to node " << ait->target_node
+        if (debug) cerr << endl <<  "proceeding to node " << *ait
                         << " from node: " << node_idx;
         collect_cw_fanin_nodes(nodes, nodes_from_fanin, hmm_state_count,
-                               phones, node_to_connect, ait->target_node);
+                               phones, node_to_connect, *ait);
     }
 }
 
@@ -1135,7 +1116,7 @@ void DecoderGraph::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
     for (auto nit=node_idxs.begin(); nit != node_idxs.end(); ++nit) {
         Node &node = nodes[*nit];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-            fstr << "\t" << *nit << " -> " << ait->target_node << endl;
+            fstr << "\t" << *nit << " -> " << *ait << endl;
     }
     fstr << "}" << endl;
 }
@@ -1154,11 +1135,11 @@ DecoderGraph::nodes_identical(vector<Node> &nodes, int node_idx_1, int node_idx_
     set<pair<int, int> > node1_next_states;
     set<pair<int, int> > node2_next_states;
     for (auto ait = nd1.arcs.begin(); ait != nd1.arcs.end(); ++ait) {
-        Node &target_node_1 = nodes[ait->target_node];
+        Node &target_node_1 = nodes[*ait];
         node1_next_states.insert(make_pair(target_node_1.word_id, target_node_1.hmm_state));
     }
     for (auto ait = nd2.arcs.begin(); ait != nd2.arcs.end(); ++ait) {
-        Node &target_node_2 = nodes[ait->target_node];
+        Node &target_node_2 = nodes[*ait];
         node2_next_states.insert(make_pair(target_node_2.word_id, target_node_2.hmm_state));
     }
     if (node1_next_states != node2_next_states) return false;
@@ -1166,11 +1147,11 @@ DecoderGraph::nodes_identical(vector<Node> &nodes, int node_idx_1, int node_idx_
     set<pair<int, int> > node1_reverse_next_states;
     set<pair<int, int> > node2_reverse_next_states;
     for (auto ait = nd1.reverse_arcs.begin(); ait != nd1.reverse_arcs.end(); ++ait) {
-        Node &target_node_1 = nodes[ait->target_node];
+        Node &target_node_1 = nodes[*ait];
         node1_reverse_next_states.insert(make_pair(target_node_1.word_id, target_node_1.hmm_state));
     }
     for (auto ait = nd2.reverse_arcs.begin(); ait != nd2.reverse_arcs.end(); ++ait) {
-        Node &target_node_2 = nodes[ait->target_node];
+        Node &target_node_2 = nodes[*ait];
         node2_reverse_next_states.insert(make_pair(target_node_2.word_id, target_node_2.hmm_state));
     }
     if (node1_reverse_next_states != node2_reverse_next_states) return false;
@@ -1189,46 +1170,18 @@ DecoderGraph::merge_nodes(vector<Node> &nodes, int node_idx_1, int node_idx_2)
     removed_node.hmm_state = -1;
     removed_node.word_id = -1;
 
-    set<int> arcs;
-    for (auto ait = merged_node.arcs.begin(); ait != merged_node.arcs.end(); ++ait)
-        arcs.insert(ait->target_node);
-    for (auto ait = removed_node.arcs.begin(); ait != removed_node.arcs.end(); ++ait)
-        arcs.insert(ait->target_node);
+    for (auto ait = removed_node.arcs.begin(); ait != removed_node.arcs.end(); ++ait) {
+        merged_node.arcs.insert(*ait);
+        nodes[*ait].reverse_arcs.erase(node_idx_2);
+        nodes[*ait].reverse_arcs.insert(node_idx_1);
+    }
 
-    set<int> reverse_arcs;
-    for (auto ait = merged_node.reverse_arcs.begin(); ait != merged_node.reverse_arcs.end(); ++ait)
-        reverse_arcs.insert(ait->target_node);
-    for (auto ait = removed_node.reverse_arcs.begin(); ait != removed_node.reverse_arcs.end(); ++ait)
-        reverse_arcs.insert(ait->target_node);
-
-    merged_node.arcs.clear(); merged_node.reverse_arcs.clear();
+    for (auto ait = removed_node.reverse_arcs.begin(); ait != removed_node.reverse_arcs.end(); ++ait) {
+        merged_node.reverse_arcs.insert(*ait);
+        nodes[*ait].arcs.erase(node_idx_2);
+        nodes[*ait].arcs.insert(node_idx_1);
+    }
     removed_node.arcs.clear(); removed_node.reverse_arcs.clear();
-
-    for (auto ait=arcs.begin(); ait != arcs.end(); ++ait) {
-        merged_node.arcs.resize(merged_node.arcs.size()+1);
-        merged_node.arcs.back().target_node = *ait;
-        Node &target_node = nodes[*ait];
-        for (auto rait = target_node.reverse_arcs.begin(); rait != target_node.reverse_arcs.end();) {
-            if (rait->target_node == node_idx_1 || rait->target_node == node_idx_2)
-                rait = target_node.reverse_arcs.erase(rait);
-            else ++rait;
-        }
-        target_node.reverse_arcs.resize(target_node.reverse_arcs.size()+1);
-        target_node.reverse_arcs.back().target_node = node_idx_1;
-    }
-
-    for (auto ait=reverse_arcs.begin(); ait != reverse_arcs.end(); ++ait) {
-        merged_node.reverse_arcs.resize(merged_node.reverse_arcs.size()+1);
-        merged_node.reverse_arcs.back().target_node = *ait;
-        Node &target_node = nodes[*ait];
-        for (auto rait = target_node.arcs.begin(); rait != target_node.arcs.end();) {
-            if (rait->target_node == node_idx_1 || rait->target_node == node_idx_2)
-                rait = target_node.arcs.erase(rait);
-            else ++rait;
-        }
-        target_node.arcs.resize(target_node.arcs.size()+1);
-        target_node.arcs.back().target_node = node_idx_1;
-    }
 
     return node_idx_1;
 }
@@ -1237,8 +1190,7 @@ DecoderGraph::merge_nodes(vector<Node> &nodes, int node_idx_1, int node_idx_2)
 void
 DecoderGraph::connect_end_to_start_node(vector<Node> &nodes)
 {
-    nodes[END_NODE].arcs.resize(nodes[1].arcs.size()+1);
-    nodes[END_NODE].arcs.back().target_node = START_NODE;
+    nodes[DecoderGraph::END_NODE].arcs.insert(DecoderGraph::START_NODE);
 }
 
 
@@ -1252,6 +1204,6 @@ DecoderGraph::write_graph(vector<Node> &nodes, string fname)
     for (int i=0; i<nodes.size(); i++) {
         Node &node = nodes[i];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-            outf << "a " << i << " " << ait->target_node << endl;
+            outf << "a " << i << " " << *ait << endl;
     }
 }

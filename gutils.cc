@@ -116,8 +116,8 @@ assert_path(DecoderGraph &dg,
     }
 
     for (auto ait = curr_node.arcs.begin(); ait != curr_node.arcs.end(); ++ait) {
-        if (ait->target_node == node_idx) continue;
-        bool retval = assert_path(dg, nodes, states, subwords, ait->target_node);
+        if (*ait == node_idx) continue;
+        bool retval = assert_path(dg, nodes, states, subwords, *ait);
         if (retval) return true;
     }
 
@@ -306,11 +306,7 @@ assert_transitions(DecoderGraph &dg,
 
         if (node.hmm_state == -1) {
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-                if (ait->log_prob != 0.0) {
-                    if (debug) cerr << "Node " << node_idx << " non hmm state out transition lp: " << ait->log_prob << endl;
-                    return false;
-                }
-                if (ait->target_node == node_idx) {
+                if (*ait == node_idx) {
                     if (debug) cerr << "Node " << node_idx << " self-transition in non-hmm-node " << endl;
                     return false;
                 }
@@ -322,20 +318,8 @@ assert_transitions(DecoderGraph &dg,
         bool self_transition = false;
         bool out_transition = false;
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-            if (ait->target_node == node_idx) {
-                self_transition = true;
-                if (ait->log_prob != state.transitions[0].log_prob) {
-                    if (debug) cerr << "Node " << node_idx << " invalid self-transition prob" << endl;
-                    return false;
-                }
-            }
-            else {
-                out_transition = true;
-                if (ait->log_prob != state.transitions[1].log_prob) {
-                    if (debug) cerr << "Node " << node_idx << " invalid out-transition prob" << endl;
-                    return false;
-                }
-            }
+            if (*ait == node_idx) self_transition = true;
+            else out_transition = true;
         }
         if (!self_transition) {
             if (debug) cerr << "Node " << node_idx << " has no self-transition" << endl;
@@ -360,9 +344,9 @@ assert_subword_ids_left(DecoderGraph &dg,
     for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
         if (nit->word_id == -1) continue;
         if (nit->reverse_arcs.size() == 1) {
-            if (nit->reverse_arcs[0].target_node == DecoderGraph::START_NODE) continue;
-            if (nodes[nit->reverse_arcs[0].target_node].word_id != -1) continue;
-            if (nodes[nit->reverse_arcs[0].target_node].arcs.size() > 1) continue;
+            if (*(nit->reverse_arcs.begin()) == DecoderGraph::START_NODE) continue;
+            if (nodes[*(nit->reverse_arcs.begin())].word_id != -1) continue;
+            if (nodes[*(nit->reverse_arcs.begin())].arcs.size() > 1) continue;
             return false;
         }
     }
@@ -381,9 +365,9 @@ assert_subword_ids_right(DecoderGraph &dg,
     for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
         if (nit->word_id == -1) continue;
         if (nit->arcs.size() == 1) {
-            if (nit->arcs[0].target_node == DecoderGraph::END_NODE) continue;
-            if (nodes[nit->arcs[0].target_node].word_id != -1) continue;
-            if (nodes[nit->arcs[0].target_node].reverse_arcs.size() > 1) continue;
+            if (*(nit->arcs.begin()) == DecoderGraph::END_NODE) continue;
+            if (nodes[*(nit->arcs.begin())].word_id != -1) continue;
+            if (nodes[*(nit->arcs.begin())].reverse_arcs.size() > 1) continue;
             return false;
         }
     }
@@ -398,8 +382,8 @@ assert_no_double_arcs(vector<DecoderGraph::Node> &nodes)
     for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
         set<int> targets;
         for (auto ait = nit->arcs.begin(); ait != nit->arcs.end(); ++ait) {
-            if (targets.find(ait->target_node) != targets.end()) return false;
-            targets.insert(ait->target_node);
+            if (targets.find(*ait) != targets.end()) return false;
+            targets.insert(*ait);
         }
     }
 
@@ -418,7 +402,7 @@ assert_prefix_state_tying(DecoderGraph &dg,
         for (auto ait1 = nit->arcs.begin(); ait1 != nit->arcs.end(); ++ait1) {
             for (auto ait2 = nit->arcs.begin(); ait2 != nit->arcs.end(); ++ait2) {
                 if (ait1 == ait2) continue;
-                if (dg.nodes_identical(nodes, ait1->target_node, ait2->target_node)) return false;
+                if (dg.nodes_identical(nodes, *ait1, *ait2)) return false;
             }
         }
     }
@@ -439,9 +423,9 @@ assert_suffix_state_tying(DecoderGraph &dg,
         for (auto ait1 = node.reverse_arcs.begin(); ait1 != node.reverse_arcs.end(); ++ait1) {
             for (auto ait2 = node.reverse_arcs.begin(); ait2 != node.reverse_arcs.end(); ++ait2) {
                 if (ait1 == ait2) continue;
-                if (dg.nodes_identical(nodes, ait1->target_node, ait2->target_node)) {
+                if (dg.nodes_identical(nodes, *ait1, *ait2)) {
                     cerr << endl << "problem in node: " << i << endl;
-                    cerr << "targets: " << ait1->target_node << " " << ait2->target_node << endl;
+                    cerr << "targets: " << *ait1 << " " << *ait2 << endl;
                     return false;
                 }
             }
@@ -502,8 +486,8 @@ assert_only_segmented_words(DecoderGraph &dg,
     if (node.hmm_state != -1) states.push_back(node.hmm_state);
     if (node.word_id != -1) subwords.push_back(node.word_id);
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (nodes[ait->target_node].cw_node) continue;
-        bool rv = assert_only_segmented_words(dg, nodes, debug, states, subwords, ait->target_node);
+        if (nodes[*ait].cw_node) continue;
+        bool rv = assert_only_segmented_words(dg, nodes, debug, states, subwords, *ait);
         if (!rv) return false;
     }
 
@@ -578,16 +562,16 @@ assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
     bool cw_entry_found = false;
     bool non_cw_entry_found = false;
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (nodes[ait->target_node].cw_node) cw_entry_found = true;
+        if (nodes[*ait].cw_node) cw_entry_found = true;
         else non_cw_entry_found = true;
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        DecoderGraph::Node &target_node = nodes[ait->target_node];
+        DecoderGraph::Node &target_node = nodes[*ait];
         if (cw_visited && non_cw_entry_found && target_node.cw_node) continue;
         if (!cw_visited && cw_entry_found && !target_node.cw_node) continue;
         bool rv = assert_only_segmented_cw_word_pairs(dg, nodes, states, subwords,
-                  ait->target_node, cw_visited);
+                  *ait, cw_visited);
         if (!rv) return false;
     }
 

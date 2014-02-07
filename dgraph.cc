@@ -24,9 +24,6 @@ int main(int argc, char* argv[])
     DecoderGraph dg;
 
     try {
-        int assertions = 1;
-        bool words_ok;
-
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
         dg.read_phone_model(phfname);
@@ -41,12 +38,6 @@ int main(int argc, char* argv[])
 
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
-
-        map<string, vector<string> > triphonized_words;
-        if (assertions) {
-            cerr << "Triphonizing words" << endl;
-            triphonize_all_words(dg, triphonized_words);
-        }
 
         time_t rawtime;
         time ( &rawtime );
@@ -68,10 +59,6 @@ int main(int argc, char* argv[])
         vector<DecoderGraph::Node> nodes;
         dg.expand_subword_nodes(swnodes, nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        if (assertions) {
-            words_ok = assert_words(dg, nodes, triphonized_words, false);
-            cerr << "assert_words: " << words_ok << endl;
-        }
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
@@ -83,10 +70,6 @@ int main(int argc, char* argv[])
         dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
         dg.connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        if (assertions) {
-            words_ok = assert_words(dg, nodes, triphonized_words, false);
-            cerr << "assert_words: " << words_ok << endl;
-        }
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
@@ -95,10 +78,6 @@ int main(int argc, char* argv[])
         dg.tie_state_prefixes(nodes, false);
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        if (assertions) {
-            words_ok = assert_words(dg, nodes, triphonized_words, false);
-            cerr << "assert_words: " << words_ok << endl;
-        }
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
@@ -107,31 +86,21 @@ int main(int argc, char* argv[])
         dg.tie_state_suffixes(nodes);
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        if (assertions) {
-            words_ok = assert_words(dg, nodes, triphonized_words, false);
-            cerr << "assert_words: " << words_ok << endl;
-        }
-
         cerr << "Pushing subword ids right.." << endl;
         dg.push_word_ids_right(nodes);
-        if (assertions) {
-            words_ok = assert_words(dg, nodes, triphonized_words, false);
-            cerr << "assert_words: " << words_ok << endl;
-        }
-
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
-        cerr << "Pruning unreachable nodes.." << endl;
-        dg.prune_unreachable_nodes(nodes);
-        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
 
-        if (assertions) {
-            words_ok = assert_words(dg, nodes, triphonized_words, false);
+
+        if (true) {
+            map<string, vector<string> > triphonized_words;
+            triphonize_all_words(dg, triphonized_words);
+            bool words_ok = assert_words(dg, nodes, triphonized_words, false);
             cerr << "assert_words: " << words_ok << endl;
             bool pairs_ok = assert_word_pairs(dg, nodes, 10000, false);
             cerr << "assert word pairs: " << pairs_ok << endl;
-            bool only_words = assert_only_segmented_words(dg, nodes);
-            cerr << "assert only segmented words: " << only_words << endl;
+            //bool only_words = assert_only_segmented_words(dg, nodes);
+            //cerr << "assert only segmented words: " << only_words << endl;
             //bool only_word_pairs = assert_only_segmented_cw_word_pairs(dg, nodes);
             //cerr << "assert only segmented word pairs: " << only_word_pairs << endl;
         }

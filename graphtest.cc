@@ -129,8 +129,8 @@ void graphtest::GraphTest5(void)
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
 
     dg.add_hmm_self_transitions(nodes);
-    dg.set_hmm_transition_probs(nodes);
-    CPPUNIT_ASSERT( assert_transitions(dg, nodes, true) );
+    //dg.set_hmm_transition_probs(nodes);
+    //CPPUNIT_ASSERT( assert_transitions(dg, nodes, true) );
 }
 
 
