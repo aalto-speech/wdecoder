@@ -35,6 +35,7 @@ class graphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (GraphTest20);
     CPPUNIT_TEST (GraphTest21);
     CPPUNIT_TEST (GraphTest22);
+    CPPUNIT_TEST (GraphTest23);
     CPPUNIT_TEST_SUITE_END ();
 
     public:
@@ -64,6 +65,7 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         void GraphTest20(void);
         void GraphTest21(void);
         void GraphTest22(void);
+        void GraphTest23(void);
 
     private:
 
