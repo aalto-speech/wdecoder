@@ -91,7 +91,6 @@ public:
                                int node_idx=START_NODE);
     void prune_unreachable_nodes(std::vector<Node> &nodes);
     void add_hmm_self_transitions(std::vector<Node> &nodes);
-    //void set_hmm_transition_probs(std::vector<Node> &nodes);
     void push_word_ids_left(std::vector<Node> &nodes);
     void push_word_ids_left(std::vector<Node> &nodes,
                             int &move_count,

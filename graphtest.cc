@@ -148,11 +148,11 @@ void graphtest::GraphTest6(void)
     CPPUNIT_ASSERT_EQUAL( 182, (int)dg.reachable_graph_nodes(nodes) );
     dg.tie_state_prefixes(nodes, false);
     dg.tie_state_suffixes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)dg.reachable_graph_nodes(nodes) );
 
     dg.prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 135, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
@@ -178,13 +178,13 @@ void graphtest::GraphTest7(void)
     dg.tie_state_suffixes(nodes);
     dg.prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)dg.reachable_graph_nodes(nodes) );
 
     dg.push_word_ids_left(nodes);
     dg.prune_unreachable_nodes(nodes);
 
-    CPPUNIT_ASSERT_EQUAL( 135, (int)dg.reachable_graph_nodes(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 135, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 136, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
@@ -490,7 +490,7 @@ void graphtest::GraphTest16(void)
     dg.prune_unreachable_nodes(nodes);
 
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 95, (int)dg.reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 92, (int)dg.reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );

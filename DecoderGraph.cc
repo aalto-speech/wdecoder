@@ -603,12 +603,10 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
     Node &nd = nodes[node_idx];
     set<int> temp_arcs = nd.reverse_arcs;
 
-    map<pair<int, int>, set<int> > targets;
+    map<pair<int, set<int> >, set<int> > targets;
     for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end(); ++ait) {
         int target_hmm = nodes[*ait].hmm_state;
-        int word_id = nodes[*ait].word_id;
-        if (nodes[*ait].arcs.size() > 1) continue;
-        targets[make_pair(word_id, target_hmm)].insert(*ait);
+        if (target_hmm != -1) targets[make_pair(target_hmm, nodes[*ait].arcs)].insert(*ait);
     }
 
     if (debug) {
@@ -619,7 +617,7 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
 
         for (auto tit = targets.begin(); tit !=targets.end(); ++tit) {
             if (tit->second.size() == 1) continue;
-            cerr << "target: " << tit->first.first << " " << tit->first.second << " " << tit->second.size() << endl;
+            cerr << "target: " << tit->first.first << " " << tit->second.size() << endl;
             for (auto nit = tit->second.begin(); nit != tit->second.end(); ++nit)
                 cerr << *nit << " ";
             cerr << endl;
@@ -711,31 +709,9 @@ DecoderGraph::add_hmm_self_transitions(std::vector<Node> &nodes)
 
         Node &node = nodes[i];
         if (node.hmm_state == -1) continue;
-
-        HmmState &state = m_hmm_states[node.hmm_state];
         node.arcs.insert(i);
     }
 }
-
-
-/*
-void
-DecoderGraph::set_hmm_transition_probs(std::vector<Node> &nodes)
-{
-    for (int i=0; i<nodes.size(); i++) {
-        if (i == END_NODE) continue;
-
-        Node &node = nodes[i];
-        if (node.hmm_state == -1) continue;
-
-        HmmState &state = m_hmm_states[node.hmm_state];
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-            if (*ait == i) ait->log_prob = state.transitions[0].log_prob;
-            else ait->log_prob = state.transitions[1].log_prob;
-        }
-    }
-}
-*/
 
 
 void
