@@ -617,8 +617,6 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
     if (node_idx == START_NODE) return;
     if (processed_nodes.find(node_idx) != processed_nodes.end()) return;
     if (debug) cerr << endl << "tying state: " << node_idx << endl;
-    //if (processed_nodes.size() % 1000 == 0) cerr << "number of processed nodes: "
-    //                                             << processed_nodes.size() << "/" << nodes.size() << endl;
     processed_nodes.insert(node_idx);
     Node &nd = nodes[node_idx];
 
@@ -626,8 +624,6 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
     for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end(); ++ait) {
         int target_hmm = nodes[ait->target_node].hmm_state;
         int word_id = nodes[ait->target_node].word_id;
-        //if (word_id != -1 && m_units[word_id].length() < 2) continue;
-        //if (node_idx == END_NODE && target_hmm != -1) continue;
         if (nodes[ait->target_node].arcs.size() > 1) continue;
         targets[make_pair(word_id, target_hmm)].insert(ait->target_node);
     }
@@ -666,8 +662,10 @@ DecoderGraph::tie_state_suffixes(vector<Node> &nodes,
 
     if (stop_propagation && !arcs_removed) return;
 
-    for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end(); ++ait)
-        tie_state_suffixes(nodes, processed_nodes, stop_propagation, ait->target_node);
+    for (int raidx = 0; raidx < nd.reverse_arcs.size(); raidx++) {
+        Arc &arc = nd.reverse_arcs[raidx];
+        tie_state_suffixes(nodes, processed_nodes, stop_propagation, arc.target_node);
+    }
 }
 
 
