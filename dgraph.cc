@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
         cerr << "time: " << ctime (&rawtime) << endl;
 
 
-        if (true) {
+        if (false) {
             map<string, vector<string> > triphonized_words;
             triphonize_all_words(dg, triphonized_words);
             bool words_ok = assert_words(dg, nodes, triphonized_words, false);
