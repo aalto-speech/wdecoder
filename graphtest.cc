@@ -648,6 +648,12 @@ void graphtest::GraphTest22(void)
     dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
     dg.connect_end_to_start_node(nodes);
 
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
+
     dg.push_word_ids_right(nodes);
     dg.tie_state_prefixes(nodes, false);
     dg.prune_unreachable_nodes(nodes);
