@@ -249,7 +249,7 @@ Decoder::recognize_lna_file(string lnafname)
         //bool sil_detected = detect_silence();
         //if (sil_detected && frame_idx > 200) m_global_beam = m_silence_beam;
         if (m_propagated_count > 50000) {
-            float beamdiff = min(100.0, ((m_propagated_count-50000.0)/500000.0) * 100.0);
+            float beamdiff = min(100.0, ((m_propagated_count-50000.0)/400000.0) * 100.0);
             m_global_beam = original_global_beam-beamdiff;
         }
         else m_global_beam = original_global_beam;

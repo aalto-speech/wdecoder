@@ -86,8 +86,8 @@ int main(int argc, char* argv[])
         dg.tie_state_suffixes(nodes);
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        cerr << "Pushing subword ids right.." << endl;
-        dg.push_word_ids_right(nodes);
+        cerr << "Pushing subword ids left.." << endl;
+        dg.push_word_ids_left(nodes);
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
 
