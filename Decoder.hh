@@ -40,12 +40,17 @@ public:
 
     class WordHistory {
     public:
-        WordHistory() : word_id(-1), previous(nullptr) { }
-        WordHistory(int word_id, WordHistory *previous)
-            : word_id(word_id), previous(previous) { }
+        WordHistory() : word_id(-1), previous(nullptr),
+                        best_token_score(-1e20), prune(false) { }
+        WordHistory(int word_id, WordHistory *previous,
+                    float best_token_score=-1e20, bool prune=false)
+            : word_id(word_id), previous(previous),
+              best_token_score(best_token_score), prune(prune) { }
         int word_id;
         WordHistory *previous;
         std::map<int, WordHistory*> next;
+        float best_token_score;
+        bool prune;
     };
 
     class Token {

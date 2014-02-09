@@ -344,55 +344,34 @@ Decoder::prune_tokens(void)
     vector<Token> pruned_tokens;
     m_active_histories.clear();
 
-    // Global beam pruning and collect stats for different histories
-    map<WordHistory*, float> history_beams;
+    // Global beam pruning
+    // History beam pruning
     float current_glob_beam = m_best_log_prob - m_global_beam;
     for (int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
-        if (tok.total_log_prob > current_glob_beam) {
+        if (tok.total_log_prob < current_glob_beam)
+            m_global_beam_pruned_count++;
+        else if (tok.total_log_prob < (tok.history->best_token_score-m_history_beam))
+            m_history_beam_pruned_count++;
+        else
             pruned_tokens.push_back(tok);
-            if (history_beams.find(tok.history) == history_beams.end())
-                history_beams[tok.history] = tok.total_log_prob;
-            else if (tok.total_log_prob > history_beams[tok.history])
-                history_beams[tok.history] = tok.total_log_prob;
-        }
-        else m_global_beam_pruned_count++;
     }
 
-    vector<pair<WordHistory*, float> > descending_histories;
-    for (auto hit = history_beams.begin(); hit != history_beams.end(); ++hit) {
-        hit->second -= m_history_beam;
-        descending_histories.push_back(make_pair(hit->first, hit->second));
-    }
-    sort(descending_histories.begin(), descending_histories.end(), descending_whp_sort);
-    set<WordHistory*> histories_to_prune;
-    for (int i=m_history_limit; i<descending_histories.size(); i++)
-        histories_to_prune.insert(descending_histories[i].first);
-
-    // History beam pruning
-    // Histogram pruning
     // Collect best tokens for each state/history
     m_tokens.clear();
     for (int i=0; i<pruned_tokens.size(); i++) {
         Token &tok = pruned_tokens[i];
-
-        if (histories_to_prune.find(tok.history) != histories_to_prune.end()) {
-            m_histogram_pruned_count++;
-            continue;
+        if (tok.total_log_prob > m_tokens[tok.node_idx][tok.history].total_log_prob) {
+            m_tokens[tok.node_idx][tok.history] = tok;
+            m_active_histories.insert(tok.history);
         }
+        else
+            m_dropped_count++;
+    }
 
-        if (tok.total_log_prob > history_beams[tok.history]) {
-            auto nhit = m_tokens[tok.node_idx].find(tok.history);
-            if (nhit == m_tokens[tok.node_idx].end()) {
-                m_tokens[tok.node_idx][tok.history] = tok;
-                m_active_histories.insert(tok.history);
-            }
-            else if (tok.total_log_prob > nhit->second.total_log_prob)
-                nhit->second = tok;
-            else
-                m_dropped_count++;
-        }
-        else m_history_beam_pruned_count++;
+    for (auto histit = m_active_histories.begin(); histit != m_active_histories.end(); ++histit) {
+        (*histit)->prune = false;
+        (*histit)->best_token_score = -1e20;
     }
 
     m_raw_tokens.clear();
@@ -430,6 +409,7 @@ Decoder::move_token_to_node(Token token,
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
         m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
+        token.history->best_token_score = max(token.total_log_prob, token.history->best_token_score);
         m_raw_tokens.push_back(token);
         return;
     }
@@ -440,10 +420,10 @@ Decoder::move_token_to_node(Token token,
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
         if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
-        if (token.total_log_prob < m_current_word_end_beam) {
-            m_word_end_beam_pruned_count++;
-            return;
-        }
+        //if (token.total_log_prob < m_current_word_end_beam) {
+        //    m_word_end_beam_pruned_count++;
+        //    return;
+        //}
         token.word_count++;
     }
     else if (node.word_id == -2)
