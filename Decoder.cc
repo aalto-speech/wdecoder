@@ -246,8 +246,12 @@ Decoder::recognize_lna_file(string lnafname)
     float original_global_beam = m_global_beam;
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
-        bool sil_detected = detect_silence();
-        if (sil_detected && frame_idx > 200) m_global_beam = m_silence_beam;
+        //bool sil_detected = detect_silence();
+        //if (sil_detected && frame_idx > 200) m_global_beam = m_silence_beam;
+        if (m_propagated_count > 50000) {
+            float beamdiff = min(100.0, ((m_propagated_count-50000.0)/500000.0) * 100.0);
+            m_global_beam = original_global_beam-beamdiff;
+        }
         else m_global_beam = original_global_beam;
         if (stats) cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
@@ -255,7 +259,7 @@ Decoder::recognize_lna_file(string lnafname)
         if (frame_idx % m_history_prune_frame_interval == 0) prune_word_history();
         frame_idx++;
         if (stats) {
-            if (sil_detected) cerr << "silence_beam was used" << endl;
+            //if (sil_detected) cerr << "silence_beam was used" << endl;
             cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
             cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
