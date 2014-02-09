@@ -363,11 +363,10 @@ Decoder::prune_tokens(void)
 
     // Collect best tokens for each state/history
     m_tokens.clear();
-    for (int i=0; i<pruned_tokens.size(); i++) {
-        Token &tok = pruned_tokens[i];
-        if (tok.total_log_prob > m_tokens[tok.node_idx][tok.history].total_log_prob) {
-            m_tokens[tok.node_idx][tok.history] = tok;
-            m_active_histories.insert(tok.history);
+    for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
+        if (tit->total_log_prob > m_tokens[tit->node_idx][tit->history].total_log_prob) {
+            m_tokens[tit->node_idx][tit->history] = *tit;
+            m_active_histories.insert(tit->history);
         }
         else
             m_dropped_count++;
