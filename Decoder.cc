@@ -263,7 +263,8 @@ Decoder::recognize_lna_file(string lnafname)
             cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
             cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
-            cerr << "tokens pruned by history limit: " << m_histogram_pruned_count << endl;
+            cerr << "tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
+            //cerr << "tokens pruned by history limit: " << m_histogram_pruned_count << endl;
             cerr << "best log probability: " << m_best_log_prob << endl;
             cerr << "worst log probability: " << m_worst_log_prob << endl;
             cerr << "number of active nodes: " << m_tokens.size() << endl;
@@ -305,18 +306,18 @@ Decoder::initialize()
 void
 Decoder::propagate_tokens(void)
 {
-    m_current_word_end_beam = m_best_log_prob-m_word_end_beam;
-    m_word_end_beam_pruned_count = 0;
-
     m_token_count = 0;
     m_propagated_count = 0;
     m_best_log_prob = -1e20;
+    m_best_word_end_prob = -1e20;
     m_worst_log_prob = 0;
+    m_global_beam_pruned_count = 0;
 
     for (auto sit = m_tokens.begin(); sit != m_tokens.end(); ++sit) {
         Node &node = m_nodes[sit->first];
         for (auto hit = sit->second.begin(); hit != sit->second.end(); ++hit) {
             m_token_count++;
+            hit->second.word_end = false;
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
                 move_token_to_node(hit->second, ait->target_node, ait->log_prob);
                 m_propagated_count++;
@@ -336,23 +337,26 @@ bool descending_whp_sort(pair<Decoder::WordHistory*, float> i, pair<Decoder::Wor
 void
 Decoder::prune_tokens(void)
 {
-    m_global_beam_pruned_count = 0;
     m_history_beam_pruned_count = 0;
-    m_histogram_pruned_count = 0;
+    m_word_end_beam_pruned_count = 0;
     m_state_beam_pruned_count = 0;
     m_dropped_count = 0;
     vector<Token> pruned_tokens;
     m_active_histories.clear();
 
     // Global beam pruning
+    // Word end beam pruning
     // History beam pruning
     float current_glob_beam = m_best_log_prob - m_global_beam;
+    float current_word_end_beam = m_best_word_end_prob - m_word_end_beam;
     for (int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
         if (tok.total_log_prob < current_glob_beam)
             m_global_beam_pruned_count++;
         else if (tok.total_log_prob < (tok.history->best_token_score-m_history_beam))
             m_history_beam_pruned_count++;
+        else if (tok.word_end && (tok.total_log_prob < current_word_end_beam))
+            m_word_end_beam_pruned_count++;
         else
             pruned_tokens.push_back(tok);
     }
@@ -410,6 +414,7 @@ Decoder::move_token_to_node(Token token,
         m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
         m_worst_log_prob = min(m_worst_log_prob, token.total_log_prob);
         token.history->best_token_score = max(token.total_log_prob, token.history->best_token_score);
+        if (token.word_end) m_best_word_end_prob = max(m_best_word_end_prob, token.total_log_prob);
         m_raw_tokens.push_back(token);
         return;
     }
@@ -420,10 +425,11 @@ Decoder::move_token_to_node(Token token,
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
         if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
-        //if (token.total_log_prob < m_current_word_end_beam) {
-        //    m_word_end_beam_pruned_count++;
-        //    return;
-        //}
+        token.word_end = true;
+        if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
+            m_global_beam_pruned_count++;
+            return;
+        }
         token.word_count++;
     }
     else if (node.word_id == -2)

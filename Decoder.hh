@@ -64,6 +64,7 @@ public:
       int word_start_frame;
       int word_count;
       unsigned short int dur;
+      bool word_end;
       WordHistory *history;
 
       Token():
@@ -199,6 +200,7 @@ private:
 
     float m_best_log_prob;
     float m_worst_log_prob;
+    float m_best_word_end_prob;
 
     int m_global_beam_pruned_count;
     int m_history_beam_pruned_count;
