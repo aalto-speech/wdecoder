@@ -304,25 +304,25 @@ Decoder::propagate_tokens(void)
     m_current_word_end_beam = m_best_log_prob-m_word_end_beam;
     m_word_end_beam_pruned_count = 0;
 
-    int token_count = 0;
-    int propagated_count = 0;
+    m_token_count = 0;
+    m_propagated_count = 0;
     m_best_log_prob = -1e20;
     m_worst_log_prob = 0;
 
     for (auto sit = m_tokens.begin(); sit != m_tokens.end(); ++sit) {
         Node &node = m_nodes[sit->first];
         for (auto hit = sit->second.begin(); hit != sit->second.end(); ++hit) {
-            token_count++;
+            m_token_count++;
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
                 move_token_to_node(hit->second, ait->target_node, ait->log_prob);
-                propagated_count++;
+                m_propagated_count++;
             }
         }
     }
 
     if (stats) {
-        cerr << "token count before propagation: " << token_count << endl;
-        cerr << "propagated token count: " << propagated_count << endl;
+        cerr << "token count before propagation: " << m_token_count << endl;
+        cerr << "propagated token count: " << m_propagated_count << endl;
     }
 }
 

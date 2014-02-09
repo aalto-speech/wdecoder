@@ -82,6 +82,8 @@ public:
         m_duration_scale = 0.0;
         m_transition_scale = 0.0;
         m_max_num_tokens = 0;
+        m_token_count = 0;
+        m_propagated_count = 0;
 
         m_global_beam = 0.0;
         m_current_word_end_beam = 0.0;
@@ -179,6 +181,8 @@ private:
     float m_transition_scale; // Temporary scaling used for self transitions
     int m_max_num_tokens;
     int m_history_limit;
+    int m_token_count;
+    int m_propagated_count;
 
     float m_global_beam;
     float m_state_beam;
