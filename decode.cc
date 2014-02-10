@@ -20,7 +20,7 @@ void print_graph(Decoder &d, string fname) {
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: dgraph [OPTION...] PH DUR LEXICON LM GRAPH CFGFILE LNALIST\n")
+    config("usage: dgraph [OPTION...] PH DUR LEXICON LM CFGFILE GRAPH LNALIST\n")
       ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 7) config.print_help(stderr, 1);
@@ -45,15 +45,15 @@ int main(int argc, char* argv[])
         cerr << "Reading language model: " << lmfname << endl;
         d.read_lm(lmfname);
 
-        string graphfname = config.arguments[4];
-        cerr << "Reading graph: " << graphfname << endl;
-        d.read_dgraph(graphfname);
-        cerr << "node count: " << d.m_nodes.size() << endl;
-
-        string cfgfname = config.arguments[5];
+        string cfgfname = config.arguments[4];
         cerr << "Reading configuration: " << cfgfname << endl;
         d.read_config(cfgfname);
         d.print_config(cerr);
+
+        string graphfname = config.arguments[5];
+        cerr << "Reading graph: " << graphfname << endl;
+        d.read_dgraph(graphfname);
+        cerr << "node count: " << d.m_nodes.size() << endl;
 
         string lnalistfname = config.arguments[6];
         ifstream lnalistf(lnalistfname);

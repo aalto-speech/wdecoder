@@ -143,7 +143,8 @@ public:
         return (am_score + m_lm_scale * lm_score);
     }
     Token* get_best_token();
-    void add_sentence_end_scores();
+    inline void advance_in_history(Token& token, int word_id);
+    void add_sentence_ends();
     void print_best_word_history(std::ostream &outf=std::cout);
     void print_word_history(WordHistory *history, std::ostream &outf=std::cout);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
