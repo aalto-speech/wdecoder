@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
         d.set_silence_beam(120.0);
         d.set_history_limit(70);
         d.set_word_boundary_penalty(-0.01);
+        d.set_force_sentence_end(true);
 
         d.debug=0;
         d.stats=0;

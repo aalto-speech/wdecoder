@@ -122,6 +122,7 @@ public:
     void set_history_beam(float beam) { m_history_beam = beam; }
     void set_silence_beam(float beam) { m_silence_beam = beam; }
     void set_word_end_beam(float beam) { m_word_end_beam = beam; }
+    void set_force_sentence_end(bool force) { m_force_sentence_end = force; }
 
     void recognize_lna_file(std::string lnafname);
     void initialize();
@@ -133,6 +134,7 @@ public:
       return (am_score + m_lm_scale * lm_score);
     }
     Token* get_best_token();
+    void add_sentence_end_scores();
     void print_best_word_history();
     void print_word_history(WordHistory *history);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
@@ -189,6 +191,7 @@ private:
     int m_history_limit;
     int m_token_count;
     int m_propagated_count;
+    bool m_force_sentence_end;
 
     float m_global_beam;
     float m_state_beam;

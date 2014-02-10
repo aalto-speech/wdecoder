@@ -273,6 +273,8 @@ Decoder::recognize_lna_file(string lnafname)
         }
     }
 
+    if (m_force_sentence_end) add_sentence_end_scores();
+
     time(&end_time);
     double seconds = difftime(end_time, start_time);
     double rtf = seconds / ((double)frame_idx/125.0);
@@ -458,7 +460,6 @@ Decoder::get_best_token()
     Token *best_token = nullptr;
 
     for (auto sit = m_tokens.begin(); sit != m_tokens.end(); ++sit) {
-        Node &node = m_nodes[sit->first];
         for (auto hit = sit->second.begin(); hit != sit->second.end(); ++hit) {
             if (best_token == nullptr)
                 best_token = &(hit->second);
@@ -468,6 +469,20 @@ Decoder::get_best_token()
     }
 
     return best_token;
+}
+
+
+void
+Decoder::add_sentence_end_scores()
+{
+    for (auto sit = m_tokens.begin(); sit != m_tokens.end(); ++sit) {
+        for (auto hit = sit->second.begin(); hit != sit->second.end(); ++hit) {
+            Token &token = hit->second;
+            if (token.fsa_lm_node == m_lm.initial_node_id()) continue;
+            token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[SENTENCE_END_WORD_ID], &token.lm_log_prob);
+            token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+        }
+    }
 }
 
 
