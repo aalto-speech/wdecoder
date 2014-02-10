@@ -191,24 +191,6 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
 }
 
 
-/*
-void
-Decoder::add_hmm_self_transitions(std::vector<Node> &nodes)
-{
-    for (int i=0; i<nodes.size(); i++) {
-
-        Node &node = nodes[i];
-        if (node.hmm_state == -1) continue;
-
-        HmmState &state = m_hmm_states[node.hmm_state];
-        node.arcs.insert(node.arcs.begin(), Arc());
-        node.arcs[0].log_prob = state.transitions[0].log_prob;
-        node.arcs[0].target_node = i;
-    }
-}
-*/
-
-
 void
 Decoder::set_hmm_transition_probs(std::vector<Node> &nodes)
 {
@@ -637,25 +619,6 @@ Decoder::detect_silence()
     if (average_long_sil_rank < 200.0 && sliding_rank < 200.0) return true;
     else return false;
 }
-
-
-/*
-void
-Decoder::collect_fan_in_connections(set<int> &indices,
-                                    int node_idx,
-                                    int depth)
-{
-    Node &node = m_nodes[node_idx];
-    if (depth == 4) {
-        indices.insert(node_idx);
-        return;
-    }
-
-    depth++;
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-        collect_fan_in_connections(indices, ait->target_node, depth);
-}
-*/
 
 
 void
