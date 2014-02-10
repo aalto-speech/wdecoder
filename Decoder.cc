@@ -484,6 +484,11 @@ Decoder::add_sentence_end_scores()
         for (auto hit = sit->second.begin(); hit != sit->second.end(); ++hit) {
             Token &token = hit->second;
             if (token.fsa_lm_node == m_lm.initial_node_id()) continue;
+            if (m_use_word_boundary_symbol && token.history->word_id != m_subword_map[m_word_boundary_symbol]) {
+                token.fsa_lm_node = m_lm.walk(token.fsa_lm_node,
+                        m_subword_id_to_fsa_symbol[m_subword_map[m_word_boundary_symbol]], &token.lm_log_prob);
+                token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+            }
             token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[SENTENCE_END_WORD_ID], &token.lm_log_prob);
             token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         }
