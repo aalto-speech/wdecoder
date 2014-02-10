@@ -132,6 +132,60 @@ Decoder::read_dgraph(string fname)
 
 
 void
+Decoder::read_config(string cfgfname)
+{
+    ifstream cfgf(cfgfname);
+    if (!cfgf) throw string("Problem opening configuration file: ") + cfgfname;
+
+    string line;
+    while (getline(cfgf, line)) {
+        if (!line.length()) continue;
+        stringstream ss(line);
+        string parameter, val;
+        ss >> parameter >> val;
+        if (parameter == "lm_scale") m_lm_scale = stof(val);
+        else if (parameter == "duration_scale") m_duration_scale = stof(val);
+        else if (parameter == "transition_scale") m_transition_scale = stof(val);
+        else if (parameter == "global_beam") m_global_beam = stof(val);
+        else if (parameter == "history_beam") m_history_beam = stof(val);
+        else if (parameter == "word_end_beam") m_word_end_beam = stof(val);
+        else if (parameter == "word_boundary_penalty") m_word_boundary_penalty = stof(val);
+        else if (parameter == "history_prune_frame_interval") m_history_prune_frame_interval = stoi(val);
+        else if (parameter == "force_sentence_end")
+            m_force_sentence_end = true ? val == "true": false;
+        else if (parameter == "word_boundary_symbol") {
+            m_use_word_boundary_symbol = true;
+            m_word_boundary_symbol = val;
+        }
+        else if (parameter == "debug") m_debug = stoi(val);
+        else if (parameter == "stats") m_stats = stoi(val);
+        else throw string("Unknown parameter: ") + parameter;
+    }
+
+    cfgf.close();
+}
+
+
+void
+Decoder::print_config(ostream &outf)
+{
+    outf << std::boolalpha;
+    outf << "lm scale: " << m_lm_scale << endl;
+    outf << "duration scale: " << m_duration_scale << endl;
+    outf << "transition scale: " << m_transition_scale << endl;
+    outf << "force sentence end: " << m_force_sentence_end << endl;
+    outf << "use word boundary symbol: " << m_use_word_boundary_symbol << endl;
+    if (m_use_word_boundary_symbol)
+        outf << "word boundary symbol: " << m_word_boundary_symbol << endl;
+    outf << "global beam: " << m_global_beam << endl;
+    outf << "history beam: " << m_history_beam << endl;
+    outf << "word end beam: " << m_word_end_beam << endl;
+    outf << "word boundary penalty: " << m_word_boundary_penalty << endl;
+    outf << "history prune frame interval: " << m_history_prune_frame_interval << endl;
+}
+
+
+void
 Decoder::add_silence_hmms(std::vector<Node> &nodes,
                           bool long_silence,
                           bool short_silence)
@@ -221,7 +275,7 @@ Decoder::set_subword_id_fsa_symbol_mapping()
 
 
 void
-Decoder::recognize_lna_file(string lnafname)
+Decoder::recognize_lna_file(string lnafname, ostream &outf)
 {
     m_lna_reader.open_file(lnafname.c_str(), 1024);
     m_acoustics = &m_lna_reader;
@@ -233,20 +287,19 @@ Decoder::recognize_lna_file(string lnafname)
     float original_global_beam = m_global_beam;
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
-        //bool sil_detected = detect_silence();
-        //if (sil_detected && frame_idx > 200) m_global_beam = m_silence_beam;
         if (m_propagated_count > 50000) {
             float beamdiff = min(100.0, ((m_propagated_count-50000.0)/400000.0) * 100.0);
             m_global_beam = original_global_beam-beamdiff;
         }
         else m_global_beam = original_global_beam;
-        if (stats) cerr << endl << "recognizing frame: " << frame_idx << endl;
+
+        if (m_stats) cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
         prune_tokens();
         if (frame_idx % m_history_prune_frame_interval == 0) prune_word_history();
+
         frame_idx++;
-        if (stats) {
-            //if (sil_detected) cerr << "silence_beam was used" << endl;
+        if (m_stats) {
             cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
             cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
@@ -256,11 +309,9 @@ Decoder::recognize_lna_file(string lnafname)
             cerr << "worst log probability: " << m_worst_log_prob << endl;
             cerr << "number of active nodes: " << m_tokens.size() << endl;
             cerr << "number of active word histories: " << m_active_histories.size() << endl;
-            print_best_word_history();
+            print_best_word_history(outf);
         }
     }
-
-    if (m_force_sentence_end) add_sentence_end_scores();
 
     time(&end_time);
     double seconds = difftime(end_time, start_time);
@@ -269,6 +320,7 @@ Decoder::recognize_lna_file(string lnafname)
     cerr << "\tRTF: " << rtf << endl;
     cerr << "\tLog prob: " << get_best_token()->total_log_prob << endl;
     cout << lnafname << ":";
+    if (m_force_sentence_end) add_sentence_end_scores();
     print_best_word_history();
 
     m_global_beam = original_global_beam;
@@ -314,7 +366,7 @@ Decoder::propagate_tokens(void)
         }
     }
 
-    if (stats) {
+    if (m_stats) {
         cerr << "token count before propagation: " << m_token_count << endl;
         cerr << "propagated token count: " << m_propagated_count << endl;
     }
@@ -375,7 +427,7 @@ Decoder::move_token_to_node(Token token,
                             int node_idx,
                             float transition_score)
 {
-    if (debug) cerr << "move_token_to_node:" << endl
+    if (m_debug) cerr << "move_token_to_node:" << endl
                     << "\tnode idx: " << node_idx << endl
                     << "\tprevious node idx: " << token.node_idx << endl
                     << "\ttransition score: " << transition_score << endl;
@@ -409,7 +461,7 @@ Decoder::move_token_to_node(Token token,
 
     // LM node, update LM score
     if (node.word_id >= 0) {
-        if (debug) cerr << "node: " << node_idx << " walking with: " << m_subwords[node.word_id] << endl;
+        if (m_debug) cerr << "node: " << node_idx << " walking with: " << m_subwords[node.word_id] << endl;
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
         if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
@@ -479,14 +531,14 @@ Decoder::add_sentence_end_scores()
 
 
 void
-Decoder::print_best_word_history()
+Decoder::print_best_word_history(ostream &outf)
 {
-    print_word_history(get_best_token()->history);
+    print_word_history(get_best_token()->history, outf);
 }
 
 
 void
-Decoder::print_word_history(WordHistory *history)
+Decoder::print_word_history(WordHistory *history, ostream &outf)
 {
     vector<int> subwords;
     while (true) {
@@ -496,10 +548,10 @@ Decoder::print_word_history(WordHistory *history)
     }
 
     for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
-        if (*swit >= 0) cout << m_subwords[*swit];
-        else if (*swit == -2) cout << " ";
+        if (*swit >= 0) outf << m_subwords[*swit];
+        else if (*swit == -2) outf << " ";
     }
-    cout << endl;
+    outf << endl;
 }
 
 

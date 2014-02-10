@@ -10,13 +10,20 @@
 using namespace std;
 
 
+void print_graph(Decoder &d, string fname) {
+    ofstream outf(fname);
+    d.print_dot_digraph(d.m_nodes, outf);
+    outf.close();
+}
+
+
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: dgraph [OPTION...] PH DUR LEXICON LM GRAPH LNALIST\n")
+    config("usage: dgraph [OPTION...] PH DUR LEXICON LM GRAPH CFGFILE LNALIST\n")
       ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 6) config.print_help(stderr, 1);
+    if (config.arguments.size() != 7) config.print_help(stderr, 1);
 
     try {
 
@@ -43,30 +50,16 @@ int main(int argc, char* argv[])
         d.read_dgraph(graphfname);
         cerr << "node count: " << d.m_nodes.size() << endl;
 
-//        ofstream outf("graph.dot");
-//        d.print_dot_digraph(d.m_nodes, outf);
-//        outf.close();
-//        exit(1);
+        string cfgfname = config.arguments[5];
+        cerr << "Reading configuration: " << cfgfname << endl;
+        d.read_config(cfgfname);
+        d.print_config(cerr);
 
-        d.set_lm_scale(34.0);
-        d.set_duration_scale(3.0);
-        d.set_transition_scale(1.0);
-        d.set_global_beam(200.0);
-        d.set_word_end_beam(120.0);
-        d.set_history_beam(140.0);
-        d.set_state_beam(150.0);
-        d.set_silence_beam(120.0);
-        d.set_history_limit(70);
-        d.set_word_boundary_penalty(-0.01);
-        d.set_force_sentence_end(true);
-
-        d.debug=0;
-        d.stats=0;
-
-        string lnalistfname = config.arguments[5];
+        string lnalistfname = config.arguments[6];
         ifstream lnalistf(lnalistfname);
         string line;
 
+        cerr << endl;
         while (getline(lnalistf, line)) {
             if (!line.length()) continue;
             cerr << "recognizing: " << line << endl;

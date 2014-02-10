@@ -81,8 +81,8 @@ public:
     };
 
     Decoder() {
-        debug = 0;
-        stats = 0;
+        m_debug = 0;
+        m_stats = 0;
         m_use_word_boundary_symbol = false;
         m_force_sentence_end = true;
 
@@ -113,6 +113,9 @@ public:
     void read_lm(std::string lmfname);
     void read_dgraph(std::string graphfname);
 
+    void read_config(std::string cfgfname);
+    void print_config(std::ostream &outf);
+
     void set_lm_scale(float lm_scale) { m_lm_scale = lm_scale; }
     void set_duration_scale(float dur_scale) { m_duration_scale = dur_scale; }
     void set_transition_scale(float trans_scale) { m_transition_scale = trans_scale; }
@@ -130,7 +133,7 @@ public:
         m_use_word_boundary_symbol = true;
     }
 
-    void recognize_lna_file(std::string lnafname);
+    void recognize_lna_file(std::string lnafname, std::ostream &outf=std::cout);
     void initialize();
     void propagate_tokens();
     void prune_tokens();
@@ -141,12 +144,9 @@ public:
     }
     Token* get_best_token();
     void add_sentence_end_scores();
-    void print_best_word_history();
-    void print_word_history(WordHistory *history);
+    void print_best_word_history(std::ostream &outf=std::cout);
+    void print_word_history(WordHistory *history, std::ostream &outf=std::cout);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
-
-    int debug;
-    int stats;
 
     // Subwords
     std::vector<std::string> m_subwords;
@@ -185,6 +185,9 @@ private:
     void prune_word_history();
     bool detect_silence();
     void set_word_boundaries();
+
+    int m_debug;
+    int m_stats;
 
     float m_lm_scale;
     float m_duration_scale;
