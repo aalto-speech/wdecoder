@@ -103,6 +103,7 @@ public:
         m_history_limit = 5000;
 
         m_history_prune_frame_interval = 10;
+        m_empty_history = nullptr;
 
         m_word_boundary_penalty = 0.0;
     };
@@ -221,6 +222,7 @@ private:
     int m_dropped_count;
 
     int m_history_prune_frame_interval;
+    WordHistory* m_empty_history;
 
     std::deque<float> m_silence_ranks;
 };

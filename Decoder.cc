@@ -288,7 +288,7 @@ Decoder::recognize_lna_file(string lnafname, ostream &outf)
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
         if (m_propagated_count > 50000) {
-            float beamdiff = min(100.0, ((m_propagated_count-50000.0)/400000.0) * 100.0);
+            float beamdiff = min(100.0, ((m_propagated_count-50000.0)/500000.0) * 100.0);
             m_global_beam = original_global_beam-beamdiff;
         }
         else m_global_beam = original_global_beam;
@@ -341,6 +341,7 @@ Decoder::initialize()
     tok.history = new WordHistory();
     tok.node_idx = DECODE_START_NODE;
     m_tokens[DECODE_START_NODE][tok.history] = tok;
+    m_empty_history = tok.history;
 }
 
 
