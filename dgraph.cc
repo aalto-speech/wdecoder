@@ -81,16 +81,16 @@ int main(int argc, char* argv[])
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
-        cerr << "Tying state chain suffixes.." << endl;
+        cerr << "Pushing subword ids left.." << endl;
         dg.push_word_ids_left(nodes);
+        cerr << "Tying state chain suffixes.." << endl;
         dg.tie_state_suffixes(nodes);
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
-        cerr << "Pushing subword ids left.." << endl;
+
         dg.push_word_ids_left(nodes);
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
-
 
         if (false) {
             map<string, vector<string> > triphonized_words;
@@ -105,6 +105,7 @@ int main(int argc, char* argv[])
             //cerr << "assert only segmented word pairs: " << only_word_pairs << endl;
         }
 
+        dg.add_hmm_self_transitions(nodes);
         dg.write_graph(nodes, graphfname);
 
         time ( &rawtime );

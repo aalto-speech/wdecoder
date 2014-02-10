@@ -110,7 +110,7 @@ Decoder::read_dgraph(string fname)
         nss >> ltype;
         if (ltype != "n") throw string("Problem reading graph.");
         Node &node = m_nodes[i];
-        nss >> node_idx >> node.hmm_state >> node.word_id >> arc_count;
+        nss >> node_idx >> node.hmm_state >> node.word_id >> arc_count >> node.flags;
         node.arcs.resize(arc_count);
     }
 
@@ -126,7 +126,6 @@ Decoder::read_dgraph(string fname)
     }
 
     add_silence_hmms(m_nodes);
-    add_hmm_self_transitions(m_nodes);
     set_hmm_transition_probs(m_nodes);
     set_word_boundaries();
 }
@@ -156,6 +155,8 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             nodes.resize(nodes.size()+1);
             nodes.back().hmm_state = hmm.states[sidx].model;
+            nodes.back().arcs.resize(nodes.back().arcs.size()+1);
+            nodes.back().arcs.back().target_node = nodes.size()-1;
             nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
             nodes[node_idx].arcs.back().target_node = nodes.size()-1;
             if (sidx == 2) {
@@ -178,6 +179,8 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             nodes.resize(nodes.size()+1);
             nodes.back().hmm_state = hmm.states[sidx].model;
+            nodes.back().arcs.resize(nodes.back().arcs.size()+1);
+            nodes.back().arcs.back().target_node = nodes.size()-1;
             nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
             nodes[node_idx].arcs.back().target_node = nodes.size()-1;
             node_idx = nodes.size()-1;
@@ -188,6 +191,7 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
 }
 
 
+/*
 void
 Decoder::add_hmm_self_transitions(std::vector<Node> &nodes)
 {
@@ -202,6 +206,7 @@ Decoder::add_hmm_self_transitions(std::vector<Node> &nodes)
         node.arcs[0].target_node = i;
     }
 }
+*/
 
 
 void
@@ -652,19 +657,37 @@ Decoder::set_word_boundaries()
     set<int> fan_in_indices;
     collect_fan_in_connections(fan_in_indices);
 
-    int wb_count = 0;
-    for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
-        if (nit->hmm_state == -1 && nit->word_id == -1) {
-            for (auto ait = nit->arcs.begin(); ait != nit->arcs.end(); ++ait) {
-                if (fan_in_indices.find(ait->target_node) != fan_in_indices.end()) {
-                    nit->word_id = WORD_BOUNDARY_IDENTIFIER;
-                    wb_count++;
-                    break;
+    if (!m_use_word_boundary_symbol) {
+        int wbcount = 0;
+        for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
+            if (nit->hmm_state == -1 && nit->word_id == -1) {
+                for (auto ait = nit->arcs.begin(); ait != nit->arcs.end(); ++ait) {
+                    if (fan_in_indices.find(ait->target_node) != fan_in_indices.end()) {
+                        wbcount++;
+                        nit->word_id = WORD_BOUNDARY_IDENTIFIER;
+                        break;
+                    }
                 }
             }
         }
+        cerr << "set_word_boundaries, word boundary count: " << wbcount << endl;
+        m_nodes[START_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
     }
+    else {
+        int wbcount = 0;
+        for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
+            if (nit->hmm_state == -1 && nit->word_id == -1) {
+                bool found = false;
+                for (auto ait = nit->arcs.begin(); ait != nit->arcs.end(); ++ait)
+                    if (fan_in_indices.find(ait->target_node) != fan_in_indices.end()) {
+                        found = true;
+                        break;
+                    }
 
-    m_nodes[START_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
+            }
+        }
+        cerr << "set_word_boundaries, word boundary count: " << wbcount << endl;
+        m_nodes[START_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
+    }
 }
 

@@ -1,5 +1,6 @@
 #include <sstream>
 
+#include "defs.hh"
 #include "gutils.hh"
 
 using namespace std;
@@ -160,7 +161,7 @@ assert_path(DecoderGraph &dg,
         cerr << endl;
     }
 
-    return assert_path(dg, nodes, dstates, dwords, DecoderGraph::START_NODE);
+    return assert_path(dg, nodes, dstates, dwords, START_NODE);
 }
 
 
@@ -297,7 +298,7 @@ assert_transitions(DecoderGraph &dg,
                    bool debug)
 {
     for (int node_idx = 0; node_idx < nodes.size(); ++node_idx) {
-        if (node_idx == DecoderGraph::END_NODE) continue;
+        if (node_idx == END_NODE) continue;
         DecoderGraph::Node &node = nodes[node_idx];
         if (!node.arcs.size()) {
             if (debug) cerr << "Node " << node_idx << " has no transitions" << endl;
@@ -344,7 +345,7 @@ assert_subword_ids_left(DecoderGraph &dg,
     for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
         if (nit->word_id == -1) continue;
         if (nit->reverse_arcs.size() == 1) {
-            if (*(nit->reverse_arcs.begin()) == DecoderGraph::START_NODE) continue;
+            if (*(nit->reverse_arcs.begin()) == START_NODE) continue;
             if (nodes[*(nit->reverse_arcs.begin())].word_id != -1) continue;
             if (nodes[*(nit->reverse_arcs.begin())].arcs.size() > 1) continue;
             return false;
@@ -365,7 +366,7 @@ assert_subword_ids_right(DecoderGraph &dg,
     for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
         if (nit->word_id == -1) continue;
         if (nit->arcs.size() == 1) {
-            if (*(nit->arcs.begin()) == DecoderGraph::END_NODE) continue;
+            if (*(nit->arcs.begin()) == END_NODE) continue;
             if (nodes[*(nit->arcs.begin())].word_id != -1) continue;
             if (nodes[*(nit->arcs.begin())].reverse_arcs.size() > 1) continue;
             return false;
@@ -399,7 +400,7 @@ assert_only_segmented_words(DecoderGraph &dg,
                             deque<int> subwords,
                             int node_idx)
 {
-    if (node_idx == DecoderGraph::END_NODE) {
+    if (node_idx == END_NODE) {
 
         if (debug) {
             cerr << "found subwords: " << endl;
@@ -441,7 +442,7 @@ assert_only_segmented_words(DecoderGraph &dg,
     if (node.hmm_state != -1) states.push_back(node.hmm_state);
     if (node.word_id != -1) subwords.push_back(node.word_id);
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (nodes[*ait].cw_node) continue;
+        if (nodes[*ait].flags) continue;
         bool rv = assert_only_segmented_words(dg, nodes, debug, states, subwords, *ait);
         if (!rv) return false;
     }
@@ -458,7 +459,7 @@ assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
                                     int node_idx,
                                     bool cw_visited)
 {
-    if (node_idx == DecoderGraph::END_NODE) {
+    if (node_idx == END_NODE) {
 
         string wrd1, wrd2;
         auto swit = subwords.begin();
@@ -509,7 +510,7 @@ assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
     DecoderGraph::Node &node = nodes[node_idx];
     if (node.hmm_state != -1) states.push_back(node.hmm_state);
     if (node.word_id != -1) subwords.push_back(node.word_id);
-    if (node.cw_node && !cw_visited) {
+    if (node.flags && !cw_visited) {
         subwords.push_back(-1);
         cw_visited = true;
     }
@@ -517,14 +518,14 @@ assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
     bool cw_entry_found = false;
     bool non_cw_entry_found = false;
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (nodes[*ait].cw_node) cw_entry_found = true;
+        if (nodes[*ait].flags) cw_entry_found = true;
         else non_cw_entry_found = true;
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         DecoderGraph::Node &target_node = nodes[*ait];
-        if (cw_visited && non_cw_entry_found && target_node.cw_node) continue;
-        if (!cw_visited && cw_entry_found && !target_node.cw_node) continue;
+        if (cw_visited && non_cw_entry_found && target_node.flags) continue;
+        if (!cw_visited && cw_entry_found && !target_node.flags) continue;
         bool rv = assert_only_segmented_cw_word_pairs(dg, nodes, states, subwords,
                   *ait, cw_visited);
         if (!rv) return false;

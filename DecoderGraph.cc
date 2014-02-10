@@ -12,10 +12,6 @@
 using namespace std;
 
 
-int const DecoderGraph::START_NODE = 0;
-int const DecoderGraph::END_NODE = 1;
-
-
 void
 DecoderGraph::read_phone_model(string phnfname)
 {
@@ -704,9 +700,6 @@ void
 DecoderGraph::add_hmm_self_transitions(std::vector<Node> &nodes)
 {
     for (int i=0; i<nodes.size(); i++) {
-        if (i == START_NODE) continue;
-        if (i == END_NODE) continue;
-
         Node &node = nodes[i];
         if (node.hmm_state == -1) continue;
         node.arcs.insert(i);
@@ -882,6 +875,7 @@ DecoderGraph::create_crossword_network(vector<Node> &nodes,
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
 
         nodes.resize(nodes.size()+1);
+        nodes.back().flags |= NODE_FAN_OUT_DUMMY;
         foit->second = nodes.size()-1;
 
         for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
@@ -895,6 +889,7 @@ DecoderGraph::create_crossword_network(vector<Node> &nodes,
                 connected_fanin_nodes[triphone2] = idx-2;
                 if (fiit->second == -1) {
                     nodes.resize(nodes.size()+1);
+                    nodes.back().flags |= NODE_FAN_IN_DUMMY;
                     fiit->second = nodes.size()-1;
                 }
                 nodes[idx].arcs.insert(fiit->second);
@@ -909,7 +904,7 @@ DecoderGraph::create_crossword_network(vector<Node> &nodes,
     }
 
     for (auto cwnit = nodes.begin(); cwnit != nodes.end(); ++cwnit)
-        cwnit->cw_node = true;
+        if (cwnit->flags == 0) cwnit->flags |= NODE_CW;
 }
 
 
@@ -1128,7 +1123,7 @@ DecoderGraph::merge_nodes(vector<Node> &nodes, int node_idx_1, int node_idx_2)
 void
 DecoderGraph::connect_end_to_start_node(vector<Node> &nodes)
 {
-    nodes[DecoderGraph::END_NODE].arcs.insert(DecoderGraph::START_NODE);
+    nodes[END_NODE].arcs.insert(START_NODE);
 }
 
 
@@ -1138,7 +1133,10 @@ DecoderGraph::write_graph(vector<Node> &nodes, string fname)
     std::ofstream outf(fname);
     outf << nodes.size() << endl;;
     for (int i=0; i<nodes.size(); i++)
-        outf << "n " << i << " " << nodes[i].hmm_state << " " << nodes[i].word_id << " " << nodes[i].arcs.size() << endl;
+        outf << "n " << i << " " << nodes[i].hmm_state
+             << " " << nodes[i].word_id
+             << " " << nodes[i].arcs.size()
+             << " " << nodes[i].flags << endl;
     for (int i=0; i<nodes.size(); i++) {
         Node &node = nodes[i];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)

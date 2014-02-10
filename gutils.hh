@@ -7,6 +7,7 @@
 #include <set>
 #include <vector>
 
+#include "defs.hh"
 #include "DecoderGraph.hh"
 
 
@@ -73,12 +74,12 @@ bool assert_only_segmented_words(DecoderGraph &dg,
                                  bool debug=false,
                                  std::deque<int> states = std::deque<int>(),
                                  std::deque<int> subwords = std::deque<int>(),
-                                 int node_idx = DecoderGraph::START_NODE);
+                                 int node_idx = START_NODE);
 bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
         std::vector<DecoderGraph::Node> &nodes,
         std::deque<int> states = std::deque<int>(),
         std::deque<int> subwords = std::deque<int>(),
-        int node_idx = DecoderGraph::START_NODE,
+        int node_idx = START_NODE,
         bool cw_visited = false);
 
 };

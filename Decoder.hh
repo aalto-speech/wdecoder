@@ -9,6 +9,7 @@
 #include <set>
 #include <deque>
 
+#include "defs.hh"
 #include "Hmm.hh"
 #include "LM.hh"
 #include "LnaReaderCircular.hh"
@@ -17,8 +18,6 @@
 class Decoder {
 
 public:
-    static const int START_NODE = 0;
-    static const int END_NODE = 1;
     static const int WORD_BOUNDARY_IDENTIFIER = -2;
     int DECODE_START_NODE;
     int SENTENCE_END_WORD_ID;
@@ -32,9 +31,10 @@ public:
 
     class Node {
     public:
-        Node() : word_id(-1), hmm_state(-1) { }
+        Node() : word_id(-1), hmm_state(-1), flags(0) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
+        int flags;
         std::vector<Arc> arcs;
     };
 
@@ -83,6 +83,8 @@ public:
     Decoder() {
         debug = 0;
         stats = 0;
+        m_use_word_boundary_symbol = false;
+        m_force_sentence_end = true;
 
         m_lm_scale = 0.0;
         m_duration_scale = 0.0;
@@ -123,6 +125,10 @@ public:
     void set_silence_beam(float beam) { m_silence_beam = beam; }
     void set_word_end_beam(float beam) { m_word_end_beam = beam; }
     void set_force_sentence_end(bool force) { m_force_sentence_end = force; }
+    void set_use_word_boundary_symbol(std::string symbol) {
+        m_word_boundary_symbol = symbol;
+        m_use_word_boundary_symbol = true;
+    }
 
     void recognize_lna_file(std::string lnafname);
     void initialize();
@@ -131,7 +137,7 @@ public:
     void move_token_to_node(Token token, int node_idx, float transition_score);
     inline float get_token_log_prob(float am_score, float lm_score)
     {
-      return (am_score + m_lm_scale * lm_score);
+        return (am_score + m_lm_scale * lm_score);
     }
     Token* get_best_token();
     void add_sentence_end_scores();
@@ -173,7 +179,7 @@ private:
     void add_silence_hmms(std::vector<Node> &nodes,
                           bool long_silence=true,
                           bool short_silence=false);
-    void add_hmm_self_transitions(std::vector<Node> &nodes);
+    //void add_hmm_self_transitions(std::vector<Node> &nodes);
     void set_hmm_transition_probs(std::vector<Node> &nodes);
     void set_subword_id_fsa_symbol_mapping();
     void clear_word_history();
@@ -192,6 +198,8 @@ private:
     int m_token_count;
     int m_propagated_count;
     bool m_force_sentence_end;
+    bool m_use_word_boundary_symbol;
+    std::string m_word_boundary_symbol;
 
     float m_global_beam;
     float m_state_beam;

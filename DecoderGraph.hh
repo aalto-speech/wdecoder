@@ -6,6 +6,7 @@
 #include <vector>
 #include <set>
 
+#include "defs.hh"
 #include "Hmm.hh"
 
 
@@ -19,17 +20,15 @@ public:
         std::map<std::vector<int>, int> out_arcs;                // subword ids (lookahead), node id
         std::vector<std::string> triphones;
     };
-    static int const START_NODE;
-    static int const END_NODE;
 
     class Node {
     public:
-        Node() : word_id(-1), hmm_state(-1), cw_node(false) { }
+        Node() : word_id(-1), hmm_state(-1), flags(0) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
+        int flags;
         std::set<int> arcs;
         std::set<int> reverse_arcs;
-        bool cw_node;
     };
 
     DecoderGraph() { debug = 0; };
