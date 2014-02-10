@@ -634,6 +634,7 @@ Decoder::detect_silence()
 }
 
 
+/*
 void
 Decoder::collect_fan_in_connections(set<int> &indices,
                                     int node_idx,
@@ -649,44 +650,32 @@ Decoder::collect_fan_in_connections(set<int> &indices,
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
         collect_fan_in_connections(indices, ait->target_node, depth);
 }
+*/
 
 
 void
 Decoder::set_word_boundaries()
 {
-    set<int> fan_in_indices;
-    collect_fan_in_connections(fan_in_indices);
-
-    if (!m_use_word_boundary_symbol) {
+    if (m_use_word_boundary_symbol) {
         int wbcount = 0;
         for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
-            if (nit->hmm_state == -1 && nit->word_id == -1) {
-                for (auto ait = nit->arcs.begin(); ait != nit->arcs.end(); ++ait) {
-                    if (fan_in_indices.find(ait->target_node) != fan_in_indices.end()) {
-                        wbcount++;
-                        nit->word_id = WORD_BOUNDARY_IDENTIFIER;
-                        break;
-                    }
-                }
+            if (nit->flags & NODE_FAN_OUT_DUMMY) {
+                wbcount++;
+                nit->word_id = m_subword_map[m_word_boundary_symbol];
             }
         }
-        cerr << "set_word_boundaries, word boundary count: " << wbcount << endl;
-        m_nodes[START_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
+        cerr << "word boundary count: " << wbcount+1 << endl;
+        m_nodes[START_NODE].word_id = m_subword_map[m_word_boundary_symbol];
     }
     else {
         int wbcount = 0;
         for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
-            if (nit->hmm_state == -1 && nit->word_id == -1) {
-                bool found = false;
-                for (auto ait = nit->arcs.begin(); ait != nit->arcs.end(); ++ait)
-                    if (fan_in_indices.find(ait->target_node) != fan_in_indices.end()) {
-                        found = true;
-                        break;
-                    }
-
+            if (nit->flags & NODE_FAN_IN_DUMMY) {
+                wbcount++;
+                nit->word_id = WORD_BOUNDARY_IDENTIFIER;
             }
         }
-        cerr << "set_word_boundaries, word boundary count: " << wbcount << endl;
+        cerr << "word boundary count: " << wbcount+1 << endl;
         m_nodes[START_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
     }
 }

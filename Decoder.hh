@@ -185,9 +185,9 @@ private:
     void clear_word_history();
     void prune_word_history();
     bool detect_silence();
-    void collect_fan_in_connections(std::set<int> &indices,
-                                    int node_idx=START_NODE,
-                                    int depth=0);
+    //void collect_fan_in_connections(std::set<int> &indices,
+    //                                int node_idx=START_NODE,
+    //                                int depth=0);
     void set_word_boundaries();
 
     float m_lm_scale;
