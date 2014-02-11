@@ -83,6 +83,7 @@ public:
     Decoder() {
         m_debug = 0;
         m_stats = 0;
+        m_duration_model_in_use = false;
         m_use_word_boundary_symbol = false;
         m_force_sentence_end = true;
 
@@ -200,6 +201,7 @@ private:
     int m_propagated_count;
     bool m_force_sentence_end;
     bool m_use_word_boundary_symbol;
+    bool m_duration_model_in_use;
     std::string m_word_boundary_symbol;
 
     float m_global_beam;

@@ -33,6 +33,7 @@ Decoder::read_duration_model(string durfname)
     if (!durf) throw string("Problem opening duration model.");
 
     NowayHmmReader::read_durations(durf, m_hmms);
+    m_duration_model_in_use = true;
 }
 
 
@@ -435,16 +436,17 @@ Decoder::move_token_to_node(Token token,
 
     token.am_log_prob += m_transition_scale * transition_score;
 
-    //token.node_idx = node_idx;
-    if (token.node_idx == node_idx) token.dur++;
-    else {
-        // Apply duration modeling for previous state if moved out from a hmm state
-        if (m_nodes[token.node_idx].hmm_state != -1)
-            token.am_log_prob += m_duration_scale
-                * m_hmm_states[m_nodes[token.node_idx].hmm_state].duration.get_log_prob(token.dur);
-        token.node_idx = node_idx;
-        token.dur = 1;
-    }
+    if (m_duration_model_in_use) {
+        if (token.node_idx == node_idx) token.dur++;
+        else {
+            // Apply duration modeling for previous state if moved out from a hmm state
+            if (m_nodes[token.node_idx].hmm_state != -1)
+                token.am_log_prob += m_duration_scale
+                    * m_hmm_states[m_nodes[token.node_idx].hmm_state].duration.get_log_prob(token.dur);
+            token.node_idx = node_idx;
+            token.dur = 1;
+        }
+    } else token.node_idx = node_idx;
 
     Node &node = m_nodes[node_idx];
 
