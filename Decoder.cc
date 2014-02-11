@@ -343,6 +343,7 @@ Decoder::initialize()
     tok.node_idx = DECODE_START_NODE;
     m_tokens[DECODE_START_NODE][tok.history] = tok;
     m_empty_history = tok.history;
+    m_word_history_leafs.insert(tok.history);
 }
 
 
@@ -482,7 +483,7 @@ Decoder::move_token_to_node(Token token,
     if (node.word_id != -1) advance_in_history(token, node.word_id);
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-            move_token_to_node(token, ait->target_node, ait->log_prob);
+        move_token_to_node(token, ait->target_node, ait->log_prob);
 }
 
 
@@ -526,6 +527,7 @@ Decoder::add_sentence_ends()
         for (auto hit = sit->second.begin(); hit != sit->second.end(); ++hit) {
             Token &token = hit->second;
             if (token.fsa_lm_node == m_lm.initial_node_id()) continue;
+            m_active_histories.erase(token.history);
             if (m_use_word_boundary_symbol && token.history->word_id != m_subword_map[m_word_boundary_symbol]) {
                 token.fsa_lm_node = m_lm.walk(token.fsa_lm_node,
                         m_subword_id_to_fsa_symbol[m_subword_map[m_word_boundary_symbol]], &token.lm_log_prob);
@@ -535,7 +537,47 @@ Decoder::add_sentence_ends()
             token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[SENTENCE_END_WORD_ID], &token.lm_log_prob);
             token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
             advance_in_history(token, SENTENCE_END_WORD_ID);
+            m_active_histories.insert(token.history);
         }
+    }
+}
+
+
+void
+Decoder::clear_word_history()
+{
+    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ++whlnit) {
+        WordHistory *wh = *whlnit;
+        while (wh != nullptr) {
+            if (wh->next.size() > 0) break;
+            WordHistory *tmp = wh;
+            wh = wh->previous;
+            if (wh != nullptr) wh->next.erase(tmp->word_id);
+            delete tmp;
+        }
+    }
+    m_word_history_leafs.clear();
+    m_active_histories.clear();
+}
+
+
+void
+Decoder::prune_word_history()
+{
+    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ) {
+        WordHistory *wh = *whlnit;
+        if (m_active_histories.find(wh) == m_active_histories.end()) {
+            m_word_history_leafs.erase(whlnit++);
+            while (true) {
+                WordHistory *tmp = wh;
+                wh = wh->previous;
+                wh->next.erase(tmp->word_id);
+                delete tmp;
+                if (wh == nullptr || wh->next.size() > 0) break;
+                if (m_active_histories.find(wh) != m_active_histories.end()) break;
+            }
+        }
+        else ++whlnit;
     }
 }
 
@@ -605,45 +647,6 @@ Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
                  << "[label=\"" << ait->log_prob << "\"];" << endl;
     }
     fstr << "}" << endl;
-}
-
-
-void
-Decoder::clear_word_history()
-{
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ++whlnit) {
-        WordHistory *wh = *whlnit;
-        WordHistory *tmp;
-        while (wh != nullptr) {
-            tmp = wh;
-            wh = wh->previous;
-            if (wh != nullptr) wh->next.erase(tmp->word_id);
-            delete tmp;
-            if (wh != nullptr && wh->next.size() > 0) break;
-        }
-    }
-    m_word_history_leafs.clear();
-}
-
-
-void
-Decoder::prune_word_history()
-{
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ) {
-        if (m_active_histories.find(*whlnit) == m_active_histories.end()) {
-            WordHistory *wh = *whlnit;
-            WordHistory *tmp;
-            while (m_active_histories.find(wh) == m_active_histories.end()) {
-                tmp = wh;
-                wh = wh->previous;
-                if (wh != nullptr) wh->next.erase(tmp->word_id);
-                delete tmp;
-                if (wh != nullptr || wh->next.size() > 0) break;
-            }
-            m_word_history_leafs.erase(whlnit++);
-        }
-        else ++whlnit;
-    }
 }
 
 
