@@ -151,7 +151,7 @@ Decoder::read_config(string cfgfname)
         else if (parameter == "history_beam") m_history_beam = stof(val);
         else if (parameter == "word_end_beam") m_word_end_beam = stof(val);
         else if (parameter == "word_boundary_penalty") m_word_boundary_penalty = stof(val);
-        else if (parameter == "history_prune_frame_interval") m_history_prune_frame_interval = stoi(val);
+        else if (parameter == "history_prune_frame_interval") m_history_clean_frame_interval = stoi(val);
         else if (parameter == "force_sentence_end")
             m_force_sentence_end = true ? val == "true": false;
         else if (parameter == "word_boundary_symbol") {
@@ -182,7 +182,7 @@ Decoder::print_config(ostream &outf)
     outf << "history beam: " << m_history_beam << endl;
     outf << "word end beam: " << m_word_end_beam << endl;
     outf << "word boundary penalty: " << m_word_boundary_penalty << endl;
-    outf << "history prune frame interval: " << m_history_prune_frame_interval << endl;
+    outf << "history prune frame interval: " << m_history_clean_frame_interval << endl;
 }
 
 
@@ -301,7 +301,7 @@ Decoder::recognize_lna_file(string lnafname,
         if (m_stats) cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
         prune_tokens();
-        if (frame_idx % m_history_prune_frame_interval == 0) prune_word_history();
+        if (frame_idx % m_history_clean_frame_interval == 0) prune_word_history();
 
         frame_idx++;
         if (m_stats) {
@@ -665,49 +665,6 @@ Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
                  << "[label=\"" << ait->log_prob << "\"];" << endl;
     }
     fstr << "}" << endl;
-}
-
-
-bool descending_idx_sort(pair<int, float> i, pair<int, float> j) { return (i.second > j.second); }
-
-bool
-Decoder::detect_silence()
-{
-    vector<pair<int, float> > sorted_hmm_states;
-    for (int i=0; i<m_hmm_states.size(); i++) {
-        float hmm_state_lp = m_acoustics->log_prob(i);
-        sorted_hmm_states.push_back(make_pair(i, hmm_state_lp));
-    }
-    sort(sorted_hmm_states.begin(), sorted_hmm_states.end(), descending_idx_sort);
-
-    int short_sil_pos = 0;
-    int long_sil_state_1_pos = 0;
-    int long_sil_state_2_pos = 0;
-    int long_sil_state_3_pos = 0;
-    for (int i=0; i<m_hmm_states.size(); i++) {
-        if (sorted_hmm_states[i].first == 0)
-            short_sil_pos = i;
-        if (sorted_hmm_states[i].first == 1)
-            long_sil_state_1_pos = i;
-        if (sorted_hmm_states[i].first == 2)
-            long_sil_state_2_pos = i;
-        if (sorted_hmm_states[i].first == 3)
-            long_sil_state_3_pos = i;
-    }
-
-    float average_long_sil_rank = (long_sil_state_1_pos + long_sil_state_2_pos + long_sil_state_3_pos) / 3.0;
-
-    m_silence_ranks.push_front(average_long_sil_rank);
-    while (m_silence_ranks.size() > 10) m_silence_ranks.pop_back();
-
-    float sliding_rank = 0.0;
-    for (auto it = m_silence_ranks.begin(); it != m_silence_ranks.end(); ++it) {
-        sliding_rank += *it;
-    }
-    sliding_rank /= m_silence_ranks.size();
-
-    if (average_long_sil_rank < 200.0 && sliding_rank < 200.0) return true;
-    else return false;
 }
 
 
