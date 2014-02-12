@@ -1,0 +1,10 @@
+speechdat/lnas/normal/A10097S1.lna
+speechdat/lnas/normal/A10487S7.lna
+speechdat/lnas/normal/A10508S7.lna
+speechdat/lnas/normal/A10531S9.lna
+speechdat/lnas/normal/A10662S1.lna
+speechdat/lnas/normal/A10758S1.lna
+speechdat/lnas/normal/A10760S6.lna
+speechdat/lnas/normal/A10835S1.lna
+speechdat/lnas/normal/A10846S1.lna
+speechdat/lnas/normal/A11066S4.lna
