@@ -594,7 +594,9 @@ Decoder::print_best_word_history(ostream &outf)
 
 
 void
-Decoder::print_word_history(WordHistory *history, ostream &outf)
+Decoder::print_word_history(WordHistory *history,
+                            ostream &outf,
+                            bool print_lm_probs)
 {
     vector<int> subwords;
     while (true) {
@@ -603,10 +605,20 @@ Decoder::print_word_history(WordHistory *history, ostream &outf)
         history = history->previous;
     }
 
+    int fsa_lm_node = m_lm.initial_node_id();
+    float total_lp;
+
     if (m_use_word_boundary_symbol) {
         outf << " <s>";
-        for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit)
+        for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
             if ((*swit) >= 0) outf << " " << m_subwords[*swit];
+            if (print_lm_probs) {
+                float lp = 0.0;
+                fsa_lm_node = m_lm.walk(fsa_lm_node, m_subword_id_to_fsa_symbol[*swit], &lp);
+                outf << "(" << lp << ")";
+                total_lp += lp;
+            }
+        }
     }
     else {
         for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
@@ -614,6 +626,8 @@ Decoder::print_word_history(WordHistory *history, ostream &outf)
             else if (*swit == -2) outf << " ";
         }
     }
+
+    if (print_lm_probs) outf << endl << "total lm log: " << total_lp;
     outf << endl;
 }
 
