@@ -145,13 +145,15 @@ Decoder::read_config(string cfgfname)
         string parameter, val;
         ss >> parameter >> val;
         if (parameter == "lm_scale") m_lm_scale = stof(val);
+        else if (parameter == "histogram_prune_trigger") m_histogram_prune_trigger = stoi(val);
+        else if (parameter == "histogram_prune_target") m_histogram_prune_target = stoi(val);
         else if (parameter == "duration_scale") m_duration_scale = stof(val);
         else if (parameter == "transition_scale") m_transition_scale = stof(val);
         else if (parameter == "global_beam") m_global_beam = stof(val);
         else if (parameter == "history_beam") m_history_beam = stof(val);
         else if (parameter == "word_end_beam") m_word_end_beam = stof(val);
         else if (parameter == "word_boundary_penalty") m_word_boundary_penalty = stof(val);
-        else if (parameter == "history_prune_frame_interval") m_history_clean_frame_interval = stoi(val);
+        else if (parameter == "history_clean_frame_interval") m_history_clean_frame_interval = stoi(val);
         else if (parameter == "force_sentence_end")
             m_force_sentence_end = true ? val == "true": false;
         else if (parameter == "word_boundary_symbol") {
@@ -172,6 +174,10 @@ Decoder::print_config(ostream &outf)
 {
     outf << std::boolalpha;
     outf << "lm scale: " << m_lm_scale << endl;
+    if (m_histogram_prune_trigger > 0) {
+        outf << "histogram pruning trigger: " << m_histogram_prune_trigger << endl;
+        outf << "histogram pruning target: " << m_histogram_prune_target << endl;
+    }
     outf << "duration scale: " << m_duration_scale << endl;
     outf << "transition scale: " << m_transition_scale << endl;
     outf << "force sentence end: " << m_force_sentence_end << endl;
@@ -182,7 +188,7 @@ Decoder::print_config(ostream &outf)
     outf << "history beam: " << m_history_beam << endl;
     outf << "word end beam: " << m_word_end_beam << endl;
     outf << "word boundary penalty: " << m_word_boundary_penalty << endl;
-    outf << "history prune frame interval: " << m_history_clean_frame_interval << endl;
+    outf << "history clean frame interval: " << m_history_clean_frame_interval << endl;
 }
 
 
@@ -292,8 +298,9 @@ Decoder::recognize_lna_file(string lnafname,
     float original_global_beam = m_global_beam;
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
+
         if (m_propagated_count > 50000) {
-            float beamdiff = min(100.0, ((m_propagated_count-50000.0)/500000.0) * 100.0);
+            float beamdiff = min(100.0, ((m_propagated_count-50000.0)/400000.0) * 100.0);
             m_global_beam = original_global_beam-beamdiff;
         }
         else m_global_beam = original_global_beam;
@@ -309,7 +316,7 @@ Decoder::recognize_lna_file(string lnafname,
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
             cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
             cerr << "tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
-            //cerr << "tokens pruned by history limit: " << m_histogram_pruned_count << endl;
+            cerr << "tokens pruned by histogram pruning: " << m_histogram_pruned_count << endl;
             cerr << "best log probability: " << m_best_log_prob << endl;
             cerr << "worst log probability: " << m_worst_log_prob << endl;
             cerr << "number of active nodes: " << m_tokens.size() << endl;
@@ -386,6 +393,7 @@ void
 Decoder::prune_tokens(void)
 {
     m_history_beam_pruned_count = 0;
+    m_histogram_pruned_count = 0;
     m_word_end_beam_pruned_count = 0;
     m_state_beam_pruned_count = 0;
     m_dropped_count = 0;
@@ -409,9 +417,37 @@ Decoder::prune_tokens(void)
             pruned_tokens.push_back(tok);
     }
 
+    // Apply histogram pruning if too many tokens
+    int bin_limit = 0;
+    vector<int> lp_histograms(HISTOGRAM_BINS);
+    float float_bin_count = (float)HISTOGRAM_BINS;
+    if (m_histogram_prune_trigger > 0 && pruned_tokens.size() > m_histogram_prune_trigger) {
+
+        for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); ++tit) {
+            int bin = (int)((tit->total_log_prob-current_glob_beam)/m_global_beam * float_bin_count);
+            lp_histograms[bin]++;
+        }
+
+        int bin_tokens = 0;
+        for (int bi = lp_histograms.size()-1; bi > 0; bi--) {
+            bin_tokens += lp_histograms[bi];
+            if (bin_tokens > m_histogram_prune_target) {
+                bin_limit = bi;
+                break;
+            }
+        }
+    }
+
     // Collect best tokens for each state/history
     m_tokens.clear();
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
+        if (bin_limit > 0) {
+            int bin = (int)((tit->total_log_prob-current_glob_beam)/m_global_beam * float_bin_count);
+            if (bin < bin_limit) {
+                m_histogram_pruned_count++;
+                continue;
+            }
+        }
         if (tit->total_log_prob > m_tokens[tit->node_idx][tit->history].total_log_prob) {
             m_tokens[tit->node_idx][tit->history] = *tit;
             m_active_histories.insert(tit->history);

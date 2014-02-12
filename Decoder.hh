@@ -19,6 +19,7 @@ class Decoder {
 
 public:
     static const int WORD_BOUNDARY_IDENTIFIER = -2;
+    static const int HISTOGRAM_BINS = 100;
     int DECODE_START_NODE;
     int SENTENCE_END_WORD_ID;
 
@@ -90,7 +91,8 @@ public:
         m_lm_scale = 0.0;
         m_duration_scale = 0.0;
         m_transition_scale = 0.0;
-        m_max_num_tokens = 0;
+        m_histogram_prune_trigger = 0;
+        m_histogram_prune_target = 0;
         m_token_count = 0;
         m_propagated_count = 0;
 
@@ -121,7 +123,8 @@ public:
     void set_lm_scale(float lm_scale) { m_lm_scale = lm_scale; }
     void set_duration_scale(float dur_scale) { m_duration_scale = dur_scale; }
     void set_transition_scale(float trans_scale) { m_transition_scale = trans_scale; }
-    void set_max_num_tokens(int tokens) { m_max_num_tokens = tokens; }
+    void set_histogram_prune_trigger(int tokens) { m_histogram_prune_trigger = tokens; }
+    void set_histogram_prune_target(int tokens) { m_histogram_prune_target = tokens; }
     void set_history_limit(int histories) { m_history_limit = histories; }
     void set_word_boundary_penalty(float penalty) { m_word_boundary_penalty = penalty; }
     void set_state_beam(float beam) { m_state_beam = beam; }
@@ -200,7 +203,8 @@ private:
     float m_lm_scale;
     float m_duration_scale;
     float m_transition_scale; // Temporary scaling used for self transitions
-    int m_max_num_tokens;
+    int m_histogram_prune_trigger;
+    int m_histogram_prune_target;
     int m_history_limit;
     int m_token_count;
     int m_propagated_count;
