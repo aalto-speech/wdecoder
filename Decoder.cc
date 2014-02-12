@@ -276,7 +276,11 @@ Decoder::set_subword_id_fsa_symbol_mapping()
 
 
 void
-Decoder::recognize_lna_file(string lnafname, ostream &outf)
+Decoder::recognize_lna_file(string lnafname,
+                            ostream &outf,
+                            int *frame_count,
+                            double *seconds,
+                            double *log_prob)
 {
     m_lna_reader.open_file(lnafname.c_str(), 1024);
     m_acoustics = &m_lna_reader;
@@ -315,18 +319,18 @@ Decoder::recognize_lna_file(string lnafname, ostream &outf)
     }
 
     time(&end_time);
-    double seconds = difftime(end_time, start_time);
-    double rtf = seconds / ((double)frame_idx/125.0);
-    cerr << "\trecognized " << frame_idx << " frames in " << seconds << " seconds." << endl;
-    cerr << "\tRTF: " << rtf << endl;
-    cerr << "\tLog prob: " << get_best_token()->total_log_prob << endl;
-    cout << lnafname << ":";
     if (m_force_sentence_end) add_sentence_ends();
-    print_best_word_history();
+
+    outf << lnafname << ":";
+    print_best_word_history(outf);
 
     m_global_beam = original_global_beam;
     clear_word_history();
     m_lna_reader.close();
+
+    if (frame_count != nullptr) *frame_count = frame_idx;
+    if (seconds != nullptr) *seconds = difftime(end_time, start_time);
+    if (log_prob != nullptr) *log_prob = get_best_token()->total_log_prob;
 }
 
 

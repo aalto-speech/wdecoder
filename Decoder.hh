@@ -135,7 +135,11 @@ public:
         m_use_word_boundary_symbol = true;
     }
 
-    void recognize_lna_file(std::string lnafname, std::ostream &outf=std::cout);
+    void recognize_lna_file(std::string lnafname,
+                            std::ostream &outf=std::cout,
+                            int *frame_count=nullptr,
+                            double *seconds=nullptr,
+                            double *log_prob=nullptr);
     void initialize();
     void propagate_tokens();
     void prune_tokens();
