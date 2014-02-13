@@ -49,7 +49,7 @@ public:
               best_token_score(best_token_score), prune(prune) { }
         int word_id;
         WordHistory *previous;
-        std::map<int, WordHistory*> next;
+        std::unordered_map<int, WordHistory*> next;
         float best_token_score;
         bool prune;
     };
