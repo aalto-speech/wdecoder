@@ -24,16 +24,6 @@ DecoderGraph::read_phone_model(string phnfname)
 
 
 void
-DecoderGraph::read_duration_model(string durfname)
-{
-    ifstream durf(durfname);
-    if (!durf) throw string("Problem opening duration model.");
-
-    NowayHmmReader::read_durations(durf, m_hmms);
-}
-
-
-void
 DecoderGraph::read_noway_lexicon(string lexfname)
 {
     ifstream lexf(lexfname);

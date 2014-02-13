@@ -31,7 +31,6 @@ void graphtest::tearDown (void)
 void graphtest::read_fixtures(DecoderGraph &dg)
 {
     dg.read_phone_model(amname + ".ph");
-    dg.read_duration_model(amname + ".dur");
     dg.read_noway_lexicon(lexname);
     dg.read_word_segmentations(segname);
 }

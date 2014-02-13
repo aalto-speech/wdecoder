@@ -34,7 +34,6 @@ public:
     DecoderGraph() { debug = 0; };
 
     void read_phone_model(std::string phnfname);
-    void read_duration_model(std::string durfname);
     void read_noway_lexicon(std::string lexfname);
     void read_word_segmentations(std::string segfname);
 
