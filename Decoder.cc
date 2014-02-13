@@ -286,7 +286,9 @@ Decoder::recognize_lna_file(string lnafname,
                             ostream &outf,
                             int *frame_count,
                             double *seconds,
-                            double *log_prob)
+                            double *log_prob,
+                            double *am_prob,
+                            double *lm_prob)
 {
     m_lna_reader.open_file(lnafname.c_str(), 1024);
     m_acoustics = &m_lna_reader;
@@ -300,7 +302,7 @@ Decoder::recognize_lna_file(string lnafname,
     while (m_lna_reader.go_to(frame_idx)) {
 
         if (m_propagated_count > 50000) {
-            float beamdiff = min(100.0, ((m_propagated_count-50000.0)/400000.0) * 100.0);
+            float beamdiff = min(100.0, ((m_propagated_count-50000.0)/500000.0) * 100.0);
             m_global_beam = original_global_beam-beamdiff;
         }
         else m_global_beam = original_global_beam;
@@ -327,6 +329,15 @@ Decoder::recognize_lna_file(string lnafname,
 
     time(&end_time);
     if (m_force_sentence_end) add_sentence_ends();
+    if (m_duration_model_in_use) {
+        for (auto sit = m_tokens.begin(); sit != m_tokens.end(); ++sit) {
+            Node &node = m_nodes[sit->first];
+            for (auto hit = sit->second.begin(); hit != sit->second.end(); ++hit) {
+                Token &tok = hit->second;
+                if (tok.dur > 1) apply_duration_model(tok, tok.node_idx);
+            }
+        }
+    }
 
     outf << lnafname << ":";
     print_best_word_history(outf);
@@ -335,9 +346,12 @@ Decoder::recognize_lna_file(string lnafname,
     clear_word_history();
     m_lna_reader.close();
 
+    Token *best_token = get_best_token();
     if (frame_count != nullptr) *frame_count = frame_idx;
     if (seconds != nullptr) *seconds = difftime(end_time, start_time);
     if (log_prob != nullptr) *log_prob = get_best_token()->total_log_prob;
+    if (am_prob != nullptr) *am_prob = get_best_token()->am_log_prob;
+    if (lm_prob != nullptr) *lm_prob = get_best_token()->lm_log_prob;
 }
 
 
@@ -411,8 +425,8 @@ Decoder::prune_tokens(void)
             m_global_beam_pruned_count++;
         else if (tok.total_log_prob < (tok.history->best_token_score-m_history_beam))
             m_history_beam_pruned_count++;
-        else if (tok.word_end && (tok.total_log_prob < current_word_end_beam))
-            m_word_end_beam_pruned_count++;
+        //else if (tok.word_end && (tok.total_log_prob < current_word_end_beam))
+        //    m_word_end_beam_pruned_count++;
         else
             pruned_tokens.push_back(tok);
     }
@@ -456,11 +470,7 @@ Decoder::prune_tokens(void)
             m_dropped_count++;
     }
 
-    for (auto histit = m_active_histories.begin(); histit != m_active_histories.end(); ++histit) {
-        (*histit)->prune = false;
-        (*histit)->best_token_score = -1e20;
-    }
-
+    reset_history_scores();
     m_raw_tokens.clear();
 }
 
@@ -480,10 +490,8 @@ Decoder::move_token_to_node(Token token,
     if (m_duration_model_in_use) {
         if (token.node_idx == node_idx) token.dur++;
         else {
-            // Apply duration modeling for previous state if moved out from a hmm state
-            if (m_nodes[token.node_idx].hmm_state != -1)
-                token.am_log_prob += m_duration_scale
-                    * m_hmm_states[m_nodes[token.node_idx].hmm_state].duration.get_log_prob(token.dur);
+            // Apply duration model for previous state if moved out from a hmm state
+            if (m_nodes[token.node_idx].hmm_state != -1) apply_duration_model(token, token.node_idx);
             token.node_idx = node_idx;
             token.dur = 1;
         }
@@ -728,6 +736,26 @@ Decoder::set_word_boundaries()
         }
         cerr << "word boundary count: " << wbcount+1 << endl;
         m_nodes[START_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
+    }
+}
+
+
+void
+Decoder::apply_duration_model(Token &token, int node_idx)
+{
+    token.am_log_prob += m_duration_scale
+        * m_hmm_states[m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
+}
+
+
+void
+Decoder::reset_history_scores()
+{
+    for (auto histit = m_active_histories.begin(); histit != m_active_histories.end(); ++histit) {
+        //(*histit)->prune = false;
+        (*histit)->best_token_score = -1e20;
+        for (auto nextit = (*histit)->next.begin(); nextit != (*histit)->next.end(); ++nextit)
+            (*(nextit->second)).best_token_score = -1e20;
     }
 }
 

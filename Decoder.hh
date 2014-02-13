@@ -49,7 +49,7 @@ public:
               best_token_score(best_token_score), prune(prune) { }
         int word_id;
         WordHistory *previous;
-        std::unordered_map<int, WordHistory*> next;
+        std::map<int, WordHistory*> next;
         float best_token_score;
         bool prune;
     };
@@ -142,7 +142,9 @@ public:
                             std::ostream &outf=std::cout,
                             int *frame_count=nullptr,
                             double *seconds=nullptr,
-                            double *log_prob=nullptr);
+                            double *log_prob=nullptr,
+                            double *am_prob=nullptr,
+                            double *lm_prob=nullptr);
     void initialize();
     void propagate_tokens();
     void prune_tokens();
@@ -194,8 +196,10 @@ private:
     void set_hmm_transition_probs(std::vector<Node> &nodes);
     void set_subword_id_fsa_symbol_mapping();
     void clear_word_history();
+    void reset_history_scores();
     void prune_word_history();
     void set_word_boundaries();
+    void apply_duration_model(Token &token, int node_idx);
 
     int m_debug;
     int m_stats;

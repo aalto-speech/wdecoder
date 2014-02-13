@@ -62,24 +62,24 @@ int main(int argc, char* argv[])
         ifstream lnalistf(lnalistfname);
         string line;
 
-        cerr << endl;
         int total_frames = 0;
         double total_time = 0.0;
         double total_lp = 0.0;
         int file_count = 0;
         while (getline(lnalistf, line)) {
             if (!line.length()) continue;
-            cerr << "recognizing: " << line << endl;
+            cerr << endl << "recognizing: " << line << endl;
             int curr_frames;
             double curr_time;
-            double curr_lp;
-            d.recognize_lna_file(line, cout, &curr_frames, &curr_time, &curr_lp);
+            double curr_lp, curr_am_lp, curr_lm_lp;
+            d.recognize_lna_file(line, cout, &curr_frames, &curr_time,
+                                 &curr_lp, &curr_am_lp, &curr_lm_lp);
             total_frames += curr_frames;
             total_time += curr_time;
             total_lp += curr_lp;
             cerr << "\trecognized " << curr_frames << " frames in " << curr_time << " seconds." << endl;
             cerr << "\tRTF: " << curr_time / ((double)curr_frames/125.0) << endl;
-            cerr << "\tLog prob: " << curr_lp << endl;
+            cerr << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl;
             file_count++;
         }
         lnalistf.close();
