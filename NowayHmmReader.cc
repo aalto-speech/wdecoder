@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstring>
 #include <cstdlib>
+#include <set>
 
 #include "NowayHmmReader.hh"
 
@@ -8,15 +9,15 @@ using namespace std;
 
 
 void
-NowayHmmReader::read_hmm(std::istream &in,
+NowayHmmReader::read_hmm(istream &in,
                          Hmm &hmm,
                          vector<HmmState> &hmm_states,
                          int &m_num_models)
 {
     int hmm_id = 0;
     int num_states = 0;
-    std::string label;
-    std::vector<HmmState> states;
+    string label;
+    vector<HmmState> states;
 
     in >> hmm_id;
     in >> num_states >> label;
@@ -47,7 +48,7 @@ NowayHmmReader::read_hmm(std::istream &in,
         for (int t = 0; t < num_transitions; t++) {
             in >> to >> prob;
             if (to >= num_states || to < 1) {
-                std::cerr << "hmm '" << label << "' has invalid transition" << std::endl;
+                cerr << "hmm '" << label << "' has invalid transition" << endl;
                 throw InvalidFormat();
             }
             state.transitions[t].target = to;
@@ -69,7 +70,7 @@ NowayHmmReader::read(istream &in,
                      int &m_num_models)
 {
     m_num_models = 0;
-    std::istream::iostate old_state = in.exceptions();
+    istream::iostate old_state = in.exceptions();
     in.exceptions(in.badbit | in.failbit | in.eofbit);
 
     try {
@@ -89,7 +90,7 @@ NowayHmmReader::read(istream &in,
         }
 
     }
-    catch (std::exception &e) {
+    catch (exception &e) {
         in.exceptions(old_state);
         throw InvalidFormat();
     }
@@ -97,10 +98,11 @@ NowayHmmReader::read(istream &in,
     in.exceptions(old_state);
 }
 
-void NowayHmmReader::read_durations(std::istream &in,
-                                    std::vector<Hmm> &m_hmms)
+void NowayHmmReader::read_durations(istream &in,
+                                    vector<Hmm> &m_hmms,
+                                    vector<HmmState> &m_hmm_states)
 {
-    std::istream::iostate old_state = in.exceptions();
+    istream::iostate old_state = in.exceptions();
     in.exceptions(in.badbit | in.failbit | in.eofbit);
     int version;
     int hmm_id;
@@ -110,7 +112,7 @@ void NowayHmmReader::read_durations(std::istream &in,
     try {
         if (m_hmms.size() == 0)
         {
-            std::cerr << "NowayHmmReader::read_durations(): Error: HMMs must be loaded before duration file!" << std::endl;
+            cerr << "NowayHmmReader::read_durations(): Error: HMMs must be loaded before duration file!" << endl;
             exit(1);
         }
         in >> version;
@@ -118,8 +120,8 @@ void NowayHmmReader::read_durations(std::istream &in,
             throw InvalidFormat();
         if (version == 3 || version == 4)
         {
-            std::vector<float> a_table;
-            std::vector<float> b_table;
+            vector<float> a_table;
+            vector<float> b_table;
             int num_states, state_id;
             in >> num_states;
             if (version == 3)
@@ -144,6 +146,9 @@ void NowayHmmReader::read_durations(std::istream &in,
                         throw StateOutOfRange();
                     state.duration.set_parameters(a_table[state.model],
                                                   b_table[state.model]);
+                    HmmState &state2 = m_hmm_states[state.model];
+                    state2.duration.set_parameters(a_table[state.model],
+                                                   b_table[state.model]);
                 }
             }
         }
@@ -180,11 +185,10 @@ void NowayHmmReader::read_durations(std::istream &in,
             }
         }
     }
-    catch (std::exception &e) {
+    catch (exception &e) {
         in.exceptions(old_state);
         throw InvalidFormat();
     }
 
     in.exceptions(old_state);
 }
-

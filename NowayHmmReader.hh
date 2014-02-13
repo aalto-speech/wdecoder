@@ -16,7 +16,8 @@ public:
                      std::vector<HmmState> &hmm_states,
                      int &num_models);
     static void read_durations(std::istream &in,
-                               std::vector<Hmm> &hmms);
+                               std::vector<Hmm> &hmms,
+                               std::vector<HmmState> &hmm_states);
 
     struct InvalidFormat : public std::exception {
         virtual const char *what() const throw()

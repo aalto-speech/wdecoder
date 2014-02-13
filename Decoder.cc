@@ -32,7 +32,7 @@ Decoder::read_duration_model(string durfname)
     ifstream durf(durfname);
     if (!durf) throw string("Problem opening duration model.");
 
-    NowayHmmReader::read_durations(durf, m_hmms);
+    NowayHmmReader::read_durations(durf, m_hmms, m_hmm_states);
     m_duration_model_in_use = true;
 }
 
