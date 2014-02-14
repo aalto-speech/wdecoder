@@ -3,4 +3,11 @@ dep
 decode
 dgraph
 runtests
+.project
+.cproject
+.settings
+.settings/*
+speechdat*
+lm-*
+*.txt
 
