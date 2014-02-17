@@ -3,7 +3,11 @@
 #include <errno.h>
 #include <string.h>
 #include <cassert>
+
 #include "LnaReaderCircular.hh"
+
+using namespace std;
+
 
 LnaReaderCircular::LnaReaderCircular()
     : m_file(NULL),
@@ -43,16 +47,12 @@ LnaReaderCircular::read_int()
 }
 
 void
-LnaReaderCircular::open_fd(const int fd, int buf_size)
+LnaReaderCircular::open_file(string lnafname, int buf_size)
 {
     if (m_file != NULL)
         close();
 
-#ifdef _MSC_VER
-    m_file = _fdopen(fd, "rb");
-#else
-    m_file = fdopen(fd, "rb");
-#endif
+    m_file = fopen(lnafname.c_str(), "rb");
 
     if (m_file == NULL) {
         fprintf(stderr, "LnaReaderCircular::open(): could not open fd: %s\n",

@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <sstream>
 
 #include "defs.hh"
@@ -315,7 +316,7 @@ assert_transitions(DecoderGraph &dg,
             continue;
         }
 
-        HmmState &state = dg.m_hmm_states[node.hmm_state];
+        //HmmState &state = dg.m_hmm_states[node.hmm_state];
         bool self_transition = false;
         bool out_transition = false;
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {

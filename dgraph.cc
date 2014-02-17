@@ -108,9 +108,6 @@ int main(int argc, char* argv[])
         dg.add_hmm_self_transitions(nodes);
         dg.write_graph(nodes, graphfname);
 
-        time ( &rawtime );
-        cerr << "time: " << ctime (&rawtime) << endl;
-
     } catch (string &e) {
         cerr << e << endl;
     }

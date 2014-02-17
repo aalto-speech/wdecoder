@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "NowayHmmReader.hh"
@@ -45,7 +47,7 @@ DecoderGraph::read_noway_lexicon(string lexfname)
         if (leftp != string::npos) {
             auto rightp = unit.find(")");
             if (rightp == string::npos) throw string("Problem reading line " + linei);
-            prob = stod(unit.substr(leftp+1, rightp-leftp-1));
+            prob = ::atof(unit.substr(leftp+1, rightp-leftp-1).c_str());
             unit = unit.substr(0, leftp);
         }
 

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <ctime>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -59,7 +60,7 @@ Decoder::read_noway_lexicon(string lexfname)
         if (leftp != string::npos) {
             auto rightp = unit.find(")");
             if (rightp == string::npos) throw string("Problem reading line " + linei);
-            prob = stod(unit.substr(leftp+1, rightp-leftp-1));
+            prob = atof(unit.substr(leftp+1, rightp-leftp-1).c_str());
             unit = unit.substr(0, leftp);
         }
 
@@ -143,25 +144,28 @@ Decoder::read_config(string cfgfname)
         if (!line.length()) continue;
         stringstream ss(line);
         string parameter, val;
-        ss >> parameter >> val;
-        if (parameter == "lm_scale") m_lm_scale = stof(val);
-        else if (parameter == "histogram_prune_trigger") m_histogram_prune_trigger = stoi(val);
-        else if (parameter == "histogram_prune_target") m_histogram_prune_target = stoi(val);
-        else if (parameter == "duration_scale") m_duration_scale = stof(val);
-        else if (parameter == "transition_scale") m_transition_scale = stof(val);
-        else if (parameter == "global_beam") m_global_beam = stof(val);
-        else if (parameter == "history_beam") m_history_beam = stof(val);
-        else if (parameter == "word_end_beam") m_word_end_beam = stof(val);
-        else if (parameter == "word_boundary_penalty") m_word_boundary_penalty = stof(val);
-        else if (parameter == "history_clean_frame_interval") m_history_clean_frame_interval = stoi(val);
-        else if (parameter == "force_sentence_end")
-            m_force_sentence_end = true ? val == "true": false;
+        ss >> parameter;
+        if (parameter == "lm_scale") ss >> m_lm_scale;
+        else if (parameter == "histogram_prune_trigger") ss >> m_histogram_prune_trigger;
+        else if (parameter == "histogram_prune_target") ss >> m_histogram_prune_target;
+        else if (parameter == "duration_scale") ss >> m_duration_scale;
+        else if (parameter == "transition_scale") ss >> m_transition_scale;
+        else if (parameter == "global_beam") ss >> m_global_beam;
+        else if (parameter == "history_beam") ss >> m_history_beam;
+        else if (parameter == "word_end_beam") ss >> m_word_end_beam;
+        else if (parameter == "word_boundary_penalty") ss >> m_word_boundary_penalty;
+        else if (parameter == "history_clean_frame_interval") ss >> m_history_clean_frame_interval;
+        else if (parameter == "force_sentence_end") {
+            string force_str;
+            ss >> force_str;
+            m_force_sentence_end = true ? force_str == "true": false;
+        }
         else if (parameter == "word_boundary_symbol") {
             m_use_word_boundary_symbol = true;
-            m_word_boundary_symbol = val;
+            ss >> m_word_boundary_symbol;
         }
-        else if (parameter == "debug") m_debug = stoi(val);
-        else if (parameter == "stats") m_stats = stoi(val);
+        else if (parameter == "debug") ss >> m_debug;
+        else if (parameter == "stats") ss >> m_stats;
         else throw string("Unknown parameter: ") + parameter;
     }
 
@@ -290,7 +294,7 @@ Decoder::recognize_lna_file(string lnafname,
                             double *am_prob,
                             double *lm_prob)
 {
-    m_lna_reader.open_file(lnafname.c_str(), 1024);
+    m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
     initialize();
 
@@ -643,7 +647,7 @@ Decoder::print_word_history(WordHistory *history,
     }
 
     int fsa_lm_node = m_lm.initial_node_id();
-    float total_lp;
+    float total_lp = 0.0;
 
     if (m_use_word_boundary_symbol) {
         outf << " <s>";
