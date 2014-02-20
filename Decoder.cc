@@ -380,6 +380,7 @@ Decoder::initialize()
     tok.fsa_lm_node = m_lm.initial_node_id();
     tok.history = new WordHistory();
     tok.node_idx = DECODE_START_NODE;
+    m_best_node_idx = DECODE_START_NODE;
     m_tokens[DECODE_START_NODE][tok.history] = tok;
     m_empty_history = tok.history;
     m_word_history_leafs.insert(tok.history);
@@ -398,7 +399,21 @@ Decoder::propagate_tokens(void)
     m_global_beam_pruned_count = 0;
     m_acoustic_beam_pruned_count = 0;
 
+    // Propagate best node first
+    int previous_best_node_idx = m_best_node_idx;
+    Node &best_node = m_nodes[m_best_node_idx];
+    for (auto hit = m_tokens[m_best_node_idx].begin(); hit != m_tokens[m_best_node_idx].end(); ++hit) {
+        m_token_count++;
+        //hit->second.word_end = false;
+        for (auto ait = best_node.arcs.begin(); ait != best_node.arcs.end(); ++ait) {
+            move_token_to_node(hit->second, ait->target_node, ait->log_prob);
+            m_propagated_count++;
+        }
+    }
+
+
     for (auto sit = m_tokens.begin(); sit != m_tokens.end(); ++sit) {
+        if (sit->first == previous_best_node_idx) continue;
         Node &node = m_nodes[sit->first];
         for (auto hit = sit->second.begin(); hit != sit->second.end(); ++hit) {
             m_token_count++;
@@ -508,7 +523,10 @@ Decoder::move_token_to_node(Token token,
             return;
         }
 
-        m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
+        if (token.total_log_prob > m_best_log_prob) {
+            m_best_log_prob = token.total_log_prob;
+            m_best_node_idx = node_idx;
+        }
         m_best_am_log_prob = max(m_best_am_log_prob, token.am_log_prob);
         token.history->best_token_score = max(token.am_log_prob, token.history->best_token_score);
         m_raw_tokens.push_back(token);

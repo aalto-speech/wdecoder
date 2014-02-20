@@ -187,7 +187,7 @@ public:
 
     std::vector<Node> m_nodes;
     std::set<WordHistory*> m_word_history_leafs;
-    std::map<int, std::map<WordHistory*, Token> > m_tokens;
+    std::unordered_map<int, std::unordered_map<WordHistory*, Token> > m_tokens;
     std::vector<Token> m_raw_tokens;
     std::set<WordHistory*> m_active_histories;
 
@@ -231,6 +231,7 @@ private:
     float m_word_boundary_penalty;
 
     float m_best_log_prob;
+    int m_best_node_idx;
     float m_best_am_log_prob;
     float m_worst_log_prob;
     float m_best_word_end_prob;
