@@ -15,6 +15,8 @@
 using namespace std;
 using namespace fsalm;
 
+const int Decoder::WORD_BOUNDARY_IDENTIFIER = -2;
+const int Decoder::HISTOGRAM_BINS = 100;
 
 void
 Decoder::read_phone_model(string phnfname)
@@ -151,6 +153,7 @@ Decoder::read_config(string cfgfname)
         else if (parameter == "duration_scale") ss >> m_duration_scale;
         else if (parameter == "transition_scale") ss >> m_transition_scale;
         else if (parameter == "global_beam") ss >> m_global_beam;
+        else if (parameter == "acoustic_beam") ss >> m_acoustic_beam;
         else if (parameter == "history_beam") ss >> m_history_beam;
         else if (parameter == "word_end_beam") ss >> m_word_end_beam;
         else if (parameter == "word_boundary_penalty") ss >> m_word_boundary_penalty;
@@ -189,7 +192,8 @@ Decoder::print_config(ostream &outf)
     if (m_use_word_boundary_symbol)
         outf << "word boundary symbol: " << m_word_boundary_symbol << endl;
     outf << "global beam: " << m_global_beam << endl;
-    outf << "history beam: " << m_history_beam << endl;
+    outf << "acoustic beam: " << m_acoustic_beam << endl;
+    outf << "acoustic history beam: " << m_history_beam << endl;
     outf << "word end beam: " << m_word_end_beam << endl;
     outf << "word boundary penalty: " << m_word_boundary_penalty << endl;
     outf << "history clean frame interval: " << m_history_clean_frame_interval << endl;
@@ -302,14 +306,17 @@ Decoder::recognize_lna_file(string lnafname,
     time(&start_time);
 
     float original_global_beam = m_global_beam;
+    float original_acoustic_beam = m_acoustic_beam;
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
 
-        if (m_propagated_count > 50000) {
-            float beamdiff = min(100.0, ((m_propagated_count-50000.0)/500000.0) * 100.0);
+        if (m_token_count_after_pruning > 30000) {
+            float beamdiff = min(100.0, 100.0 * (m_token_count_after_pruning-30000.0)/100000);
             m_global_beam = original_global_beam-beamdiff;
         }
         else m_global_beam = original_global_beam;
+
+        m_acoustic_beam = min(((float)frame_idx/125.0) * original_acoustic_beam, (double)original_acoustic_beam);
 
         if (m_stats) cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
@@ -318,9 +325,12 @@ Decoder::recognize_lna_file(string lnafname,
 
         frame_idx++;
         if (m_stats) {
+            cerr << "current global beam: " << m_global_beam << endl;
+            cerr << "current acoustic beam: " << m_acoustic_beam << endl;
             cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
+            cerr << "tokens pruned by acoustic beam: " << m_acoustic_beam_pruned_count << endl;
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
-            cerr << "tokens pruned by history beam: " << m_history_beam_pruned_count << endl;
+            cerr << "tokens pruned by acoustic history beam: " << m_history_beam_pruned_count << endl;
             cerr << "tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
             cerr << "tokens pruned by histogram pruning: " << m_histogram_pruned_count << endl;
             cerr << "best log probability: " << m_best_log_prob << endl;
@@ -346,6 +356,7 @@ Decoder::recognize_lna_file(string lnafname,
     print_best_word_history(outf);
 
     m_global_beam = original_global_beam;
+    m_acoustic_beam = original_acoustic_beam;
     clear_word_history();
     m_lna_reader.close();
 
@@ -381,9 +392,11 @@ Decoder::propagate_tokens(void)
     m_token_count = 0;
     m_propagated_count = 0;
     m_best_log_prob = -1e20;
+    m_best_am_log_prob = -1e20;
     m_best_word_end_prob = -1e20;
     m_worst_log_prob = 0;
     m_global_beam_pruned_count = 0;
+    m_acoustic_beam_pruned_count = 0;
 
     for (auto sit = m_tokens.begin(); sit != m_tokens.end(); ++sit) {
         Node &node = m_nodes[sit->first];
@@ -418,50 +431,26 @@ Decoder::prune_tokens(void)
     m_active_histories.clear();
 
     // Global beam pruning
-    // History beam pruning
+    // Global acoustic beam pruning
+    // History acoustic beam pruning
     float current_glob_beam = m_best_log_prob - m_global_beam;
+    float current_acoustic_beam = m_best_am_log_prob - m_acoustic_beam;
     float current_word_end_beam = m_best_word_end_prob - m_word_end_beam;
     for (int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
         if (tok.total_log_prob < current_glob_beam)
             m_global_beam_pruned_count++;
-        else if (tok.total_log_prob < (tok.history->best_token_score-m_history_beam))
+        if (tok.am_log_prob < current_acoustic_beam)
+            m_acoustic_beam_pruned_count++;
+        else if (tok.am_log_prob < (tok.history->best_token_score-m_history_beam))
             m_history_beam_pruned_count++;
         else
             pruned_tokens.push_back(tok);
     }
 
-    // Apply histogram pruning if too many tokens
-    int bin_limit = 0;
-    vector<int> lp_histograms(HISTOGRAM_BINS);
-    float float_bin_count = (float)HISTOGRAM_BINS;
-    if (m_histogram_prune_trigger > 0 && pruned_tokens.size() > m_histogram_prune_trigger) {
-
-        for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); ++tit) {
-            int bin = (int)((tit->total_log_prob-current_glob_beam)/m_global_beam * float_bin_count);
-            lp_histograms[bin]++;
-        }
-
-        int bin_tokens = 0;
-        for (int bi = lp_histograms.size()-1; bi > 0; bi--) {
-            bin_tokens += lp_histograms[bi];
-            if (bin_tokens > m_histogram_prune_target) {
-                bin_limit = bi;
-                break;
-            }
-        }
-    }
-
     // Collect best tokens for each state/history
     m_tokens.clear();
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
-        if (bin_limit > 0) {
-            int bin = (int)((tit->total_log_prob-current_glob_beam)/m_global_beam * float_bin_count);
-            if (bin < bin_limit) {
-                m_histogram_pruned_count++;
-                continue;
-            }
-        }
         if (tit->total_log_prob > m_tokens[tit->node_idx][tit->history].total_log_prob) {
             m_tokens[tit->node_idx][tit->history] = *tit;
             m_active_histories.insert(tit->history);
@@ -469,6 +458,11 @@ Decoder::prune_tokens(void)
         else
             m_dropped_count++;
     }
+
+    m_token_count_after_pruning = 0;
+    for (auto tokenit = m_tokens.begin(); tokenit != m_tokens.end(); ++tokenit)
+        m_token_count_after_pruning += tokenit->second.size();
+    if (m_stats) cerr << "token count after pruning: " << m_token_count_after_pruning << endl;
 
     reset_history_scores();
     m_raw_tokens.clear();
@@ -501,10 +495,22 @@ Decoder::move_token_to_node(Token token,
 
     // HMM node
     if (node.hmm_state != -1) {
+
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
+        if (token.am_log_prob < (m_best_am_log_prob-m_acoustic_beam)) {
+             m_acoustic_beam_pruned_count++;
+             return;
+        }
+
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+        if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
+            m_global_beam_pruned_count++;
+            return;
+        }
+
         m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
-        token.history->best_token_score = max(token.total_log_prob, token.history->best_token_score);
+        m_best_am_log_prob = max(m_best_am_log_prob, token.am_log_prob);
+        token.history->best_token_score = max(token.am_log_prob, token.history->best_token_score);
         m_raw_tokens.push_back(token);
         return;
     }
@@ -748,11 +754,14 @@ Decoder::apply_duration_model(Token &token, int node_idx)
 void
 Decoder::reset_history_scores()
 {
-    for (auto histit = m_active_histories.begin(); histit != m_active_histories.end(); ++histit) {
-        //(*histit)->prune = false;
-        (*histit)->best_token_score = -1e20;
-        for (auto nextit = (*histit)->next.begin(); nextit != (*histit)->next.end(); ++nextit)
-            (*(nextit->second)).best_token_score = -1e20;
+    for (auto histit = m_word_history_leafs.begin(); histit != m_word_history_leafs.end(); ++histit) {
+        WordHistory *history = *histit;
+        history->best_token_score = -1e20;
+        if (history->previous != NULL)
+            history->previous->best_token_score = -1e20;
     }
+
+    for (auto histit = m_active_histories.begin(); histit != m_active_histories.end(); ++histit)
+        (*histit)->best_token_score = -1e20;
 }
 

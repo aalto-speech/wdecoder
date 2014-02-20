@@ -18,8 +18,8 @@
 class Decoder {
 
 public:
-    static const int WORD_BOUNDARY_IDENTIFIER = -2;
-    static const int HISTOGRAM_BINS = 100;
+    static const int WORD_BOUNDARY_IDENTIFIER;
+    static const int HISTOGRAM_BINS;
     int DECODE_START_NODE;
     int SENTENCE_END_WORD_ID;
 
@@ -49,7 +49,8 @@ public:
               best_token_score(best_token_score), prune(prune) { }
         int word_id;
         WordHistory *previous;
-        std::unordered_map<int, WordHistory*> next;
+        //std::unordered_map<int, WordHistory*> next;
+        std::map<int, WordHistory*> next;
         float best_token_score;
         bool prune;
     };
@@ -95,8 +96,10 @@ public:
         m_histogram_prune_target = 0;
         m_token_count = 0;
         m_propagated_count = 0;
+        m_token_count_after_pruning = 0;
 
         m_global_beam = 0.0;
+        m_acoustic_beam = 0.0;
         m_current_word_end_beam = 0.0;
         m_history_beam = 0.0;
         m_silence_beam = 0.0;
@@ -212,12 +215,14 @@ private:
     int m_history_limit;
     int m_token_count;
     int m_propagated_count;
+    int m_token_count_after_pruning;
     bool m_force_sentence_end;
     bool m_use_word_boundary_symbol;
     bool m_duration_model_in_use;
     std::string m_word_boundary_symbol;
 
     float m_global_beam;
+    float m_acoustic_beam;
     float m_state_beam;
     float m_history_beam;
     float m_silence_beam;
@@ -226,10 +231,12 @@ private:
     float m_word_boundary_penalty;
 
     float m_best_log_prob;
+    float m_best_am_log_prob;
     float m_worst_log_prob;
     float m_best_word_end_prob;
 
     int m_global_beam_pruned_count;
+    int m_acoustic_beam_pruned_count;
     int m_history_beam_pruned_count;
     int m_histogram_pruned_count;
     int m_word_end_beam_pruned_count;
