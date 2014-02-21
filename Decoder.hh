@@ -162,6 +162,9 @@ public:
     void sort_histories_by_best_lp(const std::set<WordHistory*> &histories,
                                    std::vector<WordHistory*> &sorted_histories);
 
+    void find_successor_words(int node_idx, std::set<int> &word_ids);
+    void find_successor_words();
+
     // Subwords
     std::vector<std::string> m_subwords;
     // Mapping from text units to indices

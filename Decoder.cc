@@ -308,13 +308,13 @@ Decoder::recognize_lna_file(string lnafname,
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
 
-        if (m_token_count_after_pruning > 30000) {
-            float beamdiff = min(100.0, 100.0 * (m_token_count_after_pruning-30000.0)/100000);
-            m_global_beam = original_global_beam-beamdiff;
-        }
-        else m_global_beam = original_global_beam;
+//        if (m_token_count_after_pruning > 30000) {
+//            float beamdiff = min(100.0, 100.0 * (m_token_count_after_pruning-30000.0)/100000);
+//            m_global_beam = original_global_beam-beamdiff;
+//        }
+//        else m_global_beam = original_global_beam;
 
-        m_acoustic_beam = min(((float)frame_idx/125.0) * original_acoustic_beam, (double)original_acoustic_beam);
+//        m_acoustic_beam = min(((float)frame_idx/125.0) * original_acoustic_beam, (double)original_acoustic_beam);
 
         if (m_stats) cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
@@ -429,7 +429,7 @@ Decoder::propagate_tokens(void)
         for (auto tit = history->tokens->begin(); tit != history->tokens->end(); ++tit) {
             m_token_count++;
             Node &node = m_nodes[tit->second.node_idx];
-            //hit->second.word_end = false;
+            tit->second.word_end = false;
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
                 move_token_to_node(tit->second, ait->target_node, ait->log_prob);
                 m_propagated_count++;
@@ -462,6 +462,7 @@ Decoder::prune_tokens(void)
     // Global beam pruning
     // Global acoustic beam pruning
     // History acoustic beam pruning
+    // Word end beam pruning
     float current_glob_beam = m_best_log_prob - m_global_beam;
     float current_acoustic_beam = m_best_am_log_prob - m_acoustic_beam;
     float current_word_end_beam = m_best_word_end_prob - m_word_end_beam;
@@ -469,10 +470,12 @@ Decoder::prune_tokens(void)
         Token &tok = m_raw_tokens[i];
         if (tok.total_log_prob < current_glob_beam)
             m_global_beam_pruned_count++;
-        if (tok.am_log_prob < current_acoustic_beam)
+        else if (tok.am_log_prob < current_acoustic_beam)
             m_acoustic_beam_pruned_count++;
         else if (tok.am_log_prob < (tok.history->best_am_log_prob-m_history_beam))
             m_history_beam_pruned_count++;
+        else if (tok.word_end && tok.total_log_prob < current_word_end_beam)
+            m_word_end_beam_pruned_count++;
         else
             pruned_tokens.push_back(tok);
     }
@@ -546,6 +549,7 @@ Decoder::move_token_to_node(Token token,
         m_best_am_log_prob = max(m_best_am_log_prob, token.am_log_prob);
         token.history->best_am_log_prob = max(token.am_log_prob, token.history->best_am_log_prob);
         token.history->best_total_log_prob = max(token.total_log_prob, token.history->best_total_log_prob);
+        if (token.word_end) m_best_word_end_prob = max(m_best_word_end_prob, token.total_log_prob);
         m_raw_tokens.push_back(token);
         return;
     }
@@ -560,6 +564,7 @@ Decoder::move_token_to_node(Token token,
             m_global_beam_pruned_count++;
             return;
         }
+        token.word_end = true;
     }
     else if (node.word_id == -2)
         token.lm_log_prob += m_word_boundary_penalty;
@@ -605,7 +610,6 @@ Decoder::get_best_token(vector<Token> &tokens)
 
     return *best_token;
 }
-
 
 
 void
@@ -812,6 +816,10 @@ Decoder::reset_history_scores()
         if (history->previous != NULL) {
             history->previous->best_am_log_prob = -1e20;
             history->previous->best_total_log_prob = -1e20;
+            if (history->previous->previous != NULL) {
+                history->previous->previous->best_am_log_prob = -1e20;
+                history->previous->previous->best_total_log_prob = -1e20;
+            }
         }
     }
 
@@ -819,5 +827,48 @@ Decoder::reset_history_scores()
         (*histit)->best_am_log_prob = -1e20;
         (*histit)->best_total_log_prob = -1e20;
     }
+}
+
+
+void
+Decoder::find_successor_words(int node_idx, set<int> &word_ids)
+{
+    Node &node = m_nodes[node_idx];
+
+    if (node.word_id != -1) {
+        word_ids.insert(node.word_id);
+        return;
+    }
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        int target_node = ait->target_node;
+        if (target_node == node_idx) continue;
+        find_successor_words(target_node, word_ids);
+    }
+}
+
+
+void
+Decoder::find_successor_words()
+{
+    //vector<int> successor_counts(m_nodes.size());
+    set<set<int> > lookahead_states;
+    for (int i=0; i<m_nodes.size(); i++) {
+        set<int> word_ids;
+        find_successor_words(i, word_ids);
+        if (i % 100000 == 0) cerr << "node: " << i << endl;
+        //successor_counts[i] = word_ids.size();
+        lookahead_states.insert(word_ids);
+    }
+
+    cerr << endl << lookahead_states.size() << endl;
+    ofstream lassizes("lassucccounts.txt");
+    for (auto it = lookahead_states.begin(); it != lookahead_states.end(); ++it) {
+        lassizes << it->size() << endl;
+    }
+    //ofstream succc("succcounts.txt");
+    //for (int i=0; i<m_nodes.size(); i++) {
+    //    succc << i << "\t" << successor_counts[i] << endl;
+    //}
 }
 
