@@ -73,18 +73,18 @@ int main(int argc, char* argv[])
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
-        cerr << "Tying state chain prefixes.." << endl;
-        dg.push_word_ids_right(nodes);
-        dg.tie_state_prefixes(nodes, false);
+        cerr << "Pushing subword ids left.." << endl;
+        dg.push_word_ids_left(nodes);
+        cerr << "Tying state chain suffixes.." << endl;
+        dg.tie_state_suffixes(nodes);
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
-        cerr << "Pushing subword ids left.." << endl;
-        dg.push_word_ids_left(nodes);
-        cerr << "Tying state chain suffixes.." << endl;
-        dg.tie_state_suffixes(nodes);
+        cerr << "Tying state chain prefixes.." << endl;
+        dg.push_word_ids_right(nodes);
+        dg.tie_state_prefixes(nodes, false);
         dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
 
