@@ -19,7 +19,6 @@ class Decoder {
 
 public:
     static const int WORD_BOUNDARY_IDENTIFIER;
-    static const int HISTOGRAM_BINS;
     int DECODE_START_NODE;
     int SENTENCE_END_WORD_ID;
 
@@ -39,20 +38,24 @@ public:
         std::vector<Arc> arcs;
     };
 
+    class Token;
+
     class WordHistory {
     public:
-        WordHistory() : word_id(-1), previous(nullptr),
-                        best_token_score(-1e20), prune(false) { }
+        WordHistory() : word_id(-1), previous(nullptr), best_total_log_prob(-1e20),
+                        best_am_log_prob(-1e20), tokens(nullptr) { }
         WordHistory(int word_id, WordHistory *previous,
-                    float best_token_score=-1e20, bool prune=false)
+                    float best_token_score=-1e20)
             : word_id(word_id), previous(previous),
-              best_token_score(best_token_score), prune(prune) { }
+              best_am_log_prob(best_token_score), best_total_log_prob(-1e20),
+              tokens(nullptr) { }
         int word_id;
         WordHistory *previous;
         //std::unordered_map<int, WordHistory*> next;
         std::map<int, WordHistory*> next;
-        float best_token_score;
-        bool prune;
+        float best_am_log_prob;
+        float best_total_log_prob;
+        std::map<int, Decoder::Token> *tokens;
     };
 
     class Token {
@@ -157,13 +160,16 @@ public:
         return (am_score + m_lm_scale * lm_score);
     }
     Token* get_best_token();
+    Token get_best_token(std::vector<Token> &tokens);
     inline void advance_in_history(Token& token, int word_id);
-    void add_sentence_ends();
+    void add_sentence_ends(std::vector<Token> &tokens);
     void print_best_word_history(std::ostream &outf=std::cout);
     void print_word_history(WordHistory *history,
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
+    void sort_histories_by_best_lp(const std::set<WordHistory*> &histories,
+                                   std::vector<WordHistory*> &sorted_histories);
 
     // Subwords
     std::vector<std::string> m_subwords;
@@ -187,7 +193,8 @@ public:
 
     std::vector<Node> m_nodes;
     std::set<WordHistory*> m_word_history_leafs;
-    std::unordered_map<int, std::unordered_map<WordHistory*, Token> > m_tokens;
+    //std::unordered_map<int, std::unordered_map<WordHistory*, Token> > m_tokens;
+    std::vector<Token> m_tokens;
     std::vector<Token> m_raw_tokens;
     std::set<WordHistory*> m_active_histories;
 
@@ -232,6 +239,7 @@ private:
 
     float m_best_log_prob;
     int m_best_node_idx;
+    WordHistory *m_best_history;
     float m_best_am_log_prob;
     float m_worst_log_prob;
     float m_best_word_end_prob;
