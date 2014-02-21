@@ -51,7 +51,6 @@ public:
               tokens(nullptr) { }
         int word_id;
         WordHistory *previous;
-        //std::unordered_map<int, WordHistory*> next;
         std::map<int, WordHistory*> next;
         float best_am_log_prob;
         float best_total_log_prob;
@@ -95,8 +94,6 @@ public:
         m_lm_scale = 0.0;
         m_duration_scale = 0.0;
         m_transition_scale = 0.0;
-        m_histogram_prune_trigger = 0;
-        m_histogram_prune_target = 0;
         m_token_count = 0;
         m_propagated_count = 0;
         m_token_count_after_pruning = 0;
@@ -109,7 +106,8 @@ public:
         m_word_end_beam = 0.0;
         m_state_beam = 0.0;
 
-        m_history_limit = 5000;
+        m_history_limit = 50000;
+        m_token_limit = 500000;
 
         m_history_clean_frame_interval = 10;
         m_empty_history = nullptr;
@@ -129,9 +127,8 @@ public:
     void set_lm_scale(float lm_scale) { m_lm_scale = lm_scale; }
     void set_duration_scale(float dur_scale) { m_duration_scale = dur_scale; }
     void set_transition_scale(float trans_scale) { m_transition_scale = trans_scale; }
-    void set_histogram_prune_trigger(int tokens) { m_histogram_prune_trigger = tokens; }
-    void set_histogram_prune_target(int tokens) { m_histogram_prune_target = tokens; }
     void set_history_limit(int histories) { m_history_limit = histories; }
+    void set_token_limit(int tokens) { m_token_limit = tokens; }
     void set_word_boundary_penalty(float penalty) { m_word_boundary_penalty = penalty; }
     void set_state_beam(float beam) { m_state_beam = beam; }
     void set_global_beam(float beam) { m_global_beam = beam; }
@@ -193,8 +190,6 @@ public:
 
     std::vector<Node> m_nodes;
     std::set<WordHistory*> m_word_history_leafs;
-    //std::unordered_map<int, std::unordered_map<WordHistory*, Token> > m_tokens;
-    std::vector<Token> m_tokens;
     std::vector<Token> m_raw_tokens;
     std::set<WordHistory*> m_active_histories;
 
@@ -217,9 +212,8 @@ private:
     float m_lm_scale;
     float m_duration_scale;
     float m_transition_scale; // Temporary scaling used for self transitions
-    int m_histogram_prune_trigger;
-    int m_histogram_prune_target;
     int m_history_limit;
+    int m_token_limit;
     int m_token_count;
     int m_propagated_count;
     int m_token_count_after_pruning;
@@ -247,7 +241,6 @@ private:
     int m_global_beam_pruned_count;
     int m_acoustic_beam_pruned_count;
     int m_history_beam_pruned_count;
-    int m_histogram_pruned_count;
     int m_word_end_beam_pruned_count;
     int m_state_beam_pruned_count;
     int m_dropped_count;

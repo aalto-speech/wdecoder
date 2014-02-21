@@ -148,8 +148,8 @@ Decoder::read_config(string cfgfname)
         string parameter, val;
         ss >> parameter;
         if (parameter == "lm_scale") ss >> m_lm_scale;
-        else if (parameter == "histogram_prune_trigger") ss >> m_histogram_prune_trigger;
-        else if (parameter == "histogram_prune_target") ss >> m_histogram_prune_target;
+        else if (parameter == "token_limit") ss >> m_token_limit;
+        else if (parameter == "history_limit") ss >> m_history_limit;
         else if (parameter == "duration_scale") ss >> m_duration_scale;
         else if (parameter == "transition_scale") ss >> m_transition_scale;
         else if (parameter == "global_beam") ss >> m_global_beam;
@@ -181,10 +181,8 @@ Decoder::print_config(ostream &outf)
 {
     outf << std::boolalpha;
     outf << "lm scale: " << m_lm_scale << endl;
-    if (m_histogram_prune_trigger > 0) {
-        outf << "histogram pruning trigger: " << m_histogram_prune_trigger << endl;
-        outf << "histogram pruning target: " << m_histogram_prune_target << endl;
-    }
+    outf << "history limit: " << m_history_limit << endl;
+    outf << "token limit: " << m_token_limit << endl;
     outf << "duration scale: " << m_duration_scale << endl;
     outf << "transition scale: " << m_transition_scale << endl;
     outf << "force sentence end: " << m_force_sentence_end << endl;
@@ -332,9 +330,7 @@ Decoder::recognize_lna_file(string lnafname,
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
             cerr << "tokens pruned by acoustic history beam: " << m_history_beam_pruned_count << endl;
             cerr << "tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
-            cerr << "tokens pruned by histogram pruning: " << m_histogram_pruned_count << endl;
             cerr << "best log probability: " << m_best_log_prob << endl;
-            //cerr << "number of active nodes: " << m_tokens.size() << endl;
             cerr << "number of active word histories: " << m_active_histories.size() << endl;
             print_best_word_history(outf);
         }
@@ -381,7 +377,6 @@ void
 Decoder::initialize()
 {
     m_word_history_leafs.clear();
-    m_tokens.clear();
     m_raw_tokens.clear();
     m_active_histories.clear();
     Token tok;
@@ -391,9 +386,7 @@ Decoder::initialize()
     tok.node_idx = DECODE_START_NODE;
     (*(tok.history->tokens))[DECODE_START_NODE] = tok;
     m_best_node_idx = DECODE_START_NODE;
-    m_best_history = tok.history;
     m_active_histories.insert(tok.history);
-    //m_tokens[DECODE_START_NODE][tok.history] = tok;
     m_empty_history = tok.history;
     m_word_history_leafs.insert(tok.history);
 }
@@ -430,28 +423,11 @@ Decoder::propagate_tokens(void)
 
     vector<WordHistory*> histories;
     sort_histories_by_best_lp(m_active_histories, histories);
-
-    /*
-    cerr << endl << endl;
-    for (int i=0; i<histories.size() && i<50; i++) {
-        WordHistory *history = histories[i];
-        cerr << "best lp: " << history->best_total_log_prob << endl;
-        cerr << "number of tokens: " << history->tokens->size() << endl;
-    }*/
-
     reset_history_scores();
 
-    int last_history = min(500, (int)histories.size());
-    int token_limit = 35000;
-    //for (int i=0; i<histories.size(); i++) {
+    int last_history = min(m_history_limit, (int)histories.size());
     for (int i=0; i<last_history; i++) {
-
         WordHistory *history = histories[i];
-        //if (history == nullptr) continue;
-        //if (history->tokens == nullptr) continue;
-        //cerr << "best lp: " << history->best_total_log_prob << endl;
-        //cerr << "number of tokens: " << history->tokens->size() << endl;
-
         for (auto tit = history->tokens->begin(); tit != history->tokens->end(); ++tit) {
             m_token_count++;
             Node &node = m_nodes[tit->second.node_idx];
@@ -461,7 +437,7 @@ Decoder::propagate_tokens(void)
                 m_propagated_count++;
             }
         }
-        if (m_token_count > token_limit) break;
+        if (m_token_count > m_token_limit) break;
     }
     for (int i=0; i<histories.size(); i++) {
         WordHistory *history = histories[i];
@@ -480,7 +456,6 @@ void
 Decoder::prune_tokens(void)
 {
     m_history_beam_pruned_count = 0;
-    m_histogram_pruned_count = 0;
     m_word_end_beam_pruned_count = 0;
     m_state_beam_pruned_count = 0;
     m_dropped_count = 0;
@@ -569,10 +544,7 @@ Decoder::move_token_to_node(Token token,
             return;
         }
 
-        if (token.total_log_prob > m_best_log_prob) {
-            m_best_log_prob = token.total_log_prob;
-            m_best_history = token.history;
-        }
+        m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
         m_best_am_log_prob = max(m_best_am_log_prob, token.am_log_prob);
         token.history->best_am_log_prob = max(token.am_log_prob, token.history->best_am_log_prob);
         token.history->best_total_log_prob = max(token.total_log_prob, token.history->best_total_log_prob);
