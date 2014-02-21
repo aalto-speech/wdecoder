@@ -385,7 +385,6 @@ Decoder::initialize()
     tok.history->tokens = new map<int, Token>;
     tok.node_idx = DECODE_START_NODE;
     (*(tok.history->tokens))[DECODE_START_NODE] = tok;
-    m_best_node_idx = DECODE_START_NODE;
     m_active_histories.insert(tok.history);
     m_empty_history = tok.history;
     m_word_history_leafs.insert(tok.history);
@@ -417,7 +416,6 @@ Decoder::propagate_tokens(void)
     m_best_log_prob = -1e20;
     m_best_am_log_prob = -1e20;
     m_best_word_end_prob = -1e20;
-    m_worst_log_prob = 0;
     m_global_beam_pruned_count = 0;
     m_acoustic_beam_pruned_count = 0;
 
@@ -562,7 +560,6 @@ Decoder::move_token_to_node(Token token,
             m_global_beam_pruned_count++;
             return;
         }
-        token.word_count++;
     }
     else if (node.word_id == -2)
         token.lm_log_prob += m_word_boundary_penalty;

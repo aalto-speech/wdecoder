@@ -61,12 +61,9 @@ public:
     public:
       int node_idx;
       float am_log_prob;
-      float cur_am_log_prob;
       float lm_log_prob;
       float total_log_prob;
       int fsa_lm_node;
-      int word_start_frame;
-      int word_count;
       unsigned short int dur;
       bool word_end;
       WordHistory *history;
@@ -74,12 +71,9 @@ public:
       Token():
         node_idx(-1),
         am_log_prob(0.0f),
-        cur_am_log_prob(0.0f),
         lm_log_prob(0.0f),
         total_log_prob(-1e20),
         fsa_lm_node(0),
-        word_start_frame(0),
-        word_count(0),
         dur(0)
       { }
     };
@@ -232,10 +226,7 @@ private:
     float m_word_boundary_penalty;
 
     float m_best_log_prob;
-    int m_best_node_idx;
-    WordHistory *m_best_history;
     float m_best_am_log_prob;
-    float m_worst_log_prob;
     float m_best_word_end_prob;
 
     int m_global_beam_pruned_count;
