@@ -42,12 +42,13 @@ public:
 
     class WordHistory {
     public:
-        WordHistory() : word_id(-1), previous(nullptr), best_total_log_prob(-1e20),
-                        best_am_log_prob(-1e20), tokens(nullptr) { }
-        WordHistory(int word_id, WordHistory *previous,
-                    float best_token_score=-1e20)
+        WordHistory()
+            : word_id(-1), previous(nullptr),
+              best_am_log_prob(-1e20), best_total_log_prob(-1e20),
+              tokens(nullptr) { }
+        WordHistory(int word_id, WordHistory *previous)
             : word_id(word_id), previous(previous),
-              best_am_log_prob(best_token_score), best_total_log_prob(-1e20),
+              best_am_log_prob(-1e20), best_total_log_prob(-1e20),
               tokens(nullptr) { }
         int word_id;
         WordHistory *previous;
@@ -74,7 +75,9 @@ public:
         lm_log_prob(0.0f),
         total_log_prob(-1e20),
         fsa_lm_node(0),
-        dur(0)
+        dur(0),
+        word_end(false),
+        history(nullptr)
       { }
     };
 
@@ -91,6 +94,22 @@ public:
         m_token_count = 0;
         m_propagated_count = 0;
         m_token_count_after_pruning = 0;
+
+        m_dropped_count = 0;
+        m_global_beam_pruned_count = 0;
+        m_word_end_beam_pruned_count = 0;
+        m_state_beam_pruned_count = 0;
+        m_history_beam_pruned_count = 0;
+        m_acoustic_beam_pruned_count = 0;
+
+        DECODE_START_NODE = -1;
+        SENTENCE_END_WORD_ID = -1;
+
+        m_acoustics = nullptr;
+
+        m_best_log_prob = -1e20;
+        m_best_am_log_prob = -1e20;
+        m_best_word_end_prob = -1e20;
 
         m_global_beam = 0.0;
         m_acoustic_beam = 0.0;
@@ -117,23 +136,6 @@ public:
 
     void read_config(std::string cfgfname);
     void print_config(std::ostream &outf);
-
-    void set_lm_scale(float lm_scale) { m_lm_scale = lm_scale; }
-    void set_duration_scale(float dur_scale) { m_duration_scale = dur_scale; }
-    void set_transition_scale(float trans_scale) { m_transition_scale = trans_scale; }
-    void set_history_limit(int histories) { m_history_limit = histories; }
-    void set_token_limit(int tokens) { m_token_limit = tokens; }
-    void set_word_boundary_penalty(float penalty) { m_word_boundary_penalty = penalty; }
-    void set_state_beam(float beam) { m_state_beam = beam; }
-    void set_global_beam(float beam) { m_global_beam = beam; }
-    void set_history_beam(float beam) { m_history_beam = beam; }
-    void set_silence_beam(float beam) { m_silence_beam = beam; }
-    void set_word_end_beam(float beam) { m_word_end_beam = beam; }
-    void set_force_sentence_end(bool force) { m_force_sentence_end = force; }
-    void set_use_word_boundary_symbol(std::string symbol) {
-        m_word_boundary_symbol = symbol;
-        m_use_word_boundary_symbol = true;
-    }
 
     void recognize_lna_file(std::string lnafname,
                             std::ostream &outf=std::cout,

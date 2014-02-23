@@ -378,6 +378,7 @@ Decoder::initialize()
 {
     m_word_history_leafs.clear();
     m_raw_tokens.clear();
+    m_raw_tokens.reserve(1000000);
     m_active_histories.clear();
     Token tok;
     tok.fsa_lm_node = m_lm.initial_node_id();
@@ -458,6 +459,7 @@ Decoder::prune_tokens(void)
     m_state_beam_pruned_count = 0;
     m_dropped_count = 0;
     vector<Token> pruned_tokens;
+    pruned_tokens.reserve(m_raw_tokens.size());
 
     // Global beam pruning
     // Global acoustic beam pruning
@@ -485,10 +487,13 @@ Decoder::prune_tokens(void)
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
         WordHistory *history = tit->history;
         if (history->tokens != nullptr) {
-            if (tit->total_log_prob > (*(history->tokens))[tit->node_idx].total_log_prob)
-                (*(history->tokens))[tit->node_idx] = *tit;
-            else
+            auto history_state = history->tokens->find(tit->node_idx);
+            if (history_state != history->tokens->end()) {
+                if (tit->total_log_prob > history_state->second.total_log_prob)
+                    history_state->second = *tit;
                 m_dropped_count++;
+            }
+            else (*(history->tokens))[tit->node_idx] = *tit;
         }
         else {
             history->tokens = new map<int, Token>;
@@ -566,10 +571,8 @@ Decoder::move_token_to_node(Token token,
         }
         token.word_end = true;
     }
-    else if (node.word_id == -2)
-        token.lm_log_prob += m_word_boundary_penalty;
 
-    // LM nodes and word boundaries (-2), update history
+    // Update history
     if (node.word_id != -1) advance_in_history(token, node.word_id);
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
@@ -633,8 +636,7 @@ Decoder::add_sentence_ends(vector<Token> &tokens)
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         Token &token = *tit;
         if (token.fsa_lm_node == m_lm.initial_node_id()) continue;
-        // FIXME
-        //m_active_histories.erase(token.history);
+        m_active_histories.erase(token.history);
         if (m_use_word_boundary_symbol && token.history->word_id != m_subword_map[m_word_boundary_symbol]) {
             token.fsa_lm_node = m_lm.walk(token.fsa_lm_node,
                     m_subword_id_to_fsa_symbol[m_subword_map[m_word_boundary_symbol]], &token.lm_log_prob);
@@ -680,7 +682,10 @@ Decoder::prune_word_history()
                 wh->next.erase(tmp->word_id);
                 delete tmp;
                 if (wh == nullptr || wh->next.size() > 0) break;
-                if (m_active_histories.find(wh) != m_active_histories.end()) break;
+                if (m_active_histories.find(wh) != m_active_histories.end()) {
+                    m_word_history_leafs.insert(wh);
+                    break;
+                }
             }
         }
         else ++whlnit;
