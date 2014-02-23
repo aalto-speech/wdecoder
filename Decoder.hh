@@ -64,6 +64,7 @@ public:
       int node_idx;
       float am_log_prob;
       float lm_log_prob;
+      float lookahead_log_prob;
       float total_log_prob;
       int fsa_lm_node;
       unsigned short int dur;
@@ -74,6 +75,7 @@ public:
         node_idx(-1),
         am_log_prob(0.0f),
         lm_log_prob(0.0f),
+        lookahead_log_prob(0.0f),
         total_log_prob(-1e20),
         fsa_lm_node(0),
         dur(0),
@@ -86,6 +88,7 @@ public:
         m_debug = 0;
         m_stats = 0;
         m_duration_model_in_use = false;
+        m_unigram_la_in_use = false;
         m_use_word_boundary_symbol = false;
         m_force_sentence_end = true;
 
@@ -153,6 +156,7 @@ public:
     inline float get_token_log_prob(float am_score, float lm_score);
     inline void advance_in_history(Token& token, int word_id);
     inline void apply_duration_model(Token &token, int node_idx);
+    inline void update_lookahead_prob(Token &token, float lookahead_prob);
     Token* get_best_token();
     Token get_best_token(std::vector<Token> &tokens);
     void add_sentence_ends(std::vector<Token> &tokens);
@@ -224,6 +228,7 @@ private:
     bool m_force_sentence_end;
     bool m_use_word_boundary_symbol;
     bool m_duration_model_in_use;
+    bool m_unigram_la_in_use;
     std::string m_word_boundary_symbol;
 
     float m_global_beam;
