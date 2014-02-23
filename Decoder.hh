@@ -3,11 +3,9 @@
 
 #include <map>
 #include <unordered_map>
-#include <memory>
 #include <fstream>
 #include <vector>
 #include <set>
-#include <deque>
 
 #include "defs.hh"
 #include "Hmm.hh"
@@ -148,13 +146,11 @@ public:
     void propagate_tokens();
     void prune_tokens();
     void move_token_to_node(Token token, int node_idx, float transition_score);
-    inline float get_token_log_prob(float am_score, float lm_score)
-    {
-        return (am_score + m_lm_scale * lm_score);
-    }
+    inline float get_token_log_prob(float am_score, float lm_score);
+    inline void advance_in_history(Token& token, int word_id);
+    inline void apply_duration_model(Token &token, int node_idx);
     Token* get_best_token();
     Token get_best_token(std::vector<Token> &tokens);
-    inline void advance_in_history(Token& token, int word_id);
     void add_sentence_ends(std::vector<Token> &tokens);
     void print_best_word_history(std::ostream &outf=std::cout);
     void print_word_history(WordHistory *history,
@@ -203,7 +199,6 @@ private:
     void reset_history_scores();
     void prune_word_history();
     void set_word_boundaries();
-    void apply_duration_model(Token &token, int node_idx);
 
     int m_debug;
     int m_stats;

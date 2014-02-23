@@ -515,11 +515,6 @@ Decoder::move_token_to_node(Token token,
                             int node_idx,
                             float transition_score)
 {
-    if (m_debug) cerr << "move_token_to_node:" << endl
-                    << "\tnode idx: " << node_idx << endl
-                    << "\tprevious node idx: " << token.node_idx << endl
-                    << "\ttransition score: " << transition_score << endl;
-
     token.am_log_prob += m_transition_scale * transition_score;
 
     if (m_duration_model_in_use) {
@@ -559,8 +554,8 @@ Decoder::move_token_to_node(Token token,
     }
 
     // LM node, update LM score
-    if (node.word_id >= 0) {
-        if (m_debug) cerr << "node: " << node_idx << " walking with: " << m_subwords[node.word_id] << endl;
+    // Update history
+    if (node.word_id != -1) {
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
         if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
@@ -569,10 +564,8 @@ Decoder::move_token_to_node(Token token,
             return;
         }
         token.word_end = true;
+        advance_in_history(token, node.word_id);
     }
-
-    // Update history
-    if (node.word_id != -1) advance_in_history(token, node.word_id);
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
         move_token_to_node(token, ait->target_node, ait->log_prob);
@@ -614,6 +607,13 @@ Decoder::get_best_token(vector<Token> &tokens)
 }
 
 
+float
+Decoder::get_token_log_prob(float am_score, float lm_score)
+{
+    return (am_score + m_lm_scale * lm_score);
+}
+
+
 void
 Decoder::advance_in_history(Token &token, int word_id)
 {
@@ -626,6 +626,14 @@ Decoder::advance_in_history(Token &token, int word_id)
         m_word_history_leafs.erase(token.history->previous);
         m_word_history_leafs.insert(token.history);
     }
+}
+
+
+void
+Decoder::apply_duration_model(Token &token, int node_idx)
+{
+    token.am_log_prob += m_duration_scale
+        * m_hmm_states[m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
 }
 
 
@@ -799,14 +807,6 @@ Decoder::set_word_boundaries()
         cerr << "word boundary count: " << wbcount+1 << endl;
         m_nodes[START_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
     }
-}
-
-
-void
-Decoder::apply_duration_model(Token &token, int node_idx)
-{
-    token.am_log_prob += m_duration_scale
-        * m_hmm_states[m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
 }
 
 
