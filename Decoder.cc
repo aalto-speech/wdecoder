@@ -84,10 +84,19 @@ Decoder::read_noway_lexicon(string lexfname)
 void
 Decoder::read_lm(string lmfname)
 {
-    //m_lm.read(io::Stream(lmfname, "r").file);
     m_lm.read_arpa(io::Stream(lmfname, "r").file, true);
     m_lm.trim();
     set_subword_id_fsa_symbol_mapping();
+}
+
+
+void
+Decoder::read_la_lm(string lmfname)
+{
+    m_la_lm.read_arpa(io::Stream(lmfname, "r").file, true);
+    m_la_lm.trim();
+    set_subword_id_la_fsa_symbol_mapping();
+    set_unigram_la_scores();
 }
 
 
@@ -287,6 +296,17 @@ Decoder::set_subword_id_fsa_symbol_mapping()
 
 
 void
+Decoder::set_subword_id_la_fsa_symbol_mapping()
+{
+    m_subword_id_to_la_fsa_symbol.resize(m_subwords.size(), -1);
+    for (int i=0; i<m_subwords.size(); i++) {
+        string tmp(m_subwords[i]);
+        m_subword_id_to_la_fsa_symbol[i] = m_la_lm.symbol_map().index(tmp);
+    }
+}
+
+
+void
 Decoder::recognize_lna_file(string lnafname,
                             ostream &outf,
                             int *frame_count,
@@ -471,7 +491,7 @@ Decoder::prune_tokens(void)
         Token &tok = m_raw_tokens[i];
         if (tok.total_log_prob < current_glob_beam)
             m_global_beam_pruned_count++;
-        else if (tok.am_log_prob < current_acoustic_beam)
+        if (tok.am_log_prob < current_acoustic_beam)
             m_acoustic_beam_pruned_count++;
         else if (tok.am_log_prob < (tok.history->best_am_log_prob-m_history_beam))
             m_history_beam_pruned_count++;
@@ -853,26 +873,18 @@ Decoder::find_successor_words(int node_idx, set<int> &word_ids)
 
 
 void
-Decoder::find_successor_words()
+Decoder::set_unigram_la_scores()
 {
-    //vector<int> successor_counts(m_nodes.size());
-    set<set<int> > lookahead_states;
     for (int i=0; i<m_nodes.size(); i++) {
         set<int> word_ids;
         find_successor_words(i, word_ids);
-        if (i % 100000 == 0) cerr << "node: " << i << endl;
-        //successor_counts[i] = word_ids.size();
-        lookahead_states.insert(word_ids);
+        float node_best_la_prob = -1e20;
+        for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
+            float la_lm_prob = 0.0;
+            m_la_lm.walk(m_la_lm.empty_node_id(), m_subword_id_to_la_fsa_symbol[*wit], &la_lm_prob);
+            node_best_la_prob = max(node_best_la_prob, la_lm_prob);
+        }
+        m_nodes[i].unigram_la_score = node_best_la_prob;
     }
-
-    cerr << endl << lookahead_states.size() << endl;
-    ofstream lassizes("lassucccounts.txt");
-    for (auto it = lookahead_states.begin(); it != lookahead_states.end(); ++it) {
-        lassizes << it->size() << endl;
-    }
-    //ofstream succc("succcounts.txt");
-    //for (int i=0; i<m_nodes.size(); i++) {
-    //    succc << i << "\t" << successor_counts[i] << endl;
-    //}
 }
 

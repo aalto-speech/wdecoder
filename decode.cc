@@ -22,7 +22,8 @@ int main(int argc, char* argv[])
     conf::Config config;
     config("usage: dgraph [OPTION...] PH LEXICON LM CFGFILE GRAPH LNALIST\n")
       ('h', "help", "", "", "display help")
-      ('d', "duration-model=STRING", "arg", "", "Duration model");
+      ('d', "duration-model=STRING", "arg", "", "Duration model")
+      ('u', "unigram-lookahead=STRING", "arg", "", "Unigram lookahead language model");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
@@ -57,6 +58,12 @@ int main(int argc, char* argv[])
         cerr << "Reading graph: " << graphfname << endl;
         d.read_dgraph(graphfname);
         cerr << "node count: " << d.m_nodes.size() << endl;
+
+        if (config["unigram-lookahead"].specified) {
+            string lalmfname = config["unigram-lookahead"].get_str();
+            cerr << "Reading unigram lookahead model: " << lalmfname << endl;
+            d.read_la_lm(lalmfname);
+        }
 
         string lnalistfname = config.arguments[5];
         ifstream lnalistf(lnalistfname);

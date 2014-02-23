@@ -29,11 +29,14 @@ public:
 
     class Node {
     public:
-        Node() : word_id(-1), hmm_state(-1), flags(0) { }
+        Node()
+            : word_id(-1), hmm_state(-1),
+              flags(0), unigram_la_score(0.0) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         int flags;
         std::vector<Arc> arcs;
+        float unigram_la_score;
     };
 
     class Token;
@@ -130,6 +133,7 @@ public:
     void read_duration_model(std::string durfname);
     void read_noway_lexicon(std::string lexfname);
     void read_lm(std::string lmfname);
+    void read_la_lm(std::string lmfname);
     void read_dgraph(std::string graphfname);
 
     void read_config(std::string cfgfname);
@@ -161,7 +165,7 @@ public:
                                    std::vector<WordHistory*> &sorted_histories);
 
     void find_successor_words(int node_idx, std::set<int> &word_ids);
-    void find_successor_words();
+    void set_unigram_la_scores();
 
     // Subwords
     std::vector<std::string> m_subwords;
@@ -175,9 +179,14 @@ public:
     std::vector<Hmm> m_hmms;
     // Hmm states
     std::vector<HmmState> m_hmm_states;
+
     // Language model
     fsalm::LM m_lm;
     std::vector<int> m_subword_id_to_fsa_symbol;
+
+    // Lookahead language model
+    fsalm::LM m_la_lm;
+    std::vector<int> m_subword_id_to_la_fsa_symbol;
 
     // Audio reader
     LnaReaderCircular m_lna_reader;
@@ -195,6 +204,7 @@ private:
                           bool short_silence=false);
     void set_hmm_transition_probs(std::vector<Node> &nodes);
     void set_subword_id_fsa_symbol_mapping();
+    void set_subword_id_la_fsa_symbol_mapping();
     void clear_word_history();
     void reset_history_scores();
     void prune_word_history();

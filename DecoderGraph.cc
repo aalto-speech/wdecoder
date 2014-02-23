@@ -35,7 +35,6 @@ DecoderGraph::read_noway_lexicon(string lexfname)
     int linei = 1;
     while (getline(lexf, line)) {
         string unit;
-        double prob = 1.0;
         vector<string> phones;
 
         string phone;
@@ -47,7 +46,7 @@ DecoderGraph::read_noway_lexicon(string lexfname)
         if (leftp != string::npos) {
             auto rightp = unit.find(")");
             if (rightp == string::npos) throw string("Problem reading line " + linei);
-            prob = ::atof(unit.substr(leftp+1, rightp-leftp-1).c_str());
+            double prob = ::atof(unit.substr(leftp+1, rightp-leftp-1).c_str());
             unit = unit.substr(0, leftp);
         }
 
