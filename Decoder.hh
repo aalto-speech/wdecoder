@@ -55,7 +55,7 @@ public:
         std::map<int, WordHistory*> next;
         float best_am_log_prob;
         float best_total_log_prob;
-        std::map<int, Decoder::Token> *tokens;
+        std::unordered_map<int, Decoder::Token> *tokens;
     };
 
     class Token {

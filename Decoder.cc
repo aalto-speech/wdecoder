@@ -50,7 +50,6 @@ Decoder::read_noway_lexicon(string lexfname)
     int linei = 1;
     while (getline(lexf, line)) {
         string unit;
-        double prob = 1.0;
         vector<string> phones;
 
         string phone;
@@ -62,7 +61,7 @@ Decoder::read_noway_lexicon(string lexfname)
         if (leftp != string::npos) {
             auto rightp = unit.find(")");
             if (rightp == string::npos) throw string("Problem reading line " + linei);
-            prob = atof(unit.substr(leftp+1, rightp-leftp-1).c_str());
+            double prob = atof(unit.substr(leftp+1, rightp-leftp-1).c_str());
             unit = unit.substr(0, leftp);
         }
 
@@ -383,7 +382,7 @@ Decoder::initialize()
     Token tok;
     tok.fsa_lm_node = m_lm.initial_node_id();
     tok.history = new WordHistory();
-    tok.history->tokens = new map<int, Token>;
+    tok.history->tokens = new unordered_map<int, Token>;
     tok.node_idx = DECODE_START_NODE;
     (*(tok.history->tokens))[DECODE_START_NODE] = tok;
     m_active_histories.insert(tok.history);
@@ -496,7 +495,7 @@ Decoder::prune_tokens(void)
             else (*(history->tokens))[tit->node_idx] = *tit;
         }
         else {
-            history->tokens = new map<int, Token>;
+            history->tokens = new unordered_map<int, Token>;
             (*(history->tokens))[tit->node_idx] = *tit;
             m_active_histories.insert(tit->history);
         }
