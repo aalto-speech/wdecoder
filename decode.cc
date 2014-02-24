@@ -20,7 +20,7 @@ void print_graph(Decoder &d, string fname) {
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: dgraph [OPTION...] PH LEXICON LM CFGFILE GRAPH LNALIST\n")
+    config("usage: decode [OPTION...] PH LEXICON LM CFGFILE GRAPH LNALIST\n")
       ('h', "help", "", "", "display help")
       ('d', "duration-model=STRING", "arg", "", "Duration model")
       ('u', "unigram-lookahead=STRING", "arg", "", "Unigram lookahead language model");
