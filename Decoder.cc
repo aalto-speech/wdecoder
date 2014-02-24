@@ -328,14 +328,6 @@ Decoder::recognize_lna_file(string lnafname,
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
 
-//        if (m_token_count_after_pruning > 30000) {
-//            float beamdiff = min(100.0, 100.0 * (m_token_count_after_pruning-30000.0)/100000);
-//            m_global_beam = original_global_beam-beamdiff;
-//        }
-//        else m_global_beam = original_global_beam;
-
-//        m_acoustic_beam = min(((float)frame_idx/125.0) * original_acoustic_beam, (double)original_acoustic_beam);
-
         if (m_stats) cerr << endl << "recognizing frame: " << frame_idx << endl;
         propagate_tokens();
         prune_tokens();
@@ -367,20 +359,17 @@ Decoder::recognize_lna_file(string lnafname,
         delete history->tokens;
         history->tokens = nullptr;
     }
-    if (m_duration_model_in_use) {
-        for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-            Token &tok = *tit;
-            if (tok.dur > 1) apply_duration_model(tok, tok.node_idx);
-            tok.lm_log_prob -= tok.lookahead_log_prob;
-            tok.lookahead_log_prob = 0.0;
-            tok.total_log_prob = get_token_log_prob(tok.am_log_prob, tok.lm_log_prob);
-        }
+
+    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
+        Token &tok = *tit;
+        if (m_duration_model_in_use && tok.dur > 1) apply_duration_model(tok, tok.node_idx);
+        update_lookahead_prob(tok, 0.0);
+        tok.total_log_prob = get_token_log_prob(tok.am_log_prob, tok.lm_log_prob);
     }
     if (m_force_sentence_end) add_sentence_ends(tokens);
-    Token best_token = get_best_token(tokens);
 
+    Token best_token = get_best_token(tokens);
     outf << lnafname << ":";
-    //print_best_word_history(outf);
     print_word_history(best_token.history, outf);
 
     m_global_beam = original_global_beam;
@@ -883,6 +872,18 @@ Decoder::find_successor_words(int node_idx, set<int> &word_ids)
         int target_node = ait->target_node;
         if (target_node == node_idx) continue;
         find_successor_words(target_node, word_ids);
+    }
+}
+
+
+void
+Decoder::find_successor_words(vector<set<int> > &nodes)
+{
+    nodes.resize(m_nodes.size());
+    for (int i=0; i<m_nodes.size(); i++) {
+        set<int> word_ids;
+        find_successor_words(i, word_ids);
+        nodes[i] = word_ids;
     }
 }
 
