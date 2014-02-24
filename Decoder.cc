@@ -550,6 +550,8 @@ Decoder::move_token_to_node(Token token,
 
     Node &node = m_nodes[node_idx];
 
+    if (m_unigram_la_in_use) update_lookahead_prob(token, node.unigram_la_score);
+
     // HMM node
     if (node.hmm_state != -1) {
 
@@ -558,8 +560,6 @@ Decoder::move_token_to_node(Token token,
              m_acoustic_beam_pruned_count++;
              return;
         }
-
-        if (m_unigram_la_in_use) update_lookahead_prob(token, node.unigram_la_score);
 
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
@@ -581,10 +581,13 @@ Decoder::move_token_to_node(Token token,
     if (node.word_id != -1) {
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
         if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
-        if (m_unigram_la_in_use) update_lookahead_prob(token, node.unigram_la_score);
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
+            return;
+        }
+        if (token.total_log_prob < (m_best_word_end_prob-m_word_end_beam)) {
+            m_word_end_beam_pruned_count++;
             return;
         }
         token.word_end = true;
