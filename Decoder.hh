@@ -168,8 +168,8 @@ public:
     void sort_histories_by_best_lp(const std::set<WordHistory*> &histories,
                                    std::vector<WordHistory*> &sorted_histories);
 
-    void find_successor_words(int node_idx, std::set<int> &word_ids);
-    void find_successor_words(std::vector<std::set<int> > &nodes);
+    void find_successor_words(int node_idx, std::map<int, std::set<int> > &word_ids, bool start_node=false);
+    void find_successor_words(std::vector<std::map<int, std::set<int> > > &nodes);
     void set_unigram_la_scores();
 
     // Subwords

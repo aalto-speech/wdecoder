@@ -859,30 +859,39 @@ Decoder::reset_history_scores()
 
 
 void
-Decoder::find_successor_words(int node_idx, set<int> &word_ids)
+Decoder::find_successor_words(int node_idx, map<int, set<int> > &word_ids, bool start_node)
 {
     Node &node = m_nodes[node_idx];
 
-    if (node.word_id != -1) {
-        word_ids.insert(node.word_id);
+    if (!start_node && node.word_id != -1) {
+        auto wids = word_ids.find(node.word_id);
+        if (wids == word_ids.end()) {
+            set<int> tmp;
+            tmp.insert(node_idx);
+            word_ids[node.word_id] = tmp;
+        }
+        else {
+            word_ids[node.word_id].insert(node_idx);
+        }
         return;
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         int target_node = ait->target_node;
         if (target_node == node_idx) continue;
-        find_successor_words(target_node, word_ids);
+        find_successor_words(target_node, word_ids, false);
     }
 }
 
 
 void
-Decoder::find_successor_words(vector<set<int> > &nodes)
+Decoder::find_successor_words(vector<map<int, set<int> > > &nodes)
 {
     nodes.resize(m_nodes.size());
     for (int i=0; i<m_nodes.size(); i++) {
-        set<int> word_ids;
-        find_successor_words(i, word_ids);
+        if (i % 10000 == 0) cerr << "node: " << i << endl;
+        map<int, set<int> > word_ids;
+        find_successor_words(i, word_ids, true);
         nodes[i] = word_ids;
     }
 }
@@ -891,16 +900,64 @@ Decoder::find_successor_words(vector<set<int> > &nodes)
 void
 Decoder::set_unigram_la_scores()
 {
+    vector<map<int, set<int> > > nodes;
+    find_successor_words(nodes);
+
     for (int i=0; i<m_nodes.size(); i++) {
-        set<int> word_ids;
-        find_successor_words(i, word_ids);
-        float node_best_la_prob = -1e20;
-        for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-            float la_lm_prob = 0.0;
-            m_la_lm.walk(m_la_lm.empty_node_id(), m_subword_id_to_la_fsa_symbol[*wit], &la_lm_prob);
-            node_best_la_prob = max(node_best_la_prob, la_lm_prob);
+        map<int, set<int> > &word_ids = nodes[i];
+        cerr << "node: " << i << "\t" << word_ids.size() << endl;
+        if (word_ids.size() > 1) {
+            float node_best_la_prob = -1e20;
+            for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
+                float la_lm_prob = 0.0;
+                m_la_lm.walk(m_la_lm.empty_node_id(), m_subword_id_to_la_fsa_symbol[wit->first], &la_lm_prob);
+                node_best_la_prob = max(node_best_la_prob, la_lm_prob);
+            }
+            m_nodes[i].unigram_la_score = node_best_la_prob;
         }
-        m_nodes[i].unigram_la_score = node_best_la_prob;
+        else if (word_ids.size() == 1) {
+            // First step with unigram la
+            float la_lm_prob = 0.0;
+            m_la_lm.walk(m_la_lm.empty_node_id(), m_subword_id_to_la_fsa_symbol[word_ids.begin()->first], &la_lm_prob);
+            float dummy = 0.0;
+            int fsa_state = m_lm.walk(m_lm.empty_node_id(), m_subword_id_to_fsa_symbol[word_ids.begin()->first], &dummy);
+
+            // Possible following word ids without branching with normal lm
+            set<int> next_word_ids;
+            set<int> next_nodes;
+            for (auto nit = word_ids.begin()->second.begin();
+                      nit != word_ids.begin()->second.end();
+                      ++nit) {
+                next_nodes.insert(*nit);
+                next_word_ids.insert(m_nodes[*nit].word_id);
+            }
+
+            while (next_word_ids.size() == 1) {
+                fsa_state = m_lm.walk(fsa_state, m_subword_id_to_fsa_symbol[*(next_word_ids.begin())], &la_lm_prob);
+                set<int> temp_nodes = next_nodes;
+                next_word_ids.clear();
+                next_nodes.clear();
+                for (auto tnit = temp_nodes.begin(); tnit != temp_nodes.end(); ++tnit) {
+                    map<int, set<int> > &temps = nodes[*tnit];
+                    for (auto nit = temps.begin()->second.begin();
+                              nit != temps.begin()->second.end();
+                              ++nit) {
+                        next_nodes.insert(*nit);
+                        next_word_ids.insert(m_nodes[*nit].word_id);
+                    }
+                }
+            }
+
+            // First branching with respect to word ids, normal lm
+            float node_best_la_prob = -1e20;
+            for (auto wit = next_word_ids.begin(); wit != next_word_ids.end(); ++wit) {
+                float next_la_lm_prob = 0.0;
+                m_lm.walk(fsa_state, m_subword_id_to_fsa_symbol[*wit], &next_la_lm_prob);
+                node_best_la_prob = max(node_best_la_prob, next_la_lm_prob);
+            }
+
+            m_nodes[i].unigram_la_score = node_best_la_prob + la_lm_prob;
+        }
     }
 }
 
