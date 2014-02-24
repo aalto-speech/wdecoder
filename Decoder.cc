@@ -551,6 +551,7 @@ Decoder::move_token_to_node(Token token,
     Node &node = m_nodes[node_idx];
 
     if (m_unigram_la_in_use) update_lookahead_prob(token, node.unigram_la_score);
+    if ((node.flags & NODE_FAN_OUT_DUMMY) || node_idx == END_NODE) token.word_end = true;
 
     // HMM node
     if (node.hmm_state != -1) {
@@ -586,11 +587,6 @@ Decoder::move_token_to_node(Token token,
             m_global_beam_pruned_count++;
             return;
         }
-        if (token.total_log_prob < (m_best_word_end_prob-m_word_end_beam)) {
-            m_word_end_beam_pruned_count++;
-            return;
-        }
-        token.word_end = true;
         advance_in_history(token, node.word_id);
     }
 
