@@ -371,6 +371,9 @@ Decoder::recognize_lna_file(string lnafname,
         for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
             Token &tok = *tit;
             if (tok.dur > 1) apply_duration_model(tok, tok.node_idx);
+            tok.lm_log_prob -= tok.lookahead_log_prob;
+            tok.lookahead_log_prob = 0.0;
+            tok.total_log_prob = get_token_log_prob(tok.am_log_prob, tok.lm_log_prob);
         }
     }
     if (m_force_sentence_end) add_sentence_ends(tokens);
