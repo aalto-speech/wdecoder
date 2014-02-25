@@ -3,6 +3,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -370,7 +371,7 @@ Decoder::recognize_lna_file(string lnafname,
 
     Token best_token = get_best_token(tokens);
     outf << lnafname << ":";
-    print_word_history(best_token.history, outf);
+    print_word_history(best_token.history, outf, true);
 
     m_global_beam = original_global_beam;
     m_acoustic_beam = original_acoustic_beam;
@@ -889,7 +890,7 @@ Decoder::find_successor_words(vector<map<int, set<int> > > &nodes)
 {
     nodes.resize(m_nodes.size());
     for (int i=0; i<m_nodes.size(); i++) {
-        if (i % 10000 == 0) cerr << "node: " << i << endl;
+        //if (i % 10000 == 0) cerr << "node: " << i << endl;
         map<int, set<int> > word_ids;
         find_successor_words(i, word_ids, true);
         nodes[i] = word_ids;
@@ -900,12 +901,14 @@ Decoder::find_successor_words(vector<map<int, set<int> > > &nodes)
 void
 Decoder::set_unigram_la_scores()
 {
-    vector<map<int, set<int> > > nodes;
-    find_successor_words(nodes);
+    unique_ptr<vector<map<int, set<int> > > > successors(new vector<map<int, set<int> > >);
+    find_successor_words(*successors);
 
     for (int i=0; i<m_nodes.size(); i++) {
-        map<int, set<int> > &word_ids = nodes[i];
-        cerr << "node: " << i << "\t" << word_ids.size() << endl;
+
+        map<int, set<int> > &word_ids = (*successors)[i];
+        //cerr << "node: " << i << "\t" << word_ids.size() << endl;
+
         if (word_ids.size() > 1) {
             float node_best_la_prob = -1e20;
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
@@ -923,34 +926,33 @@ Decoder::set_unigram_la_scores()
             int fsa_state = m_lm.walk(m_lm.empty_node_id(), m_subword_id_to_fsa_symbol[word_ids.begin()->first], &dummy);
 
             // Possible following word ids without branching with normal lm
-            set<int> next_word_ids;
-            set<int> next_nodes;
-            for (auto nit = word_ids.begin()->second.begin();
-                      nit != word_ids.begin()->second.end();
-                      ++nit) {
-                next_nodes.insert(*nit);
-                next_word_ids.insert(m_nodes[*nit].word_id);
+            unique_ptr<set<int> > next_word_ids(new set<int>);
+            unique_ptr<set<int> > next_nodes(new set<int>);
+            for (auto nit = word_ids.begin()->second.begin(); nit != word_ids.begin()->second.end(); ++nit) {
+                map<int, set<int> > &temp_word_ids = (*successors)[*nit];
+                for (auto wnit = temp_word_ids.begin(); wnit != temp_word_ids.end(); ++wnit) {
+                    next_word_ids->insert(wnit->first);
+                    next_nodes->insert(wnit->second.begin(), wnit->second.end());
+                }
             }
 
-            while (next_word_ids.size() == 1) {
-                fsa_state = m_lm.walk(fsa_state, m_subword_id_to_fsa_symbol[*(next_word_ids.begin())], &la_lm_prob);
-                set<int> temp_nodes = next_nodes;
-                next_word_ids.clear();
-                next_nodes.clear();
-                for (auto tnit = temp_nodes.begin(); tnit != temp_nodes.end(); ++tnit) {
-                    map<int, set<int> > &temps = nodes[*tnit];
-                    for (auto nit = temps.begin()->second.begin();
-                              nit != temps.begin()->second.end();
-                              ++nit) {
-                        next_nodes.insert(*nit);
-                        next_word_ids.insert(m_nodes[*nit].word_id);
+            while (next_word_ids->size() == 1) {
+                fsa_state = m_lm.walk(fsa_state, m_subword_id_to_fsa_symbol[*(next_word_ids->begin())], &la_lm_prob);
+                unique_ptr<set<int> > temp_nodes(new set<int>(*next_nodes));
+                next_word_ids->clear();
+                next_nodes->clear();
+                for (auto tnit = temp_nodes->begin(); tnit != temp_nodes->end(); ++tnit) {
+                    map<int, set<int> > &temp_word_ids = (*successors)[*tnit];
+                    for (auto wnit = temp_word_ids.begin(); wnit != temp_word_ids.end(); ++wnit) {
+                        next_word_ids->insert(wnit->first);
+                        next_nodes->insert(wnit->second.begin(), wnit->second.end());
                     }
                 }
             }
 
             // First branching with respect to word ids, normal lm
             float node_best_la_prob = -1e20;
-            for (auto wit = next_word_ids.begin(); wit != next_word_ids.end(); ++wit) {
+            for (auto wit = next_word_ids->begin(); wit != next_word_ids->end(); ++wit) {
                 float next_la_lm_prob = 0.0;
                 m_lm.walk(fsa_state, m_subword_id_to_fsa_symbol[*wit], &next_la_lm_prob);
                 node_best_la_prob = max(node_best_la_prob, next_la_lm_prob);
