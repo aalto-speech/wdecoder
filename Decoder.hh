@@ -105,6 +105,7 @@ public:
         m_state_beam_pruned_count = 0;
         m_history_beam_pruned_count = 0;
         m_acoustic_beam_pruned_count = 0;
+        m_max_state_duration_pruned_count = 0;
 
         DECODE_START_NODE = -1;
         SENTENCE_END_WORD_ID = -1;
@@ -130,6 +131,7 @@ public:
         m_empty_history = nullptr;
 
         m_word_boundary_penalty = 0.0;
+        m_max_state_duration = 80;
     };
 
     void read_phone_model(std::string phnfname);
@@ -171,6 +173,10 @@ public:
     void find_successor_words(int node_idx, std::map<int, std::set<int> > &word_ids, bool start_node=false);
     void find_successor_words(std::vector<std::map<int, std::set<int> > > &nodes);
     void set_unigram_la_scores();
+
+    float score_state_path(std::string lnafname,
+                           std::string sfname,
+                           bool duration_model=true);
 
     // Subwords
     std::vector<std::string> m_subwords;
@@ -231,6 +237,8 @@ private:
     bool m_duration_model_in_use;
     bool m_unigram_la_in_use;
     std::string m_word_boundary_symbol;
+    int m_word_boundary_symbol_idx;
+    int m_max_state_duration;
 
     float m_global_beam;
     float m_acoustic_beam;
@@ -250,6 +258,7 @@ private:
     int m_history_beam_pruned_count;
     int m_word_end_beam_pruned_count;
     int m_state_beam_pruned_count;
+    int m_max_state_duration_pruned_count;
     int m_dropped_count;
 
     int m_history_clean_frame_interval;

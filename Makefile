@@ -8,7 +8,7 @@ cxxflags = -O3 -march=native -std=gnu++0x -Wall -Wno-sign-compare
 
 ##################################################
 
-progs = dgraph decode
+progs = dgraph decode dummy
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
 srcs = conf.cc io.cc ArpaReader.cc LM.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc LnaReaderCircular.cc Decoder.cc gutils.cc

@@ -176,6 +176,7 @@ Decoder::read_config(string cfgfname)
         else if (parameter == "word_boundary_symbol") {
             m_use_word_boundary_symbol = true;
             ss >> m_word_boundary_symbol;
+            m_word_boundary_symbol_idx = m_subword_map[m_word_boundary_symbol];
         }
         else if (parameter == "debug") ss >> m_debug;
         else if (parameter == "stats") ss >> m_stats;
@@ -432,6 +433,7 @@ Decoder::propagate_tokens(void)
     m_best_word_end_prob = -1e20;
     m_global_beam_pruned_count = 0;
     m_acoustic_beam_pruned_count = 0;
+    m_max_state_duration_pruned_count = 0;
 
     vector<WordHistory*> histories;
     sort_histories_by_best_lp(m_active_histories, histories);
@@ -531,20 +533,25 @@ Decoder::move_token_to_node(Token token,
 {
     token.am_log_prob += m_transition_scale * transition_score;
 
-    if (m_duration_model_in_use) {
-        if (token.node_idx == node_idx) token.dur++;
-        else {
-            // Apply duration model for previous state if moved out from a hmm state
-            if (m_nodes[token.node_idx].hmm_state != -1) apply_duration_model(token, token.node_idx);
-            token.node_idx = node_idx;
-            token.dur = 1;
-        }
-    } else token.node_idx = node_idx;
-
     Node &node = m_nodes[node_idx];
 
+    if (token.node_idx == node_idx) {
+        token.dur++;
+        if (token.dur > m_max_state_duration && node.hmm_state > 3) {
+            m_max_state_duration_pruned_count++;
+            return;
+        }
+    }
+    else {
+        // Apply duration model for previous state if moved out from a hmm state
+        if (m_duration_model_in_use && m_nodes[token.node_idx].hmm_state != -1)
+            apply_duration_model(token, token.node_idx);
+        token.node_idx = node_idx;
+        token.dur = 1;
+    }
+
     if (m_unigram_la_in_use) update_lookahead_prob(token, node.unigram_la_score);
-    if ((node.flags & NODE_FAN_OUT_DUMMY) || node_idx == END_NODE) token.word_end = true;
+    //if ((node.flags & NODE_FAN_OUT_DUMMY) || node_idx == END_NODE) token.word_end = true;
 
     // HMM node
     if (node.hmm_state != -1) {
@@ -575,6 +582,7 @@ Decoder::move_token_to_node(Token token,
     if (node.word_id != -1) {
         token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
         if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
+        if (node.word_id != m_word_boundary_symbol_idx) token.word_end = true;
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
@@ -963,3 +971,51 @@ Decoder::set_unigram_la_scores()
     }
 }
 
+
+float
+Decoder::score_state_path(string lnafname,
+                          string sfname,
+                          bool duration_model)
+{
+    m_lna_reader.open_file(lnafname, 1024);
+    m_acoustics = &m_lna_reader;
+
+    ifstream sinf(sfname);
+    if (!sinf) throw string("Problem opening state path file.");
+
+    int start, end, state_idx;
+    string line;
+    int frame_idx = 0;
+
+    float gmm_score = 0.0;
+    float trans_score = 0.0;
+    float dur_score = 0.0;
+    float total_score = 0.0;
+    while (getline(sinf, line)) {
+        stringstream ncl(line);
+        ncl >> start >> end >> state_idx;
+        int dur = end-start;
+
+        HmmState &state = m_hmm_states[state_idx];
+        while (frame_idx < end) {
+            m_lna_reader.go_to(frame_idx);
+            gmm_score += m_acoustics->log_prob(state_idx);
+            trans_score += state.transitions[0].log_prob;
+            frame_idx++;
+            cerr << frame_idx << "\t" << gmm_score << "\t" << trans_score << "\t" << total_score << endl;
+        }
+        trans_score += state.transitions[1].log_prob;
+        //dur_score += m_duration_scale * m_hmm_states[state_idx].duration.get_log_prob(dur);
+        total_score = gmm_score + trans_score + dur_score;
+
+        //cerr << frame_idx << "\t" << gmm_score << "\t" << trans_score << "\t" << total_score << endl;
+    }
+
+    total_score = gmm_score + trans_score + dur_score;
+    cerr << "gmm: " << gmm_score << endl;
+    cerr << "trans: " << trans_score << endl;
+    cerr << "dur: " << dur_score << endl;
+    cerr << "total: " << total_score << endl;
+
+    m_lna_reader.close();
+}
