@@ -240,7 +240,7 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
             nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
             nodes[node_idx].arcs.back().target_node = nodes.size()-1;
             if (sidx == 2) {
-                nodes[DECODE_START_NODE].arcs.resize(1);
+                nodes[DECODE_START_NODE].arcs.resize(nodes[DECODE_START_NODE].arcs.size()+1);
                 nodes[DECODE_START_NODE].arcs.back().target_node = nodes.size()-1;
             }
             node_idx = nodes.size()-1;
@@ -263,6 +263,10 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
             nodes.back().arcs.back().target_node = nodes.size()-1;
             nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
             nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+            if (sidx == 2) {
+                nodes[DECODE_START_NODE].arcs.resize(nodes[DECODE_START_NODE].arcs.size()+1);
+                nodes[DECODE_START_NODE].arcs.back().target_node = nodes.size()-1;
+            }
             node_idx = nodes.size()-1;
         }
         nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
