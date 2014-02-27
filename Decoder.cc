@@ -326,19 +326,16 @@ Decoder::recognize_lna_file(string lnafname,
 
     time_t start_time, end_time;
     time(&start_time);
-
-    float original_global_beam = m_global_beam;
-    float original_acoustic_beam = m_acoustic_beam;
     int frame_idx = 0;
     while (m_lna_reader.go_to(frame_idx)) {
 
-        if (m_stats) cerr << endl << "recognizing frame: " << frame_idx << endl;
+        reset_frame_variables();
         propagate_tokens();
         prune_tokens();
         //if (frame_idx % m_history_clean_frame_interval == 0) prune_word_history();
 
-        frame_idx++;
         if (m_stats) {
+            cerr << endl << "recognized frame: " << frame_idx << endl;
             cerr << "current global beam: " << m_global_beam << endl;
             cerr << "current acoustic beam: " << m_acoustic_beam << endl;
             cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
@@ -350,13 +347,14 @@ Decoder::recognize_lna_file(string lnafname,
             cerr << "number of active nodes: " << m_active_nodes.size() << endl;
             print_best_word_history(outf);
         }
-    }
 
+        frame_idx++;
+    }
     time(&end_time);
 
     vector<Token> tokens;
     for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
-        map<int, Token> & node_tokens = m_recombined_tokens[*nit];
+        map<int, Token> &node_tokens = m_recombined_tokens[*nit];
         for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit)
             tokens.push_back(tit->second);
     }
@@ -373,8 +371,6 @@ Decoder::recognize_lna_file(string lnafname,
     outf << lnafname << ":";
     print_word_history(best_token.history, outf, false);
 
-    m_global_beam = original_global_beam;
-    m_acoustic_beam = original_acoustic_beam;
     clear_word_history();
     m_lna_reader.close();
 
@@ -392,6 +388,7 @@ Decoder::initialize()
     m_word_history_leafs.clear();
     m_raw_tokens.clear();
     m_raw_tokens.reserve(1000000);
+    m_recombined_tokens.clear();
     m_recombined_tokens.resize(m_nodes.size());
     m_best_node_scores.resize(m_nodes.size(), -1e20);
     m_active_nodes.clear();
@@ -403,8 +400,26 @@ Decoder::initialize()
     m_active_nodes.insert(DECODE_START_NODE);
     m_recombined_tokens[DECODE_START_NODE][m_lm.initial_node_id()] = tok;
     m_active_histories.insert(tok.history);
-    m_empty_history = tok.history;
     m_word_history_leafs.insert(tok.history);
+}
+
+
+void
+Decoder::reset_frame_variables()
+{
+    m_token_count = 0;
+    m_propagated_count = 0;
+    m_best_log_prob = -1e20;
+    m_best_am_log_prob = -1e20;
+    m_best_word_end_prob = -1e20;
+    m_global_beam_pruned_count = 0;
+    m_acoustic_beam_pruned_count = 0;
+    m_max_state_duration_pruned_count = 0;
+    m_history_beam_pruned_count = 0;
+    m_word_end_beam_pruned_count = 0;
+    m_state_beam_pruned_count = 0;
+    m_dropped_count = 0;
+    m_token_count_after_pruning = 0;
 }
 
 
@@ -430,15 +445,6 @@ Decoder::active_nodes_sorted_by_best_lp(vector<int> &nodes)
 void
 Decoder::propagate_tokens(void)
 {
-    m_token_count = 0;
-    m_propagated_count = 0;
-    m_best_log_prob = -1e20;
-    m_best_am_log_prob = -1e20;
-    m_best_word_end_prob = -1e20;
-    m_global_beam_pruned_count = 0;
-    m_acoustic_beam_pruned_count = 0;
-    m_max_state_duration_pruned_count = 0;
-
     vector<int> sorted_active_nodes;
     active_nodes_sorted_by_best_lp(sorted_active_nodes);
 
@@ -471,13 +477,8 @@ Decoder::propagate_tokens(void)
 void
 Decoder::prune_tokens(void)
 {
-    m_history_beam_pruned_count = 0;
-    m_word_end_beam_pruned_count = 0;
-    m_state_beam_pruned_count = 0;
-    m_dropped_count = 0;
-    m_token_count_after_pruning = 0;
     vector<Token> pruned_tokens;
-    pruned_tokens.reserve(m_raw_tokens.size());
+    pruned_tokens.reserve(50000);
 
     // Global beam pruning
     // Global acoustic beam pruning
@@ -497,6 +498,7 @@ Decoder::prune_tokens(void)
         else
             pruned_tokens.push_back(tok);
     }
+    m_raw_tokens.clear();
 
     // Collect best tokens for each node/fsa state pair
     m_active_nodes.clear();
@@ -523,7 +525,6 @@ Decoder::prune_tokens(void)
     }
 
     if (m_stats) cerr << "token count after pruning: " << m_token_count_after_pruning << endl;
-    m_raw_tokens.clear();
 }
 
 

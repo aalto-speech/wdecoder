@@ -123,7 +123,6 @@ public:
         m_active_node_limit = 50000;
 
         m_history_clean_frame_interval = 10;
-        m_empty_history = nullptr;
 
         m_word_boundary_penalty = 0.0;
         m_max_state_duration = 80;
@@ -147,6 +146,7 @@ public:
                             double *am_prob=nullptr,
                             double *lm_prob=nullptr);
     void initialize();
+    void reset_frame_variables();
     void propagate_tokens();
     void prune_tokens();
     void move_token_to_node(Token token, int node_idx, float transition_score);
