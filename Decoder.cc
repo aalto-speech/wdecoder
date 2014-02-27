@@ -898,28 +898,12 @@ Decoder::find_successor_words(int node_idx, map<int, set<int> > &word_ids, bool 
 
 
 void
-Decoder::find_successor_words(vector<map<int, set<int> > > &nodes)
-{
-    nodes.resize(m_nodes.size());
-    for (int i=0; i<m_nodes.size(); i++) {
-        //if (i % 10000 == 0) cerr << "node: " << i << endl;
-        map<int, set<int> > word_ids;
-        find_successor_words(i, word_ids, true);
-        nodes[i] = word_ids;
-    }
-}
-
-
-void
 Decoder::set_unigram_la_scores()
 {
-    unique_ptr<vector<map<int, set<int> > > > successors(new vector<map<int, set<int> > >);
-    find_successor_words(*successors);
-
     for (int i=0; i<m_nodes.size(); i++) {
 
-        map<int, set<int> > &word_ids = (*successors)[i];
-        //cerr << "node: " << i << "\t" << word_ids.size() << endl;
+        map<int, set<int> > word_ids;
+        find_successor_words(i, word_ids, true);
 
         if (word_ids.size() > 1) {
             float node_best_la_prob = -1e20;
@@ -941,7 +925,8 @@ Decoder::set_unigram_la_scores()
             unique_ptr<set<int> > next_word_ids(new set<int>);
             unique_ptr<set<int> > next_nodes(new set<int>);
             for (auto nit = word_ids.begin()->second.begin(); nit != word_ids.begin()->second.end(); ++nit) {
-                map<int, set<int> > &temp_word_ids = (*successors)[*nit];
+                map<int, set<int> > temp_word_ids;
+                find_successor_words(*nit, temp_word_ids, true);
                 for (auto wnit = temp_word_ids.begin(); wnit != temp_word_ids.end(); ++wnit) {
                     next_word_ids->insert(wnit->first);
                     next_nodes->insert(wnit->second.begin(), wnit->second.end());
@@ -954,7 +939,8 @@ Decoder::set_unigram_la_scores()
                 next_word_ids->clear();
                 next_nodes->clear();
                 for (auto tnit = temp_nodes->begin(); tnit != temp_nodes->end(); ++tnit) {
-                    map<int, set<int> > &temp_word_ids = (*successors)[*tnit];
+                    map<int, set<int> > temp_word_ids;
+                    find_successor_words(*tnit, temp_word_ids, true);
                     for (auto wnit = temp_word_ids.begin(); wnit != temp_word_ids.end(); ++wnit) {
                         next_word_ids->insert(wnit->first);
                         next_nodes->insert(wnit->second.begin(), wnit->second.end());

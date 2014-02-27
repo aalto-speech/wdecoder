@@ -164,7 +164,6 @@ public:
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
 
     void find_successor_words(int node_idx, std::map<int, std::set<int> > &word_ids, bool start_node=false);
-    void find_successor_words(std::vector<std::map<int, std::set<int> > > &nodes);
     void set_unigram_la_scores();
 
     float score_state_path(std::string lnafname,
