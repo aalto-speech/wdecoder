@@ -973,7 +973,7 @@ Decoder::score_state_path(string lnafname,
     ifstream sinf(sfname);
     if (!sinf) throw string("Problem opening state path file.");
 
-    int start, end, state_idx;
+    int start=-1, end=-1, state_idx=-1;
     string line;
     int frame_idx = 0;
 
@@ -986,21 +986,25 @@ Decoder::score_state_path(string lnafname,
         ncl >> start >> end >> state_idx;
         int dur = end-start;
 
+        if (state_idx != -1)
+            trans_score += m_hmm_states[state_idx].transitions[1].log_prob;
         HmmState &state = m_hmm_states[state_idx];
         while (frame_idx < end) {
             m_lna_reader.go_to(frame_idx);
             gmm_score += m_acoustics->log_prob(state_idx);
-            trans_score += state.transitions[0].log_prob;
+            if (frame_idx != start)
+                trans_score += state.transitions[0].log_prob;
             frame_idx++;
-            cerr << frame_idx << "\t" << gmm_score << "\t" << trans_score << "\t" << total_score << endl;
+            total_score = gmm_score + trans_score + dur_score;
         }
-        trans_score += state.transitions[1].log_prob;
         if (duration_model && m_duration_model_in_use)
             dur_score += m_duration_scale * m_hmm_states[state_idx].duration.get_log_prob(dur);
+
         total_score = gmm_score + trans_score + dur_score;
 
-        //cerr << frame_idx << "\t" << gmm_score << "\t" << trans_score << "\t" << total_score << endl;
+        cerr << frame_idx << "\t" << gmm_score << "\t" << trans_score << "\t" << total_score << endl;
     }
+    HmmState &state = m_hmm_states[state_idx];
 
     total_score = gmm_score + trans_score + dur_score;
     cerr << "gmm: " << gmm_score << endl;
