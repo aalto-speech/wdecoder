@@ -491,7 +491,7 @@ Decoder::prune_tokens(void)
         Token &tok = m_raw_tokens[i];
         if (tok.total_log_prob < current_glob_beam)
             m_global_beam_pruned_count++;
-        if (tok.am_log_prob < current_acoustic_beam)
+        else if (tok.am_log_prob < current_acoustic_beam)
             m_acoustic_beam_pruned_count++;
         else if (tok.word_end && tok.total_log_prob < current_word_end_beam)
             m_word_end_beam_pruned_count++;
