@@ -44,12 +44,13 @@ public:
     class WordHistory {
     public:
         WordHistory()
-            : word_id(-1), previous(nullptr) { }
+            : word_id(-1), previous(nullptr), best_am_log_prob(-1e20) { }
         WordHistory(int word_id, WordHistory *previous)
-            : word_id(word_id), previous(previous) { }
+            : word_id(word_id), previous(previous), best_am_log_prob(-1e20) { }
         int word_id;
         WordHistory *previous;
         std::map<int, WordHistory*> next;
+        float best_am_log_prob;
     };
 
     class Token {
@@ -118,7 +119,6 @@ public:
         m_word_end_beam = 0.0;
         m_state_beam = 0.0;
 
-        m_history_limit = 50000;
         m_token_limit = 500000;
         m_active_node_limit = 50000;
 
@@ -217,14 +217,14 @@ private:
     void prune_word_history();
     void set_word_boundaries();
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
+    void reset_history_scores();
 
     int m_debug;
     int m_stats;
 
     float m_lm_scale;
     float m_duration_scale;
-    float m_transition_scale; // Temporary scaling used for self transitions
-    int m_history_limit;
+    float m_transition_scale;
     int m_token_limit;
     int m_active_node_limit;
     int m_token_count;

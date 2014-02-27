@@ -159,7 +159,6 @@ Decoder::read_config(string cfgfname)
         ss >> parameter;
         if (parameter == "lm_scale") ss >> m_lm_scale;
         else if (parameter == "token_limit") ss >> m_token_limit;
-        else if (parameter == "history_limit") ss >> m_history_limit;
         else if (parameter == "node_limit") ss >> m_active_node_limit;
         else if (parameter == "duration_scale") ss >> m_duration_scale;
         else if (parameter == "transition_scale") ss >> m_transition_scale;
@@ -193,7 +192,6 @@ Decoder::print_config(ostream &outf)
 {
     outf << std::boolalpha;
     outf << "lm scale: " << m_lm_scale << endl;
-    //outf << "history limit: " << m_history_limit << endl;
     outf << "active node limit: " << m_active_node_limit << endl;
     outf << "token limit: " << m_token_limit << endl;
     outf << "duration scale: " << m_duration_scale << endl;
@@ -203,8 +201,8 @@ Decoder::print_config(ostream &outf)
     if (m_use_word_boundary_symbol)
         outf << "word boundary symbol: " << m_word_boundary_symbol << endl;
     outf << "global beam: " << m_global_beam << endl;
-    outf << "acoustic beam: " << m_acoustic_beam << endl;
-    //outf << "acoustic history beam: " << m_history_beam << endl;
+    outf << "acoustic global beam: " << m_acoustic_beam << endl;
+    outf << "acoustic history beam: " << m_history_beam << endl;
     outf << "word end beam: " << m_word_end_beam << endl;
     outf << "word boundary penalty: " << m_word_boundary_penalty << endl;
     outf << "history clean frame interval: " << m_history_clean_frame_interval << endl;
@@ -345,7 +343,7 @@ Decoder::recognize_lna_file(string lnafname,
             cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
             cerr << "tokens pruned by acoustic beam: " << m_acoustic_beam_pruned_count << endl;
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
-            //cerr << "tokens pruned by acoustic history beam: " << m_history_beam_pruned_count << endl;
+            cerr << "tokens pruned by acoustic history beam: " << m_history_beam_pruned_count << endl;
             cerr << "tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
             cerr << "best log probability: " << m_best_log_prob << endl;
             cerr << "number of active nodes: " << m_active_nodes.size() << endl;
@@ -424,6 +422,7 @@ Decoder::reset_frame_variables()
     m_state_beam_pruned_count = 0;
     m_dropped_count = 0;
     m_token_count_after_pruning = 0;
+    reset_history_scores();
 }
 
 
@@ -497,6 +496,8 @@ Decoder::prune_tokens(void)
             m_global_beam_pruned_count++;
         else if (tok.am_log_prob < current_acoustic_beam)
             m_acoustic_beam_pruned_count++;
+        else if (tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam)
+            m_history_beam_pruned_count++;
         else if (tok.word_end && tok.total_log_prob < current_word_end_beam)
             m_word_end_beam_pruned_count++;
         else
@@ -577,6 +578,7 @@ Decoder::move_token_to_node(Token token,
         m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
         m_best_am_log_prob = max(m_best_am_log_prob, token.am_log_prob);
         if (token.word_end) m_best_word_end_prob = max(m_best_word_end_prob, token.total_log_prob);
+        token.history->best_am_log_prob = max(token.history->best_am_log_prob, token.am_log_prob);
         m_raw_tokens.push_back(token);
         return;
     }
@@ -843,6 +845,22 @@ Decoder::set_word_boundaries()
         }
         cerr << "word boundary count: " << wbcount+1 << endl;
         m_nodes[START_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
+    }
+}
+
+
+void
+Decoder::reset_history_scores()
+{
+    for (auto histit = m_word_history_leafs.begin(); histit != m_word_history_leafs.end(); ++histit) {
+        WordHistory *history = *histit;
+        history->best_am_log_prob = -1e20;
+        if (history->previous != NULL) {
+            history->previous->best_am_log_prob = -1e20;
+            if (history->previous->previous != NULL) {
+                history->previous->previous->best_am_log_prob = -1e20;
+            }
+        }
     }
 }
 
