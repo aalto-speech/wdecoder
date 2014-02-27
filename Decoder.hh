@@ -44,19 +44,12 @@ public:
     class WordHistory {
     public:
         WordHistory()
-            : word_id(-1), previous(nullptr),
-              best_am_log_prob(-1e20), best_total_log_prob(-1e20),
-              tokens(nullptr) { }
+            : word_id(-1), previous(nullptr) { }
         WordHistory(int word_id, WordHistory *previous)
-            : word_id(word_id), previous(previous),
-              best_am_log_prob(-1e20), best_total_log_prob(-1e20),
-              tokens(nullptr) { }
+            : word_id(word_id), previous(previous) { }
         int word_id;
         WordHistory *previous;
         std::map<int, WordHistory*> next;
-        float best_am_log_prob;
-        float best_total_log_prob;
-        std::unordered_map<int, Decoder::Token> *tokens;
     };
 
     class Token {
@@ -98,6 +91,7 @@ public:
         m_token_count = 0;
         m_propagated_count = 0;
         m_token_count_after_pruning = 0;
+        m_word_boundary_symbol_idx = -1;
 
         m_dropped_count = 0;
         m_global_beam_pruned_count = 0;
@@ -126,6 +120,7 @@ public:
 
         m_history_limit = 50000;
         m_token_limit = 500000;
+        m_active_node_limit = 50000;
 
         m_history_clean_frame_interval = 10;
         m_empty_history = nullptr;
@@ -167,8 +162,6 @@ public:
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
-    void sort_histories_by_best_lp(const std::set<WordHistory*> &histories,
-                                   std::vector<WordHistory*> &sorted_histories);
 
     void find_successor_words(int node_idx, std::map<int, std::set<int> > &word_ids, bool start_node=false);
     void find_successor_words(std::vector<std::map<int, std::set<int> > > &nodes);
@@ -205,8 +198,12 @@ public:
 
     std::vector<Node> m_nodes;
     std::set<WordHistory*> m_word_history_leafs;
-    std::vector<Token> m_raw_tokens;
     std::set<WordHistory*> m_active_histories;
+
+    std::vector<Token> m_raw_tokens;
+    std::set<int> m_active_nodes;
+    std::vector<std::map<int, Token> > m_recombined_tokens;
+    std::vector<float> m_best_node_scores;
 
 private:
 
@@ -217,9 +214,9 @@ private:
     void set_subword_id_fsa_symbol_mapping();
     void set_subword_id_la_fsa_symbol_mapping();
     void clear_word_history();
-    void reset_history_scores();
     void prune_word_history();
     void set_word_boundaries();
+    void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
 
     int m_debug;
     int m_stats;
@@ -229,6 +226,7 @@ private:
     float m_transition_scale; // Temporary scaling used for self transitions
     int m_history_limit;
     int m_token_limit;
+    int m_active_node_limit;
     int m_token_count;
     int m_propagated_count;
     int m_token_count_after_pruning;
