@@ -148,7 +148,7 @@ public:
     void initialize();
     void reset_frame_variables();
     void propagate_tokens();
-    void prune_tokens();
+    void prune_tokens(bool collect_active_histories=false);
     void move_token_to_node(Token token, int node_idx, float transition_score);
     inline float get_token_log_prob(float am_score, float lm_score);
     inline void advance_in_history(Token& token, int word_id);

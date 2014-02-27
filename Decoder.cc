@@ -333,8 +333,12 @@ Decoder::recognize_lna_file(string lnafname,
 
         reset_frame_variables();
         propagate_tokens();
-        prune_tokens();
-        //if (frame_idx % m_history_clean_frame_interval == 0) prune_word_history();
+
+        if (frame_idx % m_history_clean_frame_interval == 0) {
+            prune_tokens(true);
+            prune_word_history();
+        }
+        else prune_tokens(false);
 
         if (m_stats) {
             cerr << endl << "recognized frame: " << frame_idx << endl;
@@ -423,6 +427,7 @@ Decoder::reset_frame_variables()
     m_dropped_count = 0;
     m_token_count_after_pruning = 0;
     reset_history_scores();
+    m_active_histories.clear();
 }
 
 
@@ -478,7 +483,7 @@ Decoder::propagate_tokens(void)
 
 
 void
-Decoder::prune_tokens(void)
+Decoder::prune_tokens(bool collect_active_histories)
 {
     vector<Token> pruned_tokens;
     pruned_tokens.reserve(50000);
@@ -507,7 +512,6 @@ Decoder::prune_tokens(void)
 
     // Collect best tokens for each node/fsa state pair
     m_active_nodes.clear();
-    m_active_histories.clear();
     fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
         std::map<int, Token> &node_tokens = m_recombined_tokens[tit->node_idx];
@@ -515,7 +519,8 @@ Decoder::prune_tokens(void)
         if (bntit != node_tokens.end()) {
             if (tit->total_log_prob > bntit->second.total_log_prob) {
                 bntit->second = *tit;
-                //m_active_histories.insert(tit->history);
+                if (collect_active_histories)
+                    m_active_histories.insert(tit->history);
                 m_best_node_scores[tit->node_idx] = max(m_best_node_scores[tit->node_idx], tit->total_log_prob);
             }
             m_dropped_count++;
@@ -525,7 +530,8 @@ Decoder::prune_tokens(void)
             m_active_nodes.insert(tit->node_idx);
             m_token_count_after_pruning++;
             m_best_node_scores[tit->node_idx] = max(m_best_node_scores[tit->node_idx], tit->total_log_prob);
-            //m_active_histories.insert(tit->history);
+            if (collect_active_histories)
+                m_active_histories.insert(tit->history);
         }
     }
 
