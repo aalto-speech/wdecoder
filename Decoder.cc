@@ -338,40 +338,27 @@ Decoder::recombined_to_vector(std::vector<Token> &raw_tokens)
 }
 
 
-void
+bool
 Decoder::track_result(std::vector<Token> &tokens)
 {
-    map<WordHistory*, string> history_to_string;
-    map<WordHistory*, int> token_counts;
-    string curr_path_string;
+    map<WordHistory*, set<Token> > token_counts;
 
-    cerr << "Longest result path in word history:";
-    WordHistory *curr_history = m_empty_history;
-    for (auto trit = m_tracked_result.begin(); trit != m_tracked_result.end(); ++trit) {
-        auto hit = curr_history->next.find(*trit);
-        if (hit != curr_history->next.end()) {
-            cerr << " " << m_subwords[*trit];
-            curr_path_string += " " + m_subwords[*trit];
-            history_to_string[curr_history] = curr_path_string;
-            token_counts[curr_history] = 0;
-            curr_history = hit->second;
-        }
-        else {
-            cerr << endl;
-            break;
-        }
-    }
-
-    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        if (token_counts.find(tit->history) != token_counts.end()) {
+    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit)
+        if (m_tracked_histories.find(tit->history) != m_tracked_histories.end())
             token_counts[tit->history]++;
+
+    int histcounts = 0;
+    for (auto tcit = token_counts.begin(); tcit != token_counts.end(); ++tcit) {
+        if (tcit->second > 0) {
+            string whs;
+            word_history_to_string(tcit->first, whs);
+            cerr << "\t" << tcit->second << " tokens for path: " << whs << endl;
+            histcounts++;
         }
     }
 
-    for (auto tcit = token_counts.begin(); tcit != token_counts.end(); ++tcit) {
-        if (tcit->second > 0)
-            cerr << "\t" << tcit->second << " tokens for path: " << history_to_string[tcit->first] << endl;
-    }
+    if (histcounts > 0) return true;
+    else return false;
 }
 
 
@@ -388,6 +375,19 @@ Decoder::recognize_lna_file(string lnafname,
     m_acoustics = &m_lna_reader;
     initialize();
 
+    if (m_track_result) {
+        WordHistory* curr_history = m_empty_history;
+        for (auto trit = m_tracked_result.begin(); trit != m_tracked_result.end(); ++trit) {
+            cerr << "advancing history with: " << m_subwords[*trit] << " " << *trit << endl;
+            curr_history->next[*trit] = new WordHistory(*trit, curr_history);
+            curr_history = curr_history->next[*trit];
+            if (trit != m_tracked_result.begin())
+                m_tracked_histories.insert(curr_history);
+        }
+        m_word_history_leafs.erase(m_empty_history);
+        m_word_history_leafs.insert(curr_history);
+    }
+
     time_t start_time, end_time;
     time(&start_time);
     int frame_idx = 0;
@@ -396,23 +396,23 @@ Decoder::recognize_lna_file(string lnafname,
         reset_frame_variables();
         propagate_tokens();
 
+        cerr << endl;
         if (m_track_result) {
-            cerr << endl;
-            cerr << "frame " << frame_idx << " after propagation" << endl;
-            track_result(m_raw_tokens);
+            cerr << "frame " << frame_idx << " after propagation" << endl;;
+            bool hists = track_result(m_raw_tokens);
+            //if (!hists && frame_idx > 10) exit(1);
         }
 
-        if (frame_idx % m_history_clean_frame_interval == 0) {
-            prune_tokens(true);
-            prune_word_history();
-        }
-        else prune_tokens(false);
+        prune_tokens(true);
+        //if (frame_idx % m_history_clean_frame_interval == 0)
+        //    prune_word_history();
 
         vector<Token> track_tokens;
         recombined_to_vector(track_tokens);
         if (m_track_result) {
-            cerr << "frame " << frame_idx << " after pruning" << endl;
-            track_result(track_tokens);
+            cerr << endl << "frame " << frame_idx << " after pruning" << endl;
+            bool hists = track_result(track_tokens);
+            //if (!hists && frame_idx > 10) exit(1);
         }
 
         if (m_stats) {
@@ -573,14 +573,26 @@ Decoder::prune_tokens(bool collect_active_histories)
     float current_word_end_beam = m_best_word_end_prob - m_word_end_beam;
     for (int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
-        if (tok.total_log_prob < current_glob_beam)
+        if (tok.total_log_prob < current_glob_beam) {
+            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end())
+                cerr << "\ttoken pruned by global beam" << endl;
             m_global_beam_pruned_count++;
-        else if (tok.am_log_prob < current_acoustic_beam)
+        }
+        else if (tok.am_log_prob < current_acoustic_beam) {
+            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end())
+                cerr << "\ttoken pruned by acoustic beam" << endl;
             m_acoustic_beam_pruned_count++;
-        else if (tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam)
+        }
+        else if (tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam) {
+            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end())
+                cerr << "\ttoken pruned by history beam" << endl;
             m_history_beam_pruned_count++;
-        else if (tok.word_end && tok.total_log_prob < current_word_end_beam)
+        }
+        else if (tok.word_end && tok.total_log_prob < current_word_end_beam) {
+            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end())
+                cerr << "\ttoken pruned by word end beam" << endl;
             m_word_end_beam_pruned_count++;
+        }
         else
             pruned_tokens.push_back(tok);
     }
@@ -673,6 +685,8 @@ Decoder::move_token_to_node(Token token,
         if (node.word_id != m_word_boundary_symbol_idx) token.word_end = true;
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
+            if (m_tracked_histories.find(token.history) != m_tracked_histories.end())
+                cerr << "\ttoken pruned by global beam" << endl;
             m_global_beam_pruned_count++;
             return;
         }
@@ -829,6 +843,24 @@ Decoder::print_best_word_history(ostream &outf)
 
 
 void
+Decoder::word_history_to_string(WordHistory *history,
+                                std::string &whs)
+{
+    whs.clear();
+    vector<int> subwords;
+    while (true) {
+        subwords.push_back(history->word_id);
+        if (history->previous == nullptr) break;
+        history = history->previous;
+    }
+    for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
+        if (swit != subwords.rbegin()) whs += " ";
+        if ((*swit) >= 0) whs += m_subwords[*swit];
+    }
+}
+
+
+void
 Decoder::print_word_history(WordHistory *history,
                             ostream &outf,
                             bool print_lm_probs)
@@ -937,11 +969,9 @@ Decoder::reset_history_scores()
     for (auto histit = m_word_history_leafs.begin(); histit != m_word_history_leafs.end(); ++histit) {
         WordHistory *history = *histit;
         history->best_am_log_prob = -1e20;
-        if (history->previous != NULL) {
+        while (history->previous != NULL) {
             history->previous->best_am_log_prob = -1e20;
-            if (history->previous->previous != NULL) {
-                history->previous->previous->best_am_log_prob = -1e20;
-            }
+            history = history->previous;
         }
     }
 }

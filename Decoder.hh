@@ -161,6 +161,8 @@ public:
     Token get_best_token(std::vector<Token> &tokens);
     void add_sentence_ends(std::vector<Token> &tokens);
     void print_best_word_history(std::ostream &outf=std::cout);
+    void word_history_to_string(WordHistory *history,
+                                std::string &whs);
     void print_word_history(WordHistory *history,
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
@@ -175,7 +177,7 @@ public:
 
     void set_tracked_result(std::string result);
     int recombined_to_vector(std::vector<Token> &raw_tokens);
-    void track_result(std::vector<Token> &tokens);
+    bool track_result(std::vector<Token> &tokens);
 
     // Subwords
     std::vector<std::string> m_subwords;
@@ -270,6 +272,7 @@ private:
 
     bool m_track_result;
     std::vector<int> m_tracked_result;
+    std::set<WordHistory*> m_tracked_histories;
 };
 
 #endif /* DECODER_HH */
