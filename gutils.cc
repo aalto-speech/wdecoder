@@ -94,6 +94,30 @@ get_hmm_states_cw(DecoderGraph &dg,
 }
 
 
+void
+find_successor_word(vector<DecoderGraph::Node> &nodes,
+                    set<pair<int, int> > &matches,
+                    int word_id,
+                    int node_idx,
+                    int depth)
+{
+    DecoderGraph::Node &node = nodes[node_idx];
+    if (depth > 0) {
+        if (node.word_id == word_id) {
+            matches.insert(make_pair(node_idx, depth));
+            return;
+        }
+        else if (node.word_id != -1)
+            return;
+    }
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        if (*ait == node_idx) continue;
+        find_successor_word(nodes, matches, word_id, *ait, depth+1);
+    }
+}
+
+
 bool
 assert_path(DecoderGraph &dg,
             vector<DecoderGraph::Node> &nodes,

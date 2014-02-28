@@ -1133,3 +1133,29 @@ Decoder::score_state_path(string lnafname,
     m_lna_reader.close();
     return total_score;
 }
+
+
+void
+Decoder::find_successor_word(std::set<std::pair<int, int> > &found,
+                             int word_id,
+                             int node_idx,
+                             int depth)
+{
+    Node &node = m_nodes[node_idx];
+    if (depth > 0) {
+        if (node.word_id == word_id) {
+            found.insert(make_pair(node_idx, depth));
+            return;
+        }
+        else if (node.word_id != -1)
+            return;
+    }
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        if (ait->target_node == node_idx) continue;
+        find_successor_word(found, word_id, ait->target_node, depth+1);
+    }
+}
+
+
+

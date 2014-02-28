@@ -179,6 +179,11 @@ public:
     int recombined_to_vector(std::vector<Token> &raw_tokens);
     bool track_result(std::vector<Token> &tokens);
 
+    void find_successor_word(std::set<std::pair<int, int> > &found,
+                             int word_id,
+                             int node_idx,
+                             int depth=0);
+
     // Subwords
     std::vector<std::string> m_subwords;
     // Mapping from text units to indices

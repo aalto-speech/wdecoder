@@ -30,6 +30,11 @@ void get_hmm_states_cw(DecoderGraph &dg,
                        std::string wrd1,
                        std::string wrd2,
                        std::vector<int> &states);
+void find_successor_word(std::vector<DecoderGraph::Node> &nodes,
+                         std::set<std::pair<int, int> > &matches,
+                         int word_id,
+                         int node_idx=START_NODE,
+                         int depth=0);
 bool assert_path(DecoderGraph &dg,
                  std::vector<DecoderGraph::Node> &nodes,
                  std::deque<int> states,
@@ -74,7 +79,7 @@ bool assert_only_segmented_words(DecoderGraph &dg,
                                  bool debug=false,
                                  std::deque<int> states = std::deque<int>(),
                                  std::deque<int> subwords = std::deque<int>(),
-                                 int node_idx = START_NODE);
+                                 int node_idx=START_NODE);
 bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
         std::vector<DecoderGraph::Node> &nodes,
         std::deque<int> states = std::deque<int>(),
