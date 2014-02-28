@@ -314,6 +314,15 @@ Decoder::set_subword_id_la_fsa_symbol_mapping()
 
 
 void
+Decoder::set_tracked_result(string result)
+{
+    std::vector<std::string> tokens = str::split(result, " ", true);
+    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit)
+        m_tracked_result.push_back(m_subword_map[*tit]);
+}
+
+
+void
 Decoder::recognize_lna_file(string lnafname,
                             ostream &outf,
                             int *frame_count,

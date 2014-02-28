@@ -126,6 +126,8 @@ public:
 
         m_word_boundary_penalty = 0.0;
         m_max_state_duration = 80;
+
+        m_track_result = false;
     };
 
     void read_phone_model(std::string phnfname);
@@ -138,6 +140,7 @@ public:
     void read_config(std::string cfgfname);
     void print_config(std::ostream &outf);
 
+    void set_tracked_result(std::string result);
     void recognize_lna_file(std::string lnafname,
                             std::ostream &outf=std::cout,
                             int *frame_count=nullptr,
@@ -145,6 +148,7 @@ public:
                             double *log_prob=nullptr,
                             double *am_prob=nullptr,
                             double *lm_prob=nullptr);
+
     void initialize();
     void reset_frame_variables();
     void propagate_tokens();
@@ -260,6 +264,9 @@ private:
 
     int m_history_clean_frame_interval;
     WordHistory* m_empty_history;
+
+    bool m_track_result;
+    std::vector<int> m_tracked_result;
 };
 
 #endif /* DECODER_HH */
