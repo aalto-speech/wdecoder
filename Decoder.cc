@@ -319,6 +319,59 @@ Decoder::set_tracked_result(string result)
     std::vector<std::string> tokens = str::split(result, " ", true);
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit)
         m_tracked_result.push_back(m_subword_map[*tit]);
+    m_track_result = true;
+}
+
+
+int
+Decoder::recombined_to_vector(std::vector<Token> &raw_tokens)
+{
+    int token_count = 0;
+    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
+        for (auto tit = m_recombined_tokens[*nit].begin(); tit != m_recombined_tokens[*nit].end(); ++tit) {
+            token_count++;
+            tit->second.word_end = false;
+            raw_tokens.push_back(tit->second);
+        }
+    }
+    return token_count;
+}
+
+
+void
+Decoder::track_result(std::vector<Token> &tokens)
+{
+    map<WordHistory*, string> history_to_string;
+    map<WordHistory*, int> token_counts;
+    string curr_path_string;
+
+    cerr << "Longest result path in word history:";
+    WordHistory *curr_history = m_empty_history;
+    for (auto trit = m_tracked_result.begin(); trit != m_tracked_result.end(); ++trit) {
+        auto hit = curr_history->next.find(*trit);
+        if (hit != curr_history->next.end()) {
+            cerr << " " << m_subwords[*trit];
+            curr_path_string += " " + m_subwords[*trit];
+            history_to_string[curr_history] = curr_path_string;
+            token_counts[curr_history] = 0;
+            curr_history = hit->second;
+        }
+        else {
+            cerr << endl;
+            break;
+        }
+    }
+
+    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
+        if (token_counts.find(tit->history) != token_counts.end()) {
+            token_counts[tit->history]++;
+        }
+    }
+
+    for (auto tcit = token_counts.begin(); tcit != token_counts.end(); ++tcit) {
+        if (tcit->second > 0)
+            cerr << "\t" << tcit->second << " tokens for path: " << history_to_string[tcit->first] << endl;
+    }
 }
 
 
@@ -343,11 +396,24 @@ Decoder::recognize_lna_file(string lnafname,
         reset_frame_variables();
         propagate_tokens();
 
+        if (m_track_result) {
+            cerr << endl;
+            cerr << "frame " << frame_idx << " after propagation" << endl;
+            track_result(m_raw_tokens);
+        }
+
         if (frame_idx % m_history_clean_frame_interval == 0) {
             prune_tokens(true);
             prune_word_history();
         }
         else prune_tokens(false);
+
+        vector<Token> track_tokens;
+        recombined_to_vector(track_tokens);
+        if (m_track_result) {
+            cerr << "frame " << frame_idx << " after pruning" << endl;
+            track_result(track_tokens);
+        }
 
         if (m_stats) {
             cerr << endl << "recognized frame: " << frame_idx << endl;
@@ -416,6 +482,7 @@ Decoder::initialize()
     m_recombined_tokens[DECODE_START_NODE][m_lm.initial_node_id()] = tok;
     m_active_histories.insert(tok.history);
     m_word_history_leafs.insert(tok.history);
+    m_empty_history = tok.history;
 }
 
 

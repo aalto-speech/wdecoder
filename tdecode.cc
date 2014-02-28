@@ -86,6 +86,7 @@ int main(int argc, char* argv[])
             int curr_frames;
             double curr_time;
             double curr_lp, curr_am_lp, curr_lm_lp;
+            d.set_tracked_result(resline);
             d.recognize_lna_file(lnaline, cout, &curr_frames, &curr_time,
                                  &curr_lp, &curr_am_lp, &curr_lm_lp);
             total_frames += curr_frames;

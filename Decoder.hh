@@ -140,7 +140,6 @@ public:
     void read_config(std::string cfgfname);
     void print_config(std::ostream &outf);
 
-    void set_tracked_result(std::string result);
     void recognize_lna_file(std::string lnafname,
                             std::ostream &outf=std::cout,
                             int *frame_count=nullptr,
@@ -173,6 +172,10 @@ public:
     float score_state_path(std::string lnafname,
                            std::string sfname,
                            bool duration_model=true);
+
+    void set_tracked_result(std::string result);
+    int recombined_to_vector(std::vector<Token> &raw_tokens);
+    void track_result(std::vector<Token> &tokens);
 
     // Subwords
     std::vector<std::string> m_subwords;
