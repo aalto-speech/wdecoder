@@ -341,7 +341,7 @@ Decoder::recombined_to_vector(std::vector<Token> &raw_tokens)
 bool
 Decoder::track_result(std::vector<Token> &tokens)
 {
-    map<WordHistory*, set<Token> > token_counts;
+    map<WordHistory*, int> token_counts;
 
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit)
         if (m_tracked_histories.find(tit->history) != m_tracked_histories.end())
@@ -352,7 +352,7 @@ Decoder::track_result(std::vector<Token> &tokens)
         if (tcit->second > 0) {
             string whs;
             word_history_to_string(tcit->first, whs);
-            cerr << "\t" << tcit->second << " tokens for path: " << whs << endl;
+            cerr << tcit->second << " tokens for path: " << whs << endl;
             histcounts++;
         }
     }
@@ -415,6 +415,16 @@ Decoder::recognize_lna_file(string lnafname,
             //if (!hists && frame_idx > 10) exit(1);
         }
 
+        if (m_global_beam_pruned_count > 0)
+            cerr << "tracked tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
+        if (m_acoustic_beam_pruned_count > 0)
+            cerr << "tracked tokens pruned by acoustic beam: " << m_acoustic_beam_pruned_count << endl;
+        if (m_history_beam_pruned_count > 0)
+            cerr << "tracked tokens pruned by acoustic history beam: " << m_history_beam_pruned_count << endl;
+        if (m_word_end_beam_pruned_count > 0)
+            cerr << "tracked tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
+
+        /*
         if (m_stats) {
             cerr << endl << "recognized frame: " << frame_idx << endl;
             cerr << "current global beam: " << m_global_beam << endl;
@@ -428,6 +438,7 @@ Decoder::recognize_lna_file(string lnafname,
             cerr << "number of active nodes: " << m_active_nodes.size() << endl;
             print_best_word_history(outf);
         }
+        */
 
         frame_idx++;
     }
@@ -574,24 +585,24 @@ Decoder::prune_tokens(bool collect_active_histories)
     for (int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
         if (tok.total_log_prob < current_glob_beam) {
-            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end())
-                cerr << "\ttoken pruned by global beam" << endl;
-            m_global_beam_pruned_count++;
+            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end()) {
+                m_global_beam_pruned_count++;
+            }
         }
         else if (tok.am_log_prob < current_acoustic_beam) {
-            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end())
-                cerr << "\ttoken pruned by acoustic beam" << endl;
-            m_acoustic_beam_pruned_count++;
+            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end()) {
+                m_acoustic_beam_pruned_count++;
+            }
         }
         else if (tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam) {
-            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end())
-                cerr << "\ttoken pruned by history beam" << endl;
-            m_history_beam_pruned_count++;
+            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end()) {
+                m_history_beam_pruned_count++;
+            }
         }
         else if (tok.word_end && tok.total_log_prob < current_word_end_beam) {
-            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end())
-                cerr << "\ttoken pruned by word end beam" << endl;
-            m_word_end_beam_pruned_count++;
+            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end()) {
+                m_word_end_beam_pruned_count++;
+            }
         }
         else
             pruned_tokens.push_back(tok);
@@ -659,13 +670,15 @@ Decoder::move_token_to_node(Token token,
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
         if (token.am_log_prob < (m_best_am_log_prob-m_acoustic_beam)) {
-             m_acoustic_beam_pruned_count++;
+            if (m_tracked_histories.find(token.history) != m_tracked_histories.end())
+                m_acoustic_beam_pruned_count++;
              return;
         }
 
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
-            m_global_beam_pruned_count++;
+            if (m_tracked_histories.find(token.history) != m_tracked_histories.end())
+                m_global_beam_pruned_count++;
             return;
         }
 
@@ -686,8 +699,7 @@ Decoder::move_token_to_node(Token token,
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             if (m_tracked_histories.find(token.history) != m_tracked_histories.end())
-                cerr << "\ttoken pruned by global beam" << endl;
-            m_global_beam_pruned_count++;
+                m_global_beam_pruned_count++;
             return;
         }
         advance_in_history(token, node.word_id);
