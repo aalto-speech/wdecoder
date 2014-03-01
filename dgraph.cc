@@ -77,7 +77,6 @@ int main(int argc, char* argv[])
         dg.push_word_ids_left(nodes);
         cerr << "Tying state chain suffixes.." << endl;
         dg.tie_state_suffixes(nodes);
-        dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
 
         time ( &rawtime );
@@ -85,8 +84,35 @@ int main(int argc, char* argv[])
         cerr << "Tying state chain prefixes.." << endl;
         dg.push_word_ids_right(nodes);
         dg.tie_state_prefixes(nodes, false);
-        dg.prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        cerr << "Tying word id prefixes.." << endl;
+        dg.push_word_ids_left(nodes);
+        dg.tie_word_id_prefixes(nodes, false);
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        cerr << "Tying state chain prefixes.." << endl;
+        dg.tie_state_prefixes(nodes, false);
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        cerr << "Tying word id prefixes.." << endl;
+        dg.push_word_ids_left(nodes);
+        dg.tie_word_id_prefixes(nodes, false);
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        cerr << "Tying state chain prefixes.." << endl;
+        dg.tie_state_prefixes(nodes, false);
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        cerr << "Tying word id prefixes.." << endl;
+        dg.push_word_ids_left(nodes);
+        dg.tie_word_id_prefixes(nodes, false);
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        cerr << "Tying state chain prefixes.." << endl;
+        dg.tie_state_prefixes(nodes, false);
+        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
 
         dg.push_word_ids_left(nodes);
         time ( &rawtime );
@@ -107,6 +133,14 @@ int main(int argc, char* argv[])
 
         dg.add_hmm_self_transitions(nodes);
         dg.write_graph(nodes, graphfname);
+
+        for (int i=0; i<dg.m_units.size(); i++) {
+            set<pair<int, int> > results;
+            find_successor_word(nodes, results, i, 0);
+            if (results.size() > 1) {
+                cerr << results.size() << " matches for subword: " << dg.m_units[i] << endl;
+            }
+        }
 
     } catch (string &e) {
         cerr << e << endl;
