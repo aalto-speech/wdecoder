@@ -401,10 +401,19 @@ DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
                                int node_idx)
 {
     int hmm_index = m_hmm_map[triphone];
+    return connect_triphone(nodes, hmm_index, node_idx);
+}
+
+
+int
+DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
+                               int hmm_index,
+                               int node_idx)
+{
     Hmm &hmm = m_hmms[hmm_index];
 
     if (debug) {
-        cerr << "  " << triphone << " (" << triphone[2] << ")" << endl;
+        //cerr << "  " << triphone << " (" << triphone[2] << ")" << endl;
         for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             cerr << "\t" << hmm.states[sidx].model;
             for (int transidx = 0; transidx<hmm.states[sidx].transitions.size(); ++transidx)
@@ -994,7 +1003,8 @@ void
 DecoderGraph::connect_crossword_network(vector<Node> &nodes,
                                         vector<Node> &cw_nodes,
                                         map<string, int> &fanout,
-                                        map<string, int> &fanin)
+                                        map<string, int> &fanin,
+                                        bool push_left_after_fanin)
 {
     int offset = nodes.size();
     for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {
@@ -1026,7 +1036,10 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
         fanin_node.arcs.insert(node_idx);
     }
 
-    push_word_ids_left(nodes);
+    if (push_left_after_fanin)
+        push_word_ids_left(nodes);
+    else
+        set_reverse_arcs_also_from_unreachable(nodes);
 
     map<int, string> nodes_to_fanout;
     collect_cw_fanout_nodes(nodes, nodes_to_fanout);
@@ -1082,10 +1095,9 @@ DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
         return;
     }
 
-    for (auto ait = node.reverse_arcs.begin(); ait != node.reverse_arcs.end(); ++ait) {
+    for (auto ait = node.reverse_arcs.begin(); ait != node.reverse_arcs.end(); ++ait)
         collect_cw_fanout_nodes(nodes, nodes_to_fanout, hmm_state_count,
                                 phones, node_to_connect, *ait);
-    }
 }
 
 
@@ -1225,3 +1237,94 @@ DecoderGraph::write_graph(vector<Node> &nodes, string fname)
             outf << "a " << i << " " << *ait << endl;
     }
 }
+
+
+void
+DecoderGraph::add_word(std::vector<TriphoneNode> &nodes,
+                       std::string word,
+                       std::vector<std::string> &triphones)
+{
+    vector<string> &subwords = m_word_segs.at(word);
+    vector<int> subword_ids;
+    for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
+        subword_ids.push_back(m_unit_map[*swit]);
+
+    vector<int> hmm_ids;
+    for (auto trit = triphones.begin(); trit != triphones.end(); ++trit) {
+        int hmm_index = m_hmm_map[*trit];
+        hmm_ids.push_back(hmm_index);
+    }
+
+    int curr_node_idx = START_NODE;
+    for (int i=0; i<hmm_ids.size()-1; i++) {
+        int hmm_state_id = hmm_ids[i];
+        if (nodes[curr_node_idx].hmm_id_lookahead.find(hmm_state_id) != nodes[curr_node_idx].hmm_id_lookahead.end()) {
+            curr_node_idx = nodes[curr_node_idx].hmm_id_lookahead[hmm_state_id];
+        }
+        else {
+            nodes.resize(nodes.size()+1);
+            nodes.back().hmm_id = hmm_state_id;
+            nodes[curr_node_idx].hmm_id_lookahead[hmm_state_id] = nodes.size()-1;
+            curr_node_idx = nodes.size()-1;
+        }
+    }
+
+    for (int i=0; i<subword_ids.size(); i++) {
+        int subword_id = subword_ids[i];
+        if (nodes[curr_node_idx].subword_id_lookahead.find(subword_id) != nodes[curr_node_idx].subword_id_lookahead.end()) {
+            curr_node_idx = nodes[curr_node_idx].subword_id_lookahead[subword_id];
+        }
+        else {
+            nodes.resize(nodes.size()+1);
+            nodes.back().subword_id = subword_id;
+            nodes[curr_node_idx].subword_id_lookahead[subword_id] = nodes.size()-1;
+            curr_node_idx = nodes.size()-1;
+        }
+    }
+
+    for (int i=hmm_ids.size()-1; i<hmm_ids.size(); i++) {
+        int hmm_state_id = hmm_ids[i];
+        if (nodes[curr_node_idx].hmm_id_lookahead.find(hmm_state_id) != nodes[curr_node_idx].hmm_id_lookahead.end()) {
+            curr_node_idx = nodes[curr_node_idx].hmm_id_lookahead[hmm_state_id];
+        }
+        else {
+            nodes.resize(nodes.size()+1);
+            nodes.back().hmm_id = hmm_state_id;
+            nodes[curr_node_idx].hmm_id_lookahead[hmm_state_id] = nodes.size()-1;
+            curr_node_idx = nodes.size()-1;
+        }
+    }
+
+    nodes[curr_node_idx].connect_to_end_node = true;
+}
+
+
+void
+DecoderGraph::triphones_to_states(std::vector<TriphoneNode> &triphone_nodes,
+                                  std::vector<Node> &nodes,
+                                  int curr_tri_idx,
+                                  int curr_state_idx)
+{
+    if (triphone_nodes[curr_tri_idx].connect_to_end_node)
+        nodes[curr_state_idx].arcs.insert(END_NODE);
+
+    for (auto triit = triphone_nodes[curr_tri_idx].hmm_id_lookahead.begin();
+         triit != triphone_nodes[curr_tri_idx].hmm_id_lookahead.end();
+         ++triit)
+    {
+        int new_state_idx = connect_triphone(nodes, triit->first, curr_state_idx);
+        triphones_to_states(triphone_nodes, nodes, triit->second, new_state_idx);
+    }
+
+    for (auto swit = triphone_nodes[curr_tri_idx].subword_id_lookahead.begin();
+         swit != triphone_nodes[curr_tri_idx].subword_id_lookahead.end();
+         ++swit)
+    {
+        nodes.resize(nodes.size()+1);
+        nodes.back().word_id = swit->first;
+        nodes[curr_state_idx].arcs.insert(nodes.size()-1);
+        triphones_to_states(triphone_nodes, nodes, swit->second, nodes.size()-1);
+    }
+}
+
+

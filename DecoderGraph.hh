@@ -21,6 +21,16 @@ public:
         std::vector<std::string> triphones;
     };
 
+    class TriphoneNode {
+    public:
+        TriphoneNode() : subword_id(-1), hmm_id(-1), connect_to_end_node(false) { }
+        int subword_id; // -1 for nodes without word identity.
+        int hmm_id; // -1 for nodes without acoustics.
+        bool connect_to_end_node;
+        std::map<int, int> hmm_id_lookahead;
+        std::map<int, int> subword_id_lookahead;
+    };
+
     class Node {
     public:
         Node() : word_id(-1), hmm_state(-1), flags(0) { }
@@ -79,6 +89,14 @@ public:
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr = std::cout);
     int reachable_graph_nodes(std::vector<Node> &nodes);
 
+    void add_word(std::vector<TriphoneNode> &nodes,
+                  std::string word,
+                  std::vector<std::string> &triphones);
+    void triphones_to_states(std::vector<TriphoneNode> &triphone_nodes,
+                             std::vector<Node> &nodes,
+                             int curr_triphone_idx=START_NODE,
+                             int curr_state_idx=START_NODE);
+
     int debug;
 
 //private:
@@ -92,6 +110,9 @@ public:
                           int node_idx=START_NODE);
     int connect_triphone(std::vector<Node> &nodes,
                          std::string triphone,
+                         int node_idx);
+    int connect_triphone(std::vector<Node> &nodes,
+                         int triphone_idx,
                          int node_idx);
     void print_graph(std::vector<Node> &nodes,
                      std::vector<int> path,
@@ -123,7 +144,8 @@ public:
     void connect_crossword_network(std::vector<Node> &nodes,
                                    std::vector<Node> &cw_nodes,
                                    std::map<std::string, int> &fanout,
-                                   std::map<std::string, int> &fanin);
+                                   std::map<std::string, int> &fanin,
+                                   bool push_left_after_fanin=true);
     void collect_cw_fanout_nodes(std::vector<Node> &nodes,
                                  std::map<int, std::string> &nodes_to_fanout,
                                  int hmm_state_count=0,

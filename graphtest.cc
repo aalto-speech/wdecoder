@@ -789,6 +789,108 @@ void graphtest::GraphTest25(void)
 }
 
 
+// Test cross-word network creation and connecting
+// More like a real scenario with 500 words with all tying etc.
+// Alternative graph construction
+void graphtest::GraphTest26(void)
+{
+    DecoderGraph dg;
+    segname = "data/500.segs";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
+    map<string, vector<string> > triphonized_words;
+    triphonize_all_words(dg, triphonized_words);
+    for (auto wit = triphonized_words.begin(); wit != triphonized_words.end(); ++wit)
+        dg.add_word(triphone_nodes, wit->first, wit->second);
+
+    vector<DecoderGraph::Node> nodes(2);
+    dg.triphones_to_states(triphone_nodes, nodes);
+    triphone_nodes.clear();
+
+    dg.prune_unreachable_nodes(nodes);
+    cerr << endl << "real-like scenario with 500 words:" << endl;
+    cerr << "initial expansion, number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    dg.create_crossword_network(cw_nodes, fanout, fanin);
+    dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+    dg.connect_end_to_start_node(nodes);
+    cerr << "crossword network added, number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+    dg.push_word_ids_left(nodes);
+    dg.tie_state_prefixes(nodes);
+    dg.tie_word_id_prefixes(nodes);
+    dg.push_word_ids_right(nodes);
+    dg.tie_state_prefixes(nodes);
+    cerr << "prefixes tied, number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+    dg.push_word_ids_right(nodes);
+    dg.tie_state_suffixes(nodes);
+    dg.tie_word_id_suffixes(nodes);
+    dg.push_word_ids_left(nodes);
+    dg.tie_state_suffixes(nodes);
+    cerr << "suffixes tied, number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+    cerr << "asserting no double arcs" << endl;
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    cerr << "asserting all words in the graph" << endl;
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    cerr << "asserting only correct words in the graph" << endl;
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
+    cerr << "asserting all word pairs in the graph" << endl;
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    cerr << "asserting only correct word pairs in the graph" << endl;
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
+}
+
+
+// Test the tying problem with the alternative graph construction
+void graphtest::GraphTest27(void)
+{
+    DecoderGraph dg;
+    segname = "data/auto.segs";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
+    map<string, vector<string> > triphonized_words;
+    triphonize_all_words(dg, triphonized_words);
+    for (auto wit = triphonized_words.begin(); wit != triphonized_words.end(); ++wit)
+        dg.add_word(triphone_nodes, wit->first, wit->second);
+
+    vector<DecoderGraph::Node> nodes(2);
+    dg.triphones_to_states(triphone_nodes, nodes);
+    triphone_nodes.clear();
+    dg.prune_unreachable_nodes(nodes);
+
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    dg.create_crossword_network(cw_nodes, fanout, fanin);
+    dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+    dg.connect_end_to_start_node(nodes);
+
+    dg.push_word_ids_left(nodes);
+    dg.tie_state_prefixes(nodes);
+    dg.tie_word_id_prefixes(nodes);
+    dg.push_word_ids_right(nodes);
+    dg.tie_state_prefixes(nodes);
+
+    dg.push_word_ids_right(nodes);
+    dg.tie_state_suffixes(nodes);
+    dg.tie_word_id_suffixes(nodes);
+    dg.push_word_ids_left(nodes);
+    dg.tie_state_suffixes(nodes);
+
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
+}
+
+
 // ofstream origoutf("cw_simple.dot");
 // dg.print_dot_digraph(nodes, origoutf);
 // origoutf.close();
