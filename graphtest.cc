@@ -654,7 +654,7 @@ void graphtest::GraphTest22(void)
 void graphtest::GraphTest23(void)
 {
     DecoderGraph dg;
-    segname = "data/duplicate.segs";
+    segname = "data/duplicate2.segs";
     read_fixtures(dg);
 
     vector<DecoderGraph::SubwordNode> swnodes;
@@ -696,10 +696,56 @@ void graphtest::GraphTest23(void)
 }
 
 
+// Some problem with duplicate word ids
+void graphtest::GraphTest24(void)
+{
+    DecoderGraph dg;
+    segname = "data/au.segs";
+    read_fixtures(dg);
+
+    vector<DecoderGraph::SubwordNode> swnodes;
+    dg.create_word_graph(swnodes);
+    dg.tie_subword_suffixes(swnodes);
+    vector<DecoderGraph::Node> nodes;
+    dg.expand_subword_nodes(swnodes, nodes);
+    dg.prune_unreachable_nodes(nodes);
+
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    dg.create_crossword_network(cw_nodes, fanout, fanin);
+    dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+    dg.connect_end_to_start_node(nodes);
+
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
+
+    dg.push_word_ids_right(nodes);
+    dg.tie_state_prefixes(nodes, false);
+
+    dg.push_word_ids_left(nodes);
+    CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes));
+    dg.tie_state_suffixes(nodes);
+    dg.tie_state_prefixes(nodes);
+    dg.push_word_ids_left(nodes);
+    dg.tie_word_id_prefixes(nodes);
+    dg.push_word_ids_left(nodes);
+
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, false) );
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes) );
+}
+
+
 // Test cross-word network creation and connecting
 // More like a real scenario with 500 words with all tying etc.
 // Print out some numbers
-void graphtest::GraphTest24(void)
+void graphtest::GraphTest25(void)
 {
     DecoderGraph dg;
     segname = "data/500.segs";
