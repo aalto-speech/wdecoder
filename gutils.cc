@@ -425,9 +425,10 @@ assert_no_duplicate_word_ids(DecoderGraph &dg,
         set<pair<int, int> > results;
         find_successor_word(nodes, results, i, START_NODE);
         if (results.size() > 1 && dg.m_units[i].length() > 1) {
-            cerr << results.size() << " matches for subword: " << dg.m_units[i] << endl;
+            return false;
         }
     }
+    return true;
 }
 
 

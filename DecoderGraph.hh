@@ -63,6 +63,12 @@ public:
                             std::set<int> &processed_nodes,
                             bool stop_propagation=false,
                             int node_idx=END_NODE);
+    void tie_word_id_prefixes(std::vector<Node> &nodes,
+                              bool stop_propagation=false);
+    void tie_word_id_prefixes(std::vector<Node> &nodes,
+                              std::set<int> &processed_nodes,
+                              bool stop_propagation=false,
+                              int node_idx=START_NODE);
     void print_graph(std::vector<Node> &nodes);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr = std::cout);
     int reachable_graph_nodes(std::vector<Node> &nodes);
