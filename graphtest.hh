@@ -37,8 +37,8 @@ class graphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (GraphTest22);
     CPPUNIT_TEST (GraphTest23);
     CPPUNIT_TEST (GraphTest24);
-    //CPPUNIT_TEST (GraphTest25);
-    //CPPUNIT_TEST (GraphTest26);
+    CPPUNIT_TEST (GraphTest25);
+    CPPUNIT_TEST (GraphTest26);
     CPPUNIT_TEST (GraphTest27);
     CPPUNIT_TEST_SUITE_END ();
 

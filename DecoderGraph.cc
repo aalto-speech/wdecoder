@@ -1255,8 +1255,11 @@ DecoderGraph::add_word(std::vector<TriphoneNode> &nodes,
         hmm_ids.push_back(hmm_index);
     }
 
+    int lm_label_pos = min(hmm_ids.size()-1, m_lexicon[(*(subwords.begin()))].size()-1);
+    lm_label_pos = max(1, lm_label_pos);
+
     int curr_node_idx = START_NODE;
-    for (int i=0; i<hmm_ids.size()-1; i++) {
+    for (int i=0; i<lm_label_pos; i++) {
         int hmm_state_id = hmm_ids[i];
         if (nodes[curr_node_idx].hmm_id_lookahead.find(hmm_state_id) != nodes[curr_node_idx].hmm_id_lookahead.end()) {
             curr_node_idx = nodes[curr_node_idx].hmm_id_lookahead[hmm_state_id];
@@ -1282,7 +1285,7 @@ DecoderGraph::add_word(std::vector<TriphoneNode> &nodes,
         }
     }
 
-    for (int i=hmm_ids.size()-1; i<hmm_ids.size(); i++) {
+    for (int i=lm_label_pos; i<hmm_ids.size(); i++) {
         int hmm_state_id = hmm_ids[i];
         if (nodes[curr_node_idx].hmm_id_lookahead.find(hmm_state_id) != nodes[curr_node_idx].hmm_id_lookahead.end()) {
             curr_node_idx = nodes[curr_node_idx].hmm_id_lookahead[hmm_state_id];

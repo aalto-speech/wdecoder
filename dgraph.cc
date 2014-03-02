@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
         dg.connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
 
-
+        cerr << endl;
         cerr << "Pushing subword ids left.." << endl;
         dg.push_word_ids_left(nodes);
         cerr << "Tying state chain prefixes.." << endl;
@@ -80,12 +80,25 @@ int main(int argc, char* argv[])
         cerr << "Tying word id prefixes.." << endl;
         dg.tie_word_id_prefixes(nodes);
         cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
+        cerr << "Pushing subword ids left.." << endl;
+        dg.push_word_ids_left(nodes);
+        cerr << "Tying state chain prefixes.." << endl;
+        dg.tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        cerr << "Tying word id prefixes.." << endl;
+        dg.tie_word_id_prefixes(nodes);
+        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
         cerr << "Pushing subword ids right.." << endl;
         dg.push_word_ids_right(nodes);
         cerr << "Tying state chain prefixes.." << endl;
         dg.tie_state_prefixes(nodes);
         cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
 
+        cerr << endl;
         cerr << "Pushing subword ids right.." << endl;
         dg.push_word_ids_right(nodes);
         cerr << "Tying state chain suffixes.." << endl;
@@ -94,6 +107,18 @@ int main(int argc, char* argv[])
         cerr << "Tying word id suffixes.." << endl;
         dg.tie_word_id_suffixes(nodes);
         cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
+        cerr << "Pushing subword ids right.." << endl;
+        dg.push_word_ids_right(nodes);
+        cerr << "Tying state chain suffixes.." << endl;
+        dg.tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        cerr << "Tying word id suffixes.." << endl;
+        dg.tie_word_id_suffixes(nodes);
+        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
         cerr << "Pushing subword ids left.." << endl;
         dg.push_word_ids_left(nodes);
         cerr << "Tying state chain suffixes.." << endl;
