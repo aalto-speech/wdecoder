@@ -798,11 +798,20 @@ void graphtest::GraphTest26(void)
     segname = "data/500.segs";
     read_fixtures(dg);
 
+    /*
     vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
     map<string, vector<string> > triphonized_words;
     triphonize_all_words(dg, triphonized_words);
     for (auto wit = triphonized_words.begin(); wit != triphonized_words.end(); ++wit)
         dg.add_word(triphone_nodes, wit->first, wit->second);
+    */
+
+    vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
+    for (auto wit = dg.m_word_segs.begin(); wit != dg.m_word_segs.end(); ++wit) {
+        vector<DecoderGraph::TriphoneNode> word_triphones;
+        triphonize(dg, wit->first, word_triphones);
+        dg.add_triphones(triphone_nodes, word_triphones);
+    }
 
     vector<DecoderGraph::Node> nodes(2);
     dg.triphones_to_states(triphone_nodes, nodes);
@@ -835,6 +844,7 @@ void graphtest::GraphTest26(void)
 
     cerr << "asserting no double arcs" << endl;
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
     cerr << "asserting all words in the graph" << endl;
     CPPUNIT_ASSERT( assert_words(dg, nodes, true) );
     cerr << "asserting only correct words in the graph" << endl;
@@ -853,11 +863,20 @@ void graphtest::GraphTest27(void)
     segname = "data/auto.segs";
     read_fixtures(dg);
 
+    /*
     vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
     map<string, vector<string> > triphonized_words;
     triphonize_all_words(dg, triphonized_words);
     for (auto wit = triphonized_words.begin(); wit != triphonized_words.end(); ++wit)
         dg.add_word(triphone_nodes, wit->first, wit->second);
+    */
+
+    vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
+    for (auto wit = dg.m_word_segs.begin(); wit != dg.m_word_segs.end(); ++wit) {
+        vector<DecoderGraph::TriphoneNode> word_triphones;
+        triphonize(dg, wit->first, word_triphones);
+        dg.add_triphones(triphone_nodes, word_triphones);
+    }
 
     vector<DecoderGraph::Node> nodes(2);
     dg.triphones_to_states(triphone_nodes, nodes);

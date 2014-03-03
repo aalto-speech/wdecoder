@@ -39,6 +39,45 @@ void triphonize(DecoderGraph &dg,
 }
 
 
+void triphonize(DecoderGraph &dg,
+                string word,
+                vector<DecoderGraph::TriphoneNode> &nodes)
+{
+    nodes.clear();
+    if (dg.m_word_segs.find(word) == dg.m_word_segs.end())
+        throw string("Warning, segmentation for word ") + word + string("not found.");
+
+    string tripstring;
+    vector<pair<int, int> > word_id_positions;
+    vector<string> triphones;
+    for (auto swit = dg.m_word_segs[word].begin(); swit != dg.m_word_segs[word].end(); ++swit) {
+        vector<string> &triphones = dg.m_lexicon[*swit];
+        for (auto tit = triphones.begin(); tit != triphones.end(); ++tit)
+            tripstring += (*tit)[2];
+        int word_id_pos = max(1, (int)(tripstring.size()-1));
+        word_id_positions.push_back(make_pair(dg.m_unit_map[*swit], word_id_pos));
+    }
+    triphonize(tripstring, triphones);
+
+    for (int i=1; i<word_id_positions.size(); i++) {
+        word_id_positions[i].second += i;
+        if (word_id_positions[i].second <= word_id_positions[i-1].second)
+            word_id_positions[i].second = word_id_positions[i-1].second + 1;
+    }
+
+    for (auto triit = triphones.begin(); triit != triphones.end(); ++triit) {
+        DecoderGraph::TriphoneNode trin;
+        trin.hmm_id = dg.m_hmm_map[*triit];
+        nodes.push_back(trin);
+    }
+    for (auto wit = word_id_positions.begin(); wit != word_id_positions.end(); ++wit) {
+        DecoderGraph::TriphoneNode trin;
+        trin.subword_id = wit->first;
+        nodes.insert(nodes.begin()+wit->second, trin);
+    }
+}
+
+
 void triphonize_all_words(DecoderGraph &dg,
                           map<string, vector<string> > &triphonized_words) {
     for (auto wit = dg.m_word_segs.begin(); wit != dg.m_word_segs.end(); ++wit) {

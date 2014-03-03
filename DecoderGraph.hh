@@ -92,6 +92,8 @@ public:
     void add_word(std::vector<TriphoneNode> &nodes,
                   std::string word,
                   std::vector<std::string> &triphones);
+    void add_triphones(std::vector<TriphoneNode> &nodes,
+                       std::vector<TriphoneNode> &nodes_to_add);
     void triphones_to_states(std::vector<TriphoneNode> &triphone_nodes,
                              std::vector<Node> &nodes,
                              int curr_triphone_idx=START_NODE,
