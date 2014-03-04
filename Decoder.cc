@@ -1023,7 +1023,7 @@ Decoder::set_unigram_la_scores()
         map<int, set<int> > word_ids;
         find_successor_words(i, word_ids, true);
 
-        if (word_ids.size() > 1) {
+        if (word_ids.size() > 1 || word_ids.begin()->first != m_word_boundary_symbol_idx) {
             float node_best_la_prob = -1e20;
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
                 float la_lm_prob = 0.0;
