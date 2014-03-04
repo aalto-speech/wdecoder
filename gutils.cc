@@ -40,17 +40,15 @@ void triphonize(DecoderGraph &dg,
 
 
 void triphonize(DecoderGraph &dg,
-                string word,
+                vector<string> &word_seg,
                 vector<DecoderGraph::TriphoneNode> &nodes)
 {
     nodes.clear();
-    if (dg.m_word_segs.find(word) == dg.m_word_segs.end())
-        throw string("Warning, segmentation for word ") + word + string("not found.");
 
     string tripstring;
     vector<pair<int, int> > word_id_positions;
     vector<string> triphones;
-    for (auto swit = dg.m_word_segs[word].begin(); swit != dg.m_word_segs[word].end(); ++swit) {
+    for (auto swit = word_seg.begin(); swit != word_seg.end(); ++swit) {
         vector<string> &triphones = dg.m_lexicon[*swit];
         for (auto tit = triphones.begin(); tit != triphones.end(); ++tit)
             tripstring += (*tit)[2];

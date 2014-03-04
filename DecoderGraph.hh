@@ -46,6 +46,8 @@ public:
     void read_phone_model(std::string phnfname);
     void read_noway_lexicon(std::string lexfname);
     void read_word_segmentations(std::string segfname);
+    void read_word_segmentations(std::string segfname,
+                                 std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
 
     void create_word_graph(std::vector<SubwordNode> &nodes);
     void tie_subword_suffixes(std::vector<SubwordNode> &nodes);
@@ -141,6 +143,10 @@ public:
     int num_hmm_states(std::vector<Node> &nodes);
     int num_subword_states(std::vector<Node> &nodes);
     void create_crossword_network(std::vector<Node> &nodes,
+                                  std::map<std::string, int> &fanout,
+                                  std::map<std::string, int> &fanin);
+    void create_crossword_network(std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs,
+                                  std::vector<DecoderGraph::Node> &nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin);
     void connect_crossword_network(std::vector<Node> &nodes,

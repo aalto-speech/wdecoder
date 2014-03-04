@@ -19,7 +19,7 @@ void triphonize(DecoderGraph &dg,
                 std::string word,
                 std::vector<std::string> &triphones);
 void triphonize(DecoderGraph &dg,
-                std::string word,
+                std::vector<std::string> &word_seg,
                 std::vector<DecoderGraph::TriphoneNode> &nodes);
 void triphonize_all_words(DecoderGraph &dg,
                           std::map<std::string, std::vector<std::string> > &triphonized_words);

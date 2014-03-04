@@ -809,7 +809,7 @@ void graphtest::GraphTest26(void)
     vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
     for (auto wit = dg.m_word_segs.begin(); wit != dg.m_word_segs.end(); ++wit) {
         vector<DecoderGraph::TriphoneNode> word_triphones;
-        triphonize(dg, wit->first, word_triphones);
+        triphonize(dg, wit->second, word_triphones);
         dg.add_triphones(triphone_nodes, word_triphones);
     }
 
@@ -874,7 +874,7 @@ void graphtest::GraphTest27(void)
     vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
     for (auto wit = dg.m_word_segs.begin(); wit != dg.m_word_segs.end(); ++wit) {
         vector<DecoderGraph::TriphoneNode> word_triphones;
-        triphonize(dg, wit->first, word_triphones);
+        triphonize(dg, wit->second, word_triphones);
         dg.add_triphones(triphone_nodes, word_triphones);
     }
 
