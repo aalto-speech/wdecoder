@@ -31,12 +31,16 @@ public:
     public:
         Node()
             : word_id(-1), hmm_state(-1),
-              flags(0), unigram_la_score(0.0) { }
+              flags(0), unigram_la_score(0.0),
+              bigram_la_score(0.0),
+              bigram_la_table(nullptr) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         int flags;
         std::vector<Arc> arcs;
         float unigram_la_score;
+        float bigram_la_score;
+        std::vector<float> *bigram_la_table;
     };
 
     class Token;
@@ -61,9 +65,11 @@ public:
       float lookahead_log_prob;
       float total_log_prob;
       int fsa_lm_node;
+      int last_word_id;
+      WordHistory *history;
       unsigned short int dur;
       bool word_end;
-      WordHistory *history;
+
 
       Token():
         node_idx(-1),
@@ -72,6 +78,7 @@ public:
         lookahead_log_prob(0.0f),
         total_log_prob(-1e20),
         fsa_lm_node(0),
+        last_word_id(-1),
         dur(0),
         word_end(false),
         history(nullptr)
@@ -83,6 +90,7 @@ public:
         m_stats = 0;
         m_duration_model_in_use = false;
         m_unigram_la_in_use = false;
+        m_bigram_la_in_use = false;
         m_use_word_boundary_symbol = false;
         m_force_sentence_end = true;
 
@@ -93,6 +101,8 @@ public:
         m_propagated_count = 0;
         m_token_count_after_pruning = 0;
         m_word_boundary_symbol_idx = -1;
+        m_sentence_begin_symbol_idx = -1;
+        m_sentence_end_symbol_idx = -1;
 
         m_dropped_count = 0;
         m_global_beam_pruned_count = 0;
@@ -106,6 +116,7 @@ public:
         SENTENCE_END_WORD_ID = -1;
 
         m_acoustics = nullptr;
+        m_empty_history = nullptr;
 
         m_best_log_prob = -1e20;
         m_best_am_log_prob = -1e20;
@@ -165,6 +176,7 @@ public:
 
     void find_successor_words(int node_idx, std::map<int, std::set<int> > &word_ids, bool start_node=false);
     void set_unigram_la_scores();
+    void set_bigram_la_scores();
 
     float score_state_path(std::string lnafname,
                            std::string sfname,
@@ -215,6 +227,7 @@ private:
     void clear_word_history();
     void prune_word_history();
     void set_word_boundaries();
+    void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
     void reset_history_scores();
 
@@ -233,8 +246,11 @@ private:
     bool m_use_word_boundary_symbol;
     bool m_duration_model_in_use;
     bool m_unigram_la_in_use;
+    bool m_bigram_la_in_use;
     std::string m_word_boundary_symbol;
     int m_word_boundary_symbol_idx;
+    int m_sentence_begin_symbol_idx;
+    int m_sentence_end_symbol_idx;
     int m_max_state_duration;
 
     float m_global_beam;
