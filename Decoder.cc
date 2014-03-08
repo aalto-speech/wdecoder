@@ -1080,10 +1080,8 @@ Decoder::create_la_tables(bool fan_out_dummy,
         if (all_cw && (node.flags & NODE_CW)) la_table_for_this_node = true;
         if (!la_table_for_this_node) continue;
 
-        if (m_debug) {
-            cerr << "setting la table to node: " << i << endl;
-            cerr << "la table count: " << la_table_node_count+1 << endl;
-        }
+        if (m_debug) cerr << "setting la table to node: " << i << "..";
+
         node.bigram_la_table = new vector<float>(m_subwords.size(), -1e20);
         node.flags |= NODE_BIGRAM_LA_TABLE;
         set<int> word_ids;
@@ -1093,6 +1091,7 @@ Decoder::create_la_tables(bool fan_out_dummy,
         if (finished_la_tables.find(word_ids) != finished_la_tables.end()) {
             int prev_node_id = finished_la_tables[word_ids];
             (*(node.bigram_la_table)) = (*(m_nodes[prev_node_id].bigram_la_table));
+            if (m_debug) cerr << endl << "used existing table" << endl;
             continue;
         }
 
@@ -1107,6 +1106,8 @@ Decoder::create_la_tables(bool fan_out_dummy,
         }
 
         finished_la_tables[word_ids] = i;
+        if (m_debug) cerr << endl << "created a new table" << endl;
+        if (m_debug) cerr << "table count " << la_table_node_count << endl;
     }
 }
 
