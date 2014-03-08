@@ -65,6 +65,8 @@ int main(int argc, char* argv[])
             d.read_la_lm(lalmfname);
         }
 
+        d.write_bigram_la_scores("bigram-la-scores.txt");
+
         string lnalistfname = config.arguments[5];
         ifstream lnalistf(lnalistfname);
         string line;

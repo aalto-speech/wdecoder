@@ -177,6 +177,7 @@ public:
     void find_successor_words(int node_idx, std::map<int, std::set<int> > &word_ids, bool start_node=false);
     void set_unigram_la_scores();
     void set_bigram_la_scores();
+    void write_bigram_la_scores(std::string blafname);
 
     float score_state_path(std::string lnafname,
                            std::string sfname,

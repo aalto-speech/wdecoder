@@ -1023,7 +1023,9 @@ Decoder::set_bigram_la_scores()
         }
 
         if (i == START_NODE ||
-            (node.flags & NODE_CW) ||
+//            (node.flags & NODE_CW) ||
+            (node.flags & NODE_FAN_OUT_DUMMY) ||
+            (node.flags & NODE_FAN_IN_DUMMY) ||
             (node.flags & NODE_INITIAL))
         {
             cerr << "setting la table to node: " << i << endl;
@@ -1116,3 +1118,23 @@ Decoder::score_state_path(string lnafname,
     m_lna_reader.close();
     return total_score;
 }
+
+
+void
+Decoder::write_bigram_la_scores(string blafname)
+{
+    ofstream bloutf(blafname);
+    if (!bloutf) throw string("Problem opening file for bigram lookahead scores.");
+
+    for (int i=0; i<m_nodes.size(); i++) {
+        Node &node = m_nodes[i];
+        if (node.bigram_la_table != nullptr) {
+            bloutf << i;
+            for (int n=0; n<node.bigram_la_table->size(); n++)
+                bloutf << " " << (*(node.bigram_la_table))[n];
+            bloutf << endl;
+        }
+    }
+}
+
+
