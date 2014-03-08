@@ -79,9 +79,9 @@ public:
         total_log_prob(-1e20),
         fsa_lm_node(0),
         last_word_id(-1),
+        history(nullptr),
         dur(0),
-        word_end(false),
-        history(nullptr)
+        word_end(false)
       { }
     };
 
@@ -105,6 +105,7 @@ public:
                             double *log_prob=nullptr,
                             double *am_prob=nullptr,
                             double *lm_prob=nullptr);
+
     void initialize();
     void reset_frame_variables();
     void propagate_tokens();
@@ -122,16 +123,32 @@ public:
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
-
-    void find_successor_words(int node_idx, std::map<int, std::set<int> > &word_ids, bool start_node=false);
+    void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=false);
     void set_unigram_la_scores();
     void set_bigram_la_scores();
+    void create_la_tables(bool fan_out_dummy=true,
+                          bool fan_in_dummy=true,
+                          bool initial=true,
+                          bool silence=true,
+                          bool all_cw=false);
     void write_bigram_la_tables(std::string blafname);
     void read_bigram_la_tables(std::string blafname);
-
     float score_state_path(std::string lnafname,
                            std::string sfname,
                            bool duration_model=true);
+    void add_silence_hmms(std::vector<Node> &nodes,
+                          bool long_silence=true,
+                          bool short_silence=false);
+    void set_hmm_transition_probs(std::vector<Node> &nodes);
+    void set_subword_id_fsa_symbol_mapping();
+    void set_subword_id_la_fsa_symbol_mapping();
+    void clear_word_history();
+    void prune_word_history();
+    void set_word_boundaries();
+    void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
+    void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
+    void reset_history_scores();
+
 
     // Subwords
     std::vector<std::string> m_subwords;
@@ -170,21 +187,6 @@ public:
     int m_debug;
     int m_stats;
 
-private:
-
-    void add_silence_hmms(std::vector<Node> &nodes,
-                          bool long_silence=true,
-                          bool short_silence=false);
-    void set_hmm_transition_probs(std::vector<Node> &nodes);
-    void set_subword_id_fsa_symbol_mapping();
-    void set_subword_id_la_fsa_symbol_mapping();
-    void clear_word_history();
-    void prune_word_history();
-    void set_word_boundaries();
-    void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
-    void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
-    void reset_history_scores();
-
     float m_lm_scale;
     float m_duration_scale;
     float m_transition_scale;
@@ -205,6 +207,7 @@ private:
     int m_sentence_end_symbol_idx;
     int m_max_state_duration;
     int m_fsa_state_sentence_begin_and_wb;
+    int m_initial_node_depth;
 
     float m_global_beam;
     float m_acoustic_beam;
