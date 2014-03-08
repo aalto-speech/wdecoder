@@ -85,59 +85,8 @@ public:
       { }
     };
 
-    Decoder() {
-        m_debug = 0;
-        m_stats = 0;
-        m_duration_model_in_use = false;
-        m_unigram_la_in_use = false;
-        m_bigram_la_in_use = false;
-        m_use_word_boundary_symbol = false;
-        m_force_sentence_end = true;
-
-        m_lm_scale = 0.0;
-        m_duration_scale = 0.0;
-        m_transition_scale = 0.0;
-        m_token_count = 0;
-        m_propagated_count = 0;
-        m_token_count_after_pruning = 0;
-        m_word_boundary_symbol_idx = -1;
-        m_sentence_begin_symbol_idx = -1;
-        m_sentence_end_symbol_idx = -1;
-
-        m_dropped_count = 0;
-        m_global_beam_pruned_count = 0;
-        m_word_end_beam_pruned_count = 0;
-        m_state_beam_pruned_count = 0;
-        m_history_beam_pruned_count = 0;
-        m_acoustic_beam_pruned_count = 0;
-        m_max_state_duration_pruned_count = 0;
-
-        DECODE_START_NODE = -1;
-        SENTENCE_END_WORD_ID = -1;
-
-        m_acoustics = nullptr;
-        m_empty_history = nullptr;
-
-        m_best_log_prob = -1e20;
-        m_best_am_log_prob = -1e20;
-        m_best_word_end_prob = -1e20;
-
-        m_global_beam = 0.0;
-        m_acoustic_beam = 0.0;
-        m_current_word_end_beam = 0.0;
-        m_history_beam = 0.0;
-        m_silence_beam = 0.0;
-        m_word_end_beam = 0.0;
-        m_state_beam = 0.0;
-
-        m_token_limit = 500000;
-        m_active_node_limit = 50000;
-
-        m_history_clean_frame_interval = 10;
-
-        m_word_boundary_penalty = 0.0;
-        m_max_state_duration = 80;
-    };
+    Decoder();
+    ~Decoder();
 
     void read_phone_model(std::string phnfname);
     void read_duration_model(std::string durfname);
@@ -177,7 +126,8 @@ public:
     void find_successor_words(int node_idx, std::map<int, std::set<int> > &word_ids, bool start_node=false);
     void set_unigram_la_scores();
     void set_bigram_la_scores();
-    void write_bigram_la_scores(std::string blafname);
+    void write_bigram_la_tables(std::string blafname);
+    void read_bigram_la_tables(std::string blafname);
 
     float score_state_path(std::string lnafname,
                            std::string sfname,
@@ -217,6 +167,9 @@ public:
     std::vector<std::map<int, Token> > m_recombined_tokens;
     std::vector<float> m_best_node_scores;
 
+    int m_debug;
+    int m_stats;
+
 private:
 
     void add_silence_hmms(std::vector<Node> &nodes,
@@ -232,9 +185,6 @@ private:
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
     void reset_history_scores();
 
-    int m_debug;
-    int m_stats;
-
     float m_lm_scale;
     float m_duration_scale;
     float m_transition_scale;
@@ -248,11 +198,13 @@ private:
     bool m_duration_model_in_use;
     bool m_unigram_la_in_use;
     bool m_bigram_la_in_use;
+    bool m_precomputed_lookahead_tables;
     std::string m_word_boundary_symbol;
     int m_word_boundary_symbol_idx;
     int m_sentence_begin_symbol_idx;
     int m_sentence_end_symbol_idx;
     int m_max_state_duration;
+    int m_fsa_state_sentence_begin_and_wb;
 
     float m_global_beam;
     float m_acoustic_beam;

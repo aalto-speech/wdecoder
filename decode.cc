@@ -23,7 +23,8 @@ int main(int argc, char* argv[])
     config("usage: decode [OPTION...] PH LEXICON LM CFGFILE GRAPH LNALIST\n")
       ('h', "help", "", "", "display help")
       ('d', "duration-model=STRING", "arg", "", "Duration model")
-      ('u', "unigram-lookahead=STRING", "arg", "", "Unigram lookahead language model");
+      ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
+      ('t', "lookahead-tables=STRING", "arg", "", "Precomputed lookahead tables");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
@@ -59,13 +60,17 @@ int main(int argc, char* argv[])
         d.read_dgraph(graphfname);
         cerr << "node count: " << d.m_nodes.size() << endl;
 
-        if (config["unigram-lookahead"].specified) {
-            string lalmfname = config["unigram-lookahead"].get_str();
-            cerr << "Reading unigram lookahead model: " << lalmfname << endl;
-            d.read_la_lm(lalmfname);
+        if (config["lookahead-tables"].specified) {
+            string latfname = config["lookahead-tables"].get_str();
+            cerr << "Reading precomputed lookahead tables: " << latfname << endl;
+            d.read_bigram_la_tables(latfname);
         }
 
-        d.write_bigram_la_scores("bigram-la-scores.txt");
+        if (config["lookahead-model"].specified) {
+            string lalmfname = config["lookahead-model"].get_str();
+            cerr << "Reading lookahead model: " << lalmfname << endl;
+            d.read_la_lm(lalmfname);
+        }
 
         string lnalistfname = config.arguments[5];
         ifstream lnalistf(lnalistfname);
