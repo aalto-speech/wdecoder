@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
         cerr << "Creating lookahead tables" << endl;
         // fan_out_dummy, fan_in_dummy, initial, silence, all_cw
         bool all_cw = config["cross-word"].specified;
-        d.create_la_tables(false, false, true, false, all_cw);
+        d.create_la_tables(true, true, true, true, all_cw);
         //d.create_bigram_la_tables(true, true, true, true, all_cw);
 
         string latfname = config.arguments[5];
