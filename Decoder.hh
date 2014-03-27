@@ -10,6 +10,7 @@
 #include "defs.hh"
 #include "Hmm.hh"
 #include "LM.hh"
+#include "Ngram.hh"
 #include "LnaReaderCircular.hh"
 
 
@@ -64,7 +65,7 @@ public:
       float lm_log_prob;
       float lookahead_log_prob;
       float total_log_prob;
-      int fsa_lm_node;
+      int lm_node;
       int last_word_id;
       WordHistory *history;
       unsigned short int dur;
@@ -77,7 +78,7 @@ public:
         lm_log_prob(0.0f),
         lookahead_log_prob(0.0f),
         total_log_prob(-1e20),
-        fsa_lm_node(0),
+        lm_node(0),
         last_word_id(-1),
         history(nullptr),
         dur(0),
@@ -164,8 +165,8 @@ public:
     std::vector<HmmState> m_hmm_states;
 
     // Language model
-    fsalm::LM m_lm;
-    std::vector<int> m_subword_id_to_fsa_symbol;
+    Ngram m_lm;
+    std::vector<int> m_subword_id_to_ngram_symbol;
 
     // Lookahead language model
     fsalm::LM m_la_lm;

@@ -157,8 +157,7 @@ Decoder::read_noway_lexicon(string lexfname)
 void
 Decoder::read_lm(string lmfname)
 {
-    m_lm.read_arpa(io::Stream(lmfname, "r").file, true);
-    m_lm.trim();
+    m_lm.read_arpa(lmfname);
     set_subword_id_fsa_symbol_mapping();
 }
 
@@ -377,10 +376,10 @@ Decoder::set_hmm_transition_probs(std::vector<Node> &nodes)
 void
 Decoder::set_subword_id_fsa_symbol_mapping()
 {
-    m_subword_id_to_fsa_symbol.resize(m_subwords.size(), -1);
+    m_subword_id_to_ngram_symbol.resize(m_subwords.size(), -1);
     for (int i=0; i<m_subwords.size(); i++) {
         string tmp(m_subwords[i]);
-        m_subword_id_to_fsa_symbol[i] = m_lm.symbol_map().index(tmp);
+        m_subword_id_to_ngram_symbol[i] = m_lm.vocabulary_lookup[tmp];
         if (tmp == "</s>") SENTENCE_END_WORD_ID = i;
     }
 }
@@ -484,17 +483,17 @@ Decoder::initialize()
     m_active_nodes.clear();
     m_active_histories.clear();
     Token tok;
-    tok.fsa_lm_node = m_lm.initial_node_id();
+    tok.lm_node = m_lm.sentence_start_node;
     tok.history = new WordHistory();
     tok.node_idx = DECODE_START_NODE;
     m_active_nodes.insert(DECODE_START_NODE);
     m_word_history_leafs.insert(tok.history);
     advance_in_history(tok, m_word_boundary_symbol_idx);
     float dummy;
-    tok.fsa_lm_node = m_lm.walk(tok.fsa_lm_node, m_subword_id_to_fsa_symbol[m_word_boundary_symbol_idx], &dummy);
-    m_fsa_state_sentence_begin_and_wb = tok.fsa_lm_node;
+    tok.lm_node = m_lm.score(tok.lm_node, m_subword_id_to_ngram_symbol[m_word_boundary_symbol_idx], dummy);
+    m_fsa_state_sentence_begin_and_wb = tok.lm_node;
     m_active_histories.insert(tok.history);
-    m_recombined_tokens[DECODE_START_NODE][tok.fsa_lm_node] = tok;
+    m_recombined_tokens[DECODE_START_NODE][tok.lm_node] = tok;
 }
 
 
@@ -603,7 +602,7 @@ Decoder::prune_tokens(bool collect_active_histories)
     fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
         std::map<int, Token> &node_tokens = m_recombined_tokens[tit->node_idx];
-        auto bntit = node_tokens.find(tit->fsa_lm_node);
+        auto bntit = node_tokens.find(tit->lm_node);
         if (bntit != node_tokens.end()) {
             if (tit->total_log_prob > bntit->second.total_log_prob) {
                 bntit->second = *tit;
@@ -614,7 +613,7 @@ Decoder::prune_tokens(bool collect_active_histories)
             m_dropped_count++;
         }
         else {
-            node_tokens[tit->fsa_lm_node] = *tit;
+            node_tokens[tit->lm_node] = *tit;
             m_active_nodes.insert(tit->node_idx);
             m_token_count_after_pruning++;
             m_best_node_scores[tit->node_idx] = max(m_best_node_scores[tit->node_idx], tit->total_log_prob);
@@ -687,7 +686,7 @@ Decoder::move_token_to_node(Token token,
     // Update LM score
     // Update history
     if (node.word_id != -1) {
-        token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
+        token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
@@ -700,7 +699,7 @@ Decoder::move_token_to_node(Token token,
         advance_in_history(token, node.word_id);
 
         if (node.word_id == SENTENCE_END_WORD_ID) {
-            token.fsa_lm_node = m_fsa_state_sentence_begin_and_wb;
+            token.lm_node = m_fsa_state_sentence_begin_and_wb;
             advance_in_history(token, m_word_boundary_symbol_idx);
         }
     }
@@ -789,15 +788,15 @@ Decoder::add_sentence_ends(vector<Token> &tokens)
 {
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         Token &token = *tit;
-        if (token.fsa_lm_node == m_lm.initial_node_id()) continue;
+        if (token.lm_node == m_lm.sentence_start_node) continue;
         m_active_histories.erase(token.history);
         if (m_use_word_boundary_symbol && token.history->word_id != m_subword_map[m_word_boundary_symbol]) {
-            token.fsa_lm_node = m_lm.walk(token.fsa_lm_node,
-                    m_subword_id_to_fsa_symbol[m_subword_map[m_word_boundary_symbol]], &token.lm_log_prob);
+            token.lm_node = m_lm.score(token.lm_node,
+                    m_subword_id_to_ngram_symbol[m_subword_map[m_word_boundary_symbol]], token.lm_log_prob);
             token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
             advance_in_history(token, m_subword_map[m_word_boundary_symbol]);
         }
-        token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[SENTENCE_END_WORD_ID], &token.lm_log_prob);
+        token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[SENTENCE_END_WORD_ID], token.lm_log_prob);
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         advance_in_history(token, SENTENCE_END_WORD_ID);
         m_active_histories.insert(token.history);
@@ -866,7 +865,7 @@ Decoder::print_word_history(WordHistory *history,
         history = history->previous;
     }
 
-    int fsa_lm_node = m_lm.initial_node_id();
+    int fsa_lm_node = m_lm.sentence_start_node;
     float total_lp = 0.0;
 
     if (m_use_word_boundary_symbol) {
@@ -875,7 +874,7 @@ Decoder::print_word_history(WordHistory *history,
             if ((*swit) >= 0) outf << " " << m_subwords[*swit];
             if (print_lm_probs) {
                 float lp = 0.0;
-                fsa_lm_node = m_lm.walk(fsa_lm_node, m_subword_id_to_fsa_symbol[*swit], &lp);
+                fsa_lm_node = m_lm.score(fsa_lm_node, m_subword_id_to_ngram_symbol[*swit], lp);
                 outf << "(" << lp << ")";
                 total_lp += lp;
             }
