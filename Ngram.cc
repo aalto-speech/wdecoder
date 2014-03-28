@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "Ngram.hh"
+#include "str.hh"
 
 using namespace std;
 
@@ -72,6 +73,7 @@ Ngram::read_arpa(string arpafname) {
             for (int i=0; i<curr_ngram_order; i++) {
                 if (vals.eof()) throw string("Invalid ARPA line");
                 vals >> tmp;
+                str::clean(tmp);
                 curr_ngram_str.push_back(tmp);
             }
             if (curr_ngram_order == 1) {
@@ -85,9 +87,8 @@ Ngram::read_arpa(string arpafname) {
 
             int node_idx_traversal = root_node;
             for (int i=0; i<curr_ngram.size()-1; i++) {
-                if (nodes[node_idx_traversal].next.find(curr_ngram[i]) == nodes[node_idx_traversal].next.end()) {
+                if (nodes[node_idx_traversal].next.find(curr_ngram[i]) == nodes[node_idx_traversal].next.end())
                     throw string("Missing lower order n-gram");
-                }
                 node_idx_traversal = nodes[node_idx_traversal].next[curr_ngram[i]];
             }
             if (nodes[node_idx_traversal].next.find(curr_ngram.back()) != nodes[node_idx_traversal].next.end())
@@ -97,10 +98,21 @@ Ngram::read_arpa(string arpafname) {
             if (!vals.eof())
                 vals >> nodes[curr_node_idx].backoff_prob;
 
-            int bo_traversal = root_node;
-            for (int i=1; i<curr_ngram.size(); i++)
-                bo_traversal = nodes[bo_traversal].next[curr_ngram[i]];
-            nodes[curr_node_idx].backoff_node = bo_traversal;
+            int ctxt_start = 1;
+            while (true) {
+                int bo_traversal = root_node;
+                int i = ctxt_start;
+                for (; i<curr_ngram.size(); i++) {
+                    auto boit = nodes[bo_traversal].next.find(curr_ngram[i]);
+                    if (boit == nodes[bo_traversal].next.end()) break;
+                    bo_traversal = boit->second;
+                }
+                if (i >= curr_ngram.size()) {
+                    nodes[curr_node_idx].backoff_node = bo_traversal;
+                    break;
+                }
+                else ctxt_start++;
+            }
 
             curr_node_idx++;
             ngrams_read++;
