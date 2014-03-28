@@ -7,11 +7,8 @@ class Ngram {
 public:
     class Node {
         public:
-        Node() : node_idx(-1), word(-1), prob(0.0),
-                 backoff_prob(0.0), backoff_node(-1) { }
+        Node() : prob(0.0), backoff_prob(0.0), backoff_node(-1) { }
         std::map<int, int> next;
-        int node_idx;
-        int word;
         float prob;
         float backoff_prob;
         int backoff_node;

@@ -66,7 +66,6 @@ Ngram::read_arpa(string arpafname) {
             vals >> nodes[curr_node_idx].prob;
             if (nodes[curr_node_idx].prob > 0.0)
                 throw string("Invalid log probability");
-            nodes[curr_node_idx].node_idx = curr_node_idx;
 
             vector<string> curr_ngram_str;
             string tmp;
@@ -95,7 +94,6 @@ Ngram::read_arpa(string arpafname) {
                 throw string("Duplicate n-gram in model");
             nodes[node_idx_traversal].next[curr_ngram.back()] = curr_node_idx;
 
-            nodes[curr_node_idx].word = curr_ngram.back();
             if (!vals.eof())
                 vals >> nodes[curr_node_idx].backoff_prob;
 
