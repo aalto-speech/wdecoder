@@ -485,12 +485,15 @@ Decoder::initialize()
     Token tok;
     tok.lm_node = m_lm.sentence_start_node;
     tok.history = new WordHistory();
+    tok.history->word_id = m_sentence_begin_symbol_idx;
     tok.node_idx = DECODE_START_NODE;
     m_active_nodes.insert(DECODE_START_NODE);
     m_word_history_leafs.insert(tok.history);
     advance_in_history(tok, m_word_boundary_symbol_idx);
-    float dummy;
-    tok.lm_node = m_lm.score(tok.lm_node, m_subword_id_to_ngram_symbol[m_word_boundary_symbol_idx], dummy);
+    if (m_use_word_boundary_symbol) {
+        float dummy;
+        tok.lm_node = m_lm.score(tok.lm_node, m_subword_id_to_ngram_symbol[m_word_boundary_symbol_idx], dummy);
+    }
     m_fsa_state_sentence_begin_and_wb = tok.lm_node;
     m_active_histories.insert(tok.history);
     m_recombined_tokens[DECODE_START_NODE][tok.lm_node] = tok;
@@ -865,13 +868,11 @@ Decoder::print_word_history(WordHistory *history,
         history = history->previous;
     }
 
-    int fsa_lm_node = m_lm.sentence_start_node;
+    int fsa_lm_node = m_lm.root_node;
     float total_lp = 0.0;
-
     if (m_use_word_boundary_symbol) {
-        outf << " <s>";
         for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
-            if ((*swit) >= 0) outf << " " << m_subwords[*swit];
+            outf << " " << m_subwords[*swit];
             if (print_lm_probs) {
                 float lp = 0.0;
                 fsa_lm_node = m_lm.score(fsa_lm_node, m_subword_id_to_ngram_symbol[*swit], lp);
