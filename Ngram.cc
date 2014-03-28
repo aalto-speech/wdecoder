@@ -138,8 +138,12 @@ Ngram::score(int node_idx, int word, double &score)
     while (true) {
         auto nit = nodes[node_idx].next.find(word);
         if (nit != nodes[node_idx].next.end()) {
-            score += nodes[nit->second].prob;
-            return nit->second;
+            int node_idx = nit->second;
+            score += nodes[node_idx].prob;
+            if (nodes[node_idx].next.size() == 0)
+                return nodes[node_idx].backoff_node;
+            else
+                return node_idx;
         }
         else {
             score += nodes[node_idx].backoff_prob;
@@ -155,8 +159,12 @@ Ngram::score(int node_idx, int word, float &score)
     while (true) {
         auto nit = nodes[node_idx].next.find(word);
         if (nit != nodes[node_idx].next.end()) {
-            score += nodes[nit->second].prob;
-            return nit->second;
+            int node_idx = nit->second;
+            score += nodes[node_idx].prob;
+            if (nodes[node_idx].next.size() == 0)
+                return nodes[node_idx].backoff_node;
+            else
+                return node_idx;
         }
         else {
             score += nodes[node_idx].backoff_prob;
