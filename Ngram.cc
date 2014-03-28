@@ -84,7 +84,7 @@ Ngram::read_arpa(string arpafname) {
             for (auto sit = curr_ngram_str.begin(); sit != curr_ngram_str.end(); ++sit)
                 curr_ngram.push_back(vocabulary_lookup[*sit]);
 
-            int node_idx_traversal = 0;
+            int node_idx_traversal = root_node;
             for (int i=0; i<curr_ngram.size()-1; i++) {
                 if (nodes[node_idx_traversal].next.find(curr_ngram[i]) == nodes[node_idx_traversal].next.end()) {
                     throw string("Missing lower order n-gram");
@@ -99,8 +99,8 @@ Ngram::read_arpa(string arpafname) {
             if (!vals.eof())
                 vals >> nodes[curr_node_idx].backoff_prob;
 
-            int bo_traversal = 0;
-            for (int i=1; i<curr_ngram.size()-1; i++)
+            int bo_traversal = root_node;
+            for (int i=1; i<curr_ngram.size(); i++)
                 bo_traversal = nodes[bo_traversal].next[curr_ngram[i]];
             nodes[curr_node_idx].backoff_node = bo_traversal;
 
