@@ -53,9 +53,8 @@ int main(int argc, char* argv[])
         string lalmfname = config.arguments[4];
         cerr << "Reading lookahead model: " << lalmfname << endl;
 
-        d.m_la_lm.read_arpa(io::Stream(lalmfname, "r").file, true);
-        d.m_la_lm.trim();
-        d.set_subword_id_la_fsa_symbol_mapping();
+        d.m_la_lm.read_arpa(lalmfname);
+        d.set_subword_id_la_ngram_symbol_mapping();
         if (d.m_la_lm.order() != 3) {
             cerr << "Lookahead language model should be trigram" << endl;
             exit(1);

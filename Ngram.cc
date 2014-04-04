@@ -108,6 +108,8 @@ Ngram::read_arpa(string arpafname) {
         sort(order_ngrams.begin(), order_ngrams.end());
 
         cerr << "inserting to tree.." << endl;
+        vector<int> previous_context;
+        int previous_node;
         for (unsigned int ni=0; ni<order_ngrams.size(); ni++) {
 
             int node_idx_traversal = root_node;
@@ -153,6 +155,7 @@ Ngram::read_arpa(string arpafname) {
             curr_node_idx++;
         }
 
+        max_order = curr_ngram_order;
         curr_ngram_order++;
         total_ngrams_read += ngrams_read;
         ngrams_read = 0;

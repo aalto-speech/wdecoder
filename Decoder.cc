@@ -158,16 +158,16 @@ void
 Decoder::read_lm(string lmfname)
 {
     m_lm.read_arpa(lmfname);
-    set_subword_id_fsa_symbol_mapping();
+    set_subword_id_ngram_symbol_mapping();
 }
 
 
 void
 Decoder::read_la_lm(string lmfname)
 {
-    m_la_lm.read_arpa(io::Stream(lmfname, "r").file, true);
-    m_la_lm.trim();
-    set_subword_id_la_fsa_symbol_mapping();
+    m_la_lm.read_arpa(lmfname);
+    set_subword_id_la_ngram_symbol_mapping();
+
     if (m_la_lm.order() > 1) {
         cerr << "Setting bigram lookahead scores" << endl;
         create_la_tables();
@@ -376,7 +376,7 @@ Decoder::set_hmm_transition_probs(std::vector<Node> &nodes)
 
 
 void
-Decoder::set_subword_id_fsa_symbol_mapping()
+Decoder::set_subword_id_ngram_symbol_mapping()
 {
     m_subword_id_to_ngram_symbol.resize(m_subwords.size(), -1);
     for (int i=0; i<m_subwords.size(); i++) {
@@ -388,12 +388,12 @@ Decoder::set_subword_id_fsa_symbol_mapping()
 
 
 void
-Decoder::set_subword_id_la_fsa_symbol_mapping()
+Decoder::set_subword_id_la_ngram_symbol_mapping()
 {
-    m_subword_id_to_la_fsa_symbol.resize(m_subwords.size(), -1);
+    m_subword_id_to_la_ngram_symbol.resize(m_subwords.size(), -1);
     for (int i=0; i<m_subwords.size(); i++) {
         string tmp(m_subwords[i]);
-        m_subword_id_to_la_fsa_symbol[i] = m_la_lm.symbol_map().index(tmp);
+        m_subword_id_to_la_ngram_symbol[i] = m_la_lm.vocabulary_lookup[tmp];
     }
 }
 
@@ -1027,7 +1027,7 @@ Decoder::set_unigram_la_scores()
         float node_best_la_prob = -1e20;
         for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
             float la_lm_prob = 0.0;
-            m_la_lm.walk(m_la_lm.empty_node_id(), m_subword_id_to_la_fsa_symbol[*wit], &la_lm_prob);
+            m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
             node_best_la_prob = max(node_best_la_prob, la_lm_prob);
         }
         m_nodes[i].unigram_la_score = node_best_la_prob;
@@ -1046,11 +1046,11 @@ Decoder::set_bigram_la_scores()
             set<int> word_ids;
             find_successor_words(i, word_ids, true);
             float dummy = 0.0;
-            int fsa_state = m_la_lm.walk(m_la_lm.empty_node_id(), m_subword_id_to_la_fsa_symbol[node.word_id], &dummy);
+            int fsa_state = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], dummy);
             node.bigram_la_score = -1e20;
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
                 float la_lm_prob = 0.0;
-                m_la_lm.walk(fsa_state, m_subword_id_to_la_fsa_symbol[*wit], &la_lm_prob);
+                m_la_lm.score(fsa_state, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
                 node.bigram_la_score = max(node.bigram_la_score, la_lm_prob);
             }
         }
@@ -1069,8 +1069,8 @@ Decoder::create_la_tables(bool fan_out_dummy,
     for (int swidx = 0; swidx < m_subwords.size(); swidx++) {
         if (swidx == m_sentence_end_symbol_idx) continue;
         float dummy;
-        int fsa_state = m_la_lm.walk(m_la_lm.empty_node_id(), m_subword_id_to_la_fsa_symbol[swidx], &dummy);
-        fsa_state = m_la_lm.walk(fsa_state, m_subword_id_to_la_fsa_symbol[m_word_boundary_symbol_idx], &dummy);
+        int fsa_state = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[swidx], dummy);
+        fsa_state = m_la_lm.score(fsa_state, m_subword_id_to_la_ngram_symbol[m_word_boundary_symbol_idx], dummy);
         precomputed_fsa_states[swidx] = fsa_state;
     }
 
@@ -1109,7 +1109,7 @@ Decoder::create_la_tables(bool fan_out_dummy,
             int fsa_state = precomputed_fsa_states[swidx];
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
                 float la_lm_prob = 0.0;
-                m_la_lm.walk(fsa_state, m_subword_id_to_la_fsa_symbol[*wit], &la_lm_prob);
+                m_la_lm.score(fsa_state, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
                 (*(node.bigram_la_table))[swidx] = max((*(node.bigram_la_table))[swidx], la_lm_prob);
             }
         }

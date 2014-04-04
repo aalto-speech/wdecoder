@@ -19,7 +19,8 @@ public:
 
     Ngram() : root_node(0),
               sentence_start_node(-1),
-              sentence_start_symbol_idx(-1)
+              sentence_start_symbol_idx(-1),
+              max_order(-1)
     {
         sentence_start_symbol.assign("<s>");
     };
@@ -27,6 +28,7 @@ public:
     void read_arpa(std::string arpafname);
     int score(int node_idx, int word, double &score);
     int score(int node_idx, int word, float &score);
+    int order() { return max_order; };
 
     int root_node;
     int sentence_start_node;
@@ -43,6 +45,7 @@ private:
     std::vector<int> arc_words;
     std::vector<int> arc_target_nodes;
     std::map<int, int> ngram_counts_per_order;
+    int max_order;
 
     class NgramInfo {
     public:

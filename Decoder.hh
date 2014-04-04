@@ -141,8 +141,8 @@ public:
                           bool long_silence=true,
                           bool short_silence=false);
     void set_hmm_transition_probs(std::vector<Node> &nodes);
-    void set_subword_id_fsa_symbol_mapping();
-    void set_subword_id_la_fsa_symbol_mapping();
+    void set_subword_id_ngram_symbol_mapping();
+    void set_subword_id_la_ngram_symbol_mapping();
     void clear_word_history();
     void prune_word_history();
     void set_word_boundaries();
@@ -169,8 +169,8 @@ public:
     std::vector<int> m_subword_id_to_ngram_symbol;
 
     // Lookahead language model
-    fsalm::LM m_la_lm;
-    std::vector<int> m_subword_id_to_la_fsa_symbol;
+    Ngram m_la_lm;
+    std::vector<int> m_subword_id_to_la_ngram_symbol;
 
     // Audio reader
     LnaReaderCircular m_lna_reader;
