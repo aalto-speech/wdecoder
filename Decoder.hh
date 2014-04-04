@@ -206,7 +206,7 @@ public:
     int m_sentence_begin_symbol_idx;
     int m_sentence_end_symbol_idx;
     int m_max_state_duration;
-    int m_fsa_state_sentence_begin_and_wb;
+    int m_ngram_state_sentence_begin_and_wb;
     int m_initial_node_depth;
 
     float m_global_beam;

@@ -4,7 +4,6 @@
 #include <climits>
 
 #include "Decoder.hh"
-#include "LM.hh"
 #include "conf.hh"
 #include "io.hh"
 

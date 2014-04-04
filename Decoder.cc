@@ -74,7 +74,7 @@ Decoder::Decoder()
     m_word_boundary_penalty = 0.0;
     m_max_state_duration = 80;
 
-    m_fsa_state_sentence_begin_and_wb = -1;
+    m_ngram_state_sentence_begin_and_wb = -1;
 }
 
 
@@ -495,7 +495,7 @@ Decoder::initialize()
         float dummy;
         tok.lm_node = m_lm.score(tok.lm_node, m_subword_id_to_ngram_symbol[m_word_boundary_symbol_idx], dummy);
     }
-    m_fsa_state_sentence_begin_and_wb = tok.lm_node;
+    m_ngram_state_sentence_begin_and_wb = tok.lm_node;
     m_active_histories.insert(tok.history);
     m_recombined_tokens[DECODE_START_NODE][tok.lm_node] = tok;
 }
@@ -608,7 +608,7 @@ Decoder::prune_tokens(bool collect_active_histories)
     }
     m_raw_tokens.clear();
 
-    // Collect best tokens for each node/fsa state pair
+    // Collect best tokens for each node/ngram state pair
     m_active_nodes.clear();
     fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
@@ -710,7 +710,7 @@ Decoder::move_token_to_node(Token token,
         advance_in_history(token, node.word_id);
 
         if (node.word_id == SENTENCE_END_WORD_ID) {
-            token.lm_node = m_fsa_state_sentence_begin_and_wb;
+            token.lm_node = m_ngram_state_sentence_begin_and_wb;
             advance_in_history(token, m_word_boundary_symbol_idx);
         }
     }
@@ -876,14 +876,14 @@ Decoder::print_word_history(WordHistory *history,
         history = history->previous;
     }
 
-    int fsa_lm_node = m_lm.root_node;
+    int lm_node = m_lm.root_node;
     float total_lp = 0.0;
     if (m_use_word_boundary_symbol) {
         for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
             outf << " " << m_subwords[*swit];
             if (print_lm_probs) {
                 float lp = 0.0;
-                fsa_lm_node = m_lm.score(fsa_lm_node, m_subword_id_to_ngram_symbol[*swit], lp);
+                lm_node = m_lm.score(lm_node, m_subword_id_to_ngram_symbol[*swit], lp);
                 outf << "(" << lp << ")";
                 total_lp += lp;
             }
@@ -1045,11 +1045,11 @@ Decoder::set_bigram_la_scores()
             set<int> word_ids;
             find_successor_words(i, word_ids, true);
             float dummy = 0.0;
-            int fsa_state = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], dummy);
+            int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], dummy);
             node.bigram_la_score = -1e20;
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
                 float la_lm_prob = 0.0;
-                m_la_lm.score(fsa_state, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
+                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
                 node.bigram_la_score = max(node.bigram_la_score, la_lm_prob);
             }
         }
@@ -1064,13 +1064,13 @@ Decoder::create_la_tables(bool fan_out_dummy,
                           bool silence,
                           bool all_cw)
 {
-    vector<int> precomputed_fsa_states(m_subwords.size());
+    vector<int> precomputed_lm_nodes(m_subwords.size());
     for (int swidx = 0; swidx < m_subwords.size(); swidx++) {
         if (swidx == m_sentence_end_symbol_idx) continue;
         float dummy;
-        int fsa_state = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[swidx], dummy);
-        fsa_state = m_la_lm.score(fsa_state, m_subword_id_to_la_ngram_symbol[m_word_boundary_symbol_idx], dummy);
-        precomputed_fsa_states[swidx] = fsa_state;
+        int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[swidx], dummy);
+        lm_node = m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[m_word_boundary_symbol_idx], dummy);
+        precomputed_lm_nodes[swidx] = lm_node;
     }
 
     int la_table_node_count = 0;
@@ -1105,10 +1105,10 @@ Decoder::create_la_tables(bool fan_out_dummy,
 
         for (int swidx = 0; swidx < m_subwords.size(); swidx++) {
             if (swidx == m_sentence_end_symbol_idx) continue;
-            int fsa_state = precomputed_fsa_states[swidx];
+            int lm_node = precomputed_lm_nodes[swidx];
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
                 float la_lm_prob = 0.0;
-                m_la_lm.score(fsa_state, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
+                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
                 (*(node.bigram_la_table))[swidx] = max((*(node.bigram_la_table))[swidx], la_lm_prob);
             }
         }
