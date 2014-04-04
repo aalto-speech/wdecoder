@@ -9,7 +9,6 @@
 
 #include "defs.hh"
 #include "Hmm.hh"
-#include "LM.hh"
 #include "Ngram.hh"
 #include "LnaReaderCircular.hh"
 

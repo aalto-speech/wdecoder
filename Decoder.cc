@@ -14,7 +14,6 @@
 #include "io.hh"
 
 using namespace std;
-using namespace fsalm;
 
 const int Decoder::WORD_BOUNDARY_IDENTIFIER = -2;
 
