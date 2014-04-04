@@ -39,14 +39,6 @@ public:
 
 private:
 
-    int find_node(int node_idx, int word);
-
-    std::vector<Node> nodes;
-    std::vector<int> arc_words;
-    std::vector<int> arc_target_nodes;
-    std::map<int, int> ngram_counts_per_order;
-    int max_order;
-
     class NgramInfo {
     public:
         NgramInfo() : prob(0.0), backoff_prob(0.0) { }
@@ -63,4 +55,20 @@ private:
             throw std::string("Comparing same ngrams");
         }
     };
+
+    int find_node(int node_idx, int word);
+    int read_arpa_read_order(std::ifstream &arpafile,
+                             std::vector<NgramInfo> &order_ngrams,
+                             std::string &line,
+                             int curr_ngram_order,
+                             int &linei);
+    void read_arpa_insert_order_to_tree(std::vector<NgramInfo> &order_ngrams,
+                                        int &curr_node_idx,
+                                        int &curr_arc_idx);
+
+    std::vector<Node> nodes;
+    std::vector<int> arc_words;
+    std::vector<int> arc_target_nodes;
+    std::map<int, int> ngram_counts_per_order;
+    int max_order;
 };
