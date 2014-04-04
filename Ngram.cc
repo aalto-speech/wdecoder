@@ -160,7 +160,6 @@ Ngram::read_arpa(string arpafname) {
 
     sentence_start_symbol_idx = vocabulary_lookup[sentence_start_symbol];
     sentence_start_node = find_node(root_node, sentence_start_symbol_idx);
-    //print_tree(root_node);
 }
 
 
@@ -217,30 +216,5 @@ Ngram::find_node(int node_idx, int word)
     int arc_idx = lower_b-arc_words.begin();
     if (arc_idx == last_arc || *lower_b != word) return -1;
     return arc_target_nodes[arc_idx];
-}
-
-
-void
-Ngram::print_tree(int node_idx)
-{
-    Node &nd = nodes[node_idx];
-    cerr << "node idx: " << node_idx << " prob: " << nd.prob
-         << "\tbackoff_prob: " << nd.backoff_prob
-         << "\tbackoff_node: " << nd.backoff_node
-         << "\tfirst_arc: " << nd.first_arc << "\tlast_arc: " << nd.last_arc << endl;
-
-    int first_arc = nd.first_arc;
-    int last_arc = nd.last_arc+1;
-    if (first_arc == -1) return;
-    for (int aidx = first_arc; aidx < last_arc; aidx++) {
-        int word = arc_words[aidx];
-        int target_node = arc_target_nodes[aidx];
-        cerr << "\tword: " << vocabulary[word] << " target node: " << target_node << endl;
-    }
-    for (int aidx = first_arc; aidx < last_arc; aidx++) {
-        int word = arc_words[aidx];
-        int target_node = arc_target_nodes[aidx];
-        print_tree(target_node);
-    }
 }
 

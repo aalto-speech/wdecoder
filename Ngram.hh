@@ -34,15 +34,15 @@ public:
     std::string sentence_start_symbol;
     std::vector<std::string> vocabulary;
     std::map<std::string, int> vocabulary_lookup;
-    std::vector<Node> nodes;
-    std::vector<int> arc_words;
-    std::vector<int> arc_target_nodes;
-    std::map<int, int> ngram_counts_per_order;
 
 private:
 
     int find_node(int node_idx, int word);
-    void print_tree(int node_idx);
+
+    std::vector<Node> nodes;
+    std::vector<int> arc_words;
+    std::vector<int> arc_target_nodes;
+    std::map<int, int> ngram_counts_per_order;
 
     class NgramInfo {
     public:
@@ -59,7 +59,5 @@ private:
                 else if (ngri.ngram[i] < ngram[i]) return false;
             throw std::string("Comparing same ngrams");
         }
-
     };
-
 };
