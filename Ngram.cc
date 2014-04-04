@@ -55,6 +55,12 @@ Ngram::score(int node_idx, int word, float &score)
 int
 Ngram::find_node(int node_idx, int word)
 {
+    if (node_idx == root_node) {
+        auto wit = root_node_next.find(word);
+        if (wit != root_node_next.end())
+            return wit->second;
+    }
+
     int first_arc = nodes[node_idx].first_arc;
     if (first_arc == -1) return -1;
     int last_arc = nodes[node_idx].last_arc+1;
@@ -133,7 +139,7 @@ Ngram::read_arpa(string arpafname) {
         sort(order_ngrams.begin(), order_ngrams.end());
 
         cerr << "inserting to tree.." << endl;
-        read_arpa_insert_order_to_tree(order_ngrams, curr_node_idx, curr_arc_idx);
+        read_arpa_insert_order_to_tree(order_ngrams, curr_node_idx, curr_arc_idx, curr_ngram_order);
 
         max_order = curr_ngram_order;
         curr_ngram_order++;
@@ -195,12 +201,9 @@ Ngram::read_arpa_read_order(ifstream &arpafile,
 void
 Ngram::read_arpa_insert_order_to_tree(std::vector<NgramInfo> &order_ngrams,
                                       int &curr_node_idx,
-                                      int &curr_arc_idx)
+                                      int &curr_arc_idx,
+                                      int curr_order)
 {
-
-    vector<int> previous_context;
-    int previous_node;
-
     for (unsigned int ni=0; ni<order_ngrams.size(); ni++) {
 
         int node_idx_traversal = root_node;
@@ -209,11 +212,8 @@ Ngram::read_arpa_insert_order_to_tree(std::vector<NgramInfo> &order_ngrams,
             if (node_idx_traversal == -1) throw string("Missing lower order n-gram");
         }
         int tmp = find_node(node_idx_traversal, order_ngrams[ni].ngram.back());
-        if (tmp != -1) {
-            cerr << order_ngrams[ni].prob << endl;
-            cerr << order_ngrams[ni].backoff_prob << endl;
+        if (tmp != -1)
             throw string("Duplicate n-gram in model");
-        }
 
         if (nodes[node_idx_traversal].first_arc == -1)
             nodes[node_idx_traversal].first_arc = curr_arc_idx;
@@ -223,6 +223,9 @@ Ngram::read_arpa_insert_order_to_tree(std::vector<NgramInfo> &order_ngrams,
         arc_target_nodes[curr_arc_idx] = curr_node_idx;
         nodes[curr_node_idx].prob = order_ngrams[ni].prob;
         nodes[curr_node_idx].backoff_prob = order_ngrams[ni].backoff_prob;
+
+        if (curr_order == 1)
+            root_node_next[order_ngrams[ni].ngram.back()] = curr_node_idx;
 
         int ctxt_start = 1;
         while (true) {

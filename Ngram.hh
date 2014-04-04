@@ -64,11 +64,13 @@ private:
                              int &linei);
     void read_arpa_insert_order_to_tree(std::vector<NgramInfo> &order_ngrams,
                                         int &curr_node_idx,
-                                        int &curr_arc_idx);
+                                        int &curr_arc_idx,
+                                        int curr_order);
 
     std::vector<Node> nodes;
     std::vector<int> arc_words;
     std::vector<int> arc_target_nodes;
+    std::map<int, int> root_node_next;
     std::map<int, int> ngram_counts_per_order;
     int max_order;
 };
