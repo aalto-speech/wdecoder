@@ -5,13 +5,16 @@
 
 class Ngram {
 public:
+
     class Node {
-        public:
-        Node() : prob(0.0), backoff_prob(0.0), backoff_node(-1) { }
-        std::map<int, int> next;
+    public:
+        Node() : prob(0.0), backoff_prob(0.0), backoff_node(-1),
+                 first_arc(-1), last_arc(-1) { }
         float prob;
         float backoff_prob;
         int backoff_node;
+        int first_arc;
+        int last_arc;
     };
 
     Ngram() : root_node(0),
@@ -32,5 +35,31 @@ public:
     std::vector<std::string> vocabulary;
     std::map<std::string, int> vocabulary_lookup;
     std::vector<Node> nodes;
+    std::vector<int> arc_words;
+    std::vector<int> arc_target_nodes;
     std::map<int, int> ngram_counts_per_order;
+
+private:
+
+    int find_node(int node_idx, int word);
+    void print_tree(int node_idx);
+
+    class NgramInfo {
+    public:
+        NgramInfo() : prob(0.0), backoff_prob(0.0) { }
+        std::vector<int> ngram;
+        double prob;
+        double backoff_prob;
+        bool operator<(const NgramInfo &ngri) const
+        {
+            if (ngram.size() != ngri.ngram.size())
+                throw std::string("Comparing ngrams of different order");
+            for (unsigned int i=0; i<ngram.size(); i++)
+                if (ngram[i] < ngri.ngram[i]) return true;
+                else if (ngri.ngram[i] < ngram[i]) return false;
+            throw std::string("Comparing same ngrams");
+        }
+
+    };
+
 };

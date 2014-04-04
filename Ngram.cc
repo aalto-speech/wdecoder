@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -18,6 +19,7 @@ void _getline(ifstream &fstr, string &line, int &linei) {
 
 void
 Ngram::read_arpa(string arpafname) {
+
     ifstream arpafile(arpafname);
     string header_error("Invalid ARPA header");
     if (!arpafile) throw string("Problem opening ARPA file: " + arpafname);
@@ -50,7 +52,10 @@ Ngram::read_arpa(string arpafname) {
     int total_ngrams_read = 0;
     curr_ngram_order = 1;
     nodes.resize(total_ngram_count+1);
+    arc_words.reserve(total_ngram_count);
+    arc_target_nodes.reserve(total_ngram_count);
     int curr_node_idx = 1;
+    int curr_arc_idx = 0;
 
     while (curr_ngram_order <= max_ngram_order) {
         while (line.length() == 0)
@@ -61,11 +66,13 @@ Ngram::read_arpa(string arpafname) {
         }
 
         _getline(arpafile, line, linei);
+        vector<NgramInfo> order_ngrams;
         while (line.length() > 0) {
             stringstream vals(line);
 
-            vals >> nodes[curr_node_idx].prob;
-            if (nodes[curr_node_idx].prob > 0.0)
+            NgramInfo ngram;
+            vals >> ngram.prob;
+            if (ngram.prob > 0.0)
                 throw string("Invalid log probability");
 
             vector<string> curr_ngram_str;
@@ -81,54 +88,79 @@ Ngram::read_arpa(string arpafname) {
                 vocabulary_lookup[curr_ngram_str[0]] = vocabulary.size()-1;
             }
 
-            vector<int> curr_ngram;
+            vector<int> curr_ngram_words;
             for (auto sit = curr_ngram_str.begin(); sit != curr_ngram_str.end(); ++sit)
-                curr_ngram.push_back(vocabulary_lookup[*sit]);
-
-            int node_idx_traversal = root_node;
-            for (int i=0; i<curr_ngram.size()-1; i++) {
-                if (nodes[node_idx_traversal].next.find(curr_ngram[i]) == nodes[node_idx_traversal].next.end())
-                    throw string("Missing lower order n-gram");
-                node_idx_traversal = nodes[node_idx_traversal].next[curr_ngram[i]];
-            }
-            if (nodes[node_idx_traversal].next.find(curr_ngram.back()) != nodes[node_idx_traversal].next.end())
-                throw string("Duplicate n-gram in model");
-            nodes[node_idx_traversal].next[curr_ngram.back()] = curr_node_idx;
+                curr_ngram_words.push_back(vocabulary_lookup[*sit]);
+            ngram.ngram = curr_ngram_words;
 
             if (!vals.eof())
-                vals >> nodes[curr_node_idx].backoff_prob;
+                vals >> ngram.backoff_prob;
+
+            order_ngrams.push_back(ngram);
+            _getline(arpafile, line, linei);
+            ngrams_read++;
+        }
+
+        cerr << "Read n-grams for order " << curr_ngram_order << ": " << ngrams_read << endl;
+        if (ngrams_read != ngram_counts_per_order[curr_ngram_order])
+            throw string("Invalid number of n-grams for order: " + curr_ngram_order);
+        cerr << "sorting.." << endl;
+        sort(order_ngrams.begin(), order_ngrams.end());
+
+        cerr << "inserting to tree.." << endl;
+        for (unsigned int ni=0; ni<order_ngrams.size(); ni++) {
+
+            int node_idx_traversal = root_node;
+            for (int i=0; i<order_ngrams[ni].ngram.size()-1; i++) {
+                node_idx_traversal = find_node(node_idx_traversal, order_ngrams[ni].ngram[i]);
+                if (node_idx_traversal == -1) throw string("Missing lower order n-gram");
+            }
+            int tmp = find_node(node_idx_traversal, order_ngrams[ni].ngram.back());
+            if (tmp != -1) {
+                cerr << order_ngrams[ni].prob << endl;
+                cerr << order_ngrams[ni].backoff_prob << endl;
+                throw string("Duplicate n-gram in model");
+            }
+
+            if (nodes[node_idx_traversal].first_arc == -1)
+                nodes[node_idx_traversal].first_arc = curr_arc_idx;
+            nodes[node_idx_traversal].last_arc = curr_arc_idx;
+
+            arc_words.resize(curr_arc_idx+1);
+            arc_words[curr_arc_idx] = order_ngrams[ni].ngram.back();
+            arc_target_nodes.resize(curr_arc_idx+1);
+            arc_target_nodes[curr_arc_idx] = curr_node_idx;
+            nodes[curr_node_idx].prob = order_ngrams[ni].prob;
+            nodes[curr_node_idx].backoff_prob = order_ngrams[ni].backoff_prob;
 
             int ctxt_start = 1;
             while (true) {
                 int bo_traversal = root_node;
                 int i = ctxt_start;
-                for (; i<curr_ngram.size(); i++) {
-                    auto boit = nodes[bo_traversal].next.find(curr_ngram[i]);
-                    if (boit == nodes[bo_traversal].next.end()) break;
-                    bo_traversal = boit->second;
+                for (; i<order_ngrams[ni].ngram.size(); i++) {
+                    int tmp = find_node(bo_traversal, order_ngrams[ni].ngram[i]);
+                    if (tmp == -1) break;
+                    bo_traversal = tmp;
                 }
-                if (i >= curr_ngram.size()) {
+                if (i >= order_ngrams[ni].ngram.size()) {
                     nodes[curr_node_idx].backoff_node = bo_traversal;
                     break;
                 }
                 else ctxt_start++;
             }
 
+            curr_arc_idx++;
             curr_node_idx++;
-            ngrams_read++;
-            _getline(arpafile, line, linei);
         }
 
-        cerr << "Read n-grams for order " << curr_ngram_order << ": " << ngrams_read << endl;
-        if (ngrams_read != ngram_counts_per_order[curr_ngram_order])
-            throw string("Invalid number of n-grams for order: " + curr_ngram_order);
         curr_ngram_order++;
         total_ngrams_read += ngrams_read;
         ngrams_read = 0;
     }
 
     sentence_start_symbol_idx = vocabulary_lookup[sentence_start_symbol];
-    sentence_start_node = nodes[root_node].next[sentence_start_symbol_idx];
+    sentence_start_node = find_node(root_node, sentence_start_symbol_idx);
+    //print_tree(root_node);
 }
 
 
@@ -136,11 +168,11 @@ int
 Ngram::score(int node_idx, int word, double &score)
 {
     while (true) {
-        auto nit = nodes[node_idx].next.find(word);
-        if (nit != nodes[node_idx].next.end()) {
-            int node_idx = nit->second;
+        int tmp = find_node(node_idx, word);
+        if (tmp != -1) {
+            node_idx = tmp;
             score += nodes[node_idx].prob;
-            if (nodes[node_idx].next.size() == 0)
+            if (nodes[node_idx].first_arc == -1)
                 return nodes[node_idx].backoff_node;
             else
                 return node_idx;
@@ -157,11 +189,11 @@ int
 Ngram::score(int node_idx, int word, float &score)
 {
     while (true) {
-        auto nit = nodes[node_idx].next.find(word);
-        if (nit != nodes[node_idx].next.end()) {
-            int node_idx = nit->second;
+        int tmp = find_node(node_idx, word);
+        if (tmp != -1) {
+            node_idx = tmp;
             score += nodes[node_idx].prob;
-            if (nodes[node_idx].next.size() == 0)
+            if (nodes[node_idx].first_arc == -1)
                 return nodes[node_idx].backoff_node;
             else
                 return node_idx;
@@ -172,3 +204,43 @@ Ngram::score(int node_idx, int word, float &score)
         }
     }
 }
+
+
+int
+Ngram::find_node(int node_idx, int word)
+{
+    int first_arc = nodes[node_idx].first_arc;
+    if (first_arc == -1) return -1;
+    int last_arc = nodes[node_idx].last_arc+1;
+
+    auto lower_b=lower_bound(arc_words.begin()+first_arc, arc_words.begin()+last_arc, word);
+    int arc_idx = lower_b-arc_words.begin();
+    if (arc_idx == last_arc || *lower_b != word) return -1;
+    return arc_target_nodes[arc_idx];
+}
+
+
+void
+Ngram::print_tree(int node_idx)
+{
+    Node &nd = nodes[node_idx];
+    cerr << "node idx: " << node_idx << " prob: " << nd.prob
+         << "\tbackoff_prob: " << nd.backoff_prob
+         << "\tbackoff_node: " << nd.backoff_node
+         << "\tfirst_arc: " << nd.first_arc << "\tlast_arc: " << nd.last_arc << endl;
+
+    int first_arc = nd.first_arc;
+    int last_arc = nd.last_arc+1;
+    if (first_arc == -1) return;
+    for (int aidx = first_arc; aidx < last_arc; aidx++) {
+        int word = arc_words[aidx];
+        int target_node = arc_target_nodes[aidx];
+        cerr << "\tword: " << vocabulary[word] << " target node: " << target_node << endl;
+    }
+    for (int aidx = first_arc; aidx < last_arc; aidx++) {
+        int word = arc_words[aidx];
+        int target_node = arc_target_nodes[aidx];
+        print_tree(target_node);
+    }
+}
+
