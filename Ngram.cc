@@ -205,7 +205,7 @@ Ngram::read_arpa_insert_order_to_tree(std::vector<NgramInfo> &order_ngrams,
     for (unsigned int ni=0; ni<order_ngrams.size(); ni++) {
 
         int node_idx_traversal = root_node;
-        for (int i=0; i<order_ngrams[ni].ngram.size()-1; i++) {
+        for (unsigned int i=0; i<order_ngrams[ni].ngram.size()-1; i++) {
             node_idx_traversal = find_node(node_idx_traversal, order_ngrams[ni].ngram[i]);
             if (node_idx_traversal == -1) throw string("Missing lower order n-gram");
         }
@@ -228,7 +228,7 @@ Ngram::read_arpa_insert_order_to_tree(std::vector<NgramInfo> &order_ngrams,
         int ctxt_start = 1;
         while (true) {
             int bo_traversal = root_node;
-            int i = ctxt_start;
+            unsigned int i = ctxt_start;
             for (; i<order_ngrams[ni].ngram.size(); i++) {
                 int tmp = find_node(bo_traversal, order_ngrams[ni].ngram[i]);
                 if (tmp == -1) break;

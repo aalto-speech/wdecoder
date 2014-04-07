@@ -1162,7 +1162,6 @@ Decoder::score_state_path(string lnafname,
 
         cerr << frame_idx << "\t" << gmm_score << "\t" << trans_score << "\t" << total_score << endl;
     }
-    HmmState &state = m_hmm_states[state_idx];
 
     total_score = gmm_score + trans_score + dur_score;
     cerr << "gmm: " << gmm_score << endl;

@@ -137,9 +137,9 @@ void NowayHmmReader::read_durations(istream &in,
                 a_table.push_back(a);
                 b_table.push_back(b);
             }
-            for (int i = 0; i < m_hmms.size(); i++)
+            for (unsigned int i = 0; i < m_hmms.size(); i++)
             {
-                for (int s = 2; s < m_hmms[i].states.size(); s++)
+                for (unsigned int s = 2; s < m_hmms[i].states.size(); s++)
                 {
                     HmmState &state = m_hmms[i].states[s];
                     if (state.model >= num_states)
@@ -154,7 +154,7 @@ void NowayHmmReader::read_durations(istream &in,
         }
         else
         {
-            for (int i = 0; i < m_hmms.size(); i++)
+            for (unsigned int i = 0; i < m_hmms.size(); i++)
             {
                 in >> hmm_id;
                 if (hmm_id != i+1)
@@ -166,7 +166,7 @@ void NowayHmmReader::read_durations(istream &in,
                     m_hmms[i].set_pho_dur_stat(a,b);
                 }
 
-                for (int s = 2; s < m_hmms[i].states.size(); s++)
+                for (unsigned int s = 2; s < m_hmms[i].states.size(); s++)
                 {
                     HmmState &state = m_hmms[i].states[s];
                     in >> a >> b;
@@ -175,7 +175,7 @@ void NowayHmmReader::read_durations(istream &in,
 
                 if (version == 2)
                 {
-                    for (int s = 2; s < m_hmms[i].states.size(); s++)
+                    for (unsigned int s = 2; s < m_hmms[i].states.size(); s++)
                     {
                         HmmState &state = m_hmms[i].states[s];
                         in >> a0 >> a1 >> b0 >> b1;
