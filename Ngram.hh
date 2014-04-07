@@ -1,3 +1,6 @@
+#ifndef NGRAM_HH
+#define NGRAM_HH
+
 #include <map>
 #include <string>
 #include <vector>
@@ -74,3 +77,6 @@ private:
     std::map<int, int> ngram_counts_per_order;
     int max_order;
 };
+
+#endif
+
