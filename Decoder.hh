@@ -211,7 +211,7 @@ public:
 
     float m_global_beam;
     float m_acoustic_beam;
-    float m_state_beam;
+    float m_node_beam;
     float m_history_beam;
     float m_silence_beam;
     float m_word_end_beam;
@@ -226,7 +226,7 @@ public:
     int m_acoustic_beam_pruned_count;
     int m_history_beam_pruned_count;
     int m_word_end_beam_pruned_count;
-    int m_state_beam_pruned_count;
+    int m_node_beam_pruned_count;
     int m_max_state_duration_pruned_count;
     int m_dropped_count;
 

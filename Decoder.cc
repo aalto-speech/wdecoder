@@ -43,7 +43,7 @@ Decoder::Decoder()
     m_dropped_count = 0;
     m_global_beam_pruned_count = 0;
     m_word_end_beam_pruned_count = 0;
-    m_state_beam_pruned_count = 0;
+    m_node_beam_pruned_count = 0;
     m_history_beam_pruned_count = 0;
     m_acoustic_beam_pruned_count = 0;
     m_max_state_duration_pruned_count = 0;
@@ -64,7 +64,7 @@ Decoder::Decoder()
     m_history_beam = 0.0;
     m_silence_beam = 0.0;
     m_word_end_beam = 0.0;
-    m_state_beam = 0.0;
+    m_node_beam = 0.0;
 
     m_token_limit = 500000;
     m_active_node_limit = 50000;
@@ -246,7 +246,7 @@ Decoder::read_config(string cfgfname)
         else if (parameter == "acoustic_beam") ss >> m_acoustic_beam;
         else if (parameter == "history_beam") ss >> m_history_beam;
         else if (parameter == "word_end_beam") ss >> m_word_end_beam;
-        else if (parameter == "state_beam") ss >> m_state_beam;
+        else if (parameter == "node_beam") ss >> m_node_beam;
         else if (parameter == "word_boundary_penalty") ss >> m_word_boundary_penalty;
         else if (parameter == "history_clean_frame_interval") ss >> m_history_clean_frame_interval;
         else if (parameter == "force_sentence_end") {
@@ -285,7 +285,7 @@ Decoder::print_config(ostream &outf)
     outf << "acoustic global beam: " << m_acoustic_beam << endl;
     outf << "acoustic history beam: " << m_history_beam << endl;
     outf << "word end beam: " << m_word_end_beam << endl;
-    outf << "state beam: " << m_state_beam << endl;
+    outf << "node beam: " << m_node_beam << endl;
     outf << "word boundary penalty: " << m_word_boundary_penalty << endl;
     outf << "history clean frame interval: " << m_history_clean_frame_interval << endl;
 }
@@ -514,7 +514,7 @@ Decoder::reset_frame_variables()
     m_max_state_duration_pruned_count = 0;
     m_history_beam_pruned_count = 0;
     m_word_end_beam_pruned_count = 0;
-    m_state_beam_pruned_count = 0;
+    m_node_beam_pruned_count = 0;
     m_dropped_count = 0;
     m_token_count_after_pruning = 0;
     reset_history_scores();
@@ -550,11 +550,11 @@ Decoder::propagate_tokens(void)
     int node_count = 0;
     for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit) {
         Node &node = m_nodes[*nit];
-        float curr_node_beam = m_best_node_scores[*nit] - m_state_beam;
+        float curr_node_beam = m_best_node_scores[*nit] - m_node_beam;
         for (auto tit = m_recombined_tokens[*nit].begin(); tit != m_recombined_tokens[*nit].end(); ++tit) {
 
             if (tit->second.total_log_prob < curr_node_beam) {
-                m_state_beam_pruned_count++;
+                m_node_beam_pruned_count++;
                 continue;
             }
 
