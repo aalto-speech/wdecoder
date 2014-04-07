@@ -14,9 +14,78 @@
 #include "io.hh"
 
 using namespace std;
-using namespace fsalm;
 
 const int Decoder::WORD_BOUNDARY_IDENTIFIER = -2;
+
+
+Decoder::Decoder()
+{
+    m_debug = 0;
+    m_stats = 0;
+    m_duration_model_in_use = false;
+    m_unigram_la_in_use = false;
+    m_bigram_la_in_use = false;
+    m_precomputed_lookahead_tables = false;
+    m_use_word_boundary_symbol = false;
+    m_force_sentence_end = true;
+
+    m_lm_scale = 0.0;
+    m_duration_scale = 0.0;
+    m_transition_scale = 0.0;
+    m_token_count = 0;
+    m_propagated_count = 0;
+    m_token_count_after_pruning = 0;
+    m_word_boundary_symbol_idx = -1;
+    m_sentence_begin_symbol_idx = -1;
+    m_sentence_end_symbol_idx = -1;
+    m_initial_node_depth = 2;
+
+    m_dropped_count = 0;
+    m_global_beam_pruned_count = 0;
+    m_word_end_beam_pruned_count = 0;
+    m_state_beam_pruned_count = 0;
+    m_history_beam_pruned_count = 0;
+    m_acoustic_beam_pruned_count = 0;
+    m_max_state_duration_pruned_count = 0;
+
+    DECODE_START_NODE = -1;
+    SENTENCE_END_WORD_ID = -1;
+
+    m_acoustics = nullptr;
+    m_empty_history = nullptr;
+
+    m_best_log_prob = -1e20;
+    m_best_am_log_prob = -1e20;
+    m_best_word_end_prob = -1e20;
+
+    m_global_beam = 0.0;
+    m_acoustic_beam = 0.0;
+    m_current_word_end_beam = 0.0;
+    m_history_beam = 0.0;
+    m_silence_beam = 0.0;
+    m_word_end_beam = 0.0;
+    m_state_beam = 0.0;
+
+    m_token_limit = 500000;
+    m_active_node_limit = 50000;
+
+    m_history_clean_frame_interval = 10;
+
+    m_word_boundary_penalty = 0.0;
+    m_max_state_duration = 80;
+
+    m_ngram_state_sentence_begin_and_wb = -1;
+}
+
+
+Decoder::~Decoder()
+{
+    for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit)
+        if (nit->bigram_la_table != nullptr) {
+            delete nit->bigram_la_table;
+            nit->bigram_la_table = nullptr;
+        }
+}
 
 
 void
@@ -74,6 +143,8 @@ Decoder::read_noway_lexicon(string lexfname)
         if (m_subword_map.find(unit) == m_subword_map.end()) {
             m_subwords.push_back(unit);
             m_subword_map[unit] = m_subwords.size()-1;
+            if (unit == "<s>") m_sentence_begin_symbol_idx = m_subwords.size()-1;
+            if (unit == "</s>") m_sentence_end_symbol_idx = m_subwords.size()-1;
         }
         m_lexicon[unit] = phones;
 
@@ -85,20 +156,28 @@ Decoder::read_noway_lexicon(string lexfname)
 void
 Decoder::read_lm(string lmfname)
 {
-    m_lm.read_arpa(io::Stream(lmfname, "r").file, true);
-    m_lm.trim();
-    set_subword_id_fsa_symbol_mapping();
+    m_lm.read_arpa(lmfname);
+    set_subword_id_ngram_symbol_mapping();
 }
 
 
 void
 Decoder::read_la_lm(string lmfname)
 {
-    m_la_lm.read_arpa(io::Stream(lmfname, "r").file, true);
-    m_la_lm.trim();
-    set_subword_id_la_fsa_symbol_mapping();
-    set_unigram_la_scores();
-    m_unigram_la_in_use = true;
+    m_la_lm.read_arpa(lmfname);
+    set_subword_id_la_ngram_symbol_mapping();
+
+    if (m_la_lm.order() > 1) {
+        cerr << "Setting bigram lookahead scores" << endl;
+        create_la_tables();
+        set_bigram_la_scores();
+        m_bigram_la_in_use = true;
+    }
+    else {
+        cerr << "Setting unigram lookahead scores" << endl;
+        set_unigram_la_scores();
+        m_unigram_la_in_use = true;
+    }
 }
 
 
@@ -142,6 +221,7 @@ Decoder::read_dgraph(string fname)
     add_silence_hmms(m_nodes);
     set_hmm_transition_probs(m_nodes);
     set_word_boundaries();
+    mark_initial_nodes(m_initial_node_depth);
 }
 
 
@@ -166,6 +246,7 @@ Decoder::read_config(string cfgfname)
         else if (parameter == "acoustic_beam") ss >> m_acoustic_beam;
         else if (parameter == "history_beam") ss >> m_history_beam;
         else if (parameter == "word_end_beam") ss >> m_word_end_beam;
+        else if (parameter == "state_beam") ss >> m_state_beam;
         else if (parameter == "word_boundary_penalty") ss >> m_word_boundary_penalty;
         else if (parameter == "history_clean_frame_interval") ss >> m_history_clean_frame_interval;
         else if (parameter == "force_sentence_end") {
@@ -204,6 +285,7 @@ Decoder::print_config(ostream &outf)
     outf << "acoustic global beam: " << m_acoustic_beam << endl;
     outf << "acoustic history beam: " << m_history_beam << endl;
     outf << "word end beam: " << m_word_end_beam << endl;
+    outf << "state beam: " << m_state_beam << endl;
     outf << "word boundary penalty: " << m_word_boundary_penalty << endl;
     outf << "history clean frame interval: " << m_history_clean_frame_interval << endl;
 }
@@ -233,6 +315,7 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             nodes.resize(nodes.size()+1);
             nodes.back().hmm_state = hmm.states[sidx].model;
+            nodes.back().flags |= NODE_SILENCE;
             nodes.back().arcs.resize(nodes.back().arcs.size()+1);
             nodes.back().arcs.back().target_node = nodes.size()-1;
             nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
@@ -257,6 +340,7 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             nodes.resize(nodes.size()+1);
             nodes.back().hmm_state = hmm.states[sidx].model;
+            nodes.back().flags |= NODE_SILENCE;
             nodes.back().arcs.resize(nodes.back().arcs.size()+1);
             nodes.back().arcs.back().target_node = nodes.size()-1;
             nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
@@ -291,74 +375,25 @@ Decoder::set_hmm_transition_probs(std::vector<Node> &nodes)
 
 
 void
-Decoder::set_subword_id_fsa_symbol_mapping()
+Decoder::set_subword_id_ngram_symbol_mapping()
 {
-    m_subword_id_to_fsa_symbol.resize(m_subwords.size(), -1);
+    m_subword_id_to_ngram_symbol.resize(m_subwords.size(), -1);
     for (int i=0; i<m_subwords.size(); i++) {
         string tmp(m_subwords[i]);
-        m_subword_id_to_fsa_symbol[i] = m_lm.symbol_map().index(tmp);
+        m_subword_id_to_ngram_symbol[i] = m_lm.vocabulary_lookup[tmp];
         if (tmp == "</s>") SENTENCE_END_WORD_ID = i;
     }
 }
 
 
 void
-Decoder::set_subword_id_la_fsa_symbol_mapping()
+Decoder::set_subword_id_la_ngram_symbol_mapping()
 {
-    m_subword_id_to_la_fsa_symbol.resize(m_subwords.size(), -1);
+    m_subword_id_to_la_ngram_symbol.resize(m_subwords.size(), -1);
     for (int i=0; i<m_subwords.size(); i++) {
         string tmp(m_subwords[i]);
-        m_subword_id_to_la_fsa_symbol[i] = m_la_lm.symbol_map().index(tmp);
+        m_subword_id_to_la_ngram_symbol[i] = m_la_lm.vocabulary_lookup[tmp];
     }
-}
-
-
-void
-Decoder::set_tracked_result(string result)
-{
-    std::vector<std::string> tokens = str::split(result, " ", true);
-    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit)
-        m_tracked_result.push_back(m_subword_map[*tit]);
-    m_track_result = true;
-}
-
-
-int
-Decoder::recombined_to_vector(std::vector<Token> &raw_tokens)
-{
-    int token_count = 0;
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
-        for (auto tit = m_recombined_tokens[*nit].begin(); tit != m_recombined_tokens[*nit].end(); ++tit) {
-            token_count++;
-            tit->second.word_end = false;
-            raw_tokens.push_back(tit->second);
-        }
-    }
-    return token_count;
-}
-
-
-bool
-Decoder::track_result(std::vector<Token> &tokens)
-{
-    map<WordHistory*, int> token_counts;
-
-    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit)
-        if (m_tracked_histories.find(tit->history) != m_tracked_histories.end())
-            token_counts[tit->history]++;
-
-    int histcounts = 0;
-    for (auto tcit = token_counts.begin(); tcit != token_counts.end(); ++tcit) {
-        if (tcit->second > 0) {
-            string whs;
-            word_history_to_string(tcit->first, whs);
-            cerr << tcit->second << " tokens for path: " << whs << endl;
-            histcounts++;
-        }
-    }
-
-    if (histcounts > 0) return true;
-    else return false;
 }
 
 
@@ -375,19 +410,6 @@ Decoder::recognize_lna_file(string lnafname,
     m_acoustics = &m_lna_reader;
     initialize();
 
-    if (m_track_result) {
-        WordHistory* curr_history = m_empty_history;
-        for (auto trit = m_tracked_result.begin(); trit != m_tracked_result.end(); ++trit) {
-            cerr << "advancing history with: " << m_subwords[*trit] << " " << *trit << endl;
-            curr_history->next[*trit] = new WordHistory(*trit, curr_history);
-            curr_history = curr_history->next[*trit];
-            if (trit != m_tracked_result.begin())
-                m_tracked_histories.insert(curr_history);
-        }
-        m_word_history_leafs.erase(m_empty_history);
-        m_word_history_leafs.insert(curr_history);
-    }
-
     time_t start_time, end_time;
     time(&start_time);
     int frame_idx = 0;
@@ -396,35 +418,12 @@ Decoder::recognize_lna_file(string lnafname,
         reset_frame_variables();
         propagate_tokens();
 
-        cerr << endl;
-        if (m_track_result) {
-            cerr << "frame " << frame_idx << " after propagation" << endl;;
-            bool hists = track_result(m_raw_tokens);
-            //if (!hists && frame_idx > 10) exit(1);
+        if (frame_idx % m_history_clean_frame_interval == 0) {
+            prune_tokens(true);
+            prune_word_history();
         }
+        else prune_tokens(false);
 
-        prune_tokens(true);
-        //if (frame_idx % m_history_clean_frame_interval == 0)
-        //    prune_word_history();
-
-        vector<Token> track_tokens;
-        recombined_to_vector(track_tokens);
-        if (m_track_result) {
-            cerr << endl << "frame " << frame_idx << " after pruning" << endl;
-            bool hists = track_result(track_tokens);
-            //if (!hists && frame_idx > 10) exit(1);
-        }
-
-        if (m_global_beam_pruned_count > 0)
-            cerr << "tracked tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
-        if (m_acoustic_beam_pruned_count > 0)
-            cerr << "tracked tokens pruned by acoustic beam: " << m_acoustic_beam_pruned_count << endl;
-        if (m_history_beam_pruned_count > 0)
-            cerr << "tracked tokens pruned by acoustic history beam: " << m_history_beam_pruned_count << endl;
-        if (m_word_end_beam_pruned_count > 0)
-            cerr << "tracked tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
-
-        /*
         if (m_stats) {
             cerr << endl << "recognized frame: " << frame_idx << endl;
             cerr << "current global beam: " << m_global_beam << endl;
@@ -438,7 +437,6 @@ Decoder::recognize_lna_file(string lnafname,
             cerr << "number of active nodes: " << m_active_nodes.size() << endl;
             print_best_word_history(outf);
         }
-        */
 
         frame_idx++;
     }
@@ -486,14 +484,20 @@ Decoder::initialize()
     m_active_nodes.clear();
     m_active_histories.clear();
     Token tok;
-    tok.fsa_lm_node = m_lm.initial_node_id();
+    tok.lm_node = m_lm.sentence_start_node;
     tok.history = new WordHistory();
+    tok.history->word_id = m_sentence_begin_symbol_idx;
     tok.node_idx = DECODE_START_NODE;
     m_active_nodes.insert(DECODE_START_NODE);
-    m_recombined_tokens[DECODE_START_NODE][m_lm.initial_node_id()] = tok;
-    m_active_histories.insert(tok.history);
     m_word_history_leafs.insert(tok.history);
-    m_empty_history = tok.history;
+    advance_in_history(tok, m_word_boundary_symbol_idx);
+    if (m_use_word_boundary_symbol) {
+        float dummy;
+        tok.lm_node = m_lm.score(tok.lm_node, m_subword_id_to_ngram_symbol[m_word_boundary_symbol_idx], dummy);
+    }
+    m_ngram_state_sentence_begin_and_wb = tok.lm_node;
+    m_active_histories.insert(tok.history);
+    m_recombined_tokens[DECODE_START_NODE][tok.lm_node] = tok;
 }
 
 
@@ -546,7 +550,14 @@ Decoder::propagate_tokens(void)
     int node_count = 0;
     for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit) {
         Node &node = m_nodes[*nit];
+        float curr_node_beam = m_best_node_scores[*nit] - m_state_beam;
         for (auto tit = m_recombined_tokens[*nit].begin(); tit != m_recombined_tokens[*nit].end(); ++tit) {
+
+            if (tit->second.total_log_prob < curr_node_beam) {
+                m_state_beam_pruned_count++;
+                continue;
+            }
+
             m_token_count++;
             tit->second.word_end = false;
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
@@ -584,37 +595,25 @@ Decoder::prune_tokens(bool collect_active_histories)
     float current_word_end_beam = m_best_word_end_prob - m_word_end_beam;
     for (int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
-        if (tok.total_log_prob < current_glob_beam) {
-            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end()) {
-                m_global_beam_pruned_count++;
-            }
-        }
-        else if (tok.am_log_prob < current_acoustic_beam) {
-            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end()) {
-                m_acoustic_beam_pruned_count++;
-            }
-        }
-        else if (tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam) {
-            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end()) {
-                m_history_beam_pruned_count++;
-            }
-        }
-        else if (tok.word_end && tok.total_log_prob < current_word_end_beam) {
-            if (m_tracked_histories.find(tok.history) != m_tracked_histories.end()) {
-                m_word_end_beam_pruned_count++;
-            }
-        }
+        if (tok.total_log_prob < current_glob_beam)
+            m_global_beam_pruned_count++;
+        else if (tok.am_log_prob < current_acoustic_beam)
+            m_acoustic_beam_pruned_count++;
+        else if (tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam)
+            m_history_beam_pruned_count++;
+        else if (tok.word_end && tok.total_log_prob < current_word_end_beam)
+            m_word_end_beam_pruned_count++;
         else
             pruned_tokens.push_back(tok);
     }
     m_raw_tokens.clear();
 
-    // Collect best tokens for each node/fsa state pair
+    // Collect best tokens for each node/ngram state pair
     m_active_nodes.clear();
     fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
         std::map<int, Token> &node_tokens = m_recombined_tokens[tit->node_idx];
-        auto bntit = node_tokens.find(tit->fsa_lm_node);
+        auto bntit = node_tokens.find(tit->lm_node);
         if (bntit != node_tokens.end()) {
             if (tit->total_log_prob > bntit->second.total_log_prob) {
                 bntit->second = *tit;
@@ -625,7 +624,7 @@ Decoder::prune_tokens(bool collect_active_histories)
             m_dropped_count++;
         }
         else {
-            node_tokens[tit->fsa_lm_node] = *tit;
+            node_tokens[tit->lm_node] = *tit;
             m_active_nodes.insert(tit->node_idx);
             m_token_count_after_pruning++;
             m_best_node_scores[tit->node_idx] = max(m_best_node_scores[tit->node_idx], tit->total_log_prob);
@@ -663,22 +662,26 @@ Decoder::move_token_to_node(Token token,
     }
 
     if (m_unigram_la_in_use) update_lookahead_prob(token, node.unigram_la_score);
-    //if ((node.flags & NODE_FAN_OUT_DUMMY) || node_idx == END_NODE) token.word_end = true;
+    else if (m_bigram_la_in_use) {
+        if (node.flags & NODE_BIGRAM_LA_TABLE) {
+            float la_prob = (*(node.bigram_la_table))[token.last_word_id];
+            update_lookahead_prob(token, la_prob);
+        }
+        else if (node.bigram_la_score != 0.0) update_lookahead_prob(token, node.bigram_la_score);
+    }
 
     // HMM node
     if (node.hmm_state != -1) {
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
         if (token.am_log_prob < (m_best_am_log_prob-m_acoustic_beam)) {
-            if (m_tracked_histories.find(token.history) != m_tracked_histories.end())
-                m_acoustic_beam_pruned_count++;
+             m_acoustic_beam_pruned_count++;
              return;
         }
 
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
-            if (m_tracked_histories.find(token.history) != m_tracked_histories.end())
-                m_global_beam_pruned_count++;
+            m_global_beam_pruned_count++;
             return;
         }
 
@@ -690,19 +693,26 @@ Decoder::move_token_to_node(Token token,
         return;
     }
 
-    // LM node, update LM score
+    // LM node
+    // Update LM score
     // Update history
     if (node.word_id != -1) {
-        token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[node.word_id], &token.lm_log_prob);
-        if (node.word_id == SENTENCE_END_WORD_ID) token.fsa_lm_node = m_lm.initial_node_id();
-        if (node.word_id != m_word_boundary_symbol_idx) token.word_end = true;
+        token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
-            if (m_tracked_histories.find(token.history) != m_tracked_histories.end())
-                m_global_beam_pruned_count++;
+            m_global_beam_pruned_count++;
             return;
         }
+        if (node.word_id != m_word_boundary_symbol_idx) {
+            token.word_end = true;
+            if (node.word_id != m_sentence_end_symbol_idx) token.last_word_id = node.word_id;
+        }
         advance_in_history(token, node.word_id);
+
+        if (node.word_id == SENTENCE_END_WORD_ID) {
+            token.lm_node = m_ngram_state_sentence_begin_and_wb;
+            advance_in_history(token, m_word_boundary_symbol_idx);
+        }
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
@@ -789,15 +799,15 @@ Decoder::add_sentence_ends(vector<Token> &tokens)
 {
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         Token &token = *tit;
-        if (token.fsa_lm_node == m_lm.initial_node_id()) continue;
+        if (token.lm_node == m_lm.sentence_start_node) continue;
         m_active_histories.erase(token.history);
         if (m_use_word_boundary_symbol && token.history->word_id != m_subword_map[m_word_boundary_symbol]) {
-            token.fsa_lm_node = m_lm.walk(token.fsa_lm_node,
-                    m_subword_id_to_fsa_symbol[m_subword_map[m_word_boundary_symbol]], &token.lm_log_prob);
+            token.lm_node = m_lm.score(token.lm_node,
+                    m_subword_id_to_ngram_symbol[m_subword_map[m_word_boundary_symbol]], token.lm_log_prob);
             token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
             advance_in_history(token, m_subword_map[m_word_boundary_symbol]);
         }
-        token.fsa_lm_node = m_lm.walk(token.fsa_lm_node, m_subword_id_to_fsa_symbol[SENTENCE_END_WORD_ID], &token.lm_log_prob);
+        token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[SENTENCE_END_WORD_ID], token.lm_log_prob);
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         advance_in_history(token, SENTENCE_END_WORD_ID);
         m_active_histories.insert(token.history);
@@ -855,24 +865,6 @@ Decoder::print_best_word_history(ostream &outf)
 
 
 void
-Decoder::word_history_to_string(WordHistory *history,
-                                std::string &whs)
-{
-    whs.clear();
-    vector<int> subwords;
-    while (true) {
-        subwords.push_back(history->word_id);
-        if (history->previous == nullptr) break;
-        history = history->previous;
-    }
-    for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
-        if (swit != subwords.rbegin()) whs += " ";
-        if ((*swit) >= 0) whs += m_subwords[*swit];
-    }
-}
-
-
-void
 Decoder::print_word_history(WordHistory *history,
                             ostream &outf,
                             bool print_lm_probs)
@@ -884,16 +876,14 @@ Decoder::print_word_history(WordHistory *history,
         history = history->previous;
     }
 
-    int fsa_lm_node = m_lm.initial_node_id();
+    int lm_node = m_lm.root_node;
     float total_lp = 0.0;
-
     if (m_use_word_boundary_symbol) {
-        outf << " <s>";
         for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
-            if ((*swit) >= 0) outf << " " << m_subwords[*swit];
+            outf << " " << m_subwords[*swit];
             if (print_lm_probs) {
                 float lp = 0.0;
-                fsa_lm_node = m_lm.walk(fsa_lm_node, m_subword_id_to_fsa_symbol[*swit], &lp);
+                lm_node = m_lm.score(lm_node, m_subword_id_to_ngram_symbol[*swit], lp);
                 outf << "(" << lp << ")";
                 total_lp += lp;
             }
@@ -959,7 +949,7 @@ Decoder::set_word_boundaries()
             }
         }
         cerr << "word boundary count: " << wbcount+1 << endl;
-        m_nodes[START_NODE].word_id = m_subword_map[m_word_boundary_symbol];
+        m_nodes[END_NODE].word_id = m_subword_map[m_word_boundary_symbol];
     }
     else {
         int wbcount = 0;
@@ -976,34 +966,44 @@ Decoder::set_word_boundaries()
 
 
 void
+Decoder::mark_initial_nodes(int max_depth, int curr_depth, int node_idx)
+{
+    Node &node = m_nodes[node_idx];
+
+    if (node_idx != START_NODE) {
+        if (node.word_id != -1) return;
+        node.flags |= NODE_INITIAL;
+    }
+    if (curr_depth == max_depth) return;
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+        mark_initial_nodes(max_depth, curr_depth+1, ait->target_node);
+}
+
+
+void
 Decoder::reset_history_scores()
 {
     for (auto histit = m_word_history_leafs.begin(); histit != m_word_history_leafs.end(); ++histit) {
         WordHistory *history = *histit;
         history->best_am_log_prob = -1e20;
-        while (history->previous != NULL) {
+        if (history->previous != NULL) {
             history->previous->best_am_log_prob = -1e20;
-            history = history->previous;
+            if (history->previous->previous != NULL) {
+                history->previous->previous->best_am_log_prob = -1e20;
+            }
         }
     }
 }
 
 
 void
-Decoder::find_successor_words(int node_idx, map<int, set<int> > &word_ids, bool start_node)
+Decoder::find_successor_words(int node_idx, set<int> &word_ids, bool start_node)
 {
     Node &node = m_nodes[node_idx];
 
     if (!start_node && node.word_id != -1) {
-        auto wids = word_ids.find(node.word_id);
-        if (wids == word_ids.end()) {
-            set<int> tmp;
-            tmp.insert(node_idx);
-            word_ids[node.word_id] = tmp;
-        }
-        else {
-            word_ids[node.word_id].insert(node_idx);
-        }
+        word_ids.insert(node.word_id);
         return;
     }
 
@@ -1020,62 +1020,102 @@ Decoder::set_unigram_la_scores()
 {
     for (int i=0; i<m_nodes.size(); i++) {
 
-        map<int, set<int> > word_ids;
+        set<int> word_ids;
         find_successor_words(i, word_ids, true);
 
-        if (word_ids.size() > 1 || word_ids.begin()->first != m_word_boundary_symbol_idx) {
-            float node_best_la_prob = -1e20;
+        float node_best_la_prob = -1e20;
+        for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
+            float la_lm_prob = 0.0;
+            m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
+            node_best_la_prob = max(node_best_la_prob, la_lm_prob);
+        }
+        m_nodes[i].unigram_la_score = node_best_la_prob;
+    }
+}
+
+
+void
+Decoder::set_bigram_la_scores()
+{
+    for (int i=0; i<m_nodes.size(); i++) {
+        Node &node = m_nodes[i];
+        if (node.word_id != -1
+            && node.word_id != m_sentence_end_symbol_idx
+            && (!(node.flags & NODE_BIGRAM_LA_TABLE))) {
+            set<int> word_ids;
+            find_successor_words(i, word_ids, true);
+            float dummy = 0.0;
+            int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], dummy);
+            node.bigram_la_score = -1e20;
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
                 float la_lm_prob = 0.0;
-                m_la_lm.walk(m_la_lm.empty_node_id(), m_subword_id_to_la_fsa_symbol[wit->first], &la_lm_prob);
-                node_best_la_prob = max(node_best_la_prob, la_lm_prob);
+                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
+                node.bigram_la_score = max(node.bigram_la_score, la_lm_prob);
             }
-            m_nodes[i].unigram_la_score = node_best_la_prob;
         }
-        else if (word_ids.size() == 1) {
-            // First step with unigram la
-            float la_lm_prob = 0.0;
-            m_la_lm.walk(m_la_lm.empty_node_id(), m_subword_id_to_la_fsa_symbol[word_ids.begin()->first], &la_lm_prob);
-            float dummy = 0.0;
-            int fsa_state = m_lm.walk(m_lm.empty_node_id(), m_subword_id_to_fsa_symbol[word_ids.begin()->first], &dummy);
+    }
+}
 
-            // Possible following word ids without branching with normal lm
-            unique_ptr<set<int> > next_word_ids(new set<int>);
-            unique_ptr<set<int> > next_nodes(new set<int>);
-            for (auto nit = word_ids.begin()->second.begin(); nit != word_ids.begin()->second.end(); ++nit) {
-                map<int, set<int> > temp_word_ids;
-                find_successor_words(*nit, temp_word_ids, true);
-                for (auto wnit = temp_word_ids.begin(); wnit != temp_word_ids.end(); ++wnit) {
-                    next_word_ids->insert(wnit->first);
-                    next_nodes->insert(wnit->second.begin(), wnit->second.end());
-                }
-            }
 
-            while (next_word_ids->size() == 1) {
-                fsa_state = m_lm.walk(fsa_state, m_subword_id_to_fsa_symbol[*(next_word_ids->begin())], &la_lm_prob);
-                unique_ptr<set<int> > temp_nodes(new set<int>(*next_nodes));
-                next_word_ids->clear();
-                next_nodes->clear();
-                for (auto tnit = temp_nodes->begin(); tnit != temp_nodes->end(); ++tnit) {
-                    map<int, set<int> > temp_word_ids;
-                    find_successor_words(*tnit, temp_word_ids, true);
-                    for (auto wnit = temp_word_ids.begin(); wnit != temp_word_ids.end(); ++wnit) {
-                        next_word_ids->insert(wnit->first);
-                        next_nodes->insert(wnit->second.begin(), wnit->second.end());
-                    }
-                }
-            }
+void
+Decoder::create_la_tables(bool fan_out_dummy,
+                          bool fan_in_dummy,
+                          bool initial,
+                          bool silence,
+                          bool all_cw)
+{
+    vector<int> precomputed_lm_nodes(m_subwords.size());
+    for (int swidx = 0; swidx < m_subwords.size(); swidx++) {
+        if (swidx == m_sentence_end_symbol_idx) continue;
+        float dummy;
+        int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[swidx], dummy);
+        lm_node = m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[m_word_boundary_symbol_idx], dummy);
+        precomputed_lm_nodes[swidx] = lm_node;
+    }
 
-            // First branching with respect to word ids, normal lm
-            float node_best_la_prob = -1e20;
-            for (auto wit = next_word_ids->begin(); wit != next_word_ids->end(); ++wit) {
-                float next_la_lm_prob = 0.0;
-                m_lm.walk(fsa_state, m_subword_id_to_fsa_symbol[*wit], &next_la_lm_prob);
-                node_best_la_prob = max(node_best_la_prob, next_la_lm_prob);
-            }
+    int la_table_node_count = 0;
+    map<set<int>, int> finished_la_tables;
+    for (int i=0; i<m_nodes.size(); i++) {
 
-            m_nodes[i].unigram_la_score = node_best_la_prob + la_lm_prob;
+        Node &node = m_nodes[i];
+
+        bool la_table_for_this_node = false;
+        if (i == START_NODE) la_table_for_this_node = true;
+        if (fan_out_dummy && (node.flags & NODE_FAN_OUT_DUMMY)) la_table_for_this_node = true;
+        if (fan_in_dummy && (node.flags & NODE_FAN_IN_DUMMY)) la_table_for_this_node = true;
+        if (initial && (node.flags & NODE_INITIAL)) la_table_for_this_node = true;
+        if (silence && (node.flags & NODE_SILENCE)) la_table_for_this_node = true;
+        if (all_cw && (node.flags & NODE_CW)) la_table_for_this_node = true;
+        if (!la_table_for_this_node) continue;
+
+        if (m_debug) cerr << "setting la table to node: " << i << "..";
+
+        node.bigram_la_table = new vector<float>(m_subwords.size(), -1e20);
+        node.flags |= NODE_BIGRAM_LA_TABLE;
+        set<int> word_ids;
+        find_successor_words(i, word_ids, true);
+        la_table_node_count++;
+
+        if (finished_la_tables.find(word_ids) != finished_la_tables.end()) {
+            int prev_node_id = finished_la_tables[word_ids];
+            (*(node.bigram_la_table)) = (*(m_nodes[prev_node_id].bigram_la_table));
+            if (m_debug) cerr << endl << "used existing table" << endl;
+            continue;
         }
+
+        for (int swidx = 0; swidx < m_subwords.size(); swidx++) {
+            if (swidx == m_sentence_end_symbol_idx) continue;
+            int lm_node = precomputed_lm_nodes[swidx];
+            for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
+                float la_lm_prob = 0.0;
+                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
+                (*(node.bigram_la_table))[swidx] = max((*(node.bigram_la_table))[swidx], la_lm_prob);
+            }
+        }
+
+        finished_la_tables[word_ids] = i;
+        if (m_debug) cerr << endl << "created a new table" << endl;
+        if (m_debug) cerr << "table count " << la_table_node_count << endl;
     }
 }
 
@@ -1136,26 +1176,40 @@ Decoder::score_state_path(string lnafname,
 
 
 void
-Decoder::find_successor_word(std::set<std::pair<int, int> > &found,
-                             int word_id,
-                             int node_idx,
-                             int depth)
+Decoder::write_bigram_la_tables(string blafname)
 {
-    Node &node = m_nodes[node_idx];
-    if (depth > 0) {
-        if (node.word_id == word_id) {
-            found.insert(make_pair(node_idx, depth));
-            return;
-        }
-        else if (node.word_id != -1)
-            return;
-    }
+    ofstream bloutf(blafname);
+    if (!bloutf) throw string("Problem opening file for bigram lookahead scores.");
 
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (ait->target_node == node_idx) continue;
-        find_successor_word(found, word_id, ait->target_node, depth+1);
+    for (int i=0; i<m_nodes.size(); i++) {
+        Node &node = m_nodes[i];
+        if (node.bigram_la_table != nullptr) {
+            bloutf << i;
+            for (int n=0; n<node.bigram_la_table->size(); n++)
+                bloutf << " " << (*(node.bigram_la_table))[n];
+            bloutf << endl;
+        }
     }
 }
 
 
+void
+Decoder::read_bigram_la_tables(string blafname)
+{
+    ifstream blinf(blafname);
+    if (!blinf) throw string("Problem opening bigram lookahead score file.");
 
+    string line;
+    while (getline(blinf, line)) {
+        int node_idx;
+        float val;
+        stringstream ss(line);
+        ss >> node_idx;
+        m_nodes[node_idx].bigram_la_table = new vector<float>(m_subwords.size());
+        m_nodes[node_idx].flags |= NODE_BIGRAM_LA_TABLE;
+        int curr_sw_idx = 0;
+        while (ss >> val) (*(m_nodes[node_idx].bigram_la_table))[curr_sw_idx] = val;
+    }
+
+    m_precomputed_lookahead_tables = true;
+}

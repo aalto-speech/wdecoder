@@ -8,10 +8,10 @@ cxxflags = -O3 -march=native -std=gnu++0x -Wall -Wno-sign-compare
 
 ##################################################
 
-progs = dgraph decode tdecode dummy dgraph2
+progs = dgraph dgraph2 latables decode
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
-srcs = conf.cc io.cc ArpaReader.cc LM.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc LnaReaderCircular.cc Decoder.cc gutils.cc
+srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc LnaReaderCircular.cc Decoder.cc gutils.cc
 objs = $(srcs:.cc=.o)
 
 test_progs = runtests
@@ -46,7 +46,7 @@ test: $(test_progs)
 
 .PHONY: clean
 clean:
-	rm -f $(objs) $(progs) $(progs_objs) $(test_progs) $(test_progs_objs) $(test_objs) .depend *~
+	rm -f $(objs) *.o $(progs) $(progs_objs) $(test_progs) $(test_progs_objs) $(test_objs) .depend *~
 
 dep:
 	$(CXX) -MM $(cxxflags) $(DEPFLAGS) $(all_srcs) > dep
