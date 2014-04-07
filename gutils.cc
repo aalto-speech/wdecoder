@@ -135,7 +135,7 @@ void
 find_successor_word(vector<DecoderGraph::Node> &nodes,
                     set<pair<int, int> > &matches,
                     int word_id,
-                    int node_idx,
+                    node_idx_t node_idx,
                     int depth)
 {
     DecoderGraph::Node &node = nodes[node_idx];
@@ -160,7 +160,7 @@ assert_path(DecoderGraph &dg,
             vector<DecoderGraph::Node> &nodes,
             deque<int> states,
             deque<string> subwords,
-            int node_idx)
+            node_idx_t node_idx)
 {
     DecoderGraph::Node &curr_node = nodes[node_idx];
 

@@ -197,7 +197,7 @@ Decoder::read_dgraph(string fname)
     m_nodes.resize(node_count);
 
     string ltype;
-    for (int i=0; i<m_nodes.size(); i++) {
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
         getline(ginf, line);
         stringstream nss(line);
         nss >> ltype;
@@ -311,8 +311,8 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         nodes[END_NODE].arcs.resize(nodes[END_NODE].arcs.size()+1);
         nodes[END_NODE].arcs.back().target_node = DECODE_START_NODE;
 
-        int node_idx = END_NODE;
-        for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+        node_idx_t node_idx = END_NODE;
+        for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             nodes.resize(nodes.size()+1);
             nodes.back().hmm_state = hmm.states[sidx].model;
             nodes.back().flags |= NODE_SILENCE;
@@ -336,8 +336,8 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         int hmm_index = m_hmm_map[short_silence];
         Hmm &hmm = m_hmms[hmm_index];
 
-        int node_idx = END_NODE;
-        for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+        node_idx_t node_idx = END_NODE;
+        for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             nodes.resize(nodes.size()+1);
             nodes.back().hmm_state = hmm.states[sidx].model;
             nodes.back().flags |= NODE_SILENCE;
@@ -360,7 +360,7 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
 void
 Decoder::set_hmm_transition_probs(std::vector<Node> &nodes)
 {
-    for (int i=0; i<nodes.size(); i++) {
+    for (unsigned int i=0; i<nodes.size(); i++) {
 
         Node &node = nodes[i];
         if (node.hmm_state == -1) continue;
@@ -378,7 +378,7 @@ void
 Decoder::set_subword_id_ngram_symbol_mapping()
 {
     m_subword_id_to_ngram_symbol.resize(m_subwords.size(), -1);
-    for (int i=0; i<m_subwords.size(); i++) {
+    for (unsigned int i=0; i<m_subwords.size(); i++) {
         string tmp(m_subwords[i]);
         m_subword_id_to_ngram_symbol[i] = m_lm.vocabulary_lookup[tmp];
         if (tmp == "</s>") SENTENCE_END_WORD_ID = i;
@@ -390,7 +390,7 @@ void
 Decoder::set_subword_id_la_ngram_symbol_mapping()
 {
     m_subword_id_to_la_ngram_symbol.resize(m_subwords.size(), -1);
-    for (int i=0; i<m_subwords.size(); i++) {
+    for (unsigned int i=0; i<m_subwords.size(); i++) {
         string tmp(m_subwords[i]);
         m_subword_id_to_la_ngram_symbol[i] = m_la_lm.vocabulary_lookup[tmp];
     }
@@ -593,7 +593,7 @@ Decoder::prune_tokens(bool collect_active_histories)
     float current_glob_beam = m_best_log_prob - m_global_beam;
     float current_acoustic_beam = m_best_am_log_prob - m_acoustic_beam;
     float current_word_end_beam = m_best_word_end_prob - m_word_end_beam;
-    for (int i=0; i<m_raw_tokens.size(); i++) {
+    for (unsigned int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
         if (tok.total_log_prob < current_glob_beam)
             m_global_beam_pruned_count++;
@@ -909,7 +909,7 @@ Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
     fstr << "\tedge [fontsize=12];" << endl;
     fstr << "\trankdir=LR;" << endl << endl;
 
-    for (int nidx = 0; nidx < m_nodes.size(); ++nidx) {
+    for (unsigned int nidx = 0; nidx < m_nodes.size(); ++nidx) {
         Node &nd = m_nodes[nidx];
         fstr << "\t" << nidx;
         if (nidx == START_NODE) fstr << " [label=\"start\"]" << endl;
@@ -927,7 +927,7 @@ Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
     }
 
     fstr << endl;
-    for (int nidx = 0; nidx < m_nodes.size(); ++nidx) {
+    for (unsigned int nidx = 0; nidx < m_nodes.size(); ++nidx) {
         Node &node = m_nodes[nidx];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             fstr << "\t" << nidx << " -> " << ait->target_node
@@ -1018,7 +1018,7 @@ Decoder::find_successor_words(int node_idx, set<int> &word_ids, bool start_node)
 void
 Decoder::set_unigram_la_scores()
 {
-    for (int i=0; i<m_nodes.size(); i++) {
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
 
         set<int> word_ids;
         find_successor_words(i, word_ids, true);
@@ -1037,7 +1037,7 @@ Decoder::set_unigram_la_scores()
 void
 Decoder::set_bigram_la_scores()
 {
-    for (int i=0; i<m_nodes.size(); i++) {
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
         Node &node = m_nodes[i];
         if (node.word_id != -1
             && node.word_id != m_sentence_end_symbol_idx
@@ -1065,8 +1065,8 @@ Decoder::create_la_tables(bool fan_out_dummy,
                           bool all_cw)
 {
     vector<int> precomputed_lm_nodes(m_subwords.size());
-    for (int swidx = 0; swidx < m_subwords.size(); swidx++) {
-        if (swidx == m_sentence_end_symbol_idx) continue;
+    for (unsigned int swidx = 0; swidx < m_subwords.size(); swidx++) {
+        if ((int)swidx == m_sentence_end_symbol_idx) continue;
         float dummy;
         int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[swidx], dummy);
         lm_node = m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[m_word_boundary_symbol_idx], dummy);
@@ -1075,7 +1075,7 @@ Decoder::create_la_tables(bool fan_out_dummy,
 
     int la_table_node_count = 0;
     map<set<int>, int> finished_la_tables;
-    for (int i=0; i<m_nodes.size(); i++) {
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
 
         Node &node = m_nodes[i];
 
@@ -1103,8 +1103,8 @@ Decoder::create_la_tables(bool fan_out_dummy,
             continue;
         }
 
-        for (int swidx = 0; swidx < m_subwords.size(); swidx++) {
-            if (swidx == m_sentence_end_symbol_idx) continue;
+        for (unsigned int swidx = 0; swidx < m_subwords.size(); swidx++) {
+            if ((int)swidx == m_sentence_end_symbol_idx) continue;
             int lm_node = precomputed_lm_nodes[swidx];
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
                 float la_lm_prob = 0.0;
@@ -1181,11 +1181,11 @@ Decoder::write_bigram_la_tables(string blafname)
     ofstream bloutf(blafname);
     if (!bloutf) throw string("Problem opening file for bigram lookahead scores.");
 
-    for (int i=0; i<m_nodes.size(); i++) {
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
         Node &node = m_nodes[i];
         if (node.bigram_la_table != nullptr) {
             bloutf << i;
-            for (int n=0; n<node.bigram_la_table->size(); n++)
+            for (unsigned int n=0; n<node.bigram_la_table->size(); n++)
                 bloutf << " " << (*(node.bigram_la_table))[n];
             bloutf << endl;
         }

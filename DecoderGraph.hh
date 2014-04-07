@@ -161,11 +161,11 @@ public:
                                  int node_to_connect=-1,
                                  int node_idx=END_NODE);
     void collect_cw_fanin_nodes(std::vector<Node> &nodes,
-                                std::map<int, std::string> &nodes_from_fanin,
+                                std::map<node_idx_t, std::string> &nodes_from_fanin,
                                 int hmm_state_count=0,
                                 std::vector<char> phones = std::vector<char>(),
-                                int node_to_connect=-1,
-                                int node_idx=START_NODE);
+                                node_idx_t node_to_connect=START_NODE,
+                                node_idx_t node_idx=START_NODE);
     void set_reverse_arcs_also_from_unreachable(std::vector<Node> &nodes);
     void set_reverse_arcs(std::vector<Node> &nodes);
     void set_reverse_arcs(std::vector<Node> &nodes,

@@ -444,17 +444,16 @@ DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
     Hmm &hmm = m_hmms[hmm_index];
 
     if (debug) {
-        //cerr << "  " << triphone << " (" << triphone[2] << ")" << endl;
-        for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+        for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             cerr << "\t" << hmm.states[sidx].model;
-            for (int transidx = 0; transidx<hmm.states[sidx].transitions.size(); ++transidx)
+            for (unsigned int transidx = 0; transidx<hmm.states[sidx].transitions.size(); ++transidx)
                 cerr << "\ttarget: " << hmm.states[sidx].transitions[transidx].target
                 << " lp: " << hmm.states[sidx].transitions[transidx].log_prob;
             cerr << endl;
         }
     }
 
-    for (int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+    for (unsigned int sidx=2; sidx < hmm.states.size(); ++sidx) {
         nodes.resize(nodes.size()+1);
         nodes.back().hmm_state = hmm.states[sidx].model;
         nodes[node_idx].arcs.insert(nodes.size()-1);
@@ -473,7 +472,7 @@ DecoderGraph::print_graph(vector<Node> &nodes,
     path.push_back(node_idx);
 
     if (node_idx == END_NODE) {
-        for (int i=0; i<path.size(); i++) {
+        for (unsigned int i=0; i<path.size(); i++) {
             if (nodes[path[i]].hmm_state != -1)
                 //cout << " " << nodes[path[i]].hmm_state;
                 cout << " " << path[i] << "(" << nodes[path[i]].hmm_state << ")";
@@ -604,7 +603,7 @@ void
 DecoderGraph::set_reverse_arcs_also_from_unreachable(vector<Node> &nodes)
 {
     clear_reverse_arcs(nodes);
-    for (int i = 0; i < nodes.size(); ++i) {
+    for (unsigned int i=0; i<nodes.size(); ++i) {
         Node &node = nodes[i];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             nodes[*ait].reverse_arcs.insert(i);
@@ -821,7 +820,7 @@ DecoderGraph::prune_unreachable_nodes(vector<Node> &nodes)
 void
 DecoderGraph::add_hmm_self_transitions(std::vector<Node> &nodes)
 {
-    for (int i=0; i<nodes.size(); i++) {
+    for (unsigned int i=0; i<nodes.size(); i++) {
         Node &node = nodes[i];
         if (node.hmm_state == -1) continue;
         node.arcs.insert(i);
@@ -1111,7 +1110,7 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
     for (auto finit = fanin.begin(); finit != fanin.end(); ++finit)
         finit->second += offset;
 
-    map<int, string> nodes_to_fanin;
+    map<node_idx_t, string> nodes_to_fanin;
     collect_cw_fanin_nodes(nodes, nodes_to_fanin);
 
     for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
@@ -1194,11 +1193,11 @@ DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
 
 void
 DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
-                                     map<int, string> &nodes_from_fanin,
+                                     map<node_idx_t, string> &nodes_from_fanin,
                                      int hmm_state_count,
                                      vector<char> phones,
-                                     int node_to_connect,
-                                     int node_idx)
+                                     node_idx_t node_to_connect,
+                                     node_idx_t node_idx)
 {
     if (node_idx == END_NODE) return;
     Node &node = nodes[node_idx];
@@ -1209,14 +1208,14 @@ DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
     if (node.word_id != -1) {
         string &subword = m_units[node.word_id];
         vector<string> &triphones = m_lexicon[subword];
-        int tri_idx = 0;
+        unsigned int tri_idx = 0;
         while (phones.size() < 2 && tri_idx < triphones.size()) {
             phones.push_back(triphones[tri_idx][2]);
             tri_idx++;
         }
     }
 
-    if (node_to_connect == -1 &&
+    if (node_to_connect == START_NODE &&
         (hmm_state_count == 4 || (hmm_state_count == 3 && node.word_id != -1))) node_to_connect = node_idx;
 
     if (phones.size() == 2 && hmm_state_count > 2) {
@@ -1243,9 +1242,9 @@ DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
 
 void DecoderGraph::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
 {
-    set<int> node_idxs;
+    set<node_idx_t> node_idxs;
     //reachable_graph_nodes(nodes, node_idxs);
-    for (int i=0;i<nodes.size();i++)
+    for (unsigned int i=0; i<nodes.size(); i++)
         node_idxs.insert(i);
 
     fstr << "digraph {" << endl << endl;
@@ -1317,12 +1316,12 @@ DecoderGraph::write_graph(vector<Node> &nodes, string fname)
 {
     std::ofstream outf(fname);
     outf << nodes.size() << endl;;
-    for (int i=0; i<nodes.size(); i++)
+    for (unsigned int i=0; i<nodes.size(); i++)
         outf << "n " << i << " " << nodes[i].hmm_state
              << " " << nodes[i].word_id
              << " " << nodes[i].arcs.size()
              << " " << nodes[i].flags << endl;
-    for (int i=0; i<nodes.size(); i++) {
+    for (unsigned int i=0; i<nodes.size(); i++) {
         Node &node = nodes[i];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             outf << "a " << i << " " << *ait << endl;
