@@ -14,7 +14,7 @@ void triphonize(string word,
 {
     string tword = "_" + word + "_";
     triphones.clear();
-    for (int i=1; i<tword.length()-1; i++) {
+    for (unsigned int i=1; i<tword.length()-1; i++) {
         stringstream tstring;
         tstring << tword[i-1] << "-" << tword[i] << "+" << tword[i+1];
         triphones.push_back(tstring.str());
@@ -57,7 +57,7 @@ void triphonize(DecoderGraph &dg,
     }
     triphonize(tripstring, triphones);
 
-    for (int i=1; i<word_id_positions.size(); i++) {
+    for (unsigned int i=1; i<word_id_positions.size(); i++) {
         word_id_positions[i].second += i;
         if (word_id_positions[i].second <= word_id_positions[i-1].second)
             word_id_positions[i].second = word_id_positions[i-1].second + 1;
@@ -93,7 +93,7 @@ void get_hmm_states(DecoderGraph &dg,
     for (auto tit = triphones.begin(); tit !=triphones.end(); ++tit) {
         int hmm_index = dg.m_hmm_map[*tit];
         Hmm &hmm = dg.m_hmms[hmm_index];
-        for (int sidx = 2; sidx < hmm.states.size(); ++sidx)
+        for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx)
             states.push_back(hmm.states[sidx].model);
     }
 }
@@ -359,7 +359,7 @@ assert_transitions(DecoderGraph &dg,
                    vector<DecoderGraph::Node> &nodes,
                    bool debug)
 {
-    for (int node_idx = 0; node_idx < nodes.size(); ++node_idx) {
+    for (unsigned int node_idx = 0; node_idx < nodes.size(); ++node_idx) {
         if (node_idx == END_NODE) continue;
         DecoderGraph::Node &node = nodes[node_idx];
         if (!node.arcs.size()) {
@@ -459,7 +459,7 @@ assert_no_duplicate_word_ids(DecoderGraph &dg,
                              vector<DecoderGraph::Node> &nodes)
 {
     bool retval = true;
-    for (int i=0; i<dg.m_units.size(); i++) {
+    for (unsigned int i=0; i<dg.m_units.size(); i++) {
         set<pair<int, int> > results;
         find_successor_word(nodes, results, i, START_NODE);
         if (results.size() > 1 && dg.m_units[i].length() > 1) {
@@ -556,7 +556,7 @@ assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
         if (dg.m_word_segs.find(wrd2) == dg.m_word_segs.end()) return false;
 
         swit = subwords.begin();
-        int eswi=0;
+        unsigned int eswi=0;
         while (*swit != -1) {
             if (dg.m_word_segs[wrd1][eswi] != dg.m_units[*swit]) return false;
             swit++;

@@ -16,8 +16,8 @@ public:
 
     struct SubwordNode {
         std::vector<int> subword_ids;
-        std::vector<std::pair<std::vector<int>, int> > in_arcs;  // subword ids (lookahead), node id
-        std::map<std::vector<int>, int> out_arcs;                // subword ids (lookahead), node id
+        std::vector<std::pair<std::vector<int>, unsigned int> > in_arcs;  // subword ids (lookahead), node id
+        std::map<std::vector<int>, unsigned int> out_arcs;                // subword ids (lookahead), node id
         std::vector<std::string> triphones;
     };
 
@@ -27,8 +27,8 @@ public:
         int subword_id; // -1 for nodes without word identity.
         int hmm_id; // -1 for nodes without acoustics.
         bool connect_to_end_node;
-        std::map<int, int> hmm_id_lookahead;
-        std::map<int, int> subword_id_lookahead;
+        std::map<int, unsigned int> hmm_id_lookahead;
+        std::map<int, unsigned int> subword_id_lookahead;
     };
 
     class Node {
@@ -37,8 +37,8 @@ public:
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         int flags;
-        std::set<int> arcs;
-        std::set<int> reverse_arcs;
+        std::set<unsigned int> arcs;
+        std::set<unsigned int> reverse_arcs;
     };
 
     DecoderGraph() { debug = 0; };
@@ -58,35 +58,35 @@ public:
                               std::vector<Node> &nodes);
     void expand_subword_nodes(const std::vector<SubwordNode> &swnodes,
                               std::vector<Node> &nodes,
-                              std::map<int, int> &expanded_nodes,
-                              int sw_node_idx=START_NODE,
-                              int node_idx=START_NODE,
+                              std::map<sw_node_idx_t, node_idx_t> &expanded_nodes,
+                              sw_node_idx_t sw_node_idx=START_NODE,
+                              node_idx_t node_idx=START_NODE,
                               char left_context='_',
                               char prev_triphone='_');
     void tie_state_prefixes(std::vector<Node> &nodes,
                             bool stop_propagation=false);
     void tie_state_prefixes(std::vector<Node> &nodes,
-                            std::set<int> &processed_nodes,
+                            std::set<node_idx_t> &processed_nodes,
                             bool stop_propagation=false,
-                            int node_idx=START_NODE);
+                            node_idx_t node_idx=START_NODE);
     void tie_state_suffixes(std::vector<Node> &nodes,
                             bool stop_propagation=false);
     void tie_state_suffixes(std::vector<Node> &nodes,
-                            std::set<int> &processed_nodes,
+                            std::set<node_idx_t> &processed_nodes,
                             bool stop_propagation=false,
-                            int node_idx=END_NODE);
+                            node_idx_t node_idx=END_NODE);
     void tie_word_id_prefixes(std::vector<Node> &nodes,
                               bool stop_propagation=false);
     void tie_word_id_prefixes(std::vector<Node> &nodes,
-                              std::set<int> &processed_nodes,
+                              std::set<node_idx_t> &processed_nodes,
                               bool stop_propagation=false,
-                              int node_idx=START_NODE);
+                              node_idx_t node_idx=START_NODE);
     void tie_word_id_suffixes(std::vector<Node> &nodes,
                               bool stop_propagation=false);
     void tie_word_id_suffixes(std::vector<Node> &nodes,
-                              std::set<int> &processed_nodes,
+                              std::set<node_idx_t> &processed_nodes,
                               bool stop_propagation=false,
-                              int node_idx=END_NODE);
+                              node_idx_t node_idx=END_NODE);
     void print_graph(std::vector<Node> &nodes);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr = std::cout);
     int reachable_graph_nodes(std::vector<Node> &nodes);
@@ -114,31 +114,31 @@ public:
                           int node_idx=START_NODE);
     int connect_triphone(std::vector<Node> &nodes,
                          std::string triphone,
-                         int node_idx);
+                         node_idx_t node_idx);
     int connect_triphone(std::vector<Node> &nodes,
                          int triphone_idx,
-                         int node_idx);
+                         node_idx_t node_idx);
     void print_graph(std::vector<Node> &nodes,
                      std::vector<int> path,
                      int node_idx);
     void reachable_graph_nodes(std::vector<Node> &nodes,
-                               std::set<int> &node_idxs,
-                               int node_idx=START_NODE);
+                               std::set<node_idx_t> &node_idxs,
+                               node_idx_t node_idx=START_NODE);
     void prune_unreachable_nodes(std::vector<Node> &nodes);
     void add_hmm_self_transitions(std::vector<Node> &nodes);
     void push_word_ids_left(std::vector<Node> &nodes);
     void push_word_ids_left(std::vector<Node> &nodes,
                             int &move_count,
-                            std::set<int> &processed_nodes,
-                            int node_idx=END_NODE,
-                            int prev_node_idx=-1,
+                            std::set<node_idx_t> &processed_nodes,
+                            node_idx_t node_idx=END_NODE,
+                            node_idx_t prev_node_idx=END_NODE,
                             int subword_id=-1);
     void push_word_ids_right(std::vector<Node> &nodes);
     void push_word_ids_right(std::vector<Node> &nodes,
                              int &move_count,
-                             std::set<int> &processed_nodes,
-                             int node_idx=START_NODE,
-                             int prev_node_idx=-1,
+                             std::set<node_idx_t> &processed_nodes,
+                             node_idx_t node_idx=START_NODE,
+                             node_idx_t prev_node_idx=START_NODE,
                              int subword_id=-1);
     int num_hmm_states(std::vector<Node> &nodes);
     int num_subword_states(std::vector<Node> &nodes);
