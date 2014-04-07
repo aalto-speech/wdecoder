@@ -135,10 +135,8 @@ Ngram::read_arpa(string arpafname) {
         if (ngrams_read != ngram_counts_per_order[curr_ngram_order])
             throw string("Invalid number of n-grams for order: " + curr_ngram_order);
 
-        cerr << "sorting.." << endl;
         sort(order_ngrams.begin(), order_ngrams.end());
 
-        cerr << "inserting to tree.." << endl;
         read_arpa_insert_order_to_tree(order_ngrams, curr_node_idx, curr_arc_idx, curr_ngram_order);
 
         max_order = curr_ngram_order;
