@@ -419,7 +419,7 @@ Decoder::recognize_lna_file(string lnafname,
         reset_frame_variables();
         propagate_tokens();
 
-        if (frame_idx > 0 && frame_idx % m_history_clean_frame_interval == 0) {
+        if (frame_idx % m_history_clean_frame_interval == 0) {
             prune_tokens(true);
             prune_word_history();
         }
@@ -435,6 +435,7 @@ Decoder::recognize_lna_file(string lnafname,
             cerr << "tokens pruned by acoustic history beam: " << m_history_beam_pruned_count << endl;
             cerr << "tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
             cerr << "tokens pruned by node beam: " << m_node_beam_pruned_count << endl;
+            cerr << "tokens pruned by histogram token limit: " << m_histogram_pruned_count << endl;
             cerr << "tokens pruned by max state duration: " << m_max_state_duration_pruned_count << endl;
             cerr << "best log probability: " << m_best_log_prob << endl;
             cerr << "number of active nodes: " << m_active_nodes.size() << endl;
@@ -478,6 +479,7 @@ Decoder::recognize_lna_file(string lnafname,
 void
 Decoder::initialize()
 {
+    m_histogram_bin_limit = 0;
     m_word_history_leafs.clear();
     m_raw_tokens.clear();
     m_raw_tokens.reserve(1000000);
@@ -553,8 +555,6 @@ Decoder::propagate_tokens(void)
     active_nodes_sorted_by_best_lp(sorted_active_nodes);
 
     int node_count = 0;
-    bool stop_propagation = false;
-    int max_propagated_count = 0;
     for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit) {
         Node &node = m_nodes[*nit];
         float curr_node_beam = m_best_node_scores[*nit] - m_node_beam;
@@ -570,16 +570,9 @@ Decoder::propagate_tokens(void)
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
                 move_token_to_node(tit->second, ait->target_node, ait->log_prob);
                 m_propagated_count++;
-                //max_propagated_count++;
             }
-
-            //if (m_token_count > m_token_limit) break;
-            //if (m_token_count > m_token_limit) stop_propagation = true;
         }
         node_count++;
-
-        //if (node_count > m_active_node_limit) break;
-        //if (node_count > m_active_node_limit) stop_propagation = true;
     }
 
     for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit)
@@ -588,7 +581,6 @@ Decoder::propagate_tokens(void)
     if (m_stats) {
         cerr << "token count before propagation: " << m_token_count << endl;
         cerr << "propagated token count: " << m_propagated_count << endl;
-        //cerr << "maximum propagated token count: " << max_propagated_count << endl;
     }
 }
 
