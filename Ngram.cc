@@ -146,6 +146,7 @@ Ngram::read_arpa(string arpafname) {
 
     sentence_start_symbol_idx = vocabulary_lookup[sentence_start_symbol];
     sentence_start_node = find_node(root_node, sentence_start_symbol_idx);
+    if (sentence_start_node == -1) throw string("Sentence start symbol not found.");
 }
 
 
