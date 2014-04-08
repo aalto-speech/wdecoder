@@ -557,7 +557,6 @@ Decoder::propagate_tokens(void)
     int node_count = 0;
     for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit) {
         Node &node = m_nodes[*nit];
-        float curr_node_beam = m_best_node_scores[*nit] - m_node_beam;
         for (auto tit = m_recombined_tokens[*nit].begin(); tit != m_recombined_tokens[*nit].end(); ++tit) {
 
             if (tit->second.histogram_bin < m_histogram_bin_limit) {
