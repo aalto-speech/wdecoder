@@ -603,8 +603,6 @@ Decoder::prune_tokens(bool collect_active_histories)
             m_global_beam_pruned_count++;
         else if (tok.am_log_prob < current_acoustic_beam)
             m_acoustic_beam_pruned_count++;
-//        else if (tok.history->word_id != m_word_boundary_symbol_idx
-//                 && tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam)
         else if (tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam)
             m_history_beam_pruned_count++;
         else if (tok.word_end && tok.total_log_prob < current_word_end_beam)
@@ -635,11 +633,12 @@ Decoder::prune_tokens(bool collect_active_histories)
         else {
             node_tokens[tit->lm_node] = *tit;
             m_active_nodes.insert(tit->node_idx);
-            m_token_count_after_pruning++;
-            if (collect_active_histories)
-                m_active_histories.insert(tit->history);
             histogram[tit->histogram_bin]++;
+            m_token_count_after_pruning++;
         }
+
+        if (collect_active_histories)
+            m_active_histories.insert(tit->history);
     }
 
     m_histogram_bin_limit = 0;
