@@ -57,6 +57,7 @@ Decoder::Decoder()
     m_best_log_prob = -1e20;
     m_best_am_log_prob = -1e20;
     m_best_word_end_prob = -1e20;
+    m_histogram_bin_limit = 0;
 
     m_global_beam = 0.0;
     m_acoustic_beam = 0.0;
@@ -418,7 +419,7 @@ Decoder::recognize_lna_file(string lnafname,
         reset_frame_variables();
         propagate_tokens();
 
-        if (frame_idx % m_history_clean_frame_interval == 0) {
+        if (frame_idx > 0 && frame_idx % m_history_clean_frame_interval == 0) {
             prune_tokens(true);
             prune_word_history();
         }
@@ -433,9 +434,11 @@ Decoder::recognize_lna_file(string lnafname,
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
             cerr << "tokens pruned by acoustic history beam: " << m_history_beam_pruned_count << endl;
             cerr << "tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
+            cerr << "tokens pruned by node beam: " << m_node_beam_pruned_count << endl;
+            cerr << "tokens pruned by max state duration: " << m_max_state_duration_pruned_count << endl;
             cerr << "best log probability: " << m_best_log_prob << endl;
             cerr << "number of active nodes: " << m_active_nodes.size() << endl;
-            print_best_word_history(outf);
+            print_best_word_history(cerr);
         }
 
         frame_idx++;
@@ -515,10 +518,12 @@ Decoder::reset_frame_variables()
     m_history_beam_pruned_count = 0;
     m_word_end_beam_pruned_count = 0;
     m_node_beam_pruned_count = 0;
+    m_histogram_pruned_count = 0;
     m_dropped_count = 0;
     m_token_count_after_pruning = 0;
     reset_history_scores();
     m_active_histories.clear();
+    fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
 }
 
 
@@ -548,13 +553,15 @@ Decoder::propagate_tokens(void)
     active_nodes_sorted_by_best_lp(sorted_active_nodes);
 
     int node_count = 0;
+    bool stop_propagation = false;
+    int max_propagated_count = 0;
     for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit) {
         Node &node = m_nodes[*nit];
         float curr_node_beam = m_best_node_scores[*nit] - m_node_beam;
         for (auto tit = m_recombined_tokens[*nit].begin(); tit != m_recombined_tokens[*nit].end(); ++tit) {
 
-            if (tit->second.total_log_prob < curr_node_beam) {
-                m_node_beam_pruned_count++;
+            if (tit->second.histogram_bin < m_histogram_bin_limit) {
+                m_histogram_pruned_count++;
                 continue;
             }
 
@@ -563,11 +570,16 @@ Decoder::propagate_tokens(void)
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
                 move_token_to_node(tit->second, ait->target_node, ait->log_prob);
                 m_propagated_count++;
+                //max_propagated_count++;
             }
+
+            //if (m_token_count > m_token_limit) break;
+            //if (m_token_count > m_token_limit) stop_propagation = true;
         }
         node_count++;
-        if (m_token_count > m_token_limit) break;
-        if (node_count > m_active_node_limit) break;
+
+        //if (node_count > m_active_node_limit) break;
+        //if (node_count > m_active_node_limit) stop_propagation = true;
     }
 
     for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit)
@@ -576,6 +588,7 @@ Decoder::propagate_tokens(void)
     if (m_stats) {
         cerr << "token count before propagation: " << m_token_count << endl;
         cerr << "propagated token count: " << m_propagated_count << endl;
+        //cerr << "maximum propagated token count: " << max_propagated_count << endl;
     }
 }
 
@@ -599,27 +612,32 @@ Decoder::prune_tokens(bool collect_active_histories)
             m_global_beam_pruned_count++;
         else if (tok.am_log_prob < current_acoustic_beam)
             m_acoustic_beam_pruned_count++;
+//        else if (tok.history->word_id != m_word_boundary_symbol_idx
+//                 && tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam)
         else if (tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam)
             m_history_beam_pruned_count++;
         else if (tok.word_end && tok.total_log_prob < current_word_end_beam)
             m_word_end_beam_pruned_count++;
-        else
+        else if (tok.total_log_prob < (m_best_node_scores[tok.node_idx] - m_node_beam))
+            m_node_beam_pruned_count++;
+        else {
+            tok.histogram_bin = (int) round(99.0 * (tok.total_log_prob-current_glob_beam)/m_global_beam);
             pruned_tokens.push_back(tok);
+        }
     }
     m_raw_tokens.clear();
 
-    // Collect best tokens for each node/ngram state pair
+    // Recombine node/ngram state hypotheses
     m_active_nodes.clear();
-    fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
+    vector<int> histogram(100, 0);
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
         std::map<int, Token> &node_tokens = m_recombined_tokens[tit->node_idx];
         auto bntit = node_tokens.find(tit->lm_node);
         if (bntit != node_tokens.end()) {
             if (tit->total_log_prob > bntit->second.total_log_prob) {
+                histogram[bntit->second.histogram_bin]--;
+                histogram[tit->histogram_bin]++;
                 bntit->second = *tit;
-                if (collect_active_histories)
-                    m_active_histories.insert(tit->history);
-                m_best_node_scores[tit->node_idx] = max(m_best_node_scores[tit->node_idx], tit->total_log_prob);
             }
             m_dropped_count++;
         }
@@ -627,13 +645,24 @@ Decoder::prune_tokens(bool collect_active_histories)
             node_tokens[tit->lm_node] = *tit;
             m_active_nodes.insert(tit->node_idx);
             m_token_count_after_pruning++;
-            m_best_node_scores[tit->node_idx] = max(m_best_node_scores[tit->node_idx], tit->total_log_prob);
             if (collect_active_histories)
                 m_active_histories.insert(tit->history);
+            histogram[tit->histogram_bin]++;
+        }
+    }
+
+    m_histogram_bin_limit = 0;
+    int histogram_tok_count = 0;
+    for (int i=99; i>= 0; i--) {
+        histogram_tok_count += histogram[i];
+        if (histogram_tok_count > m_token_limit) {
+            m_histogram_bin_limit = i;
+            break;
         }
     }
 
     if (m_stats) cerr << "token count after pruning: " << m_token_count_after_pruning << endl;
+    if (m_stats) cerr << "histogram index: " << m_histogram_bin_limit << endl;
 }
 
 
@@ -689,6 +718,7 @@ Decoder::move_token_to_node(Token token,
         m_best_am_log_prob = max(m_best_am_log_prob, token.am_log_prob);
         if (token.word_end) m_best_word_end_prob = max(m_best_word_end_prob, token.total_log_prob);
         token.history->best_am_log_prob = max(token.history->best_am_log_prob, token.am_log_prob);
+        m_best_node_scores[node_idx] = max(m_best_node_scores[node_idx], token.total_log_prob);
         m_raw_tokens.push_back(token);
         return;
     }

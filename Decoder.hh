@@ -69,7 +69,7 @@ public:
       WordHistory *history;
       unsigned short int dur;
       bool word_end;
-
+      int histogram_bin;
 
       Token():
         node_idx(-1),
@@ -81,7 +81,8 @@ public:
         last_word_id(-1),
         history(nullptr),
         dur(0),
-        word_end(false)
+        word_end(false),
+        histogram_bin(0)
       { }
     };
 
@@ -221,6 +222,7 @@ public:
     float m_best_log_prob;
     float m_best_am_log_prob;
     float m_best_word_end_prob;
+    int m_histogram_bin_limit;
 
     int m_global_beam_pruned_count;
     int m_acoustic_beam_pruned_count;
@@ -228,6 +230,7 @@ public:
     int m_word_end_beam_pruned_count;
     int m_node_beam_pruned_count;
     int m_max_state_duration_pruned_count;
+    int m_histogram_pruned_count;
     int m_dropped_count;
 
     int m_history_clean_frame_interval;
