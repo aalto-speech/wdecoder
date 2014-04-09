@@ -1011,6 +1011,9 @@ Decoder::reset_history_scores()
             history->previous->best_am_log_prob = -1e20;
             if (history->previous->previous != NULL) {
                 history->previous->previous->best_am_log_prob = -1e20;
+                if (history->previous->previous->previous != NULL) {
+                    history->previous->previous->previous->best_am_log_prob = -1e20;
+                }
             }
         }
     }
@@ -1267,6 +1270,28 @@ Decoder::find_paths(std::vector<std::vector<int> > &paths,
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         if (ait->target_node == curr_node_idx) continue;
         find_paths(paths, words, curr_word_pos, curr_path, ait->target_node);
+    }
+}
+
+
+void
+Decoder::path_to_graph(vector<int> &path,
+                       vector<Node> &nodes)
+{
+    for (int i=0; i<path.size(); i++) {
+        nodes.push_back(m_nodes[path[i]]);
+        nodes.back().arcs.clear();
+    }
+    for (int i=0; i<path.size()-1; i++) {
+        if (nodes[i].hmm_state != -1) {
+            nodes[i].arcs.resize(2);
+            nodes[i].arcs[0].target_node = i;
+            nodes[i].arcs[1].target_node = i+1;
+        }
+        else {
+            nodes[i].arcs.resize(1);
+            nodes[i].arcs[0].target_node = i+1;
+        }
     }
 }
 

@@ -156,6 +156,8 @@ public:
                     int curr_word_pos = 0,
                     std::vector<int> curr_path = std::vector<int>(),
                     int curr_node_idx = -1);
+    void path_to_graph(std::vector<int> &path,
+                       std::vector<Node> &nodes);
 
     // Subwords
     std::vector<std::string> m_subwords;
