@@ -8,7 +8,7 @@ cxxflags = -O3 -march=native -std=gnu++0x -Wall
 
 ##################################################
 
-progs = dgraph dgraph2 latables decode
+progs = dgraph dgraph2 latables decode score
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
 srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc LnaReaderCircular.cc Decoder.cc gutils.cc

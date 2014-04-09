@@ -151,7 +151,11 @@ public:
     void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
     void reset_history_scores();
-
+    void find_paths(std::vector<std::vector<int> > &paths,
+                    std::vector<int> &words,
+                    int curr_word_pos = 0,
+                    std::vector<int> curr_path = std::vector<int>(),
+                    int curr_node_idx = -1);
 
     // Subwords
     std::vector<std::string> m_subwords;

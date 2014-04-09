@@ -1232,3 +1232,41 @@ Decoder::read_bigram_la_tables(string blafname)
 
     m_precomputed_lookahead_tables = true;
 }
+
+
+void
+Decoder::find_paths(std::vector<std::vector<int> > &paths,
+                    std::vector<int> &words,
+                    int curr_word_pos,
+                    std::vector<int> curr_path,
+                    int curr_node_idx)
+{
+    if (curr_node_idx == -1) {
+        curr_node_idx = DECODE_START_NODE;
+        curr_path.push_back(curr_node_idx);
+        Node &node = m_nodes[curr_node_idx];
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+            if (ait->target_node == curr_node_idx) continue;
+            find_paths(paths, words, curr_word_pos, curr_path, ait->target_node);
+        }
+        return;
+    }
+
+    curr_path.push_back(curr_node_idx);
+    Node &node = m_nodes[curr_node_idx];
+
+    if (node.word_id != -1) {
+        if (node.word_id != words[curr_word_pos]) return;
+        else curr_word_pos++;
+        if (curr_word_pos == words.size()) {
+            paths.push_back(curr_path);
+            return;
+        }
+    }
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        if (ait->target_node == curr_node_idx) continue;
+        find_paths(paths, words, curr_word_pos, curr_path, ait->target_node);
+    }
+}
+
