@@ -610,7 +610,7 @@ Decoder::prune_tokens(bool collect_active_histories)
         else if (tok.total_log_prob < (m_best_node_scores[tok.node_idx] - m_node_beam))
             m_node_beam_pruned_count++;
         else {
-            tok.histogram_bin = (int) round(99.0 * (tok.total_log_prob-current_glob_beam)/m_global_beam);
+            tok.histogram_bin = (int) round((float)(HISTOGRAM_BIN_COUNT-1) * (tok.total_log_prob-current_glob_beam)/m_global_beam);
             pruned_tokens.push_back(tok);
         }
     }
@@ -618,7 +618,7 @@ Decoder::prune_tokens(bool collect_active_histories)
 
     // Recombine node/ngram state hypotheses
     m_active_nodes.clear();
-    vector<int> histogram(100, 0);
+    vector<int> histogram(HISTOGRAM_BIN_COUNT, 0);
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
         std::map<int, Token> &node_tokens = m_recombined_tokens[tit->node_idx];
         auto bntit = node_tokens.find(tit->lm_node);
@@ -643,7 +643,7 @@ Decoder::prune_tokens(bool collect_active_histories)
 
     m_histogram_bin_limit = 0;
     int histogram_tok_count = 0;
-    for (int i=99; i>= 0; i--) {
+    for (int i=HISTOGRAM_BIN_COUNT-1; i>= 0; i--) {
         histogram_tok_count += histogram[i];
         if (histogram_tok_count > m_token_limit) {
             m_histogram_bin_limit = i;
