@@ -89,12 +89,13 @@ int main(int argc, char* argv[])
                 vector<Decoder::Node> nodes;
                 d.path_to_graph(*pit, nodes);
 
+                /*
                 for (int ni = 0; ni < nodes.size(); ni++) {
                     cerr << nodes[ni].hmm_state;
                     if (nodes[ni].word_id != -1) cerr << " (" << d.m_subwords[nodes[ni].word_id] << ")";
                     cerr << endl;
                 }
-                exit(1);
+                */
 
                 d.m_nodes.swap(nodes);
                 d.set_hmm_transition_probs(d.m_nodes);

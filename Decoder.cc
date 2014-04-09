@@ -305,14 +305,8 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         int hmm_index = m_hmm_map[long_silence];
         Hmm &hmm = m_hmms[hmm_index];
 
-        nodes.resize(nodes.size()+1);
-        nodes.back().hmm_state = -1;
-        nodes.back().word_id = m_subword_map[string("</s>")];
-        DECODE_START_NODE = nodes.size()-1;
-        nodes[END_NODE].arcs.resize(nodes[END_NODE].arcs.size()+1);
-        nodes[END_NODE].arcs.back().target_node = DECODE_START_NODE;
-
         node_idx_t node_idx = END_NODE;
+        node_idx_t first_sil_node = nodes.size();
         for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             nodes.resize(nodes.size()+1);
             nodes.back().hmm_state = hmm.states[sidx].model;
@@ -321,13 +315,34 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
             nodes.back().arcs.back().target_node = nodes.size()-1;
             nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
             nodes[node_idx].arcs.back().target_node = nodes.size()-1;
-            if (sidx == 2) {
-                nodes[DECODE_START_NODE].arcs.resize(nodes[DECODE_START_NODE].arcs.size()+1);
-                nodes[DECODE_START_NODE].arcs.back().target_node = nodes.size()-1;
-            }
             node_idx = nodes.size()-1;
         }
+        //nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+        //nodes[node_idx].arcs.back().target_node = first_sil_node;
 
+        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+        nodes[node_idx].arcs.back().target_node = START_NODE;
+
+        nodes.resize(nodes.size()+1);
+        nodes.back().hmm_state = -1;
+        nodes.back().word_id = m_subword_map[string("</s>")];
+        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+        nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+        nodes.back().arcs.resize(nodes.back().arcs.size()+1);
+        nodes.back().arcs.back().target_node = START_NODE;
+        node_idx = nodes.size()-1;
+        DECODE_START_NODE = node_idx;
+
+        for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+            nodes.resize(nodes.size()+1);
+            nodes.back().hmm_state = hmm.states[sidx].model;
+            nodes.back().flags |= NODE_SILENCE;
+            nodes.back().arcs.resize(nodes.back().arcs.size()+1);
+            nodes.back().arcs.back().target_node = nodes.size()-1;
+            nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+            nodes[node_idx].arcs.back().target_node = nodes.size()-1;
+            node_idx = nodes.size()-1;
+        }
         nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
         nodes[node_idx].arcs.back().target_node = START_NODE;
     }
