@@ -148,6 +148,11 @@ public:
     void clear_word_history();
     void prune_word_history();
     void set_word_boundaries();
+    void find_nodes_in_depth(std::set<int> &found_nodes,
+                             int target_depth,
+                             int curr_depth,
+                             int curr_node);
+    void add_short_silences_to_cw();
     void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
     void reset_history_scores();

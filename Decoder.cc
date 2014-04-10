@@ -220,6 +220,7 @@ Decoder::read_dgraph(string fname)
     }
 
     add_silence_hmms(m_nodes);
+    add_short_silences_to_cw();
     set_hmm_transition_probs(m_nodes);
     set_word_boundaries();
     mark_initial_nodes(m_initial_node_depth);
@@ -306,7 +307,6 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         Hmm &hmm = m_hmms[hmm_index];
 
         node_idx_t node_idx = END_NODE;
-        node_idx_t first_sil_node = nodes.size();
         for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             nodes.resize(nodes.size()+1);
             nodes.back().hmm_state = hmm.states[sidx].model;
@@ -317,8 +317,6 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
             nodes[node_idx].arcs.back().target_node = nodes.size()-1;
             node_idx = nodes.size()-1;
         }
-        //nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
-        //nodes[node_idx].arcs.back().target_node = first_sil_node;
 
         nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
         nodes[node_idx].arcs.back().target_node = START_NODE;
@@ -331,10 +329,10 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         nodes.back().arcs.resize(nodes.back().arcs.size()+1);
         nodes.back().arcs.back().target_node = START_NODE;
         node_idx = nodes.size()-1;
-        DECODE_START_NODE = node_idx;
 
         for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
             nodes.resize(nodes.size()+1);
+            if (sidx == 2) DECODE_START_NODE = nodes.size()-1;
             nodes.back().hmm_state = hmm.states[sidx].model;
             nodes.back().flags |= NODE_SILENCE;
             nodes.back().arcs.resize(nodes.back().arcs.size()+1);
@@ -345,6 +343,9 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         }
         nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
         nodes[node_idx].arcs.back().target_node = START_NODE;
+
+        nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
+        nodes[node_idx].arcs.back().target_node = DECODE_START_NODE;
     }
 
     if (short_silence) {
@@ -1001,6 +1002,54 @@ Decoder::set_word_boundaries()
 
 
 void
+Decoder::find_nodes_in_depth(set<int> &found_nodes,
+                             int target_depth,
+                             int curr_depth,
+                             int curr_node)
+{
+    if (curr_depth == target_depth) {
+        found_nodes.insert(curr_node);
+        return;
+    }
+
+    Node &node = m_nodes[curr_node];
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        if (ait->target_node == curr_node) continue;
+        find_nodes_in_depth(found_nodes, target_depth, curr_depth+1, ait->target_node);
+    }
+}
+
+
+void
+Decoder::add_short_silences_to_cw()
+{
+    set<int> cw_fanout_dummy_nodes;
+
+    for (int ni = 0; ni < m_nodes.size(); ++ni) {
+        Node &node = m_nodes[ni];
+        if (node.flags & NODE_FAN_OUT_DUMMY) cw_fanout_dummy_nodes.insert(ni);
+    }
+
+    set<int> short_silence_source_nodes;
+    for (auto cwfonit = cw_fanout_dummy_nodes.begin(); cwfonit != cw_fanout_dummy_nodes.end(); ++cwfonit)
+        find_nodes_in_depth(short_silence_source_nodes, 3, 0, *cwfonit);
+
+    string short_silence("_");
+    int hmm_index = m_hmm_map[short_silence];
+    Hmm &hmm = m_hmms[hmm_index];
+    for (auto sssn = short_silence_source_nodes.begin(); sssn != short_silence_source_nodes.end(); ++sssn) {
+        m_nodes.resize(m_nodes.size()+1);
+        m_nodes.back().hmm_state = hmm.states[2].model;
+        m_nodes.back().arcs = m_nodes[*sssn].arcs;
+        m_nodes.back().arcs.resize(m_nodes.back().arcs.size()+1);
+        m_nodes.back().arcs.back().target_node = m_nodes.size()-1;
+        m_nodes[*sssn].arcs.resize(m_nodes[*sssn].arcs.size()+1);
+        m_nodes[*sssn].arcs.back().target_node = m_nodes.size()-1;
+    }
+}
+
+
+void
 Decoder::mark_initial_nodes(int max_depth, int curr_depth, int node_idx)
 {
     Node &node = m_nodes[node_idx];
@@ -1163,6 +1212,8 @@ Decoder::score_state_path(string lnafname,
                           string sfname,
                           bool duration_model)
 {
+    cerr << "lna file: " << lnafname << endl;
+    cerr << "state path file: " << sfname << endl;
     m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
 
@@ -1178,6 +1229,7 @@ Decoder::score_state_path(string lnafname,
     float dur_score = 0.0;
     float total_score = 0.0;
     while (getline(sinf, line)) {
+        cerr << "frame: " << frame_idx << endl;
         stringstream ncl(line);
         ncl >> start >> end >> state_idx;
         int dur = end-start;
