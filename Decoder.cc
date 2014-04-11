@@ -344,6 +344,7 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
         nodes[node_idx].arcs.back().target_node = START_NODE;
 
+        // Long silence loop
         nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
         nodes[node_idx].arcs.back().target_node = DECODE_START_NODE;
     }
