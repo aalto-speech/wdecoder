@@ -248,6 +248,9 @@ public:
 
     int m_history_clean_frame_interval;
     WordHistory* m_empty_history;
+
+    int m_long_silence_loop_start_node;
+    int m_long_silence_loop_end_node;
 };
 
 #endif /* DECODER_HH */

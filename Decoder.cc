@@ -76,6 +76,9 @@ Decoder::Decoder()
     m_max_state_duration = 80;
 
     m_ngram_state_sentence_begin_and_wb = -1;
+
+    m_long_silence_loop_start_node = -1;
+    m_long_silence_loop_end_node = -1;
 }
 
 
@@ -322,7 +325,6 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         nodes[node_idx].arcs.back().target_node = START_NODE;
 
         nodes.resize(nodes.size()+1);
-        nodes.back().hmm_state = -1;
         nodes.back().word_id = m_subword_map[string("</s>")];
         nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
         nodes[node_idx].arcs.back().target_node = nodes.size()-1;
@@ -347,6 +349,8 @@ Decoder::add_silence_hmms(std::vector<Node> &nodes,
         // Long silence loop
         nodes[node_idx].arcs.resize(nodes[node_idx].arcs.size()+1);
         nodes[node_idx].arcs.back().target_node = DECODE_START_NODE;
+        m_long_silence_loop_start_node = node_idx;
+        m_long_silence_loop_end_node = DECODE_START_NODE;
     }
 
     if (short_silence) {
@@ -1041,7 +1045,8 @@ Decoder::add_short_silences_to_cw()
     for (auto sssn = short_silence_source_nodes.begin(); sssn != short_silence_source_nodes.end(); ++sssn) {
         m_nodes.resize(m_nodes.size()+1);
         m_nodes.back().hmm_state = hmm.states[2].model;
-        m_nodes.back().arcs = m_nodes[*sssn].arcs;
+        for (auto arcit = m_nodes[*sssn].arcs.begin(); arcit != m_nodes[*sssn].arcs.end(); ++arcit)
+            if (arcit->target_node != *sssn) m_nodes.back().arcs.push_back(*arcit);
         m_nodes.back().arcs.resize(m_nodes.back().arcs.size()+1);
         m_nodes.back().arcs.back().target_node = m_nodes.size()-1;
         m_nodes[*sssn].arcs.resize(m_nodes[*sssn].arcs.size()+1);
@@ -1098,6 +1103,9 @@ Decoder::find_successor_words(int node_idx, set<int> &word_ids, bool start_node)
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         int target_node = ait->target_node;
         if (target_node == node_idx) continue;
+        if (node_idx == m_long_silence_loop_start_node
+            && target_node == m_long_silence_loop_end_node)
+            continue;
         find_successor_words(target_node, word_ids, false);
     }
 }
