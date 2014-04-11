@@ -173,7 +173,8 @@ Decoder::read_la_lm(string lmfname)
 
     if (m_la_lm.order() > 1) {
         cerr << "Setting bigram lookahead scores" << endl;
-        create_la_tables();
+        if (!m_precomputed_lookahead_tables)
+            create_la_tables();
         set_bigram_la_scores();
         m_bigram_la_in_use = true;
     }
