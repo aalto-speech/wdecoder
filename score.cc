@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
                 */
 
                 d.m_nodes.swap(nodes);
-                d.set_hmm_transition_probs(d.m_nodes);
+                d.set_hmm_transition_probs();
                 int original_decode_start_node = d.DECODE_START_NODE;
                 d.DECODE_START_NODE = 0;
 
