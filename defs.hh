@@ -1,6 +1,11 @@
 #ifndef DEFS_HH
 #define DEFS_HH
 
+#ifndef nullptr
+#include <cstdlib>
+#define nullptr NULL
+#endif
+
 typedef unsigned int sw_node_idx_t;
 typedef unsigned int node_idx_t;
 
