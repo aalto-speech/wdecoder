@@ -35,7 +35,8 @@ public:
             : word_id(-1), hmm_state(-1),
               flags(0), unigram_la_score(0.0),
               bigram_la_score(0.0),
-              bigram_la_table(nullptr) { }
+              bigram_la_table(nullptr),
+              bigram_la_map(nullptr) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         int flags;
@@ -43,6 +44,7 @@ public:
         float unigram_la_score;
         float bigram_la_score;
         std::vector<float> *bigram_la_table;
+        std::map<int, float> *bigram_la_map;
     };
 
     class Token;
@@ -126,9 +128,13 @@ public:
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
-    void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=false);
+    void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=true);
+    void find_predecessor_words(int node_idx, std::set<int> &word_ids,
+                                const std::vector<std::vector<Arc> > &reverse_arcs,
+                                bool start_node=true);
     void set_unigram_la_scores();
     void set_bigram_la_scores();
+    void set_bigram_la_maps();
     void create_la_tables(bool fan_out_dummy=true,
                           bool fan_in_dummy=true,
                           bool initial=true,
