@@ -173,15 +173,22 @@ Decoder::read_la_lm(string lmfname)
     set_subword_id_la_ngram_symbol_mapping();
 
     if (m_la_lm.order() > 1) {
+
+        cerr << "Setting unigram style bigram lookahead scores" << endl;
+        set_bigram_la_scores();
+        m_unigram_la_in_use = true;
+
+        /*
         if (!m_precomputed_lookahead_tables) {
             cerr << "Creating bigram lookahead tables" << endl;
             create_la_tables();
         }
         cerr << "Setting bigram lookahead scores" << endl;
-        set_bigram_la_scores();
+        set_bigram_la_scores_to_lm_nodes();
         cerr << "Setting bigram lookahead maps" << endl;
         set_bigram_la_maps();
         m_bigram_la_in_use = true;
+        */
     }
     else {
         cerr << "Setting unigram lookahead scores" << endl;
@@ -1102,6 +1109,22 @@ Decoder::find_successor_words(int node_idx,
 
 
 void
+Decoder::get_reverse_arcs(vector<vector<Arc> > &reverse_arcs)
+{
+    reverse_arcs.clear();
+    reverse_arcs.resize(m_nodes.size());
+
+    for (int ni = 0; ni < m_nodes.size(); ni++) {
+        for (auto ait = m_nodes[ni].arcs.begin(); ait != m_nodes[ni].arcs.end(); ++ait) {
+            if (ni == ait->target_node) continue;
+            reverse_arcs[ait->target_node].resize(reverse_arcs[ait->target_node].size()+1);
+            reverse_arcs[ait->target_node].back().target_node = ni;
+        }
+    }
+}
+
+
+void
 Decoder::find_predecessor_words(int node_idx,
                                 set<int> &word_ids,
                                 const std::vector<std::vector<Arc> > &reverse_arcs,
@@ -1147,6 +1170,42 @@ Decoder::set_unigram_la_scores()
 void
 Decoder::set_bigram_la_scores()
 {
+    vector<vector<Arc> > reverse_arcs;
+    get_reverse_arcs(reverse_arcs);
+
+    set_bigram_la_scores_to_lm_nodes();
+
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
+
+        Node &node = m_nodes[i];
+        if (node.word_id != -1) continue;
+
+        set<int> pred_word_ids;
+        find_predecessor_words(i, pred_word_ids, reverse_arcs);
+
+        set<int> succ_word_ids;
+        find_successor_words(i, succ_word_ids);
+
+        float node_best_la_prob = -1e20;
+        for (auto pwit = pred_word_ids.begin(); pwit != pred_word_ids.end(); ++pwit) {
+            float dummy = 0.0;
+            int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy);
+
+            for (auto swit = succ_word_ids.begin(); swit != succ_word_ids.end(); ++swit) {
+                float la_lm_prob = 0.0;
+                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*swit], la_lm_prob);
+                node_best_la_prob = max(node_best_la_prob, la_lm_prob);
+            }
+
+            m_nodes[i].unigram_la_score = node_best_la_prob;
+        }
+    }
+}
+
+
+void
+Decoder::set_bigram_la_scores_to_lm_nodes()
+{
     for (unsigned int i=0; i<m_nodes.size(); i++) {
         Node &node = m_nodes[i];
         if (node.word_id != -1
@@ -1162,6 +1221,7 @@ Decoder::set_bigram_la_scores()
                 m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
                 node.bigram_la_score = max(node.bigram_la_score, la_lm_prob);
             }
+            node.unigram_la_score = node.bigram_la_score;
         }
     }
 }
@@ -1170,14 +1230,9 @@ Decoder::set_bigram_la_scores()
 void
 Decoder::set_bigram_la_maps()
 {
-    vector<vector<Arc> > reverse_arcs(m_nodes.size());
-    for (int ni = 0; ni < m_nodes.size(); ni++) {
-        for (auto ait = m_nodes[ni].arcs.begin(); ait != m_nodes[ni].arcs.end(); ++ait) {
-            if (ni == ait->target_node) continue;
-            reverse_arcs[ait->target_node].resize(reverse_arcs[ait->target_node].size()+1);
-            reverse_arcs[ait->target_node].back().target_node = ni;
-        }
-    }
+
+    vector<vector<Arc> > reverse_arcs;
+    get_reverse_arcs(reverse_arcs);
 
     mark_initial_nodes(1000);
 

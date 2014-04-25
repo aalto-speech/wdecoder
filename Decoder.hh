@@ -128,20 +128,6 @@ public:
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
-    void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=true);
-    void find_predecessor_words(int node_idx, std::set<int> &word_ids,
-                                const std::vector<std::vector<Arc> > &reverse_arcs,
-                                bool start_node=true);
-    void set_unigram_la_scores();
-    void set_bigram_la_scores();
-    void set_bigram_la_maps();
-    void create_la_tables(bool fan_out_dummy=true,
-                          bool fan_in_dummy=true,
-                          bool initial=true,
-                          bool silence=true,
-                          bool all_cw=false);
-    void write_bigram_la_tables(std::string blafname);
-    void read_bigram_la_tables(std::string blafname);
     float score_state_path(std::string lnafname,
                            std::string sfname,
                            bool duration_model=true);
@@ -167,6 +153,33 @@ public:
                     int curr_node_idx = -1);
     void path_to_graph(std::vector<int> &path,
                        std::vector<Node> &nodes);
+
+
+    // Lookahead related functions
+    void get_reverse_arcs(std::vector<std::vector<Arc> > &reverse_arcs);
+    void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=true);
+    void find_predecessor_words(int node_idx, std::set<int> &word_ids,
+                                const std::vector<std::vector<Arc> > &reverse_arcs,
+                                bool start_node=true);
+
+    // Basic unigram la scores
+    void set_unigram_la_scores();
+    // Bigram scores conditioned on all possible predecessor words
+    void set_bigram_la_scores();
+
+    // Bigram la scores to all LM nodes, score conditioned on the subword in the same node
+    void set_bigram_la_scores_to_lm_nodes();
+    // Bigram la maps to word internal HMM nodes
+    void set_bigram_la_maps();
+    // Full bigram la tables to CW, silence and initial HMM nodes
+    void create_la_tables(bool fan_out_dummy=true,
+                          bool fan_in_dummy=true,
+                          bool initial=true,
+                          bool silence=true,
+                          bool all_cw=false);
+    void write_bigram_la_tables(std::string blafname);
+    void read_bigram_la_tables(std::string blafname);
+
 
     // Subwords
     std::vector<std::string> m_subwords;
