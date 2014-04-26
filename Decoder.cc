@@ -48,6 +48,7 @@ Decoder::Decoder()
     m_history_beam_pruned_count = 0;
     m_acoustic_beam_pruned_count = 0;
     m_max_state_duration_pruned_count = 0;
+    m_histogram_pruned_count = 0;
 
     DECODE_START_NODE = -1;
     SENTENCE_END_WORD_ID = -1;
@@ -974,8 +975,10 @@ Decoder::print_word_history(WordHistory *history,
         }
     }
     else {
-        for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit)
-            outf << " " << m_subwords[*swit];
+        for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
+            if (*swit >= 0)
+                outf << " " << m_subwords[*swit];
+        }
     }
 
     if (print_lm_probs) outf << endl << "total lm log: " << total_lp;
