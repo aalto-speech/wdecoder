@@ -974,10 +974,8 @@ Decoder::print_word_history(WordHistory *history,
         }
     }
     else {
-        for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
-            if (*swit >= 0) outf << m_subwords[*swit];
-            else if (*swit == -2) outf << " ";
-        }
+        for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit)
+            outf << " " << m_subwords[*swit];
     }
 
     if (print_lm_probs) outf << endl << "total lm log: " << total_lp;
@@ -1040,11 +1038,11 @@ Decoder::set_word_boundaries()
         for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
             if (nit->flags & NODE_FAN_OUT_DUMMY) {
                 wbcount++;
-                nit->word_id = WORD_BOUNDARY_IDENTIFIER;
+                nit->word_id = -1;
             }
         }
         cerr << "word boundary count: " << wbcount+1 << endl;
-        m_nodes[START_NODE].word_id = WORD_BOUNDARY_IDENTIFIER;
+        m_nodes[START_NODE].word_id = -1;
     }
 }
 
