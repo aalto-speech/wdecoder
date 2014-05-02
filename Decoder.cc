@@ -54,7 +54,6 @@ Decoder::Decoder()
     SENTENCE_END_WORD_ID = -1;
 
     m_acoustics = nullptr;
-    m_empty_history = nullptr;
 
     m_best_log_prob = -1e20;
     m_best_am_log_prob = -1e20;
@@ -72,6 +71,7 @@ Decoder::Decoder()
     m_token_limit = 500000;
     m_active_node_limit = 50000;
 
+    m_history_root = nullptr;
     m_history_clean_frame_interval = 10;
 
     m_word_boundary_penalty = 0.0;
@@ -334,7 +334,7 @@ Decoder::add_short_silences_to_cw()
 {
     set<int> cw_fanout_dummy_nodes;
 
-    for (int ni = 0; ni < m_nodes.size(); ++ni) {
+    for (unsigned int ni = 0; ni < m_nodes.size(); ++ni) {
         Node &node = m_nodes[ni];
         if (node.flags & NODE_FAN_OUT_DUMMY) cw_fanout_dummy_nodes.insert(ni);
     }
@@ -425,7 +425,7 @@ Decoder::set_hmm_transition_probs()
 
         HmmState &state = m_hmm_states[node.hmm_state];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-            if (ait->target_node == i) ait->log_prob = state.transitions[0].log_prob;
+            if (ait->target_node == (int)i) ait->log_prob = state.transitions[0].log_prob;
             else ait->log_prob = state.transitions[1].log_prob;
         }
     }
@@ -479,6 +479,7 @@ Decoder::recognize_lna_file(string lnafname,
         if (frame_idx % m_history_clean_frame_interval == 0) {
             prune_tokens(true);
             prune_word_history();
+            //print_certain_word_history();
         }
         else prune_tokens(false);
 
@@ -550,6 +551,7 @@ Decoder::initialize()
     m_ngram_state_sentence_begin = tok.lm_node;
     tok.history = new WordHistory();
     tok.history->word_id = m_sentence_begin_symbol_idx;
+    m_history_root = tok.history;
     tok.node_idx = DECODE_START_NODE;
     m_active_nodes.insert(DECODE_START_NODE);
     m_word_history_leafs.insert(tok.history);
@@ -943,6 +945,20 @@ Decoder::prune_word_history()
 
 
 void
+Decoder::print_certain_word_history(ostream &outf)
+{
+    WordHistory *hist = m_history_root;
+    while (true) {
+        if (hist->word_id >= 0)
+            outf << m_subwords[hist->word_id] << " ";
+        if (hist->next.size() > 1 || hist->next.size() == 0) break;
+        else hist = hist->next.begin()->second;
+    }
+    outf << endl;
+}
+
+
+void
 Decoder::print_best_word_history(ostream &outf)
 {
     print_word_history(get_best_token()->history, outf);
@@ -1116,7 +1132,7 @@ Decoder::get_reverse_arcs(vector<vector<Arc> > &reverse_arcs)
     reverse_arcs.clear();
     reverse_arcs.resize(m_nodes.size());
 
-    for (int ni = 0; ni < m_nodes.size(); ni++) {
+    for (int ni = 0; ni < (int)m_nodes.size(); ni++) {
         for (auto ait = m_nodes[ni].arcs.begin(); ait != m_nodes[ni].arcs.end(); ++ait) {
             if (ni == ait->target_node) continue;
             reverse_arcs[ait->target_node].resize(reverse_arcs[ait->target_node].size()+1);
@@ -1456,7 +1472,7 @@ Decoder::find_paths(std::vector<std::vector<int> > &paths,
     if (node.word_id != -1) {
         if (node.word_id != words[curr_word_pos]) return;
         else curr_word_pos++;
-        if (curr_word_pos == words.size()) {
+        if (curr_word_pos == (int)words.size()) {
             paths.push_back(curr_path);
             return;
         }
@@ -1473,11 +1489,11 @@ void
 Decoder::path_to_graph(vector<int> &path,
                        vector<Node> &nodes)
 {
-    for (int i=0; i<path.size(); i++) {
+    for (int i=0; i<(int)path.size(); i++) {
         nodes.push_back(m_nodes[path[i]]);
         nodes.back().arcs.clear();
     }
-    for (int i=0; i<path.size()-1; i++) {
+    for (int i=0; i<(int)path.size()-1; i++) {
         if (nodes[i].hmm_state != -1) {
             nodes[i].arcs.resize(2);
             nodes[i].arcs[0].target_node = i;

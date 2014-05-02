@@ -123,6 +123,7 @@ public:
     Token* get_best_token();
     Token get_best_token(std::vector<Token> &tokens);
     void add_sentence_ends(std::vector<Token> &tokens);
+    void print_certain_word_history(std::ostream &outf=std::cout);
     void print_best_word_history(std::ostream &outf=std::cout);
     void print_word_history(WordHistory *history,
                             std::ostream &outf=std::cout,
@@ -264,7 +265,7 @@ public:
     int m_dropped_count;
 
     int m_history_clean_frame_interval;
-    WordHistory* m_empty_history;
+    WordHistory* m_history_root;
 
     int m_long_silence_loop_start_node;
     int m_long_silence_loop_end_node;
