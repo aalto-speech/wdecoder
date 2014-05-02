@@ -23,6 +23,9 @@ void triphonize(DecoderGraph &dg,
                 std::vector<DecoderGraph::TriphoneNode> &nodes);
 void triphonize_all_words(DecoderGraph &dg,
                           std::map<std::string, std::vector<std::string> > &triphonized_words);
+void triphonize_subword(DecoderGraph &dg,
+                        const std::string &subword,
+                        std::vector<DecoderGraph::TriphoneNode> &nodes);
 void get_hmm_states(DecoderGraph &dg,
                     const std::vector<std::string> &triphones,
                     std::vector<int> &states);

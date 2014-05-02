@@ -149,6 +149,9 @@ public:
                                   std::vector<DecoderGraph::Node> &nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin);
+    void create_crossword_network_for_subwords(std::vector<DecoderGraph::Node> &nodes,
+                                               std::map<std::string, int> &fanout,
+                                               std::map<std::string, int> &fanin);
     void connect_crossword_network(std::vector<Node> &nodes,
                                    std::vector<Node> &cw_nodes,
                                    std::map<std::string, int> &fanout,

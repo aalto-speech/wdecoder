@@ -49,6 +49,7 @@ void triphonize(DecoderGraph &dg,
     vector<pair<int, int> > word_id_positions;
     vector<string> triphones;
     for (auto swit = word_seg.begin(); swit != word_seg.end(); ++swit) {
+        // FIXME
         vector<string> &triphones = dg.m_lexicon[*swit];
         for (auto tit = triphones.begin(); tit != triphones.end(); ++tit)
             tripstring += (*tit)[2];
@@ -83,6 +84,33 @@ void triphonize_all_words(DecoderGraph &dg,
         triphonize(dg, wit->first, triphones);
         triphonized_words[wit->first] = triphones;
     }
+}
+
+
+void triphonize_subword(DecoderGraph &dg,
+                        const string &subword,
+                        vector<DecoderGraph::TriphoneNode> &nodes)
+{
+    nodes.clear();
+
+    string tripstring;
+
+    vector<string> &triphones = dg.m_lexicon[subword];
+    for (auto tit = triphones.begin(); tit != triphones.end(); ++tit)
+        tripstring += (*tit)[2];
+    int word_id_pos = max(1, (int)(tripstring.size()-1));
+
+    triphonize(tripstring, triphones);
+
+    for (auto triit = triphones.begin(); triit != triphones.end(); ++triit) {
+        DecoderGraph::TriphoneNode trin;
+        trin.hmm_id = dg.m_hmm_map[*triit];
+        nodes.push_back(trin);
+    }
+
+    DecoderGraph::TriphoneNode trin;
+    trin.subword_id = dg.m_unit_map[subword];
+    nodes.insert(nodes.begin()+word_id_pos, trin);
 }
 
 
