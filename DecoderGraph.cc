@@ -1097,18 +1097,22 @@ DecoderGraph::create_crossword_network_for_subwords(vector<DecoderGraph::Node> &
                                                     map<string, int> &fanin)
 {
     set<string> one_phone_subwords;
-    set<char> phones;
     for (auto swit = m_lexicon.begin(); swit != m_lexicon.end(); ++swit) {
         vector<string> &triphones = swit->second;
-        if (triphones.size() < 2) {
-            if (triphones.size() == 1) one_phone_subwords.insert(swit->first);
-            continue;
+        if (triphones.size() == 0) continue;
+        else if (triphones.size() == 1) {
+            one_phone_subwords.insert(swit->first);
+            string fanint = triphones[0];
+            string fanoutt = triphones[0];
+            fanout[fanoutt] = -1;
+            fanin[fanint] = -1;
         }
-        string fanint = string("_-") + triphones[0][2] + string(1,'+') + triphones[1][2];
-        string fanoutt = triphones[triphones.size()-2][2] + string(1,'-') + triphones[triphones.size()-1][2] + string("+_");
-        fanout[fanoutt] = -1;
-        fanin[fanint] = -1;
-        phones.insert(triphones[0][2]);
+        else {
+            string fanint = string("_-") + triphones[0][2] + string(1,'+') + triphones[1][2];
+            string fanoutt = triphones[triphones.size()-2][2] + string(1,'-') + triphones[triphones.size()-1][2] + string("+_");
+            fanout[fanoutt] = -1;
+            fanin[fanint] = -1;
+        }
     }
 
     map<string, int> connected_fanin_nodes;
@@ -1143,6 +1147,7 @@ DecoderGraph::create_crossword_network_for_subwords(vector<DecoderGraph::Node> &
         }
     }
 
+    // Add loops for one phone subwords to cross-word network
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
         for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit) {
             string single_phone = m_lexicon[*opswit][0];
@@ -1215,6 +1220,24 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
         Node &node = nodes[fonit->first];
         node.arcs.insert(fanout_idx);
     }
+}
+
+
+void
+DecoderGraph::connect_one_phone_subwords_from_start_to_cw(vector<Node> &nodes,
+                                                          vector<Node> &cw_nodes,
+                                                          map<string, int> &fanout)
+{
+
+}
+
+
+void
+DecoderGraph::connect_one_phone_subwords_from_cw_to_end(vector<Node> &nodes,
+                                                        vector<Node> &cw_nodes,
+                                                        map<string, int> &fanin)
+{
+
 }
 
 

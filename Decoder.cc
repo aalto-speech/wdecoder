@@ -28,6 +28,7 @@ Decoder::Decoder()
     m_bigram_la_in_use = false;
     m_precomputed_lookahead_tables = false;
     m_use_word_boundary_symbol = false;
+    m_optional_word_boundaries_in_cw = false;
     m_force_sentence_end = true;
 
     m_lm_scale = 0.0;
@@ -278,6 +279,7 @@ Decoder::read_config(string cfgfname)
             ss >> m_word_boundary_symbol;
             m_word_boundary_symbol_idx = m_subword_map[m_word_boundary_symbol];
         }
+        else if (parameter == "optional_word_boundaries_in_cw") ss >> m_optional_word_boundaries_in_cw;
         else if (parameter == "debug") ss >> m_debug;
         else if (parameter == "stats") ss >> m_stats;
         else throw string("Unknown parameter: ") + parameter;
@@ -1041,7 +1043,24 @@ Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
 void
 Decoder::set_word_boundaries()
 {
-    if (m_use_word_boundary_symbol) {
+    if (m_use_word_boundary_symbol && m_optional_word_boundaries_in_cw) {
+        int wbcount = 0;
+        for (unsigned int ni = 0; ni < m_nodes.size(); ni++) {
+            Node &nd = m_nodes[ni];
+            if (nd.flags & NODE_FAN_OUT_DUMMY) {
+                wbcount++;
+                nd.word_id = -1;
+                m_nodes.resize(m_nodes.size()+1);
+                m_nodes.back().word_id = m_subword_map[m_word_boundary_symbol];
+                m_nodes.back().arcs = nd.arcs;
+                nd.arcs.resize(nd.arcs.size()+1);
+                nd.arcs.back().target_node = m_nodes.size()-1;
+            }
+        }
+        cerr << "word boundary count: " << wbcount+1 << endl;
+        m_nodes[END_NODE].word_id = m_subword_map[m_word_boundary_symbol];
+    }
+    else if (m_use_word_boundary_symbol) {
         int wbcount = 0;
         for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
             if (nit->flags & NODE_FAN_OUT_DUMMY) {
@@ -1229,17 +1248,17 @@ Decoder::set_bigram_la_scores_to_lm_nodes()
         if (node.word_id != -1
             && node.word_id != m_sentence_end_symbol_idx
             && (!(node.flags & NODE_BIGRAM_LA_TABLE))) {
-            set<int> word_ids;
-            find_successor_words(i, word_ids);
-            float dummy = 0.0;
-            int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], dummy);
-            node.bigram_la_score = -1e20;
-            for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-                float la_lm_prob = 0.0;
-                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-                node.bigram_la_score = max(node.bigram_la_score, la_lm_prob);
-            }
-            node.unigram_la_score = node.bigram_la_score;
+                set<int> word_ids;
+                find_successor_words(i, word_ids);
+                float dummy = 0.0;
+                int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], dummy);
+                node.bigram_la_score = -1e20;
+                for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
+                    float la_lm_prob = 0.0;
+                    m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
+                    node.bigram_la_score = max(node.bigram_la_score, la_lm_prob);
+                }
+                node.unigram_la_score = node.bigram_la_score;
         }
     }
 }
