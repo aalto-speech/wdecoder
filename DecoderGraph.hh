@@ -118,6 +118,9 @@ public:
     int connect_triphone(std::vector<Node> &nodes,
                          int triphone_idx,
                          node_idx_t node_idx);
+    int connect_word(std::vector<Node> &nodes,
+                     std::string word,
+                     node_idx_t node_idx);
     void print_graph(std::vector<Node> &nodes,
                      std::vector<int> path,
                      int node_idx);
