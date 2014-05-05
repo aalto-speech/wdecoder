@@ -794,6 +794,9 @@ Decoder::move_token_to_node(Token token,
         if (node.word_id != m_word_boundary_symbol_idx) {
             if (node.word_id != m_sentence_end_symbol_idx) token.last_word_id = node.word_id;
         }
+        else {
+            if (token.history->word_id == m_word_boundary_symbol_idx) return;
+        }
         advance_in_history(token, node.word_id);
 
         token.word_end = true;
