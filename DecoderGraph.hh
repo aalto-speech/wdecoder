@@ -161,10 +161,8 @@ public:
                                    std::map<std::string, int> &fanin,
                                    bool push_left_after_fanin=true);
     void connect_one_phone_subwords_from_start_to_cw(std::vector<Node> &nodes,
-                                                     std::vector<Node> &cw_nodes,
                                                      std::map<std::string, int> &fanout);
     void connect_one_phone_subwords_from_cw_to_end(std::vector<Node> &nodes,
-                                                   std::vector<Node> &cw_nodes,
                                                    std::map<std::string, int> &fanin);
     void collect_cw_fanout_nodes(std::vector<Node> &nodes,
                                  std::map<int, std::string> &nodes_to_fanout,

@@ -1225,19 +1225,31 @@ DecoderGraph::connect_crossword_network(vector<Node> &nodes,
 
 void
 DecoderGraph::connect_one_phone_subwords_from_start_to_cw(vector<Node> &nodes,
-                                                          vector<Node> &cw_nodes,
                                                           map<string, int> &fanout)
 {
-
+    for (auto swit = m_lexicon.begin(); swit != m_lexicon.end(); ++swit) {
+        vector<string> &triphones = swit->second;
+        if (triphones.size() != 1 || triphones[0].length() == 1) continue;
+        string fanoutt = triphones[0];
+        //cerr << "connecting word " << swit->first << " from start to cw" << endl;
+        int idx = connect_word(nodes, swit->first, START_NODE);
+        nodes[idx].arcs.insert(fanout[fanoutt]);
+    }
 }
 
 
 void
 DecoderGraph::connect_one_phone_subwords_from_cw_to_end(vector<Node> &nodes,
-                                                        vector<Node> &cw_nodes,
                                                         map<string, int> &fanin)
 {
-
+    for (auto swit = m_lexicon.begin(); swit != m_lexicon.end(); ++swit) {
+        vector<string> &triphones = swit->second;
+        if (triphones.size() != 1 || triphones[0].length() == 1) continue;
+        string fanint = triphones[0];
+        //cerr << "connecting word " << swit->first << " from cw to end" << endl;
+        int idx = connect_word(nodes, swit->first, fanin[fanint]);
+        nodes[idx].arcs.insert(END_NODE);
+    }
 }
 
 
