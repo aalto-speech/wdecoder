@@ -55,9 +55,9 @@ DecoderGraph::read_noway_lexicon(string lexfname)
                 throw "Unknown phone " + *pit;
         }
 
-        if (m_unit_map.find(unit) == m_unit_map.end()) {
-            m_units.push_back(unit);
-            m_unit_map[unit] = m_units.size()-1;
+        if (m_subword_map.find(unit) == m_subword_map.end()) {
+            m_subwords.push_back(unit);
+            m_subword_map[unit] = m_subwords.size()-1;
         }
         m_lexicon[unit] = phones;
 
@@ -83,7 +83,7 @@ DecoderGraph::read_word_segmentations(string segfname)
         if (m_word_segs.find(word) != m_word_segs.end()) throw "Error, segmentation already defined";
         string concatenated;
         while (ss >> subword) {
-            if (m_unit_map.find(subword) == m_unit_map.end())
+            if (m_subword_map.find(subword) == m_subword_map.end())
                 throw "Subword " + subword + " not found in lexicon";
             m_word_segs[word].push_back(subword);
             concatenated += subword;
@@ -112,7 +112,7 @@ DecoderGraph::read_word_segmentations(string segfname, vector<pair<string, vecto
         string concatenated;
         vector<string> tmp;
         while (ss >> subword) {
-            if (m_unit_map.find(subword) == m_unit_map.end())
+            if (m_subword_map.find(subword) == m_subword_map.end())
                 throw "Subword " + subword + " not found in lexicon";
             tmp.push_back(subword);
             concatenated += subword;
@@ -143,19 +143,19 @@ DecoderGraph::create_word_graph(vector<SubwordNode> &nodes)
             }
             else if (swidx == 1 && tie_first) {
                 vector<int> tmp;
-                int subword_idx = m_unit_map[(wit->second)[0]];
+                int subword_idx = m_subword_map[(wit->second)[0]];
                 tmp.push_back(subword_idx);
-                subword_idx = m_unit_map[curr_subword];
+                subword_idx = m_subword_map[curr_subword];
                 tmp.push_back(subword_idx);
                 word_sw_nodes.push_back(tmp);
             }
             else if (swidx == (wit->second.size()-1) && m_lexicon[curr_subword].size() == 1) {
-                int curr_subword_idx = m_unit_map[curr_subword];
+                int curr_subword_idx = m_subword_map[curr_subword];
                 word_sw_nodes.back().push_back(curr_subword_idx);
             }
             else {
                 vector<int> tmp;
-                int subword_idx = m_unit_map[curr_subword];
+                int subword_idx = m_subword_map[curr_subword];
                 tmp.push_back(subword_idx);
                 word_sw_nodes.push_back(tmp);
             }
@@ -232,7 +232,7 @@ DecoderGraph::print_word_graph(vector<SubwordNode> &nodes,
                 if (subword_ids.size() == 0) continue;
                 for (unsigned int swi=0; swi<subword_ids.size(); ++swi) {
                     if (swi>0) cout << " ";
-                    if (subword_ids[swi] >= 0) cout << m_units[subword_ids[swi]];
+                    if (subword_ids[swi] >= 0) cout << m_subwords[subword_ids[swi]];
                 }
                 if (path[i] >= 0) cout << " (" << path[i] << ")";
                 if (i+1 != path.size()) cout << " ";
@@ -283,7 +283,7 @@ DecoderGraph::triphonize_subword_nodes(vector<SubwordNode> &swnodes)
 
         string tripstring;
         for (auto swit = nit->subword_ids.begin(); swit != nit->subword_ids.end(); ++swit) {
-            string sw = m_units[*swit];
+            string sw = m_subwords[*swit];
             vector<string> &trips = m_lexicon[sw];
             for (auto tit = trips.begin(); tit != trips.end(); ++tit)
                 tripstring += (*tit)[2];
@@ -331,7 +331,7 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
         cerr << "subwords: ";
         for (unsigned int i=0; i<swnode.subword_ids.size(); i++) {
             if (i>0) cerr << " ";
-            cerr << m_units[swnode.subword_ids[i]];
+            cerr << m_subwords[swnode.subword_ids[i]];
         }
         cerr << endl << "triphones: ";
         for (unsigned int i=0; i<swnode.triphones.size(); i++) {
@@ -414,13 +414,13 @@ DecoderGraph::expand_subword_nodes(const vector<SubwordNode> &swnodes,
 int
 DecoderGraph::add_lm_unit(string unit)
 {
-    auto uit = m_unit_map.find(unit);
-    if (uit != m_unit_map.end())
+    auto uit = m_subword_map.find(unit);
+    if (uit != m_subword_map.end())
         return (*uit).second;
 
-    int index = m_units.size();
-    m_unit_map[unit] = index;
-    m_units.push_back(unit);
+    int index = m_subwords.size();
+    m_subword_map[unit] = index;
+    m_subwords.push_back(unit);
 
     return index;
 }
@@ -460,7 +460,7 @@ DecoderGraph::connect_word(vector<DecoderGraph::Node> &nodes,
                            node_idx_t node_idx)
 {
     nodes.resize(nodes.size()+1);
-    nodes.back().word_id = m_unit_map[word];
+    nodes.back().word_id = m_subword_map[word];
     node_idx = nodes.size()-1;
     return node_idx;
 }
@@ -480,7 +480,7 @@ DecoderGraph::print_graph(vector<Node> &nodes,
                 cout << " " << path[i] << "(" << nodes[path[i]].hmm_state << ")";
             if (nodes[path[i]].word_id != -1)
                 //cout << " " << "(" << m_units[nodes[path[i]].word_id] << ")";
-                cout << " " << path[i] << "(" << m_units[nodes[path[i]].word_id] << ")";
+                cout << " " << path[i] << "(" << m_subwords[nodes[path[i]].word_id] << ")";
         }
         cout << endl << endl;
         return;
@@ -845,7 +845,7 @@ DecoderGraph::push_word_ids_left(vector<Node> &nodes,
 
     if (debug && subword_id != -1) {
         cerr << "push left, node_idx: " << node_idx << " prev_node_idx: " << prev_node_idx;
-        cerr << " subword to move: " << m_units[subword_id] << endl;
+        cerr << " subword to move: " << m_subwords[subword_id] << endl;
         cerr << endl;
     }
 
@@ -899,7 +899,7 @@ DecoderGraph::push_word_ids_right(vector<Node> &nodes,
 
     if (debug && subword_id != -1) {
         cerr << "push right, node_idx: " << node_idx << " prev_node_idx: " << prev_node_idx;
-        cerr << " subword to move: " << m_units[subword_id] << endl;
+        cerr << " subword to move: " << m_subwords[subword_id] << endl;
         cerr << endl;
     }
 
@@ -1266,7 +1266,7 @@ DecoderGraph::collect_cw_fanout_nodes(vector<Node> &nodes,
 
     if (node.hmm_state != -1) hmm_state_count++;
     if (node.word_id != -1) {
-        string &subword = m_units[node.word_id];
+        string &subword = m_subwords[node.word_id];
         vector<string> &triphones = m_lexicon[subword];
         int tri_idx = triphones.size()-1;
         while (phones.size() < 2 && tri_idx >= 0) {
@@ -1311,7 +1311,7 @@ DecoderGraph::collect_cw_fanin_nodes(vector<Node> &nodes,
 
     if (node.hmm_state != -1) hmm_state_count++;
     if (node.word_id != -1) {
-        string &subword = m_units[node.word_id];
+        string &subword = m_subwords[node.word_id];
         vector<string> &triphones = m_lexicon[subword];
         unsigned int tri_idx = 0;
         while (phones.size() < 2 && tri_idx < triphones.size()) {
@@ -1362,12 +1362,12 @@ void DecoderGraph::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
         fstr << "\t" << *it;
         if (*it == START_NODE) fstr << " [label=\"start\"]" << endl;
         else if (*it == END_NODE) fstr << " [label=\"end\"]" << endl;
-        else if (nd.hmm_state != -1 && nd.word_id != -1)
-            fstr << " [label=\"" << *it << ":" << nd.hmm_state << ", " << m_units[nd.word_id] << "\"]" << endl;
         else if (nd.hmm_state != -1 && nd.word_id == -1)
-            fstr << " [label=\"" << *it << ":"<< nd.hmm_state << "\"]" << endl;
+            fstr << " [label=\"" << nd.hmm_state << "\"]" << endl;
         else if (nd.hmm_state == -1 && nd.word_id != -1)
-            fstr << " [label=\"" << *it << ":"<< m_units[nd.word_id] << "\"]" << endl;
+            fstr << " [label=\"" << m_subwords[nd.word_id] << "\"]" << endl;
+        else if (nd.hmm_state != -1 && nd.word_id != -1)
+            throw string("Problem");
         else
             fstr << " [label=\"" << *it << ":dummy\"]" << endl;
     }
@@ -1442,7 +1442,7 @@ DecoderGraph::add_word(std::vector<TriphoneNode> &nodes,
     vector<string> &subwords = m_word_segs.at(word);
     vector<int> subword_ids;
     for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
-        subword_ids.push_back(m_unit_map[*swit]);
+        subword_ids.push_back(m_subword_map[*swit]);
 
     vector<int> hmm_ids;
     for (auto trit = triphones.begin(); trit != triphones.end(); ++trit) {

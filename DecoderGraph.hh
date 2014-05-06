@@ -187,9 +187,9 @@ public:
     void write_graph(std::vector<Node> &nodes, std::string fname);
 
     // Text units
-    std::vector<std::string> m_units;
+    std::vector<std::string> m_subwords;
     // Mapping from text units to indices
-    std::map<std::string, int> m_unit_map;
+    std::map<std::string, int> m_subword_map;
     // Vocabulary units as phone strings, FIXME: currently only one pronunciation
     std::map<std::string, std::vector<std::string> > m_lexicon;
     // Mapping from phones (triphones) to HMM indices.
