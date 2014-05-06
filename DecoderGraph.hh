@@ -57,29 +57,13 @@ public:
     void read_phone_model(std::string phnfname);
     void read_noway_lexicon(std::string lexfname);
 
-    void add_word(std::vector<TriphoneNode> &nodes,
-                  std::string word,
-                  std::vector<std::string> &triphones);
-    void add_triphones(std::vector<TriphoneNode> &nodes,
-                       std::vector<TriphoneNode> &nodes_to_add);
-    void triphones_to_states(std::vector<TriphoneNode> &triphone_nodes,
-                             std::vector<Node> &nodes,
-                             int curr_triphone_idx=START_NODE,
-                             int curr_state_idx=START_NODE);
-
-
-    static void create_crossword_network(std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs,
-                                  std::vector<DecoderGraph::Node> &nodes,
-                                  std::map<std::string, int> &fanout,
-                                  std::map<std::string, int> &fanin);
-
-    static void collect_cw_fanout_nodes(std::vector<Node> &nodes,
+    void collect_cw_fanout_nodes(std::vector<Node> &nodes,
                                  std::map<int, std::string> &nodes_to_fanout,
                                  int hmm_state_count=0,
                                  std::vector<char> phones = std::vector<char>(),
                                  int node_to_connect=-1,
                                  int node_idx=END_NODE);
-    static void collect_cw_fanin_nodes(std::vector<Node> &nodes,
+    void collect_cw_fanin_nodes(std::vector<Node> &nodes,
                                 std::map<node_idx_t, std::string> &nodes_from_fanin,
                                 int hmm_state_count=0,
                                 std::vector<char> phones = std::vector<char>(),

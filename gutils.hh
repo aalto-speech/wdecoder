@@ -123,8 +123,11 @@ static void tie_word_id_suffixes(std::vector<DecoderGraph::Node> &nodes,
 static void print_graph(std::vector<DecoderGraph::Node> &nodes,
                  std::vector<int> path,
                  int node_idx);
-static void print_graph(std::vector<DecoderGraph::Node> &nodes);
-static void print_dot_digraph(std::vector<DecoderGraph::Node> &nodes, std::ostream &fstr = std::cout);
+static void print_graph(DecoderGraph &dg,
+                        std::vector<DecoderGraph::Node> &nodes);
+static void print_dot_digraph(DecoderGraph &dg,
+                              std::vector<DecoderGraph::Node> &nodes,
+                              std::ostream &fstr = std::cout);
 static int reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes);
 
 static void set_reverse_arcs_also_from_unreachable(std::vector<DecoderGraph::Node> &nodes);
@@ -172,7 +175,13 @@ static void push_word_ids_right(std::vector<DecoderGraph::Node> &nodes,
 static int num_hmm_states(std::vector<DecoderGraph::Node> &nodes);
 static int num_subword_states(std::vector<DecoderGraph::Node> &nodes);
 
-
+static void add_triphones(std::vector<DecoderGraph::TriphoneNode> &nodes,
+                   std::vector<DecoderGraph::TriphoneNode> &nodes_to_add);
+static void triphones_to_states(DecoderGraph &dg,
+                         std::vector<DecoderGraph::TriphoneNode> &triphone_nodes,
+                         std::vector<DecoderGraph::Node> &nodes,
+                         int curr_triphone_idx=START_NODE,
+                         int curr_state_idx=START_NODE);
 
 };
 

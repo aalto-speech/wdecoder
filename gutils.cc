@@ -405,7 +405,7 @@ bool assert_transitions(DecoderGraph &dg, vector<DecoderGraph::Node> &nodes,
 
 bool assert_subword_ids_left(DecoderGraph &dg,
         vector<DecoderGraph::Node> &nodes, bool debug) {
-    dg.set_reverse_arcs_also_from_unreachable(nodes);
+    set_reverse_arcs_also_from_unreachable(nodes);
 
     for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
         if (nit->word_id == -1)
@@ -426,7 +426,7 @@ bool assert_subword_ids_left(DecoderGraph &dg,
 
 bool assert_subword_ids_right(DecoderGraph &dg,
         vector<DecoderGraph::Node> &nodes, bool debug) {
-    dg.set_reverse_arcs_also_from_unreachable(nodes);
+    set_reverse_arcs_also_from_unreachable(nodes);
 
     for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
         if (nit->word_id == -1)
@@ -743,8 +743,6 @@ void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
         return;
     if (processed_nodes.find(node_idx) != processed_nodes.end())
         return;
-    if (debug)
-        cerr << endl << "tying state: " << node_idx << endl;
     processed_nodes.insert(node_idx);
     DecoderGraph::Node &nd = nodes[node_idx];
     set<unsigned int> temp_arcs = nd.reverse_arcs;
@@ -755,25 +753,6 @@ void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
         int target_hmm = nodes[*ait].hmm_state;
         if (target_hmm != -1)
             targets[make_pair(target_hmm, nodes[*ait].arcs)].insert(*ait);
-    }
-
-    if (debug) {
-        int target_count = 0;
-        for (auto tit = targets.begin(); tit != targets.end(); ++tit)
-            if (tit->second.size() > 1)
-                target_count++;
-        cerr << "total targets: " << target_count << endl;
-
-        for (auto tit = targets.begin(); tit != targets.end(); ++tit) {
-            if (tit->second.size() == 1)
-                continue;
-            cerr << "target: " << tit->first.first << " " << tit->second.size()
-                    << endl;
-            for (auto nit = tit->second.begin(); nit != tit->second.end();
-                    ++nit)
-                cerr << *nit << " ";
-            cerr << endl;
-        }
     }
 
     bool arcs_removed = false;
@@ -791,8 +770,6 @@ void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
             nit++;
         }
 
-        if (debug)
-            cerr << "\tnew tied node idx: " << tied_node_idx << endl;
     }
 
     if (stop_propagation && !arcs_removed)
@@ -810,8 +787,11 @@ void tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
     prune_unreachable_nodes(nodes);
 }
 
-void tie_word_id_suffixes(vector<Node> &nodes, set<node_idx_t> &processed_nodes,
-        bool stop_propagation, node_idx_t node_idx) {
+void tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
+        set<node_idx_t> &processed_nodes,
+        bool stop_propagation,
+        node_idx_t node_idx)
+{
     if (node_idx == START_NODE)
         return;
     if (processed_nodes.find(node_idx) != processed_nodes.end())
@@ -851,8 +831,10 @@ void tie_word_id_suffixes(vector<Node> &nodes, set<node_idx_t> &processed_nodes,
         tie_word_id_suffixes(nodes, processed_nodes, stop_propagation, *arcit);
 }
 
-void print_graph(vector<DecoderGraph::Node> &nodes, vector<int> path,
-        int node_idx) {
+void print_graph(DecoderGraph &dg,
+        vector<DecoderGraph::Node> &nodes, vector<int> path,
+        int node_idx)
+{
     path.push_back(node_idx);
 
     if (node_idx == END_NODE) {
@@ -864,7 +846,7 @@ void print_graph(vector<DecoderGraph::Node> &nodes, vector<int> path,
             if (nodes[path[i]].word_id != -1)
                 //cout << " " << "(" << m_units[nodes[path[i]].word_id] << ")";
                 cout << " " << path[i] << "("
-                        << m_subwords[nodes[path[i]].word_id] << ")";
+                        << dg.m_subwords[nodes[path[i]].word_id] << ")";
         }
         cout << endl << endl;
         return;
@@ -875,12 +857,18 @@ void print_graph(vector<DecoderGraph::Node> &nodes, vector<int> path,
         print_graph(nodes, path, *ait);
 }
 
-void print_graph(vector<DecoderGraph::Node> &nodes) {
+
+void print_graph(DecoderGraph &dg,
+        vector<DecoderGraph::Node> &nodes)
+{
     vector<int> path;
     print_graph(nodes, path, START_NODE);
 }
 
-void print_dot_digraph(vector<DecoderGraph::Node> &nodes, ostream &fstr) {
+void print_dot_digraph(DecoderGraph &dg,
+                       vector<DecoderGraph::Node> &nodes,
+                       ostream &fstr)
+{
     set<node_idx_t> node_idxs;
     //reachable_graph_nodes(nodes, node_idxs);
     for (unsigned int i = 0; i < nodes.size(); i++)
@@ -902,7 +890,7 @@ void print_dot_digraph(vector<DecoderGraph::Node> &nodes, ostream &fstr) {
         else if (nd.hmm_state != -1 && nd.word_id == -1)
             fstr << " [label=\"" << nd.hmm_state << "\"]" << endl;
         else if (nd.hmm_state == -1 && nd.word_id != -1)
-            fstr << " [label=\"" << m_subwords[nd.word_id] << "\"]" << endl;
+            fstr << " [label=\"" << dg.m_subwords[nd.word_id] << "\"]" << endl;
         else if (nd.hmm_state != -1 && nd.word_id != -1)
             throw string("Problem");
         else
@@ -918,6 +906,7 @@ void print_dot_digraph(vector<DecoderGraph::Node> &nodes, ostream &fstr) {
     fstr << "}" << endl;
 }
 
+
 void reachable_graph_nodes(vector<DecoderGraph::Node> &nodes,
         set<node_idx_t> &node_idxs, node_idx_t node_idx) {
     node_idxs.insert(node_idx);
@@ -930,7 +919,7 @@ void reachable_graph_nodes(vector<DecoderGraph::Node> &nodes,
 void set_reverse_arcs_also_from_unreachable(vector<DecoderGraph::Node> &nodes) {
     clear_reverse_arcs(nodes);
     for (unsigned int i = 0; i < nodes.size(); ++i) {
-        Node &node = nodes[i];
+        DecoderGraph::Node &node = nodes[i];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             nodes[*ait].reverse_arcs.insert(i);
     }
@@ -1085,7 +1074,7 @@ void
 add_hmm_self_transitions(std::vector<DecoderGraph::Node> &nodes)
 {
     for (unsigned int i=0; i<nodes.size(); i++) {
-        Node &node = nodes[i];
+        DecoderGraph::Node &node = nodes[i];
         if (node.hmm_state == -1) continue;
         node.arcs.insert(i);
     }
@@ -1103,16 +1092,10 @@ push_word_ids_left(vector<DecoderGraph::Node> &nodes,
     if (node_idx == START_NODE) return;
     processed_nodes.insert(node_idx);
 
-    Node &node = nodes[node_idx];
-
-    if (debug && subword_id != -1) {
-        cerr << "push left, node_idx: " << node_idx << " prev_node_idx: " << prev_node_idx;
-        cerr << " subword to move: " << m_subwords[subword_id] << endl;
-        cerr << endl;
-    }
+    DecoderGraph::Node &node = nodes[node_idx];
 
     if (subword_id != -1 && prev_node_idx != node_idx) {
-        Node &prev_node = nodes[prev_node_idx];
+        DecoderGraph::Node &prev_node = nodes[prev_node_idx];
         swap(node.word_id, prev_node.word_id);
         swap(node.hmm_state, prev_node.hmm_state);
         move_count++;
@@ -1158,12 +1141,6 @@ push_word_ids_right(vector<DecoderGraph::Node> &nodes,
     processed_nodes.insert(node_idx);
 
     DecoderGraph::Node &node = nodes[node_idx];
-
-    if (debug && subword_id != -1) {
-        cerr << "push right, node_idx: " << node_idx << " prev_node_idx: " << prev_node_idx;
-        cerr << " subword to move: " << m_subwords[subword_id] << endl;
-        cerr << endl;
-    }
 
     if (subword_id != -1 && prev_node_idx != node_idx) {
         DecoderGraph::Node &prev_node = nodes[prev_node_idx];
@@ -1222,6 +1199,73 @@ num_subword_states(vector<DecoderGraph::Node> &nodes)
     for (auto iit = node_idxs.begin(); iit != node_idxs.end(); ++iit)
         if (nodes[*iit].word_id != -1) subword_state_count++;
     return subword_state_count;
+}
+
+
+void
+add_triphones(std::vector<DecoderGraph::TriphoneNode> &nodes,
+                            std::vector<DecoderGraph::TriphoneNode> &nodes_to_add)
+{
+    int curr_node_idx = START_NODE;
+
+    for (auto ntait = nodes_to_add.begin(); ntait != nodes_to_add.end(); ++ntait) {
+        if (ntait->hmm_id != -1) {
+            int hmm_id = ntait->hmm_id;
+            if (nodes[curr_node_idx].hmm_id_lookahead.find(hmm_id) != nodes[curr_node_idx].hmm_id_lookahead.end()) {
+                curr_node_idx = nodes[curr_node_idx].hmm_id_lookahead[hmm_id];
+            }
+            else {
+                nodes.resize(nodes.size()+1);
+                nodes.back().hmm_id = hmm_id;
+                nodes[curr_node_idx].hmm_id_lookahead[hmm_id] = nodes.size()-1;
+                curr_node_idx = nodes.size()-1;
+            }
+        }
+        else if (ntait->subword_id != -1) {
+            int subword_id = ntait->subword_id;
+            if (nodes[curr_node_idx].subword_id_lookahead.find(subword_id) != nodes[curr_node_idx].subword_id_lookahead.end()) {
+                curr_node_idx = nodes[curr_node_idx].subword_id_lookahead[subword_id];
+            }
+            else {
+                nodes.resize(nodes.size()+1);
+                nodes.back().subword_id = subword_id;
+                nodes[curr_node_idx].subword_id_lookahead[subword_id] = nodes.size()-1;
+                curr_node_idx = nodes.size()-1;
+            }
+        }
+    }
+
+    nodes[curr_node_idx].connect_to_end_node = true;
+}
+
+
+void
+triphones_to_states(DecoderGraph &dg,
+        std::vector<DecoderGraph::TriphoneNode> &triphone_nodes,
+                                  std::vector<DecoderGraph::Node> &nodes,
+                                  int curr_tri_idx,
+                                  int curr_state_idx)
+{
+    if (triphone_nodes[curr_tri_idx].connect_to_end_node)
+        nodes[curr_state_idx].arcs.insert(END_NODE);
+
+    for (auto triit = triphone_nodes[curr_tri_idx].hmm_id_lookahead.begin();
+         triit != triphone_nodes[curr_tri_idx].hmm_id_lookahead.end();
+         ++triit)
+    {
+        int new_state_idx = connect_triphone(dg, nodes, triit->first, curr_state_idx);
+        triphones_to_states(dg, triphone_nodes, nodes, triit->second, new_state_idx);
+    }
+
+    for (auto swit = triphone_nodes[curr_tri_idx].subword_id_lookahead.begin();
+         swit != triphone_nodes[curr_tri_idx].subword_id_lookahead.end();
+         ++swit)
+    {
+        nodes.resize(nodes.size()+1);
+        nodes.back().word_id = swit->first;
+        nodes[curr_state_idx].arcs.insert(nodes.size()-1);
+        triphones_to_states(dg, triphone_nodes, nodes, swit->second, nodes.size()-1);
+    }
 }
 
 

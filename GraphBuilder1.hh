@@ -13,14 +13,18 @@ namespace graphbuilder1 {
         std::vector<std::string> triphones;
     };
 
-    static void read_word_segmentations(std::string segfname,
+    static void read_word_segmentations(DecoderGraph &dg,
+                                        std::string segfname,
                                         std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
 
-    static void create_word_graph(std::vector<SubwordNode> &nodes,
+    static void create_word_graph(DecoderGraph &dg,
+                        std::vector<SubwordNode> &nodes,
             std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
     static void tie_subword_suffixes(std::vector<SubwordNode> &nodes);
-    static void print_word_graph(std::vector<SubwordNode> &nodes);
-    static void print_word_graph(std::vector<SubwordNode> &nodes,
+    static void print_word_graph(DecoderGraph &dg,
+                        std::vector<SubwordNode> &nodes);
+    static void print_word_graph(DecoderGraph &dg,
+                        std::vector<SubwordNode> &nodes,
                           std::vector<int> path,
                           int node_idx=START_NODE);
     static int reachable_word_graph_nodes(std::vector<SubwordNode> &nodes);
@@ -38,7 +42,9 @@ namespace graphbuilder1 {
                               char left_context='_',
                               char prev_triphone='_');
 
-    static void create_crossword_network(std::vector<DecoderGraph::Node> &nodes,
+    static void create_crossword_network(DecoderGraph &dg,
+            std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs,
+            std::vector<DecoderGraph::Node> &nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin);
     static void connect_crossword_network(std::vector<DecoderGraph::Node> &nodes,
@@ -47,6 +53,6 @@ namespace graphbuilder1 {
                                    std::map<std::string, int> &fanin,
                                    bool push_left_after_fanin=true);
 
-};
+}
 
 #endif /* GRAPH_BUILDER_1_HH */

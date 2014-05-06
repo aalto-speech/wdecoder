@@ -1,10 +1,15 @@
 #include "GraphBuilder2.hh"
+#include "gutils.hh"
+
+using namespace std;
+using namespace gutils;
 
 
 namespace graphbuilder2 {
 
 void
-read_word_segmentations(string segfname,
+read_word_segmentations(DecoderGraph &dg,
+                    string segfname,
                 vector<pair<string, vector<string> > > &word_segs)
 {
     ifstream segf(segfname);
@@ -36,7 +41,7 @@ read_word_segmentations(string segfname,
 
 
 void
-DecoderGraph::create_crossword_network(vector<pair<string, vector<string> > > &word_segs,
+create_crossword_network(vector<pair<string, vector<string> > > &word_segs,
                                        vector<DecoderGraph::Node> &nodes,
                                        map<string, int> &fanout,
                                        map<string, int> &fanin)
