@@ -11,6 +11,8 @@
 #include "gutils.hh"
 
 using namespace std;
+using namespace gutils;
+using namespace subwordgraphbuilder;
 
 
 int main(int argc, char* argv[])
@@ -35,44 +37,44 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[2];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        vector<SubwordGraph::TriphoneNode> triphone_nodes(2);
+        vector<TriphoneNode> triphone_nodes(2);
         for (auto swit = swg.m_lexicon.begin(); swit != swg.m_lexicon.end(); ++swit) {
             if (swit->second.size() < 2) continue;
-            vector<SubwordGraph::TriphoneNode> sw_triphones;
+            vector<TriphoneNode> sw_triphones;
             triphonize_subword(swg, swit->first, sw_triphones);
             swg.add_triphones(triphone_nodes, sw_triphones);
         }
 
-        vector<SubwordGraph::Node> nodes(2);
-        swg.triphones_to_states(triphone_nodes, nodes);
+        vector<DecoderGraph::Node> nodes(2);
+        triphones_to_states(triphone_nodes, nodes);
         triphone_nodes.clear();
-        swg.prune_unreachable_nodes(nodes);
+        prune_unreachable_nodes(nodes);
         cerr << "number of nodes: " << swg.reachable_graph_nodes(nodes) << endl;
 
-        vector<SubwordGraph::Node> cw_nodes;
+        vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
         cerr << "Creating crossword network.." << endl;
-        swg.create_crossword_network(cw_nodes, fanout, fanin);
+        create_crossword_network(dg, cw_nodes, fanout, fanin);
 
         cerr << "Connecting crossword network.." << endl;
-        swg.connect_crossword_network(nodes, cw_nodes, fanout, fanin, true);
-        swg.connect_end_to_start_node(nodes);
-        cerr << "number of nodes: " << swg.reachable_graph_nodes(nodes) << endl;
+        connect_crossword_network(nodes, cw_nodes, fanout, fanin, true);
+        connect_end_to_start_node(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        swg.connect_one_phone_subwords_from_start_to_cw(nodes, fanout);
-        swg.connect_one_phone_subwords_from_cw_to_end(nodes, fanin);
+        connect_one_phone_subwords_from_start_to_cw(swg, nodes, fanout);
+        connect_one_phone_subwords_from_cw_to_end(swg, nodes, fanin);
 
         cerr << "Tying state chain suffixes.." << endl;
-        swg.tie_state_suffixes(nodes);
+        tie_state_suffixes(nodes);
         cerr << "number of nodes: " << swg.reachable_graph_nodes(nodes) << endl;
 
         cerr << "Tying state chain prefixes.." << endl;
-        swg.tie_state_prefixes(nodes);
+        tie_state_prefixes(nodes);
         cerr << "number of nodes: " << swg.reachable_graph_nodes(nodes) << endl;
 
-        swg.add_hmm_self_transitions(nodes);
-        swg.write_graph(nodes, graphfname);
-        swg.print_dot_digraph(nodes);
+        add_hmm_self_transitions(nodes);
+        write_graph(nodes, graphfname);
+        //swg.print_dot_digraph(nodes);
 
     } catch (string &e) {
         cerr << e << endl;
