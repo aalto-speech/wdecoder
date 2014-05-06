@@ -8,9 +8,11 @@
 #include "conf.hh"
 #include "DecoderGraph.hh"
 #include "gutils.hh"
+#include "GraphBuilder2.hh"
 
 using namespace std;
 using namespace gutils;
+using namespace graphbuilder2;
 
 
 int main(int argc, char* argv[])
@@ -35,7 +37,7 @@ int main(int argc, char* argv[])
         string segfname = config.arguments[2];
         cerr << "Reading segmentations: " << segfname << endl;
         vector<pair<string, vector<string> > > word_segs;
-        dg.read_word_segmentations(segfname, word_segs);
+        read_word_segmentations(segfname, word_segs);
 
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
@@ -46,79 +48,79 @@ int main(int argc, char* argv[])
         for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
             vector<DecoderGraph::TriphoneNode> word_triphones;
             triphonize(dg, wit->second, word_triphones);
-            dg.add_triphones(triphone_nodes, word_triphones);
+            add_triphones(triphone_nodes, word_triphones);
         }
 
         vector<DecoderGraph::Node> nodes(2);
-        dg.triphones_to_states(triphone_nodes, nodes);
+        triphones_to_states(triphone_nodes, nodes);
         triphone_nodes.clear();
-        dg.prune_unreachable_nodes(nodes);
-        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        prune_unreachable_nodes(nodes);
+        cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
         time ( &rawtime );
         cerr << "time: " << ctime (&rawtime) << endl;
         cerr << "Creating crossword network.." << endl;
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
-        dg.create_crossword_network(word_segs, cw_nodes, fanout, fanin);
+        create_crossword_network(word_segs, cw_nodes, fanout, fanin);
         cerr << "Connecting crossword network.." << endl;
-        dg.connect_crossword_network(nodes, cw_nodes, fanout, fanin);
-        dg.connect_end_to_start_node(nodes);
-        cerr << "number of hmm state nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+        connect_end_to_start_node(nodes);
+        cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
         cerr << endl;
         cerr << "Pushing subword ids left.." << endl;
-        dg.push_word_ids_left(nodes);
+        push_word_ids_left(nodes);
         cerr << "Tying state chain prefixes.." << endl;
-        dg.tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
         cerr << "Tying word id prefixes.." << endl;
-        dg.tie_word_id_prefixes(nodes);
-        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        tie_word_id_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         cerr << endl;
         cerr << "Pushing subword ids left.." << endl;
-        dg.push_word_ids_left(nodes);
+        push_word_ids_left(nodes);
         cerr << "Tying state chain prefixes.." << endl;
-        dg.tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
         cerr << "Tying word id prefixes.." << endl;
-        dg.tie_word_id_prefixes(nodes);
-        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        tie_word_id_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         cerr << endl;
         cerr << "Pushing subword ids right.." << endl;
-        dg.push_word_ids_right(nodes);
+        push_word_ids_right(nodes);
         cerr << "Tying state chain prefixes.." << endl;
-        dg.tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         cerr << endl;
         cerr << "Pushing subword ids right.." << endl;
-        dg.push_word_ids_right(nodes);
+        push_word_ids_right(nodes);
         cerr << "Tying state chain suffixes.." << endl;
-        dg.tie_state_suffixes(nodes);
-        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
         cerr << "Tying word id suffixes.." << endl;
-        dg.tie_word_id_suffixes(nodes);
-        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        tie_word_id_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         cerr << endl;
         cerr << "Pushing subword ids right.." << endl;
-        dg.push_word_ids_right(nodes);
+        push_word_ids_right(nodes);
         cerr << "Tying state chain suffixes.." << endl;
-        dg.tie_state_suffixes(nodes);
-        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
         cerr << "Tying word id suffixes.." << endl;
-        dg.tie_word_id_suffixes(nodes);
-        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        tie_word_id_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         cerr << endl;
         cerr << "Pushing subword ids left.." << endl;
-        dg.push_word_ids_left(nodes);
+        push_word_ids_left(nodes);
         cerr << "Tying state chain suffixes.." << endl;
-        dg.tie_state_suffixes(nodes);
-        cerr << "number of nodes: " << dg.reachable_graph_nodes(nodes) << endl;
+        tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         if (false) {
             map<string, vector<string> > triphonized_words;
@@ -133,15 +135,15 @@ int main(int argc, char* argv[])
             //cerr << "assert only segmented word pairs: " << only_word_pairs << endl;
         }
 
-        dg.add_hmm_self_transitions(nodes);
-        dg.write_graph(nodes, graphfname);
+        add_hmm_self_transitions(nodes);
+        write_graph(nodes, graphfname);
 
         /*
-        for (int i=0; i<dg.m_units.size(); i++) {
+        for (int i=0; i<m_units.size(); i++) {
             set<pair<int, int> > results;
             find_successor_word(nodes, results, i, 0);
             if (results.size() > 1) {
-                cerr << results.size() << " matches for subword: " << dg.m_units[i] << endl;
+                cerr << results.size() << " matches for subword: " << m_units[i] << endl;
                 cerr << "depths:";
                 for (auto rit = results.begin(); rit != results.end(); ++rit)
                     cerr << " " << rit->second;

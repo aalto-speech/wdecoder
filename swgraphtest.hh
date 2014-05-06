@@ -2,7 +2,7 @@
 #define DECODER_SWGRAPH_CPPUNIT
 
 #define private public
-#include "DecoderGraph.hh"
+#include "SubwordGraph.hh"
 #undef private
 
 #include <string>
@@ -36,7 +36,7 @@ class swgraphtest : public CPPUNIT_NS :: TestFixture
         std::string amname;
         std::string lexname;
 
-        void read_fixtures(DecoderGraph &dg);
+        void read_fixtures(SubwordGraph &dg);
 
 };
 
