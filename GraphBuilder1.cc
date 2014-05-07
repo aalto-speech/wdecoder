@@ -13,8 +13,8 @@ namespace graphbuilder1 {
 
 void
 create_word_graph(DecoderGraph &dg,
-        vector<SubwordNode> &nodes,
-        map<string, vector<string> > &word_segs)
+                  vector<SubwordNode> &nodes,
+                  map<string, vector<string> > &word_segs)
 {
     nodes.resize(2);
 
@@ -78,7 +78,7 @@ tie_subword_suffixes(vector<SubwordNode> &nodes)
 
     for (auto sit = node.in_arcs.begin(); sit != node.in_arcs.end(); ++sit) {
         if (nodes[sit->second].in_arcs[0].second == START_NODE
-            || nodes[sit->second].out_arcs.size() > 1) continue;
+                || nodes[sit->second].out_arcs.size() > 1) continue;
         suffix_counts[sit->first] += 1;
     }
 
@@ -91,7 +91,7 @@ tie_subword_suffixes(vector<SubwordNode> &nodes)
             for (auto ait = node.in_arcs.begin(); ait != node.in_arcs.end(); ++ait) {
                 // Tie only real suffixes ie. not connected from start node
                 if (ait->first == sit->first && (nodes[ait->second].in_arcs[0].second != START_NODE)
-                    && nodes[ait->second].out_arcs.size() == 1) {
+                        && nodes[ait->second].out_arcs.size() == 1) {
                     int src_node_idx = nodes[ait->second].in_arcs[0].second;
                     nodes[src_node_idx].out_arcs[ait->first] = nodes.size()-1;
                     nodes.back().in_arcs.push_back(make_pair(nodes[src_node_idx].subword_ids, src_node_idx));
@@ -107,9 +107,9 @@ tie_subword_suffixes(vector<SubwordNode> &nodes)
 
 void
 print_word_graph(DecoderGraph &dg,
-                vector<SubwordNode> &nodes,
-                               vector<int> path,
-                               int node_idx)
+                 vector<SubwordNode> &nodes,
+                 vector<int> path,
+                 int node_idx)
 {
     path.push_back(node_idx);
 
@@ -136,7 +136,7 @@ print_word_graph(DecoderGraph &dg,
 
 void
 print_word_graph(DecoderGraph &dg,
-            vector<SubwordNode> &nodes)
+                 vector<SubwordNode> &nodes)
 {
     vector<int> path;
     print_word_graph(dg, nodes, path, START_NODE);
@@ -145,8 +145,8 @@ print_word_graph(DecoderGraph &dg,
 
 void
 reachable_word_graph_nodes(vector<SubwordNode> &nodes,
-                                         set<int> &node_idxs,
-                                         int node_idx)
+                           set<int> &node_idxs,
+                           int node_idx)
 {
     node_idxs.insert(node_idx);
     for (auto ait = nodes[node_idx].out_arcs.begin(); ait != nodes[node_idx].out_arcs.end(); ++ait)
@@ -165,7 +165,7 @@ reachable_word_graph_nodes(vector<SubwordNode> &nodes)
 
 void
 triphonize_subword_nodes(DecoderGraph &dg,
-                    vector<SubwordNode> &swnodes)
+                         vector<SubwordNode> &swnodes)
 {
     for (auto nit = swnodes.begin(); nit != swnodes.end(); ++nit) {
 
@@ -186,8 +186,8 @@ triphonize_subword_nodes(DecoderGraph &dg,
 
 void
 expand_subword_nodes(DecoderGraph &dg,
-                vector<SubwordNode> &swnodes,
-                                   vector<DecoderGraph::Node> &nodes)
+                     vector<SubwordNode> &swnodes,
+                     vector<DecoderGraph::Node> &nodes)
 {
     nodes.resize(2);
     triphonize_subword_nodes(dg, swnodes);
@@ -198,13 +198,13 @@ expand_subword_nodes(DecoderGraph &dg,
 
 void
 expand_subword_nodes(DecoderGraph &dg,
-            const vector<SubwordNode> &swnodes,
-                                   vector<DecoderGraph::Node> &nodes,
-                                   map<sw_node_idx_t, node_idx_t> &expanded_nodes,
-                                   sw_node_idx_t sw_node_idx,
-                                   node_idx_t node_idx,
-                                   char left_context,
-                                   char second_left_context)
+                     const vector<SubwordNode> &swnodes,
+                     vector<DecoderGraph::Node> &nodes,
+                     map<sw_node_idx_t, node_idx_t> &expanded_nodes,
+                     sw_node_idx_t sw_node_idx,
+                     node_idx_t node_idx,
+                     char left_context,
+                     char second_left_context)
 {
     if (sw_node_idx == END_NODE) return;
 
@@ -288,10 +288,10 @@ expand_subword_nodes(DecoderGraph &dg,
 
 void
 create_crossword_network(DecoderGraph &dg,
-        map<string, vector<string> > &word_segs,
-                        vector<DecoderGraph::Node> &nodes,
-                                       map<string, int> &fanout,
-                                       map<string, int> &fanin)
+                         map<string, vector<string> > &word_segs,
+                         vector<DecoderGraph::Node> &nodes,
+                         map<string, int> &fanout,
+                         map<string, int> &fanin)
 {
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
         vector<string> triphones;
@@ -345,11 +345,11 @@ create_crossword_network(DecoderGraph &dg,
 
 void
 connect_crossword_network(DecoderGraph &dg,
-                        vector<DecoderGraph::Node> &nodes,
-                                   vector<DecoderGraph::Node> &cw_nodes,
-                                        map<string, int> &fanout,
-                                        map<string, int> &fanin,
-                                        bool push_left_after_fanin)
+                          vector<DecoderGraph::Node> &nodes,
+                          vector<DecoderGraph::Node> &cw_nodes,
+                          map<string, int> &fanout,
+                          map<string, int> &fanin,
+                          bool push_left_after_fanin)
 {
     int offset = nodes.size();
     for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {

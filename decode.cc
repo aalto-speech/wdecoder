@@ -20,10 +20,10 @@ int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: decode [OPTION...] PH LEXICON LM CFGFILE GRAPH LNALIST\n")
-      ('h', "help", "", "", "display help")
-      ('d', "duration-model=STRING", "arg", "", "Duration model")
-      ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
-      ('t', "lookahead-tables=STRING", "arg", "", "Precomputed lookahead tables");
+    ('h', "help", "", "", "display help")
+    ('d', "duration-model=STRING", "arg", "", "Duration model")
+    ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
+    ('t', "lookahead-tables=STRING", "arg", "", "Precomputed lookahead tables");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 

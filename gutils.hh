@@ -14,12 +14,12 @@
 namespace gutils {
 
 void read_word_segmentations(DecoderGraph &dg,
-                                    std::string segfname,
-                                    std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
+                             std::string segfname,
+                             std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
 
 void read_word_segmentations(DecoderGraph &dg,
-                                    std::string segfname,
-                                    std::map<std::string, std::vector<std::string> > &word_segs);
+                             std::string segfname,
+                             std::map<std::string, std::vector<std::string> > &word_segs);
 
 void triphonize(std::string word,
                 std::vector<std::string> &triphones);
@@ -43,7 +43,7 @@ void get_hmm_states(DecoderGraph &dg,
                     std::string word,
                     std::vector<int> &states);
 void get_hmm_states_cw(DecoderGraph &dg,
-                        std::map<std::string, std::vector<std::string> > &word_segs,
+                       std::map<std::string, std::vector<std::string> > &word_segs,
                        std::string wrd1,
                        std::string wrd2,
                        std::vector<int> &states);
@@ -114,7 +114,7 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
         bool cw_visited = false);
 
 void tie_state_prefixes(std::vector<DecoderGraph::Node> &nodes,
-                               bool stop_propagation=false);
+                        bool stop_propagation=false);
 void tie_state_prefixes(std::vector<DecoderGraph::Node> &nodes,
                         std::set<node_idx_t> &processed_nodes,
                         bool stop_propagation=false,
@@ -139,14 +139,14 @@ void tie_word_id_suffixes(std::vector<DecoderGraph::Node> &nodes,
                           node_idx_t node_idx=END_NODE);
 
 void print_graph(DecoderGraph &dg,
-            std::vector<DecoderGraph::Node> &nodes,
+                 std::vector<DecoderGraph::Node> &nodes,
                  std::vector<int> path,
                  int node_idx);
 void print_graph(DecoderGraph &dg,
-                        std::vector<DecoderGraph::Node> &nodes);
+                 std::vector<DecoderGraph::Node> &nodes);
 void print_dot_digraph(DecoderGraph &dg,
-                              std::vector<DecoderGraph::Node> &nodes,
-                              std::ostream &fstr = std::cout);
+                       std::vector<DecoderGraph::Node> &nodes,
+                       std::ostream &fstr = std::cout);
 int reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes);
 
 void set_reverse_arcs_also_from_unreachable(std::vector<DecoderGraph::Node> &nodes);
@@ -160,15 +160,15 @@ void connect_end_to_start_node(std::vector<DecoderGraph::Node> &nodes);
 void write_graph(std::vector<DecoderGraph::Node> &nodes, std::string fname);
 
 int connect_triphone(DecoderGraph &dg,
-                    std::vector<DecoderGraph::Node> &nodes,
+                     std::vector<DecoderGraph::Node> &nodes,
                      std::string triphone,
                      node_idx_t node_idx);
 int connect_triphone(DecoderGraph &dg,
-                    std::vector<DecoderGraph::Node> &nodes,
+                     std::vector<DecoderGraph::Node> &nodes,
                      int triphone_idx,
                      node_idx_t node_idx);
 int connect_word(DecoderGraph &dg,
-                std::vector<DecoderGraph::Node> &nodes,
+                 std::vector<DecoderGraph::Node> &nodes,
                  std::string word,
                  node_idx_t node_idx);
 
@@ -203,7 +203,7 @@ void triphones_to_states(DecoderGraph &dg,
                          int curr_state_idx=START_NODE);
 
 void collect_cw_fanout_nodes(DecoderGraph &dg,
-                            std::vector<DecoderGraph::Node> &nodes,
+                             std::vector<DecoderGraph::Node> &nodes,
                              std::map<int, std::string> &nodes_to_fanout,
                              int hmm_state_count=0,
                              std::vector<char> phones = std::vector<char>(),

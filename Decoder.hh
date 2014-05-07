@@ -63,31 +63,31 @@ public:
 
     class Token {
     public:
-      int node_idx;
-      float am_log_prob;
-      float lm_log_prob;
-      float lookahead_log_prob;
-      float total_log_prob;
-      int lm_node;
-      int last_word_id;
-      WordHistory *history;
-      unsigned short int dur;
-      bool word_end;
-      int histogram_bin;
+        int node_idx;
+        float am_log_prob;
+        float lm_log_prob;
+        float lookahead_log_prob;
+        float total_log_prob;
+        int lm_node;
+        int last_word_id;
+        WordHistory *history;
+        unsigned short int dur;
+        bool word_end;
+        int histogram_bin;
 
-      Token():
-        node_idx(-1),
-        am_log_prob(0.0f),
-        lm_log_prob(0.0f),
-        lookahead_log_prob(0.0f),
-        total_log_prob(-1e20),
-        lm_node(0),
-        last_word_id(-1),
-        history(nullptr),
-        dur(0),
-        word_end(false),
-        histogram_bin(0)
-      { }
+        Token():
+            node_idx(-1),
+            am_log_prob(0.0f),
+            lm_log_prob(0.0f),
+            lookahead_log_prob(0.0f),
+            total_log_prob(-1e20),
+            lm_node(0),
+            last_word_id(-1),
+            history(nullptr),
+            dur(0),
+            word_end(false),
+            histogram_bin(0)
+        { }
     };
 
     Decoder();

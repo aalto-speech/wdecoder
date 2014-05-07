@@ -20,23 +20,23 @@ class swgraphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (SubwordGraphTest5);
     CPPUNIT_TEST_SUITE_END ();
 
-    public:
-        void setUp(void);
-        void tearDown(void);
+public:
+    void setUp(void);
+    void tearDown(void);
 
-    protected:
-        void SubwordGraphTest1(void);
-        void SubwordGraphTest2(void);
-        void SubwordGraphTest3(void);
-        void SubwordGraphTest4(void);
-        void SubwordGraphTest5(void);
+protected:
+    void SubwordGraphTest1(void);
+    void SubwordGraphTest2(void);
+    void SubwordGraphTest3(void);
+    void SubwordGraphTest4(void);
+    void SubwordGraphTest5(void);
 
-    private:
+private:
 
-        std::string amname;
-        std::string lexname;
+    std::string amname;
+    std::string lexname;
 
-        void read_fixtures(DecoderGraph &dg);
+    void read_fixtures(DecoderGraph &dg);
 
 };
 

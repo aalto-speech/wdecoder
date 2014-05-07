@@ -21,7 +21,7 @@ namespace subwordgraphbuilder {
 
 void
 create_crossword_network(DecoderGraph &dg,
-                        vector<DecoderGraph::Node> &nodes,
+                         vector<DecoderGraph::Node> &nodes,
                          map<string, int> &fanout,
                          map<string, int> &fanin)
 {
@@ -90,7 +90,7 @@ create_crossword_network(DecoderGraph &dg,
 
 void
 connect_crossword_network(DecoderGraph &dg,
-                        vector<DecoderGraph::Node> &nodes,
+                          vector<DecoderGraph::Node> &nodes,
                           vector<DecoderGraph::Node> &cw_nodes,
                           map<string, int> &fanout,
                           map<string, int> &fanin,
@@ -146,8 +146,8 @@ connect_crossword_network(DecoderGraph &dg,
 
 void
 connect_one_phone_subwords_from_start_to_cw(DecoderGraph &dg,
-                                            vector<DecoderGraph::Node> &nodes,
-                                            map<string, int> &fanout)
+        vector<DecoderGraph::Node> &nodes,
+        map<string, int> &fanout)
 {
     for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
         vector<string> &triphones = swit->second;
@@ -162,8 +162,8 @@ connect_one_phone_subwords_from_start_to_cw(DecoderGraph &dg,
 
 void
 connect_one_phone_subwords_from_cw_to_end(DecoderGraph &dg,
-                                          vector<DecoderGraph::Node> &nodes,
-                                          map<string, int> &fanin)
+        vector<DecoderGraph::Node> &nodes,
+        map<string, int> &fanin)
 {
     for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
         vector<string> &triphones = swit->second;

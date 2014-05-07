@@ -42,48 +42,48 @@ class graphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (GraphTest27);
     CPPUNIT_TEST_SUITE_END ();
 
-    public:
-        void setUp(void);
-        void tearDown(void);
+public:
+    void setUp(void);
+    void tearDown(void);
 
-    protected:
-        void GraphTest1(void);
-        void GraphTest2(void);
-        void GraphTest3(void);
-        void GraphTest4(void);
-        void GraphTest5(void);
-        void GraphTest6(void);
-        void GraphTest7(void);
-        void GraphTest8(void);
-        void GraphTest9(void);
-        void GraphTest10(void);
-        void GraphTest11(void);
-        void GraphTest12(void);
-        void GraphTest13(void);
-        void GraphTest14(void);
-        void GraphTest15(void);
-        void GraphTest16(void);
-        void GraphTest17(void);
-        void GraphTest18(void);
-        void GraphTest19(void);
-        void GraphTest20(void);
-        void GraphTest21(void);
-        void GraphTest22(void);
-        void GraphTest23(void);
-        void GraphTest24(void);
-        void GraphTest25(void);
-        void GraphTest26(void);
-        void GraphTest27(void);
+protected:
+    void GraphTest1(void);
+    void GraphTest2(void);
+    void GraphTest3(void);
+    void GraphTest4(void);
+    void GraphTest5(void);
+    void GraphTest6(void);
+    void GraphTest7(void);
+    void GraphTest8(void);
+    void GraphTest9(void);
+    void GraphTest10(void);
+    void GraphTest11(void);
+    void GraphTest12(void);
+    void GraphTest13(void);
+    void GraphTest14(void);
+    void GraphTest15(void);
+    void GraphTest16(void);
+    void GraphTest17(void);
+    void GraphTest18(void);
+    void GraphTest19(void);
+    void GraphTest20(void);
+    void GraphTest21(void);
+    void GraphTest22(void);
+    void GraphTest23(void);
+    void GraphTest24(void);
+    void GraphTest25(void);
+    void GraphTest26(void);
+    void GraphTest27(void);
 
-    private:
+private:
 
-        std::string amname;
-        std::string lexname;
-        std::string segname;
-        //std::vector<std::pair<std::string, std::vector<std::string> > > word_segs;
-        std::map<std::string, std::vector<std::string> > word_segs;
+    std::string amname;
+    std::string lexname;
+    std::string segname;
+    //std::vector<std::pair<std::string, std::vector<std::string> > > word_segs;
+    std::map<std::string, std::vector<std::string> > word_segs;
 
-        void read_fixtures(DecoderGraph &dg);
+    void read_fixtures(DecoderGraph &dg);
 
 };
 

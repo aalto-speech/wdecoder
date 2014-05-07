@@ -13,10 +13,10 @@ namespace graphbuilder2 {
 
 void
 create_crossword_network(DecoderGraph &dg,
-        map<string, vector<string> > &word_segs,
-                                       vector<DecoderGraph::Node> &nodes,
-                                       map<string, int> &fanout,
-                                       map<string, int> &fanin)
+                         map<string, vector<string> > &word_segs,
+                         vector<DecoderGraph::Node> &nodes,
+                         map<string, int> &fanout,
+                         map<string, int> &fanin)
 {
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
         vector<string> triphones;
@@ -69,11 +69,11 @@ create_crossword_network(DecoderGraph &dg,
 
 void
 connect_crossword_network(DecoderGraph &dg,
-                        vector<DecoderGraph::Node> &nodes,
-                                   vector<DecoderGraph::Node> &cw_nodes,
-                                        map<string, int> &fanout,
-                                        map<string, int> &fanin,
-                                        bool push_left_after_fanin)
+                          vector<DecoderGraph::Node> &nodes,
+                          vector<DecoderGraph::Node> &cw_nodes,
+                          map<string, int> &fanout,
+                          map<string, int> &fanin,
+                          bool push_left_after_fanin)
 {
     int offset = nodes.size();
     for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {

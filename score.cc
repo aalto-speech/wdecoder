@@ -21,8 +21,8 @@ int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: decode [OPTION...] PH LEXICON LM CFGFILE GRAPH LNALIST RESLIST\n")
-      ('h', "help", "", "", "display help")
-      ('d', "duration-model=STRING", "arg", "", "Duration model");
+    ('h', "help", "", "", "display help")
+    ('d', "duration-model=STRING", "arg", "", "Duration model");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 7) config.print_help(stderr, 1);
 

@@ -18,14 +18,14 @@ class decodertest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (DecoderTest1);
     CPPUNIT_TEST_SUITE_END ();
 
-    public:
-        void setUp(void);
-        void tearDown(void);
+public:
+    void setUp(void);
+    void tearDown(void);
 
-    protected:
-        void DecoderTest1(void);
+protected:
+    void DecoderTest1(void);
 
-    private:
+private:
 
 };
 

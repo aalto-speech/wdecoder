@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: dgraph [OPTION...] PH LEXICON GRAPH\n")
-      ('h', "help", "", "", "display help");
+    ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 3) config.print_help(stderr, 1);
 

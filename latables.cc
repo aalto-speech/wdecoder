@@ -21,9 +21,9 @@ int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: decode [OPTION...] PH LEXICON CFGFILE GRAPH LALM LATABLES\n")
-      ('h', "help", "", "", "display help")
-      ('d', "initial-depth=INT", "arg", "2", "Depth for initial nodes")
-      ('c', "cross-word", "", "", "Create lookahead tables for all cross-word nodes");
+    ('h', "help", "", "", "display help")
+    ('d', "initial-depth=INT", "arg", "2", "Depth for initial nodes")
+    ('c', "cross-word", "", "", "Create lookahead tables for all cross-word nodes");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 

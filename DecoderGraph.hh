@@ -52,7 +52,9 @@ public:
     // Word segmentations
     //std::map<std::string, std::vector<std::string> > m_word_segs;
 
-    DecoderGraph() { debug = 0; };
+    DecoderGraph() {
+        debug = 0;
+    };
 
     void read_phone_model(std::string phnfname);
     void read_noway_lexicon(std::string lexfname);
