@@ -109,6 +109,7 @@ connect_crossword_network(DecoderGraph &dg,
         set_reverse_arcs_also_from_unreachable(nodes);
 
     map<int, string> nodes_to_fanout;
+    collect_cw_fanout_nodes(dg, nodes, nodes_to_fanout);
 
     for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
         if (fanout.find(fonit->second) == fanout.end()) {
