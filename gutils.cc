@@ -811,7 +811,8 @@ void tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
 }
 
 void tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
-                          set<node_idx_t> &processed_nodes, bool stop_propagation,
+                          set<node_idx_t> &processed_nodes,
+                          bool stop_propagation,
                           node_idx_t node_idx) {
     if (node_idx == END_NODE)
         return;

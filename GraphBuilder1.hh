@@ -11,11 +11,15 @@
 
 namespace graphbuilder1 {
 
-struct SubwordNode {
+class SubwordNode {
+public:
+    SubwordNode() { connected_from_start_node = false; }
     std::vector<int> subword_ids;
-    std::vector<std::pair<std::vector<int>, unsigned int> > in_arcs;  // subword ids (lookahead), node id
-    std::map<std::vector<int>, unsigned int> out_arcs;                // subword ids (lookahead), node id
+    //std::vector<std::pair<std::vector<int>, unsigned int> > in_arcs;  // subword ids (lookahead), node id
+    std::multimap<std::vector<int>, unsigned int> in_arcs;              // subword ids (lookahead), node id
+    std::map<std::vector<int>, unsigned int> out_arcs;                  // subword ids (lookahead), node id
     std::vector<std::string> triphones;
+    bool connected_from_start_node;
 };
 
 void create_word_graph(DecoderGraph &dg,
@@ -45,7 +49,6 @@ void expand_subword_nodes(DecoderGraph &dg,
                           node_idx_t node_idx=START_NODE,
                           char left_context='_',
                           char prev_triphone='_');
-
 void create_crossword_network(DecoderGraph &dg,
                               std::map<std::string, std::vector<std::string> > &word_segs,
                               std::vector<DecoderGraph::Node> &nodes,
