@@ -8,10 +8,10 @@ cxxflags = -O3 -march=native -std=gnu++0x -Wall
 
 ##################################################
 
-progs = dgraph dgraph2 dgraph3 wgraph swgraph latables decode score
+progs = dgraph dgraph2 wgraph swgraph latables decode score
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
-srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc gutils.cc GraphBuilder1.cc GraphBuilder2.cc SubwordGraphBuilder.cc WordGraphBuilder.cc LnaReaderCircular.cc Decoder.cc 
+srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc gutils.cc GraphBuilder1.cc GraphBuilder2.cc SubwordGraphBuilder.cc LnaReaderCircular.cc Decoder.cc 
 objs = $(srcs:.cc=.o)
 
 test_progs = runtests

@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
         cerr << "time: " << ctime (&rawtime) << endl;
         cerr << "Expanding to phone graph.." << endl;
         vector<DecoderGraph::Node> nodes;
-        expand_subword_nodes(swnodes, nodes);
+        expand_subword_nodes(dg, swnodes, nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
         time ( &rawtime );

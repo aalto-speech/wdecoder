@@ -217,13 +217,14 @@ triphonize_subword_nodes(DecoderGraph &dg,
 
 
 void
-expand_subword_nodes(vector<SubwordNode> &swnodes,
+expand_subword_nodes(DecoderGraph &dg,
+                vector<SubwordNode> &swnodes,
                                    vector<DecoderGraph::Node> &nodes)
 {
     nodes.resize(2);
-    triphonize_subword_nodes(swnodes);
+    triphonize_subword_nodes(dg, swnodes);
     map<unsigned int, unsigned int> expanded_nodes;
-    expand_subword_nodes(swnodes, nodes, expanded_nodes);
+    expand_subword_nodes(dg, swnodes, nodes, expanded_nodes);
 }
 
 
@@ -244,7 +245,7 @@ expand_subword_nodes(DecoderGraph &dg,
     if (sw_node_idx == START_NODE) {
         for (auto ait = swnode.out_arcs.begin(); ait != swnode.out_arcs.end(); ++ait)
             if (ait->second != END_NODE)
-                expand_subword_nodes(swnodes, nodes, expanded_nodes, ait->second,
+                expand_subword_nodes(dg, swnodes, nodes, expanded_nodes, ait->second,
                                      node_idx, left_context, second_left_context);
         return;
     }
@@ -311,7 +312,7 @@ expand_subword_nodes(DecoderGraph &dg,
             nodes[temp_node_idx].arcs.insert(END_NODE);
         }
         else
-            expand_subword_nodes(swnodes, nodes, expanded_nodes, ait->second,
+            expand_subword_nodes(dg, swnodes, nodes, expanded_nodes, ait->second,
                                  node_idx, last_phone, second_last_phone);
     }
 }
@@ -375,7 +376,8 @@ create_crossword_network(DecoderGraph &dg,
 
 
 void
-connect_crossword_network(vector<DecoderGraph::Node> &nodes,
+connect_crossword_network(DecoderGraph &dg,
+                        vector<DecoderGraph::Node> &nodes,
                                    vector<DecoderGraph::Node> &cw_nodes,
                                         map<string, int> &fanout,
                                         map<string, int> &fanin,
@@ -396,7 +398,7 @@ connect_crossword_network(vector<DecoderGraph::Node> &nodes,
         finit->second += offset;
 
     map<node_idx_t, string> nodes_to_fanin;
-    collect_cw_fanin_nodes(nodes, nodes_to_fanin);
+    collect_cw_fanin_nodes(dg, nodes, nodes_to_fanin);
 
     for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
         if (fanin.find(finit->second) == fanin.end()) {

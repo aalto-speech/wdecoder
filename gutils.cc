@@ -856,7 +856,7 @@ void print_graph(DecoderGraph &dg,
 
     for (auto ait = nodes[node_idx].arcs.begin();
             ait != nodes[node_idx].arcs.end(); ++ait)
-        print_graph(nodes, path, *ait);
+        print_graph(dg, nodes, path, *ait);
 }
 
 
@@ -864,7 +864,7 @@ void print_graph(DecoderGraph &dg,
         vector<DecoderGraph::Node> &nodes)
 {
     vector<int> path;
-    print_graph(nodes, path, START_NODE);
+    print_graph(dg, nodes, path, START_NODE);
 }
 
 void print_dot_digraph(DecoderGraph &dg,
@@ -1308,7 +1308,7 @@ collect_cw_fanout_nodes(DecoderGraph &dg,
     }
 
     for (auto ait = node.reverse_arcs.begin(); ait != node.reverse_arcs.end(); ++ait)
-        collect_cw_fanout_nodes(nodes, nodes_to_fanout, hmm_state_count,
+        collect_cw_fanout_nodes(dg, nodes, nodes_to_fanout, hmm_state_count,
                                 phones, node_to_connect, *ait);
 }
 
@@ -1351,11 +1351,11 @@ collect_cw_fanin_nodes(DecoderGraph &dg,
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        collect_cw_fanin_nodes(nodes, nodes_from_fanin, hmm_state_count,
+        collect_cw_fanin_nodes(dg, nodes, nodes_from_fanin, hmm_state_count,
                                phones, node_to_connect, *ait);
     }
 }
 
 
 }
-;
+

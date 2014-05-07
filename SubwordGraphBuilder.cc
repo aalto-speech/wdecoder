@@ -89,7 +89,8 @@ create_crossword_network(DecoderGraph &dg,
 
 
 void
-connect_crossword_network(vector<DecoderGraph::Node> &nodes,
+connect_crossword_network(DecoderGraph &dg,
+                        vector<DecoderGraph::Node> &nodes,
                           vector<DecoderGraph::Node> &cw_nodes,
                           map<string, int> &fanout,
                           map<string, int> &fanin,
@@ -110,7 +111,7 @@ connect_crossword_network(vector<DecoderGraph::Node> &nodes,
         finit->second += offset;
 
     map<node_idx_t, string> nodes_to_fanin;
-    collect_cw_fanin_nodes(nodes, nodes_to_fanin);
+    collect_cw_fanin_nodes(dg, nodes, nodes_to_fanin);
 
     for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
         if (fanin.find(finit->second) == fanin.end()) {
@@ -129,7 +130,7 @@ connect_crossword_network(vector<DecoderGraph::Node> &nodes,
         set_reverse_arcs_also_from_unreachable(nodes);
 
     map<int, string> nodes_to_fanout;
-    collect_cw_fanout_nodes(nodes, nodes_to_fanout);
+    collect_cw_fanout_nodes(dg, nodes, nodes_to_fanout);
 
     for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
         if (fanout.find(fonit->second) == fanout.end()) {

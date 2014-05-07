@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
         string segfname = config.arguments[2];
         cerr << "Reading segmentations: " << segfname << endl;
         vector<pair<string, vector<string> > > word_segs;
-        read_word_segmentations(segfname, word_segs);
+        read_word_segmentations(dg, segfname, word_segs);
 
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
         }
 
         vector<DecoderGraph::Node> nodes(2);
-        triphones_to_states(triphone_nodes, nodes);
+        triphones_to_states(dg, triphone_nodes, nodes);
         triphone_nodes.clear();
         prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
@@ -62,9 +62,9 @@ int main(int argc, char* argv[])
         cerr << "Creating crossword network.." << endl;
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
-        create_crossword_network(word_segs, cw_nodes, fanout, fanin);
+        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
         cerr << "Connecting crossword network.." << endl;
-        connect_crossword_network(nodes, cw_nodes, fanout, fanin);
+        connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
         connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 

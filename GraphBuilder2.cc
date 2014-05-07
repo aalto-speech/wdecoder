@@ -1,3 +1,4 @@
+#include <cassert>
 #include <sstream>
 
 #include "GraphBuilder2.hh"
@@ -97,6 +98,60 @@ create_crossword_network(DecoderGraph &dg,
         if (cwnit->flags == 0) cwnit->flags |= NODE_CW;
 }
 
+
+void
+connect_crossword_network(DecoderGraph &dg,
+                        vector<DecoderGraph::Node> &nodes,
+                                   vector<DecoderGraph::Node> &cw_nodes,
+                                        map<string, int> &fanout,
+                                        map<string, int> &fanin,
+                                        bool push_left_after_fanin)
+{
+    int offset = nodes.size();
+    for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {
+        nodes.push_back(*cwnit);
+        set<unsigned int> temp_arcs = nodes.back().arcs;
+        nodes.back().arcs.clear();
+        for (auto ait = temp_arcs.begin(); ait != temp_arcs.end(); ++ait)
+            nodes.back().arcs.insert(*ait + offset);
+    }
+
+    for (auto fonit = fanout.begin(); fonit != fanout.end(); ++fonit)
+        fonit->second += offset;
+    for (auto finit = fanin.begin(); finit != fanin.end(); ++finit)
+        finit->second += offset;
+
+    map<node_idx_t, string> nodes_to_fanin;
+    collect_cw_fanin_nodes(dg, nodes, nodes_to_fanin);
+
+    for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
+        if (fanin.find(finit->second) == fanin.end()) {
+            cerr << "Problem, triphone: " << finit->second << " not found in fanin" << endl;
+            assert(false);
+        }
+        int fanin_idx = fanin[finit->second];
+        DecoderGraph::Node &fanin_node = nodes[fanin_idx];
+        int node_idx = finit->first;
+        fanin_node.arcs.insert(node_idx);
+    }
+
+    if (push_left_after_fanin)
+        push_word_ids_left(nodes);
+    else
+        set_reverse_arcs_also_from_unreachable(nodes);
+
+    map<int, string> nodes_to_fanout;
+
+    for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
+        if (fanout.find(fonit->second) == fanout.end()) {
+            cerr << "Problem, triphone: " << fonit->second << " not found in fanout" << endl;
+            assert(false);
+        }
+        int fanout_idx = fanout[fonit->second];
+        DecoderGraph::Node &node = nodes[fonit->first];
+        node.arcs.insert(fanout_idx);
+    }
+}
 
 
 };
