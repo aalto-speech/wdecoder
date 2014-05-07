@@ -11,10 +11,6 @@
 
 namespace graphbuilder2 {
 
-void read_word_segmentations(DecoderGraph &dg,
-                                    std::string segfname,
-                                    std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
-
 void create_crossword_network(DecoderGraph &dg,
         std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs,
                               std::vector<DecoderGraph::Node> &nodes,

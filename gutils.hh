@@ -13,6 +13,10 @@
 
 namespace gutils {
 
+void read_word_segmentations(DecoderGraph &dg,
+                                    std::string segfname,
+                                    std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
+
 void triphonize(std::string word,
                 std::vector<std::string> &triphones);
 void triphonize(DecoderGraph &dg,

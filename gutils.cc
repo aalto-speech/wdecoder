@@ -10,6 +10,39 @@ using namespace std;
 
 namespace gutils {
 
+
+void
+read_word_segmentations(DecoderGraph &dg,
+                    string segfname,
+                vector<pair<string, vector<string> > > &word_segs)
+{
+    ifstream segf(segfname);
+    if (!segf) throw string("Problem opening word segmentations.");
+
+    string line;
+    int linei = 1;
+    while (getline(segf, line)) {
+        string word;
+        string subword;
+
+        stringstream ss(line);
+        ss >> word;
+        string concatenated;
+        vector<string> tmp;
+        while (ss >> subword) {
+            if (dg.m_subword_map.find(subword) == dg.m_subword_map.end())
+                throw "Subword " + subword + " not found in lexicon";
+            tmp.push_back(subword);
+            concatenated += subword;
+        }
+        if (concatenated != word) throw "Erroneous segmentation: " + concatenated;
+        word_segs.push_back(make_pair(word, tmp));
+
+        linei++;
+    }
+}
+
+
 void triphonize(string word, vector<string> &triphones) {
     string tword = "_" + word + "_";
     triphones.clear();

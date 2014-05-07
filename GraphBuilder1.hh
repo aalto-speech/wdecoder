@@ -18,10 +18,6 @@ namespace graphbuilder1 {
         std::vector<std::string> triphones;
     };
 
-    void read_word_segmentations(DecoderGraph &dg,
-                                        std::string segfname,
-                                        std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
-
     void create_word_graph(DecoderGraph &dg,
                         std::vector<SubwordNode> &nodes,
             std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
