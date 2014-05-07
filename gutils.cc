@@ -36,7 +36,8 @@ read_word_segmentations(DecoderGraph &dg,
             concatenated += subword;
         }
         if (concatenated != word) throw "Erroneous segmentation: " + concatenated;
-        word_segs.push_back(make_pair(word, tmp));
+
+        if (tmp.size() > 0) word_segs.push_back(make_pair(word, tmp));
 
         linei++;
     }
@@ -68,7 +69,8 @@ read_word_segmentations(DecoderGraph &dg,
             concatenated += subword;
         }
         if (concatenated != word) throw "Erroneous segmentation: " + concatenated;
-        word_segs[word] = tmp;
+
+        if (tmp.size() > 0) word_segs[word] = tmp;
 
         linei++;
     }

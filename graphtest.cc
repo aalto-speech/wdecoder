@@ -52,9 +52,9 @@ void graphtest::GraphTest1(void)
     CPPUNIT_ASSERT_EQUAL( 1170, (int)dg.m_hmm_states.size() );
     CPPUNIT_ASSERT_EQUAL( 11, (int)word_segs.size() );
 
-    vector<graphbuilder1::SubwordNode> nodes;
-    graphbuilder1::create_word_graph(dg, nodes, word_segs);
-    CPPUNIT_ASSERT_EQUAL( 13, reachable_word_graph_nodes(nodes) );
+    vector<graphbuilder1::SubwordNode> swnodes;
+    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
+    CPPUNIT_ASSERT_EQUAL( 13, reachable_word_graph_nodes(swnodes) );
 }
 
 
