@@ -13,7 +13,7 @@ namespace graphbuilder2 {
 
 void
 create_crossword_network(DecoderGraph &dg,
-        vector<pair<string, vector<string> > > &word_segs,
+        map<string, vector<string> > &word_segs,
                                        vector<DecoderGraph::Node> &nodes,
                                        map<string, int> &fanout,
                                        map<string, int> &fanin)

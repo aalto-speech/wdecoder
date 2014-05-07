@@ -14,7 +14,7 @@ namespace graphbuilder1 {
 void
 create_word_graph(DecoderGraph &dg,
         vector<SubwordNode> &nodes,
-        vector<pair<string, vector<string> > > &word_segs)
+        map<string, vector<string> > &word_segs)
 {
     nodes.resize(2);
 
@@ -288,7 +288,7 @@ expand_subword_nodes(DecoderGraph &dg,
 
 void
 create_crossword_network(DecoderGraph &dg,
-                        std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs,
+        map<string, vector<string> > &word_segs,
                         vector<DecoderGraph::Node> &nodes,
                                        map<string, int> &fanout,
                                        map<string, int> &fanin)

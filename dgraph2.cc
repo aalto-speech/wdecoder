@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 
         string segfname = config.arguments[2];
         cerr << "Reading segmentations: " << segfname << endl;
-        vector<pair<string, vector<string> > > word_segs;
+        map<string, vector<string> > word_segs;
         read_word_segmentations(dg, segfname, word_segs);
 
         string graphfname = config.arguments[3];

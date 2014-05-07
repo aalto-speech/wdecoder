@@ -20,7 +20,7 @@ namespace graphbuilder1 {
 
     void create_word_graph(DecoderGraph &dg,
                         std::vector<SubwordNode> &nodes,
-            std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
+                        std::map<std::string, std::vector<std::string> > &word_segs);
     void tie_subword_suffixes(std::vector<SubwordNode> &nodes);
     void print_word_graph(DecoderGraph &dg,
                         std::vector<SubwordNode> &nodes);
@@ -47,7 +47,7 @@ namespace graphbuilder1 {
                               char prev_triphone='_');
 
     void create_crossword_network(DecoderGraph &dg,
-            std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs,
+            std::map<std::string, std::vector<std::string> > &word_segs,
             std::vector<DecoderGraph::Node> &nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin);
