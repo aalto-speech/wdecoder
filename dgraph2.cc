@@ -122,6 +122,7 @@ int main(int argc, char* argv[])
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
+        /*
         if (false) {
             map<string, vector<string> > triphonized_words;
             triphonize_all_words(dg, triphonized_words);
@@ -134,6 +135,7 @@ int main(int argc, char* argv[])
             //bool only_word_pairs = assert_only_segmented_cw_word_pairs(dg, nodes);
             //cerr << "assert only segmented word pairs: " << only_word_pairs << endl;
         }
+        */
 
         add_hmm_self_transitions(nodes);
         write_graph(nodes, graphfname);

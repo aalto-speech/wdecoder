@@ -80,7 +80,8 @@ class graphtest : public CPPUNIT_NS :: TestFixture
         std::string amname;
         std::string lexname;
         std::string segname;
-        std::vector<std::pair<std::string, std::vector<std::string> > > word_segs;
+        //std::vector<std::pair<std::string, std::vector<std::string> > > word_segs;
+        std::map<std::string, std::vector<std::string> > word_segs;
 
         void read_fixtures(DecoderGraph &dg);
 

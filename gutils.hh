@@ -17,15 +17,21 @@ void read_word_segmentations(DecoderGraph &dg,
                                     std::string segfname,
                                     std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
 
+void read_word_segmentations(DecoderGraph &dg,
+                                    std::string segfname,
+                                    std::map<std::string, std::vector<std::string> > &word_segs);
+
 void triphonize(std::string word,
                 std::vector<std::string> &triphones);
 void triphonize(DecoderGraph &dg,
+                std::map<std::string, std::vector<std::string> > &word_segs,
                 std::string word,
                 std::vector<std::string> &triphones);
 void triphonize(DecoderGraph &dg,
                 std::vector<std::string> &word_seg,
                 std::vector<DecoderGraph::TriphoneNode> &nodes);
 void triphonize_all_words(DecoderGraph &dg,
+                          std::map<std::string, std::vector<std::string> > &word_segs,
                           std::map<std::string, std::vector<std::string> > &triphonized_words);
 void triphonize_subword(DecoderGraph &dg,
                         const std::string &subword,
@@ -37,6 +43,7 @@ void get_hmm_states(DecoderGraph &dg,
                     std::string word,
                     std::vector<int> &states);
 void get_hmm_states_cw(DecoderGraph &dg,
+                        std::map<std::string, std::vector<std::string> > &word_segs,
                        std::string wrd1,
                        std::string wrd2,
                        std::vector<int> &states);
@@ -60,21 +67,26 @@ bool assert_transitions(DecoderGraph &dg,
                         bool debug);
 bool assert_word_pair_crossword(DecoderGraph &dg,
                                 std::vector<DecoderGraph::Node> &nodes,
+                                std::map<std::string, std::vector<std::string> > &word_segs,
                                 std::string word1,
                                 std::string word2,
                                 bool debug);
 bool assert_words(DecoderGraph &dg,
                   std::vector<DecoderGraph::Node> &nodes,
+                  std::map<std::string, std::vector<std::string> > &word_segs,
                   bool debug);
 bool assert_words(DecoderGraph &dg,
                   std::vector<DecoderGraph::Node> &nodes,
+                  std::map<std::string, std::vector<std::string> > &word_segs,
                   std::map<std::string, std::vector<std::string> > &triphonized_words,
                   bool debug);
 bool assert_word_pairs(DecoderGraph &dg,
                        std::vector<DecoderGraph::Node> &nodes,
+                       std::map<std::string, std::vector<std::string> > &word_segs,
                        bool debug);
 bool assert_word_pairs(DecoderGraph &dg,
                        std::vector<DecoderGraph::Node> &nodes,
+                       std::map<std::string, std::vector<std::string> > &word_segs,
                        int num_pairs=10000,
                        bool debug=false);
 bool assert_subword_ids_left(DecoderGraph &dg,
@@ -88,12 +100,14 @@ bool assert_no_duplicate_word_ids(DecoderGraph &dg,
                                   std::vector<DecoderGraph::Node> &nodes);
 bool assert_only_segmented_words(DecoderGraph &dg,
                                  std::vector<DecoderGraph::Node> &nodes,
+                                 std::map<std::string, std::vector<std::string> > &word_segs,
                                  bool debug=false,
                                  std::deque<int> states = std::deque<int>(),
                                  std::deque<int> subwords = std::deque<int>(),
                                  int node_idx=START_NODE);
 bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
         std::vector<DecoderGraph::Node> &nodes,
+        std::map<std::string, std::vector<std::string> > &word_segs,
         std::deque<int> states = std::deque<int>(),
         std::deque<int> subwords = std::deque<int>(),
         int node_idx = START_NODE,

@@ -50,7 +50,7 @@ public:
     std::vector<HmmState> m_hmm_states;
 
     // Word segmentations
-    std::map<std::string, std::vector<std::string> > m_word_segs;
+    //std::map<std::string, std::vector<std::string> > m_word_segs;
 
     DecoderGraph() { debug = 0; };
 
