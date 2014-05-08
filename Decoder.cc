@@ -51,7 +51,6 @@ Decoder::Decoder()
     m_max_state_duration_pruned_count = 0;
     m_histogram_pruned_count = 0;
 
-    DECODE_START_NODE = -1;
     SENTENCE_END_WORD_ID = -1;
 
     m_acoustics = nullptr;
@@ -80,6 +79,7 @@ Decoder::Decoder()
 
     m_ngram_state_sentence_begin = -1;
 
+    m_decode_start_node = -1;
     m_long_silence_loop_start_node = -1;
     m_long_silence_loop_end_node = -1;
 }
@@ -223,6 +223,7 @@ Decoder::read_dgraph(string fname)
         if (ltype != "n") throw string("Problem reading graph.");
         Node &node = m_nodes[i];
         nss >> node_idx >> node.hmm_state >> node.word_id >> arc_count >> node.flags;
+        if (node.flags & NODE_DECODE_START) m_decode_start_node = node_idx;
         node.arcs.resize(arc_count);
     }
 
@@ -237,10 +238,13 @@ Decoder::read_dgraph(string fname)
         node_arc_counts[src_node]++;
     }
 
-    add_long_silence();
     set_hmm_transition_probs();
-    set_word_boundaries();
     mark_initial_nodes(m_initial_node_depth);
+
+    m_long_silence_loop_start_node = m_nodes.size()-1;
+    for (auto ait = m_nodes.back().arcs.begin(); ait != m_nodes.back().arcs.end(); ++ait)
+        if (ait->target_node != START_NODE)
+            m_long_silence_loop_end_node = ait->target_node;
 }
 
 
@@ -327,61 +331,6 @@ Decoder::find_nodes_in_depth(set<int> &found_nodes,
         if (ait->target_node == curr_node) continue;
         find_nodes_in_depth(found_nodes, target_depth, curr_depth+1, ait->target_node);
     }
-}
-
-
-void
-Decoder::add_long_silence()
-{
-    Node &end_node = m_nodes[END_NODE];
-    end_node.arcs.clear();
-
-    string long_silence("__");
-    int hmm_index = m_hmm_map[long_silence];
-    Hmm &hmm = m_hmms[hmm_index];
-
-    node_idx_t node_idx = END_NODE;
-    for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
-        m_nodes.resize(m_nodes.size()+1);
-        m_nodes.back().hmm_state = hmm.states[sidx].model;
-        m_nodes.back().flags |= NODE_SILENCE;
-        m_nodes.back().arcs.resize(m_nodes.back().arcs.size()+1);
-        m_nodes.back().arcs.back().target_node = m_nodes.size()-1;
-        m_nodes[node_idx].arcs.resize(m_nodes[node_idx].arcs.size()+1);
-        m_nodes[node_idx].arcs.back().target_node = m_nodes.size()-1;
-        node_idx = m_nodes.size()-1;
-    }
-
-    m_nodes[node_idx].arcs.resize(m_nodes[node_idx].arcs.size()+1);
-    m_nodes[node_idx].arcs.back().target_node = START_NODE;
-
-    m_nodes.resize(m_nodes.size()+1);
-    m_nodes.back().word_id = m_subword_map[string("</s>")];
-    m_nodes[node_idx].arcs.resize(m_nodes[node_idx].arcs.size()+1);
-    m_nodes[node_idx].arcs.back().target_node = m_nodes.size()-1;
-    m_nodes.back().arcs.resize(m_nodes.back().arcs.size()+1);
-    m_nodes.back().arcs.back().target_node = START_NODE;
-    node_idx = m_nodes.size()-1;
-
-    for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
-        m_nodes.resize(m_nodes.size()+1);
-        if (sidx == 2) DECODE_START_NODE = m_nodes.size()-1;
-        m_nodes.back().hmm_state = hmm.states[sidx].model;
-        m_nodes.back().flags |= NODE_SILENCE;
-        m_nodes.back().arcs.resize(m_nodes.back().arcs.size()+1);
-        m_nodes.back().arcs.back().target_node = m_nodes.size()-1;
-        m_nodes[node_idx].arcs.resize(m_nodes[node_idx].arcs.size()+1);
-        m_nodes[node_idx].arcs.back().target_node = m_nodes.size()-1;
-        node_idx = m_nodes.size()-1;
-    }
-    m_nodes[node_idx].arcs.resize(m_nodes[node_idx].arcs.size()+1);
-    m_nodes[node_idx].arcs.back().target_node = START_NODE;
-
-    // Long silence loop
-    m_nodes[node_idx].arcs.resize(m_nodes[node_idx].arcs.size()+1);
-    m_nodes[node_idx].arcs.back().target_node = DECODE_START_NODE;
-    m_long_silence_loop_start_node = node_idx;
-    m_long_silence_loop_end_node = DECODE_START_NODE;
 }
 
 
@@ -522,8 +471,8 @@ Decoder::initialize()
     tok.history = new WordHistory();
     tok.history->word_id = m_sentence_begin_symbol_idx;
     m_history_root = tok.history;
-    tok.node_idx = DECODE_START_NODE;
-    m_active_nodes.insert(DECODE_START_NODE);
+    tok.node_idx = m_decode_start_node;
+    m_active_nodes.insert(m_decode_start_node);
     m_word_history_leafs.insert(tok.history);
     if (m_use_word_boundary_symbol) {
         advance_in_history(tok, m_word_boundary_symbol_idx);
@@ -532,7 +481,7 @@ Decoder::initialize()
         m_ngram_state_sentence_begin = tok.lm_node;
     }
     m_active_histories.insert(tok.history);
-    m_recombined_tokens[DECODE_START_NODE][tok.lm_node] = tok;
+    m_recombined_tokens[m_decode_start_node][tok.lm_node] = tok;
 }
 
 
@@ -762,9 +711,9 @@ Decoder::move_token_to_node(Token token,
         if (node.word_id != m_word_boundary_symbol_idx) {
             if (node.word_id != m_sentence_end_symbol_idx) token.last_word_id = node.word_id;
         }
-        else {
-            if (token.history->word_id == m_word_boundary_symbol_idx) return;
-        }
+        //else {
+        //    if (token.history->word_id == m_word_boundary_symbol_idx) return;
+        //}
         advance_in_history(token, node.word_id);
 
         token.word_end = true;
@@ -1008,51 +957,6 @@ Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
                  << "[label=\"" << ait->log_prob << "\"];" << endl;
     }
     fstr << "}" << endl;
-}
-
-
-void
-Decoder::set_word_boundaries()
-{
-    if (m_use_word_boundary_symbol && m_optional_word_boundaries_in_cw) {
-        int wbcount = 0;
-        for (unsigned int ni = 0; ni < m_nodes.size(); ni++) {
-            Node &nd = m_nodes[ni];
-            if (nd.flags & NODE_FAN_OUT_DUMMY) {
-                wbcount++;
-                nd.word_id = -1;
-                m_nodes.resize(m_nodes.size()+1);
-                m_nodes.back().word_id = m_subword_map[m_word_boundary_symbol];
-                m_nodes.back().arcs = nd.arcs;
-                nd.arcs.resize(nd.arcs.size()+1);
-                nd.arcs.back().target_node = m_nodes.size()-1;
-            }
-        }
-        cerr << "word boundary count: " << wbcount+1 << endl;
-        m_nodes[END_NODE].word_id = m_subword_map[m_word_boundary_symbol];
-    }
-    else if (m_use_word_boundary_symbol) {
-        int wbcount = 0;
-        for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
-            if (nit->flags & NODE_FAN_OUT_DUMMY) {
-                wbcount++;
-                nit->word_id = m_subword_map[m_word_boundary_symbol];
-            }
-        }
-        cerr << "word boundary count: " << wbcount+1 << endl;
-        m_nodes[END_NODE].word_id = m_subword_map[m_word_boundary_symbol];
-    }
-    else {
-        int wbcount = 0;
-        for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
-            if (nit->flags & NODE_FAN_OUT_DUMMY) {
-                wbcount++;
-                nit->word_id = -1;
-            }
-        }
-        cerr << "word boundary count: " << wbcount+1 << endl;
-        m_nodes[START_NODE].word_id = -1;
-    }
 }
 
 
@@ -1446,7 +1350,7 @@ Decoder::find_paths(std::vector<std::vector<int> > &paths,
                     int curr_node_idx)
 {
     if (curr_node_idx == -1) {
-        curr_node_idx = DECODE_START_NODE;
+        curr_node_idx = m_decode_start_node;
         curr_path.push_back(curr_node_idx);
         Node &node = m_nodes[curr_node_idx];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {

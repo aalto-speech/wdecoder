@@ -162,15 +162,21 @@ void write_graph(std::vector<DecoderGraph::Node> &nodes, std::string fname);
 int connect_triphone(DecoderGraph &dg,
                      std::vector<DecoderGraph::Node> &nodes,
                      std::string triphone,
-                     node_idx_t node_idx);
+                     node_idx_t node_idx,
+                     int flag_mask=0);
 int connect_triphone(DecoderGraph &dg,
                      std::vector<DecoderGraph::Node> &nodes,
                      int triphone_idx,
-                     node_idx_t node_idx);
+                     node_idx_t node_idx,
+                     int flag_mask=0);
 int connect_word(DecoderGraph &dg,
                  std::vector<DecoderGraph::Node> &nodes,
                  std::string word,
-                 node_idx_t node_idx);
+                 node_idx_t node_idx,
+                 int flag_mask=0);
+int connect_dummy(std::vector<DecoderGraph::Node> &nodes,
+                  node_idx_t node_idx,
+                  int flag_mask);
 
 void reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes,
                            std::set<node_idx_t> &node_idxs,
@@ -216,6 +222,9 @@ void collect_cw_fanin_nodes(DecoderGraph &dg,
                             std::vector<char> phones = std::vector<char>(),
                             node_idx_t node_to_connect=START_NODE,
                             node_idx_t node_idx=START_NODE);
+
+void add_long_silence(DecoderGraph &dg,
+                      std::vector<DecoderGraph::Node> &nodes);
 
 }
 

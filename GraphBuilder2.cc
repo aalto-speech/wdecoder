@@ -16,7 +16,8 @@ create_crossword_network(DecoderGraph &dg,
                          map<string, vector<string> > &word_segs,
                          vector<DecoderGraph::Node> &nodes,
                          map<string, int> &fanout,
-                         map<string, int> &fanin)
+                         map<string, int> &fanin,
+                         bool wb_symbol)
 {
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
         vector<string> triphones;
@@ -46,6 +47,8 @@ create_crossword_network(DecoderGraph &dg,
             string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
             string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
             int idx = connect_triphone(dg, nodes, triphone1, foit->second);
+
+            idx = connect_dummy(nodes, idx, NODE_WORD_BOUNDARY);
             idx = connect_triphone(dg, nodes, "_", idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end()) {

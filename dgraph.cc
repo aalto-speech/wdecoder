@@ -19,9 +19,11 @@ int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: dgraph [OPTION...] PH LEXICON WSEGS GRAPH\n")
+    ('b', "word-boundary", "", "", "Use word boundary symbol (<w>)")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
+    bool wb_symbol = config["word-boundary"].specified;
 
     DecoderGraph dg;
 
@@ -68,7 +70,7 @@ int main(int argc, char* argv[])
         cerr << "Creating crossword network.." << endl;
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
-        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, wb_symbol);
         cerr << "Connecting crossword network.." << endl;
         connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
         connect_end_to_start_node(nodes);
@@ -144,6 +146,16 @@ int main(int argc, char* argv[])
         */
 
         add_hmm_self_transitions(nodes);
+        add_long_silence(dg, nodes);
+
+        if (wb_symbol)
+        {
+            nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
+            for (int i=0; i<nodes.size(); i++)
+                if (nodes[i].flags & NODE_WORD_BOUNDARY)
+                    nodes[i].word_id =  dg.m_subword_map["<w>"];
+        }
+
         write_graph(nodes, graphfname);
 
         /*

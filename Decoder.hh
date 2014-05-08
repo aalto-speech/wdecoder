@@ -19,7 +19,6 @@ class Decoder {
 
 public:
     static const int WORD_BOUNDARY_IDENTIFIER;
-    int DECODE_START_NODE;
     int SENTENCE_END_WORD_ID;
 
     class Arc {
@@ -136,12 +135,10 @@ public:
     void set_subword_id_la_ngram_symbol_mapping();
     void clear_word_history();
     void prune_word_history();
-    void set_word_boundaries();
     void find_nodes_in_depth(std::set<int> &found_nodes,
                              int target_depth,
                              int curr_depth,
                              int curr_node);
-    void add_long_silence();
     void set_hmm_transition_probs();
     void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
@@ -267,6 +264,7 @@ public:
     int m_history_clean_frame_interval;
     WordHistory* m_history_root;
 
+    int m_decode_start_node;
     int m_long_silence_loop_start_node;
     int m_long_silence_loop_end_node;
 };

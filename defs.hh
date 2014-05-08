@@ -18,7 +18,7 @@ typedef unsigned int node_idx_t;
 #define NODE_SILENCE                    0x08
 #define NODE_INITIAL                    0x10
 #define NODE_BIGRAM_LA_TABLE            0x20
-
-
+#define NODE_DECODE_START               0x40
+#define NODE_WORD_BOUNDARY              0x80
 
 #endif /* DEFS_HH */
