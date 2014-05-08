@@ -328,6 +328,7 @@ create_crossword_network(DecoderGraph &dg,
             string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
             string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
             int idx = connect_triphone(dg, nodes, triphone1, foit->second);
+            idx = connect_triphone(dg, nodes, "_", idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end()) {
                 idx = connect_triphone(dg, nodes, triphone2, idx);

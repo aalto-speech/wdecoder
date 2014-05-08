@@ -77,15 +77,24 @@ read_word_segmentations(DecoderGraph &dg,
 }
 
 
-void triphonize(string word, vector<string> &triphones) {
+void triphonize(string word,
+                vector<string> &triphones) {
     string tword = "_" + word + "_";
     triphones.clear();
     for (unsigned int i = 1; i < tword.length() - 1; i++) {
         stringstream tstring;
-        tstring << tword[i - 1] << "-" << tword[i] << "+" << tword[i + 1];
+        char lc = tword[i-1];
+        char rc = tword[i+1];
+        if (i > 1 && lc == '_') lc = tword[i-2];
+        if (i < tword.length()-2 && rc ==  '_') rc = tword[i+2];
+        if (i > 1 && i < tword.length()-1 && tword[i] == '_')
+            tstring << "_";
+        else
+            tstring << lc << "-" << tword[i] << "+" << rc;
         triphones.push_back(tstring.str());
     }
 }
+
 
 void triphonize(DecoderGraph &dg,
                 map<string, vector<string> > &word_segs,
@@ -105,7 +114,8 @@ void triphonize(DecoderGraph &dg,
         triphonize(word, triphones);
 }
 
-void triphonize(DecoderGraph &dg, vector<string> &word_seg,
+void triphonize(DecoderGraph &dg,
+                vector<string> &word_seg,
                 vector<DecoderGraph::TriphoneNode> &nodes)
 {
     nodes.clear();
@@ -216,6 +226,8 @@ void get_hmm_states_cw(DecoderGraph &dg,
         for (auto trit = dg.m_lexicon[*swit].begin();
                 trit != dg.m_lexicon[*swit].end(); ++trit)
             phonestring += string(1, (*trit)[2]);
+
+    phonestring += "_";
 
     for (auto swit = word_segs[wrd2].begin();
             swit != word_segs[wrd2].end(); ++swit)
@@ -353,6 +365,8 @@ bool assert_word_pair_crossword(DecoderGraph &dg,
             phonestring += string(1, (*trit)[2]);
     }
 
+    phonestring += "_";
+
     for (auto swit = word_segs[word2].begin();
             swit != word_segs[word2].end(); ++swit) {
         subwords.push_back(*swit);
@@ -468,8 +482,10 @@ bool assert_word_pairs(DecoderGraph &dg,
     return true;
 }
 
-bool assert_transitions(DecoderGraph &dg, vector<DecoderGraph::Node> &nodes,
-                        bool debug) {
+bool assert_transitions(DecoderGraph &dg,
+                        vector<DecoderGraph::Node> &nodes,
+                        bool debug)
+{
     for (unsigned int node_idx = 0; node_idx < nodes.size(); ++node_idx) {
         if (node_idx == END_NODE)
             continue;
@@ -654,12 +670,12 @@ bool assert_only_segmented_words(DecoderGraph &dg,
 }
 
 bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
-        vector<DecoderGraph::Node> &nodes,
-        map<string, vector<string> > &word_segs,
-        deque<int> states,
-        deque<int> subwords,
-        int node_idx,
-        bool cw_visited)
+                                         vector<DecoderGraph::Node> &nodes,
+                                         map<string, vector<string> > &word_segs,
+                                         deque<int> states,
+                                         deque<int> subwords,
+                                         int node_idx,
+                                         bool cw_visited)
 {
     if (node_idx == END_NODE) {
 
@@ -753,7 +769,8 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
 }
 
 void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
-                        bool stop_propagation) {
+                        bool stop_propagation)
+{
     set<node_idx_t> processed_nodes;
     set_reverse_arcs_also_from_unreachable(nodes);
     tie_state_prefixes(nodes, processed_nodes, stop_propagation, START_NODE);
@@ -762,7 +779,8 @@ void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
 
 void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
                         set<node_idx_t> &processed_nodes, bool stop_propagation,
-                        node_idx_t node_idx) {
+                        node_idx_t node_idx)
+{
     if (node_idx == END_NODE)
         return;
     if (processed_nodes.find(node_idx) != processed_nodes.end())
@@ -803,7 +821,8 @@ void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
 }
 
 void tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
-                          bool stop_propagation) {
+                          bool stop_propagation)
+{
     set<node_idx_t> processed_nodes;
     set_reverse_arcs_also_from_unreachable(nodes);
     tie_word_id_prefixes(nodes, processed_nodes, stop_propagation, START_NODE);
@@ -813,7 +832,8 @@ void tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
 void tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
                           set<node_idx_t> &processed_nodes,
                           bool stop_propagation,
-                          node_idx_t node_idx) {
+                          node_idx_t node_idx)
+{
     if (node_idx == END_NODE)
         return;
     if (processed_nodes.find(node_idx) != processed_nodes.end())
@@ -853,7 +873,8 @@ void tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
 }
 
 void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
-                        bool stop_propagation) {
+                        bool stop_propagation)
+{
     set<node_idx_t> processed_nodes;
     set_reverse_arcs_also_from_unreachable(nodes);
     tie_state_suffixes(nodes, processed_nodes, stop_propagation, END_NODE);
@@ -862,7 +883,8 @@ void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
 
 void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
                         set<node_idx_t> &processed_nodes, bool stop_propagation,
-                        node_idx_t node_idx) {
+                        node_idx_t node_idx)
+{
     if (node_idx == START_NODE)
         return;
     if (processed_nodes.find(node_idx) != processed_nodes.end())
@@ -904,7 +926,8 @@ void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
 }
 
 void tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
-                          bool stop_propagation) {
+                          bool stop_propagation)
+{
     set<node_idx_t> processed_nodes;
     set_reverse_arcs_also_from_unreachable(nodes);
     tie_word_id_suffixes(nodes, processed_nodes, stop_propagation, END_NODE);
