@@ -238,7 +238,6 @@ Decoder::read_dgraph(string fname)
     }
 
     add_long_silence();
-    add_short_silences_to_cw();
     set_hmm_transition_probs();
     set_word_boundaries();
     mark_initial_nodes(m_initial_node_depth);
@@ -327,37 +326,6 @@ Decoder::find_nodes_in_depth(set<int> &found_nodes,
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         if (ait->target_node == curr_node) continue;
         find_nodes_in_depth(found_nodes, target_depth, curr_depth+1, ait->target_node);
-    }
-}
-
-
-void
-Decoder::add_short_silences_to_cw()
-{
-    set<int> cw_fanout_dummy_nodes;
-
-    for (unsigned int ni = 0; ni < m_nodes.size(); ++ni) {
-        Node &node = m_nodes[ni];
-        if (node.flags & NODE_FAN_OUT_DUMMY) cw_fanout_dummy_nodes.insert(ni);
-    }
-
-    set<int> short_silence_source_nodes;
-    for (auto cwfonit = cw_fanout_dummy_nodes.begin(); cwfonit != cw_fanout_dummy_nodes.end(); ++cwfonit)
-        find_nodes_in_depth(short_silence_source_nodes, 3, 0, *cwfonit);
-
-    string short_silence("_");
-    int hmm_index = m_hmm_map[short_silence];
-    Hmm &hmm = m_hmms[hmm_index];
-    for (auto sssn = short_silence_source_nodes.begin(); sssn != short_silence_source_nodes.end(); ++sssn) {
-        m_nodes.resize(m_nodes.size()+1);
-        m_nodes.back().flags |= NODE_CW;
-        m_nodes.back().hmm_state = hmm.states[2].model;
-        for (auto arcit = m_nodes[*sssn].arcs.begin(); arcit != m_nodes[*sssn].arcs.end(); ++arcit)
-            if (arcit->target_node != *sssn) m_nodes.back().arcs.push_back(*arcit);
-        m_nodes.back().arcs.resize(m_nodes.back().arcs.size()+1);
-        m_nodes.back().arcs.back().target_node = m_nodes.size()-1;
-        m_nodes[*sssn].arcs.resize(m_nodes[*sssn].arcs.size()+1);
-        m_nodes[*sssn].arcs.back().target_node = m_nodes.size()-1;
     }
 }
 

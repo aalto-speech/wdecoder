@@ -979,7 +979,8 @@ void tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
 }
 
 void print_graph(DecoderGraph &dg,
-                 vector<DecoderGraph::Node> &nodes, vector<int> path,
+                 vector<DecoderGraph::Node> &nodes,
+                 vector<int> path,
                  int node_idx)
 {
     path.push_back(node_idx);
@@ -1130,10 +1131,11 @@ void connect_end_to_start_node(vector<DecoderGraph::Node> &nodes) {
     nodes[END_NODE].arcs.insert(START_NODE);
 }
 
-void write_graph(vector<DecoderGraph::Node> &nodes, string fname) {
+void write_graph(vector<DecoderGraph::Node> &nodes,
+                 string fname)
+{
     ofstream outf(fname);
     outf << nodes.size() << endl;
-    ;
     for (unsigned int i = 0; i < nodes.size(); i++)
         outf << "n " << i << " " << nodes[i].hmm_state << " "
              << nodes[i].word_id << " " << nodes[i].arcs.size() << " "

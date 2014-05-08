@@ -141,7 +141,6 @@ public:
                              int target_depth,
                              int curr_depth,
                              int curr_node);
-    void add_short_silences_to_cw();
     void add_long_silence();
     void set_hmm_transition_probs();
     void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
