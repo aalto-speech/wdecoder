@@ -176,7 +176,7 @@ Decoder::read_la_lm(string lmfname)
 
     if (m_la_lm.order() > 1) {
 
-        cerr << "Setting unigram style bigram lookahead scores" << endl;
+        cerr << "Setting bigram lookahead scores" << endl;
         set_bigram_la_scores();
         m_unigram_la_in_use = true;
 

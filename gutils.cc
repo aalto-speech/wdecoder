@@ -1058,18 +1058,6 @@ void print_dot_digraph(DecoderGraph &dg,
     fstr << "}" << endl;
 }
 
-
-void reachable_graph_nodes(vector<DecoderGraph::Node> &nodes,
-                           set<node_idx_t> &node_idxs,
-                           node_idx_t node_idx)
-{
-    node_idxs.insert(node_idx);
-    for (auto ait = nodes[node_idx].arcs.begin();
-            ait != nodes[node_idx].arcs.end(); ++ait)
-        if (node_idx != *ait && node_idxs.find(*ait) == node_idxs.end())
-            reachable_graph_nodes(nodes, node_idxs, *ait);
-}
-
 void set_reverse_arcs_also_from_unreachable(vector<DecoderGraph::Node> &nodes)
 {
     clear_reverse_arcs(nodes);
@@ -1088,15 +1076,16 @@ void set_reverse_arcs(vector<DecoderGraph::Node> &nodes)
     set_reverse_arcs(nodes, START_NODE, processed_nodes);
 }
 
-void set_reverse_arcs(vector<DecoderGraph::Node> &nodes, int node_idx,
+void set_reverse_arcs(vector<DecoderGraph::Node> &nodes,
+                      int node_idx,
                       set<int> &processed_nodes)
 {
-    if (processed_nodes.find(node_idx) != processed_nodes.end())
-        return;
+    if (processed_nodes.find(node_idx) != processed_nodes.end()) return;
     processed_nodes.insert(node_idx);
 
-    for (auto ait = nodes[node_idx].arcs.begin();
-            ait != nodes[node_idx].arcs.end(); ++ait) {
+    for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait)
+    {
+        if (*ait == node_idx) continue;
         nodes[*ait].reverse_arcs.insert(node_idx);
         set_reverse_arcs(nodes, *ait, processed_nodes);
     }
@@ -1208,6 +1197,16 @@ int connect_dummy(vector<DecoderGraph::Node> &nodes,
     nodes.back().flags |= flag_mask;
     nodes[node_idx].arcs.insert(nodes.size()-1);
     return nodes.size()-1;
+}
+
+void reachable_graph_nodes(vector<DecoderGraph::Node> &nodes,
+                           set<node_idx_t> &node_idxs,
+                           node_idx_t node_idx)
+{
+    node_idxs.insert(node_idx);
+    for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait)
+        if (node_idx != *ait && node_idxs.find(*ait) == node_idxs.end())
+            reachable_graph_nodes(nodes, node_idxs, *ait);
 }
 
 int reachable_graph_nodes(vector<DecoderGraph::Node> &nodes)
@@ -1557,6 +1556,32 @@ add_long_silence(DecoderGraph &dg,
     // Long silence loop
     nodes[node_idx].arcs.insert(node_idx-3);
 }
+
+
+void
+remove_cw_dummies(std::vector<DecoderGraph::Node> &nodes)
+{
+    set_reverse_arcs_also_from_unreachable(nodes);
+
+    for (unsigned int i=0; i<nodes.size(); i++) {
+
+        if (!((nodes[i].flags & NODE_FAN_OUT_DUMMY)
+            || (nodes[i].flags & NODE_FAN_IN_DUMMY))) continue;
+
+        for (auto rnit=nodes[i].reverse_arcs.begin(); rnit!=nodes[i].reverse_arcs.end(); ++rnit)
+        {
+            if (*rnit == i) continue;
+            nodes[*rnit].arcs.insert(nodes[i].arcs.begin(), nodes[i].arcs.end());
+            nodes[*rnit].arcs.erase(i);
+        }
+        nodes[i].arcs.clear();
+    }
+
+    clear_reverse_arcs(nodes);
+
+    prune_unreachable_nodes(nodes);
+}
+
 
 }
 

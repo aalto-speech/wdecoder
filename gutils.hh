@@ -226,6 +226,8 @@ void collect_cw_fanin_nodes(DecoderGraph &dg,
 void add_long_silence(DecoderGraph &dg,
                       std::vector<DecoderGraph::Node> &nodes);
 
+void remove_cw_dummies(std::vector<DecoderGraph::Node> &nodes);
+
 }
 
 #endif /* GUTILS_HH */

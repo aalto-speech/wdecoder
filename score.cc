@@ -99,8 +99,8 @@ int main(int argc, char* argv[])
 
                 d.m_nodes.swap(nodes);
                 d.set_hmm_transition_probs();
-                int original_decode_start_node = d.DECODE_START_NODE;
-                d.DECODE_START_NODE = 0;
+                int original_decode_start_node = d.m_decode_start_node;
+                d.m_decode_start_node = 0;
 
                 int curr_frames;
                 double curr_time;
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
                 cerr << "\tRTF: " << curr_time / ((double)curr_frames/125.0) << endl;
                 cerr << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl;
 
-                d.DECODE_START_NODE = original_decode_start_node;
+                d.m_decode_start_node = original_decode_start_node;
                 nodes.swap(d.m_nodes);
             }
             cerr << "number of alternative paths: " << paths.size() << endl;
