@@ -161,6 +161,11 @@ public:
 
     // Basic unigram la scores
     void set_unigram_la_scores();
+    void propagate_unigram_la_score(int node_idx,
+                                    float score,
+                                    std::vector<std::vector<Arc> > &reverse_arcs,
+                                    bool start_node=true);
+
     // Bigram scores conditioned on all possible predecessor words
     void set_bigram_la_scores();
 

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
+#include <climits>
 #include <iostream>
 #include <memory>
 #include <fstream>
@@ -1063,18 +1064,42 @@ Decoder::find_predecessor_words(int node_idx,
 void
 Decoder::set_unigram_la_scores()
 {
+    float init_val = -numeric_limits<float>::max();
+    for (unsigned int i=0; i<m_nodes.size(); i++)
+        m_nodes[i].unigram_la_score = init_val;
+
+    vector<vector<Arc> > reverse_arcs;
+    get_reverse_arcs(reverse_arcs);
+
     for (unsigned int i=0; i<m_nodes.size(); i++) {
+        if (i % 10000 == 0) cerr << i << endl;
+        Node &node = m_nodes[i];
+        if (node.word_id == -1) continue;
+        float la_prob = 0.0;
+        m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], la_prob);
+        propagate_unigram_la_score(i, la_prob, reverse_arcs, true);
+    }
 
-        set<int> word_ids;
-        find_successor_words(i, word_ids);
+}
 
-        float node_best_la_prob = -1e20;
-        for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-            float la_lm_prob = 0.0;
-            m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-            node_best_la_prob = max(node_best_la_prob, la_lm_prob);
-        }
-        m_nodes[i].unigram_la_score = node_best_la_prob;
+
+void
+Decoder::propagate_unigram_la_score(int node_idx,
+                                    float score,
+                                    vector<vector<Arc> > &reverse_arcs,
+                                    bool start_node)
+{
+    Node &node = m_nodes[node_idx];
+    if (!start_node) {
+        node.unigram_la_score = max(node.unigram_la_score, score);
+        if (node.word_id != -1) return;
+    }
+
+    for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
+    {
+        if (rait->target_node == node_idx) continue;
+        if (rait->target_node == m_long_silence_loop_start_node && node_idx == m_long_silence_loop_end_node) continue;
+        propagate_unigram_la_score(rait->target_node, score, reverse_arcs, false);
     }
 }
 
