@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
+        if (wb_symbol) nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
         add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);
 
