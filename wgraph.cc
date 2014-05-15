@@ -8,17 +8,39 @@
 #include "conf.hh"
 #include "DecoderGraph.hh"
 #include "gutils.hh"
+#include "WordGraphBuilder.hh"
 #include "GraphBuilder2.hh"
 
 using namespace std;
 using namespace gutils;
-using namespace graphbuilder2;
+
+
+void
+read_words(DecoderGraph &dg,
+           string wordfname,
+           set<string> &words)
+{
+    ifstream wordf(wordfname);
+    if (!wordf) throw string("Problem opening word list.");
+
+    string line;
+    int linei = 1;
+    while (getline(wordf, line)) {
+        string word;
+        stringstream ss(line);
+        ss >> word;
+        if (dg.m_subword_map.find(word) == dg.m_subword_map.end())
+            throw "Word " + word + " not found in lexicon";
+        words.insert(word);
+        linei++;
+    }
+}
 
 
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: wgraph [OPTION...] PH LEXICON WSEGS GRAPH\n")
+    config("usage: wgraph [OPTION...] PH LEXICON WORDS GRAPH\n")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
@@ -34,10 +56,10 @@ int main(int argc, char* argv[])
         cerr << "Reading lexicon: " << lexfname << endl;
         dg.read_noway_lexicon(lexfname);
 
-        string segfname = config.arguments[2];
-        cerr << "Reading segmentations: " << segfname << endl;
-        map<string, vector<string> > word_segs;
-        read_word_segmentations(dg, segfname, word_segs);
+        string wordfname = config.arguments[2];
+        cerr << "Reading word list: " << wordfname << endl;
+        set<string> words;
+        read_words(dg, wordfname, words);
 
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
@@ -45,9 +67,11 @@ int main(int argc, char* argv[])
         time_t rawtime;
 
         vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
-        for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
+        for (auto wit = words.begin(); wit != words.end(); ++wit) {
             vector<DecoderGraph::TriphoneNode> word_triphones;
-            triphonize(dg, wit->second, word_triphones);
+            triphonize_subword(dg, *wit, word_triphones);
+            if (word_triphones.size() == 2)
+                cerr << "skipping one phone word: " << *wit << endl;
             add_triphones(triphone_nodes, word_triphones);
         }
 
@@ -62,27 +86,38 @@ int main(int argc, char* argv[])
         cerr << "Creating crossword network.." << endl;
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
-        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+        wordgraphbuilder::create_crossword_network(dg, words, cw_nodes, fanout, fanin);
         cerr << "Connecting crossword network.." << endl;
-        connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+        graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
         connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
         cerr << endl;
         cerr << "Pushing word ids right.." << endl;
         push_word_ids_right(nodes);
-        cerr << "Tying state chain prefixes.." << endl;
+        cerr << "Tying state prefixes.." << endl;
         tie_state_prefixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         cerr << endl;
         cerr << "Pushing word ids left.." << endl;
         push_word_ids_left(nodes);
-        cerr << "Tying state chain suffixes.." << endl;
+        cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
+        cerr << endl;
+        cerr << "Removing cw dummies.." << endl;
+        remove_cw_dummies(nodes);
+        cerr << "Tying state prefixes.." << endl;
+        tie_state_prefixes(nodes);
+        cerr << "Tying state suffixes.." << endl;
+        tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);
+
         write_graph(nodes, graphfname);
 
     } catch (string &e) {
