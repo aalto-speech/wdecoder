@@ -48,12 +48,10 @@ create_crossword_network(DecoderGraph &dg,
             string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
 
             int idx = connect_triphone(dg, nodes, triphone1, foit->second);
-            int ss_idx = connect_triphone(dg, nodes, "_", idx);
+            idx = connect_triphone(dg, nodes, "_", idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end()) {
-                // Connect to the short silence and second triphone
                 idx = connect_triphone(dg, nodes, triphone2, idx);
-                nodes[ss_idx].arcs.insert(idx-2);
                 connected_fanin_nodes[triphone2] = idx-2;
                 if (fiit->second == -1) {
                     nodes.resize(nodes.size()+1);
@@ -62,10 +60,8 @@ create_crossword_network(DecoderGraph &dg,
                 }
                 nodes[idx].arcs.insert(fiit->second);
             }
-            else {
+            else
                 nodes[idx].arcs.insert(connected_fanin_nodes[triphone2]);
-                nodes[ss_idx].arcs.insert(connected_fanin_nodes[triphone2]);
-            }
         }
     }
 
