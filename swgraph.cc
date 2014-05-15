@@ -64,14 +64,27 @@ int main(int argc, char* argv[])
         connect_one_phone_subwords_from_start_to_cw(dg, nodes, fanout);
         connect_one_phone_subwords_from_cw_to_end(dg, nodes, fanin);
 
-        cerr << "Tying state chain suffixes.." << endl;
+        cerr << endl;
+        cerr << "Tying state prefixes.." << endl;
+        tie_state_prefixes(nodes);
+        cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        cerr << "Tying state chain prefixes.." << endl;
+        cerr << endl;
+        cerr << "Removing cw dummies.." << endl;
+        remove_cw_dummies(nodes);
+        cerr << "Tying prefixes.." << endl;
         tie_state_prefixes(nodes);
+        tie_word_id_prefixes(nodes);
+        tie_state_prefixes(nodes);
+        cerr << "Tying suffixes.." << endl;
+        tie_state_suffixes(nodes);
+        tie_word_id_suffixes(nodes);
+        tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
+        add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);
         write_graph(nodes, graphfname);
         //dg.print_dot_digraph(nodes);
