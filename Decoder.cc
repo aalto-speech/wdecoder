@@ -1064,7 +1064,7 @@ Decoder::find_predecessor_words(int node_idx,
 void
 Decoder::set_unigram_la_scores()
 {
-    float init_val = -numeric_limits<float>::max();
+    float init_val = -1e20;
     for (unsigned int i=0; i<m_nodes.size(); i++)
         m_nodes[i].unigram_la_score = init_val;
 
