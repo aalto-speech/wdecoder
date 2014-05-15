@@ -1072,14 +1072,12 @@ Decoder::set_unigram_la_scores()
     get_reverse_arcs(reverse_arcs);
 
     for (unsigned int i=0; i<m_nodes.size(); i++) {
-        if (i % 10000 == 0) cerr << i << endl;
         Node &node = m_nodes[i];
         if (node.word_id == -1) continue;
         float la_prob = 0.0;
         m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], la_prob);
         propagate_unigram_la_score(i, la_prob, reverse_arcs, true);
     }
-
 }
 
 
