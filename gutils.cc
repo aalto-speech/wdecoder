@@ -401,7 +401,12 @@ bool assert_words(DecoderGraph &dg,
         bool result = assert_path(dg, nodes, triphones, sit->second, false);
         if (!result) {
             if (debug)
-                cerr << endl << "no path for word: " << sit->first << endl;
+            {
+                cerr << endl << "no path for word: " << sit->first << ",";
+                for (auto swit = sit->second.begin(); swit != sit->second.end(); ++swit)
+                    cerr << " " << *swit;
+                cerr << endl;
+            }
             return false;
         }
     }
