@@ -146,7 +146,8 @@ void print_graph(DecoderGraph &dg,
                  std::vector<DecoderGraph::Node> &nodes);
 void print_dot_digraph(DecoderGraph &dg,
                        std::vector<DecoderGraph::Node> &nodes,
-                       std::ostream &fstr = std::cout);
+                       std::ostream &fstr = std::cout,
+                       bool mark_start_end = true);
 int reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes);
 
 void set_reverse_arcs_also_from_unreachable(std::vector<DecoderGraph::Node> &nodes);

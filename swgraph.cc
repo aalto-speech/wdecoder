@@ -38,7 +38,9 @@ int main(int argc, char* argv[])
         cerr << "Result graph file name: " << graphfname << endl;
 
         vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
+        set<string> subwords;
         for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
+            subwords.insert(swit->first);
             if (swit->second.size() < 2) continue;
             vector<DecoderGraph::TriphoneNode> sw_triphones;
             triphonize_subword(dg, swit->first, sw_triphones);
@@ -54,15 +56,15 @@ int main(int argc, char* argv[])
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
         cerr << "Creating crossword network.." << endl;
-        create_crossword_network(dg, cw_nodes, fanout, fanin);
+        create_crossword_network(dg, subwords, cw_nodes, fanout, fanin);
 
         cerr << "Connecting crossword network.." << endl;
         connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, true);
         connect_end_to_start_node(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        connect_one_phone_subwords_from_start_to_cw(dg, nodes, fanout);
-        connect_one_phone_subwords_from_cw_to_end(dg, nodes, fanin);
+        connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
+        connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
 
         cerr << endl;
         cerr << "Tying state prefixes.." << endl;

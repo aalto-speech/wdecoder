@@ -21,12 +21,15 @@ namespace subwordgraphbuilder {
 
 void
 create_crossword_network(DecoderGraph &dg,
+                         set<string> &subwords,
                          vector<DecoderGraph::Node> &nodes,
                          map<string, int> &fanout,
                          map<string, int> &fanin)
 {
     set<string> one_phone_subwords;
     for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
+        if (subwords.find(swit->first) == subwords.end()) continue;
+        cerr << swit->first << endl;
         vector<string> &triphones = swit->second;
         if (triphones.size() == 0) continue;
         else if (triphones.size() == 1) {
@@ -55,13 +58,13 @@ create_crossword_network(DecoderGraph &dg,
             string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
             string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
 
-            int idx = connect_triphone(dg, nodes, triphone1, foit->second);
-            int tmp_idx = connect_word(dg, nodes, "<w>", idx);
+            int tri1_idx = connect_triphone(dg, nodes, triphone1, foit->second);
+            int idx = connect_word(dg, nodes, "<w>", tri1_idx);
             idx = connect_triphone(dg, nodes, "_", idx);
-            nodes[tmp_idx].arcs.insert(idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end()) {
                 idx = connect_triphone(dg, nodes, triphone2, idx);
+                nodes[tri1_idx].arcs.insert(idx-2);
                 connected_fanin_nodes[triphone2] = idx-2;
                 if (fiit->second == -1) {
                     nodes.resize(nodes.size()+1);
@@ -70,19 +73,24 @@ create_crossword_network(DecoderGraph &dg,
                 }
                 nodes[idx].arcs.insert(fiit->second);
             }
-            else
+            else {
+                nodes[tri1_idx].arcs.insert(connected_fanin_nodes[triphone2]);
                 nodes[idx].arcs.insert(connected_fanin_nodes[triphone2]);
+            }
         }
     }
 
     // Add loops for one phone subwords to cross-word network
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
+        if (foit->first[0] == '_' && foit->first[4] == '_') continue;
         for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit) {
             string single_phone = dg.m_lexicon[*opswit][0];
             string triphone = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + single_phone[2];
+            cerr << "triphone: " << triphone << endl;
             int idx = connect_triphone(dg, nodes, triphone, foit->second);
             idx = connect_word(dg, nodes, *opswit, idx);
             string fanout_loop_connector = foit->first[2] + string(1,'-') + single_phone[2] + string("+_");
+            cerr << "fanout_loop_connector: " << fanout_loop_connector << endl;
             nodes[idx].arcs.insert(fanout[fanout_loop_connector]);
         }
     }
@@ -150,15 +158,15 @@ connect_crossword_network(DecoderGraph &dg,
 
 void
 connect_one_phone_subwords_from_start_to_cw(DecoderGraph &dg,
+                                            set<string> &subwords,
                                             vector<DecoderGraph::Node> &nodes,
                                             map<string, int> &fanout)
 {
-    for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
-        vector<string> &triphones = swit->second;
+    for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
+        vector<string> &triphones = dg.m_lexicon[*swit];
         if (triphones.size() != 1 || triphones[0].length() == 1) continue;
         string fanoutt = triphones[0];
-        //cerr << "connecting word " << swit->first << " from start to cw" << endl;
-        int idx = connect_word(dg, nodes, swit->first, START_NODE);
+        int idx = connect_word(dg, nodes, *swit, START_NODE);
         nodes[idx].arcs.insert(fanout[fanoutt]);
     }
 }
@@ -166,15 +174,15 @@ connect_one_phone_subwords_from_start_to_cw(DecoderGraph &dg,
 
 void
 connect_one_phone_subwords_from_cw_to_end(DecoderGraph &dg,
+                                          set<string> &subwords,
                                           vector<DecoderGraph::Node> &nodes,
                                           map<string, int> &fanin)
 {
-    for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
-        vector<string> &triphones = swit->second;
+    for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
+        vector<string> &triphones = dg.m_lexicon[*swit];
         if (triphones.size() != 1 || triphones[0].length() == 1) continue;
         string fanint = triphones[0];
-        //cerr << "connecting word " << swit->first << " from cw to end" << endl;
-        int idx = connect_word(dg, nodes, swit->first, fanin[fanint]);
+        int idx = connect_word(dg, nodes, *swit, fanin[fanint]);
         nodes[idx].arcs.insert(END_NODE);
     }
 }

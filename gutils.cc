@@ -1024,7 +1024,8 @@ void print_graph(DecoderGraph &dg,
 
 void print_dot_digraph(DecoderGraph &dg,
                        vector<DecoderGraph::Node> &nodes,
-                       ostream &fstr)
+                       ostream &fstr,
+                       bool mark_start_end)
 {
     set<node_idx_t> node_idxs;
     //reachable_graph_nodes(nodes, node_idxs);
@@ -1040,9 +1041,9 @@ void print_dot_digraph(DecoderGraph &dg,
     for (auto it = node_idxs.begin(); it != node_idxs.end(); ++it) {
         DecoderGraph::Node &nd = nodes[*it];
         fstr << "\t" << *it;
-        if (*it == START_NODE)
+        if (mark_start_end && *it == START_NODE)
             fstr << " [label=\"start\"]" << endl;
-        else if (*it == END_NODE)
+        else if (mark_start_end && *it == END_NODE)
             fstr << " [label=\"end\"]" << endl;
         else if (nd.hmm_state != -1 && nd.word_id == -1)
             fstr << " [label=\"" << nd.hmm_state << "\"]" << endl;
