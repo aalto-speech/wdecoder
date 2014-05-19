@@ -73,7 +73,8 @@ void swgraphtest::SubwordGraphTest1(void)
     subwordgraphbuilder::connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
-    //CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, true) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, true) );
 }
 
 
@@ -113,12 +114,12 @@ void swgraphtest::SubwordGraphTest2(void)
     connect_end_to_start_node(nodes);
     subwordgraphbuilder::connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
     subwordgraphbuilder::connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
+
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
 
-    ofstream origoutf("acw.dot");
-    print_dot_digraph(dg, nodes, origoutf, true);
-    origoutf.close();
-
+    //ofstream origoutf("acw.dot");
+    //print_dot_digraph(dg, nodes, origoutf, true);
+    //origoutf.close();
 }
 
 

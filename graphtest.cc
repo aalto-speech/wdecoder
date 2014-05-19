@@ -338,7 +338,7 @@ void graphtest::GraphTest12(void)
     CPPUNIT_ASSERT_EQUAL( 66, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 
@@ -368,7 +368,7 @@ void graphtest::GraphTest13(void)
     CPPUNIT_ASSERT_EQUAL( 127, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 
@@ -398,7 +398,7 @@ void graphtest::GraphTest14(void)
     CPPUNIT_ASSERT_EQUAL( 365, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 
@@ -429,7 +429,7 @@ void graphtest::GraphTest15(void)
     CPPUNIT_ASSERT_EQUAL( 201, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 
@@ -460,7 +460,7 @@ void graphtest::GraphTest16(void)
 
     CPPUNIT_ASSERT_EQUAL( 127, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
 
     push_word_ids_right(nodes);
     CPPUNIT_ASSERT( assert_subword_ids_right(dg, nodes));
@@ -478,7 +478,7 @@ void graphtest::GraphTest16(void)
     CPPUNIT_ASSERT_EQUAL( 98, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 
@@ -510,7 +510,7 @@ void graphtest::GraphTest17(void)
     CPPUNIT_ASSERT_EQUAL( 47, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 
@@ -546,7 +546,7 @@ void graphtest::GraphTest18(void)
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 
@@ -634,7 +634,7 @@ void graphtest::GraphTest22(void)
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 
     push_word_ids_right(nodes);
@@ -643,7 +643,7 @@ void graphtest::GraphTest22(void)
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 
@@ -672,7 +672,7 @@ void graphtest::GraphTest23(void)
     //CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 
     push_word_ids_right(nodes);
@@ -689,7 +689,7 @@ void graphtest::GraphTest23(void)
     CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 
@@ -730,7 +730,7 @@ void graphtest::GraphTest24(void)
     CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 
@@ -781,7 +781,7 @@ void graphtest::GraphTest25(void)
     cerr << "asserting only correct words in the graph" << endl;
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
     cerr << "asserting all word pairs in the graph" << endl;
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     cerr << "asserting only correct word pairs in the graph" << endl;
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
@@ -848,7 +848,7 @@ void graphtest::GraphTest26(void)
     cerr << "asserting only correct words in the graph" << endl;
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
     cerr << "asserting all word pairs in the graph" << endl;
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     cerr << "asserting only correct word pairs in the graph" << endl;
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
@@ -902,7 +902,7 @@ void graphtest::GraphTest27(void)
     CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
 

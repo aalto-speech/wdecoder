@@ -341,55 +341,6 @@ bool assert_path(DecoderGraph &dg,
     return assert_path(dg, nodes, dstates, dwords, START_NODE);
 }
 
-bool assert_word_pair_crossword(DecoderGraph &dg,
-                                vector<DecoderGraph::Node> &nodes,
-                                map<string, vector<string> > &word_segs,
-                                string word1,
-                                string word2,
-                                bool debug)
-{
-    if (dg.m_lexicon.find(word1) == word_segs.end())
-        return false;
-    if (dg.m_lexicon.find(word2) == word_segs.end())
-        return false;
-
-    string phonestring;
-    vector<string> triphones;
-    vector<string> subwords;
-
-    for (auto swit = word_segs[word1].begin();
-            swit != word_segs[word1].end(); ++swit) {
-        subwords.push_back(*swit);
-        for (auto trit = dg.m_lexicon[*swit].begin();
-                trit != dg.m_lexicon[*swit].end(); ++trit)
-            phonestring += string(1, (*trit)[2]);
-    }
-
-    phonestring += "_";
-
-    for (auto swit = word_segs[word2].begin();
-            swit != word_segs[word2].end(); ++swit) {
-        subwords.push_back(*swit);
-        for (auto trit = dg.m_lexicon[*swit].begin();
-                trit != dg.m_lexicon[*swit].end(); ++trit)
-            phonestring += string(1, (*trit)[2]);
-    }
-
-    triphonize(phonestring, triphones);
-
-    if (debug) {
-        cerr << endl;
-        for (auto trit = triphones.begin(); trit != triphones.end(); ++trit)
-            cerr << " " << *trit;
-        cerr << endl;
-        for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
-            cerr << " " << *swit;
-        cerr << endl;
-    }
-
-    return assert_path(dg, nodes, triphones, subwords, debug);
-}
-
 bool assert_words(DecoderGraph &dg,
                   vector<DecoderGraph::Node> &nodes,
                   map<string, vector<string> > &word_segs,
@@ -431,20 +382,74 @@ bool assert_words(DecoderGraph &dg,
     return true;
 }
 
+bool assert_word_pair_crossword(DecoderGraph &dg,
+                                vector<DecoderGraph::Node> &nodes,
+                                map<string, vector<string> > &word_segs,
+                                string word1,
+                                string word2,
+                                bool short_silence,
+                                bool wb_symbol,
+                                bool debug)
+{
+    if (dg.m_lexicon.find(word1) == word_segs.end())
+        return false;
+    if (dg.m_lexicon.find(word2) == word_segs.end())
+        return false;
+
+    string phonestring;
+    vector<string> triphones;
+    vector<string> subwords;
+
+    for (auto swit = word_segs[word1].begin();
+            swit != word_segs[word1].end(); ++swit) {
+        subwords.push_back(*swit);
+        for (auto trit = dg.m_lexicon[*swit].begin();
+                trit != dg.m_lexicon[*swit].end(); ++trit)
+            phonestring += string(1, (*trit)[2]);
+    }
+
+    if (short_silence) phonestring += "_";
+    if (wb_symbol) subwords.push_back("<w>");
+
+    for (auto swit = word_segs[word2].begin();
+            swit != word_segs[word2].end(); ++swit) {
+        subwords.push_back(*swit);
+        for (auto trit = dg.m_lexicon[*swit].begin();
+                trit != dg.m_lexicon[*swit].end(); ++trit)
+            phonestring += string(1, (*trit)[2]);
+    }
+
+    triphonize(phonestring, triphones);
+
+    if (debug) {
+        cerr << endl;
+        for (auto trit = triphones.begin(); trit != triphones.end(); ++trit)
+            cerr << " " << *trit;
+        cerr << endl;
+        for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
+            cerr << " " << *swit;
+        cerr << endl;
+    }
+
+    return assert_path(dg, nodes, triphones, subwords, debug);
+}
+
 bool assert_word_pairs(DecoderGraph &dg,
                        vector<DecoderGraph::Node> &nodes,
                        map<string, vector<string> > &word_segs,
+                       bool short_silence,
+                       bool wb_symbol,
                        bool debug)
 {
     for (auto fit = word_segs.begin(); fit != word_segs.end(); ++fit)
     {
-        for (auto sit = word_segs.begin(); sit != word_segs.end();
-                ++sit) {
+        for (auto sit = word_segs.begin(); sit != word_segs.end(); ++sit)
+        {
             if (debug)
                 cerr << endl << "checking word pair: " << fit->first << " - "
                      << sit->first << endl;
             bool result = assert_word_pair_crossword(dg, nodes, word_segs,
-                          fit->first, sit->first, debug);
+                          fit->first, sit->first, short_silence, wb_symbol, debug);
             if (!result) {
                 cerr << endl << "word pair: " << fit->first << " - "
                      << sit->first << " not found" << endl;
@@ -459,6 +464,8 @@ bool assert_word_pairs(DecoderGraph &dg,
                        vector<DecoderGraph::Node> &nodes,
                        map<string, vector<string> > &word_segs,
                        int num_pairs,
+                       bool short_silence,
+                       bool wb_symbol,
                        bool debug)
 {
     int wp_count = 0;
@@ -474,7 +481,7 @@ bool assert_word_pairs(DecoderGraph &dg,
         string second_word = wit2->first;
 
         bool result = assert_word_pair_crossword(dg, nodes, word_segs,
-                      first_word, second_word, debug);
+                      first_word, second_word, short_silence, wb_symbol, debug);
         if (!result) {
             cerr << endl << "word pair: " << first_word << " - " << second_word
                  << " not found" << endl;
