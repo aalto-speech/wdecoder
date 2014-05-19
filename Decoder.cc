@@ -1061,37 +1061,45 @@ Decoder::find_predecessor_words(int node_idx,
 }
 
 
+bool descending_node_unigram_la_lp_sort(const pair<int, float> &i,
+                                        const pair<int, float> &j)
+{
+    return (i.second > j.second);
+}
+
 void
 Decoder::set_unigram_la_scores()
 {
     float init_val = -1e20;
     int total_lm_nodes = 0;
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-        m_nodes[i].unigram_la_score = init_val;
-        if (m_nodes[i].word_id != -1) total_lm_nodes++;
-    }
+    float best_lp = init_val;
+    vector<pair<unsigned int, float> > sorted_nodes;
 
-    vector<vector<Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
-
-    float best_lp = -1e20;
-    int swidx = 0;
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
+    for (int i=0; i<(int)m_nodes.size(); i++) {
         Node &node = m_nodes[i];
+        node.unigram_la_score = init_val;
+
         if (node.word_id == -1) continue;
-        swidx++;
-        if (swidx % 100 == 0) cerr << "processed lm nodes " << swidx << "/" << total_lm_nodes << endl;
+
+        total_lm_nodes++;
         float la_prob = 0.0;
         m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], la_prob);
-        propagate_unigram_la_score(i, la_prob, reverse_arcs, true);
+        sorted_nodes.push_back(make_pair(i, la_prob));
         best_lp = max(best_lp, la_prob);
     }
+
+    sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_unigram_la_lp_sort);
+    vector<vector<Arc> > reverse_arcs;
+    get_reverse_arcs(reverse_arcs);
 
     propagate_unigram_la_score(START_NODE, best_lp, reverse_arcs, true);
     m_nodes[START_NODE].unigram_la_score = best_lp;
 
+    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
+        propagate_unigram_la_score(snit->first, snit->second, reverse_arcs, true);
+
     for (unsigned int i=0; i<m_nodes.size(); i++)
-        if (m_nodes[i].unigram_la_score == -1e20) cerr << "problem in node: " << i << endl;
+        if (m_nodes[i].unigram_la_score < -1e19) cerr << "unigram la problem in node: " << i << endl;
 }
 
 
@@ -1103,13 +1111,14 @@ Decoder::propagate_unigram_la_score(int node_idx,
 {
     Node &node = m_nodes[node_idx];
     if (!start_node) {
-        node.unigram_la_score = max(node.unigram_la_score, score);
+        if (node.unigram_la_score > -1e19) return;
+        node.unigram_la_score = score;
         if (node.word_id != -1) return;
     }
 
     for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
     {
-        if (rait->target_node == node_idx) continue;
+        //if (rait->target_node == node_idx) continue;
         if (rait->target_node == m_long_silence_loop_start_node && node_idx == m_long_silence_loop_end_node) continue;
         if (rait->target_node == START_NODE) continue;
         propagate_unigram_la_score(rait->target_node, score, reverse_arcs, false);
