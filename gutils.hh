@@ -188,7 +188,7 @@ int connect_word(DecoderGraph &dg,
                  int flag_mask=0);
 int connect_dummy(std::vector<DecoderGraph::Node> &nodes,
                   node_idx_t node_idx,
-                  int flag_mask);
+                  int flag_mask=0);
 
 void reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes,
                            std::set<node_idx_t> &node_idxs,
