@@ -52,6 +52,11 @@ void find_successor_word(std::vector<DecoderGraph::Node> &nodes,
                          int word_id,
                          node_idx_t node_idx=START_NODE,
                          int depth=0);
+void find_nodes_in_depth(std::vector<DecoderGraph::Node> &nodes,
+                         std::set<int> &found_nodes,
+                         int target_depth,
+                         int curr_depth=0,
+                         int curr_node=START_NODE);
 bool assert_path(DecoderGraph &dg,
                  std::vector<DecoderGraph::Node> &nodes,
                  std::deque<int> states,

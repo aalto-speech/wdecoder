@@ -261,6 +261,24 @@ void find_successor_word(vector<DecoderGraph::Node> &nodes,
     }
 }
 
+void find_nodes_in_depth(vector<DecoderGraph::Node> &nodes,
+                         set<int> &found_nodes,
+                         int target_depth,
+                         int curr_depth,
+                         int curr_node)
+{
+    if (curr_depth == target_depth) {
+        found_nodes.insert(curr_node);
+        return;
+    }
+
+    DecoderGraph::Node &node = nodes[curr_node];
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        if (*ait == curr_node) continue;
+        find_nodes_in_depth(nodes, found_nodes, target_depth, curr_depth+1, *ait);
+    }
+}
+
 bool assert_path(DecoderGraph &dg,
                  vector<DecoderGraph::Node> &nodes,
                  deque<int> states,
