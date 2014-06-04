@@ -127,6 +127,7 @@ create_crossword_network(DecoderGraph &dg,
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end())
             {
+                // Connect one phone subwords before second triphone for _-x+_ connector nodes in fanin
                 if (fiit->first[0] == '_' && fiit->first[4] == '_')
                 {
                     set<int> temp_node_idxs;
@@ -177,9 +178,6 @@ create_crossword_network(DecoderGraph &dg,
                 string fanout_loop_connector = foit->first[2] + string(1,'-') + string(1,single_phone[2]) + string("+_");
                 if (fanout.find(fanout_loop_connector) == fanout.end()) {
                     cerr << "problem in connecting fanout loop for one phone subword: " << *opswit << endl;
-                    cerr << "fanout_loop_connector: " << fanout_loop_connector << endl;
-                    cerr << "single_phone: " << single_phone << endl;
-                    cerr << "triphone: " << triphone << endl;
                     assert(false);
                 }
                 nodes[lidx].arcs.insert(fanout[fanout_loop_connector]);
@@ -196,7 +194,7 @@ create_crossword_network(DecoderGraph &dg,
 
             int lidx = connect_word(dg, nodes, *opswit, fiit->second);
             cerr << "connected from " << fiit->second << " to " << lidx << " with subword: " << *opswit <<  endl;
-            //lidx = connect_triphone(dg, nodes, triphone, lidx);
+            lidx = connect_triphone(dg, nodes, triphone, lidx);
             string fanout_loop_connector = fiit->first[4] + string(1,'-') + string(1,single_phone[2]) + string("+_");
             if (fanout.find(fanout_loop_connector) == fanout.end()) {
                 cerr << "problem in connecting fanout loop for one phone subword:" << *opswit << endl;
