@@ -1034,11 +1034,9 @@ void print_graph(DecoderGraph &dg,
         return;
     }
 
-    for (auto ait = nodes[node_idx].arcs.begin();
-            ait != nodes[node_idx].arcs.end(); ++ait)
+    for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait)
         print_graph(dg, nodes, path, *ait);
 }
-
 
 void print_graph(DecoderGraph &dg,
                  vector<DecoderGraph::Node> &nodes)
@@ -1076,6 +1074,8 @@ void print_dot_digraph(DecoderGraph &dg,
             fstr << " [label=\"" << dg.m_subwords[nd.word_id] << "\"]" << endl;
         else if (nd.hmm_state != -1 && nd.word_id != -1)
             throw string("Problem");
+        else if (nd.label.length() > 0)
+            fstr << " [label=\"" << *it << ":" << nd.label << "\"]" << endl;
         else
             fstr << " [label=\"" << *it << ":dummy\"]" << endl;
     }

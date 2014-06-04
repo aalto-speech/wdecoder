@@ -92,6 +92,7 @@ create_crossword_network(DecoderGraph &dg,
         nodes.resize(nodes.size()+1);
         nodes.back().flags |= NODE_FAN_OUT_DUMMY;
         foit->second = nodes.size()-1;
+        nodes[foit->second].label.assign(foit->first);
         int start_index = foit->second;
 
         // Connect one phone subwords right after the fanout for _-x+_ connector nodes
@@ -99,10 +100,8 @@ create_crossword_network(DecoderGraph &dg,
         {
             set<int> temp_node_idxs;
             int dummy_node_idx = -1;
-            for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit)
-            {
-                if (dg.m_lexicon[*opswit][0] == foit->first)
-                {
+            for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit) {
+                if (dg.m_lexicon[*opswit][0] == foit->first) {
                     int temp_idx = connect_word(dg, nodes, *opswit, foit->second);
                     temp_node_idxs.insert(temp_idx);
                     if (dummy_node_idx == -1) {
@@ -126,7 +125,25 @@ create_crossword_network(DecoderGraph &dg,
             int idx = connect_word(dg, nodes, "<w>", tri1_idx);
             idx = connect_triphone(dg, nodes, "_", idx);
 
-            if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end()) {
+            if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end())
+            {
+                if (fiit->first[0] == '_' && fiit->first[4] == '_')
+                {
+                    set<int> temp_node_idxs;
+                    int dummy_node_idx = -1;
+                    for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit) {
+                        if (dg.m_lexicon[*opswit][0] == fiit->first) {
+                            int temp_idx = connect_word(dg, nodes, *opswit, idx);
+                            temp_node_idxs.insert(temp_idx);
+                            if (dummy_node_idx == -1)
+                                dummy_node_idx = connect_dummy(nodes, temp_idx);
+                            else
+                                nodes[temp_idx].arcs.insert(dummy_node_idx);
+                        }
+                    }
+                    idx = dummy_node_idx;
+                }
+
                 idx = connect_triphone(dg, nodes, triphone2, idx);
                 nodes[tri1_idx].arcs.insert(idx-2);
                 connected_fanin_nodes[triphone2] = idx-2;
@@ -134,6 +151,7 @@ create_crossword_network(DecoderGraph &dg,
                     nodes.resize(nodes.size()+1);
                     nodes.back().flags |= NODE_FAN_IN_DUMMY;
                     fiit->second = nodes.size()-1;
+                    nodes[fiit->second].label.assign(fiit->first);
                 }
                 nodes[idx].arcs.insert(fiit->second);
             }

@@ -32,6 +32,7 @@ public:
         int flags;
         std::set<unsigned int> arcs;
         std::set<unsigned int> reverse_arcs;
+        std::string label;
     };
 
     int debug;
