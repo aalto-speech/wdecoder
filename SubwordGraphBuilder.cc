@@ -69,7 +69,7 @@ create_crossword_network(DecoderGraph &dg,
     // Fanin last triphone + phone from one phone subwords, all combinations to fanin
     for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
         for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
-            string fanint = string("_-") + string(1,(fiit->first)[2]) + string(1,'+') + string(1,*phit);
+            string fanint = string("_-") + string(1,(fiit->first)[4]) + string(1,'+') + string(1,*phit);
             fanin[fanint] = -1;
             cerr << "fanint: " << fanint << endl;
         }
@@ -142,6 +142,7 @@ create_crossword_network(DecoderGraph &dg,
             string fanin_loop_connector = string("_-") + fiit->first[4] + string(1,'+') + string(1,single_phone[2]);
             if (fanin.find(fanin_loop_connector) == fanin.end()) {
                 cerr << "problem in connecting fanin loop for one phone subword:" << *opswit << endl;
+                cerr << fanin_loop_connector << endl;
                 assert(false);
             }
             nodes[lidx].arcs.insert(fanin[fanin_loop_connector]);
