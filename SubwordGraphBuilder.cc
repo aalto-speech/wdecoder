@@ -68,6 +68,7 @@ create_crossword_network(DecoderGraph &dg,
 
     // Fanin last triphone + phone from one phone subwords, all combinations to fanin
     for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
+        if ((fiit->first)[4] == '_') continue;
         for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
             string fanint = string("_-") + string(1,(fiit->first)[4]) + string(1,'+') + string(1,*phit);
             fanin[fanint] = -1;
@@ -77,8 +78,9 @@ create_crossword_network(DecoderGraph &dg,
 
     cerr << "step 3" << endl;
 
-    // Phone from one phone subwords + fanout first triphone, all combinations to fanout
+    // Fanout last triphone + phone from one phone subwords, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
+        if ((foit->first)[0] == '_') continue;
         for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
             string fanoutt = string(1,(foit->first)[2]) + string(1,'-') + string(1,*phit) + string("+_");
             fanout[fanoutt] = -1;
@@ -123,6 +125,36 @@ create_crossword_network(DecoderGraph &dg,
         }
     }
 
+
+    // Add loops for one phone subwords from fanout back to fanout
+    for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
+        if (foit->first[0] == '_' && foit->first[4] == '_') continue;
+
+        // Connect one phone subwords
+        // Both to xy_ and _x_ fanin connectors
+        // Optional short silence and word break
+        for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit) {
+            string single_phone = dg.m_lexicon[*opswit][0];
+            string triphone = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + string(1,single_phone[2]);
+
+            int lidx = connect_word(dg, nodes, *opswit, foit->second);
+            int wbidx = connect_word(dg, nodes, "<w>", lidx);
+            wbidx = connect_triphone(dg, nodes, "_", wbidx);
+            lidx = connect_triphone(dg, nodes, triphone, lidx);
+            nodes[wbidx].arcs.insert(lidx-2);
+            string fanout_loop_connector = foit->first[2] + string(1,'-') + string(1,single_phone[2]) + string("+_");
+            if (fanout.find(fanout_loop_connector) == fanout.end()) {
+                cerr << "problem in connecting fanout loop for one phone subword:" << *opswit << endl;
+                cerr << fanout_loop_connector << endl;
+                assert(false);
+            }
+            nodes[lidx].arcs.insert(fanout[fanout_loop_connector]);
+            cerr << "fanout, connected from " << foit->first << " to " << nodes[fanout[fanout_loop_connector]].label << " with subword: " << *opswit << endl;
+            cerr << "\t..triphone " << triphone << endl;
+        }
+    }
+
+
     // Add loops for one phone subwords from fanin back to fanin
     for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
         if (fiit->first[0] == '_' && fiit->first[4] == '_') continue;
@@ -146,8 +178,8 @@ create_crossword_network(DecoderGraph &dg,
                 assert(false);
             }
             nodes[lidx].arcs.insert(fanin[fanin_loop_connector]);
-            cerr << "connected from " << fiit->first << " to " << nodes[fanin[fanin_loop_connector]].label << " with subword: " << *opswit << endl;
-            cerr << " .. and triphone " << triphone << endl;
+            cerr << "fanin, connected from " << fiit->first << " to " << nodes[fanin[fanin_loop_connector]].label << " with subword: " << *opswit << endl;
+            cerr << "\t..triphone " << triphone << endl;
 
 
             string triphone2 = fiit->first[4] + string(1,'-') + string(1,single_phone[2]) + string("+_");
@@ -163,12 +195,9 @@ create_crossword_network(DecoderGraph &dg,
                 assert(false);
             }
             nodes[lidx].arcs.insert(fanin[fanin_loop_connector]);
-            cerr << "connected from " << fiit->first << " to " << nodes[fanin[fanin_loop_connector]].label << " with subword: " << *opswit << endl;
-            cerr << " .. and triphone " << triphone2 << endl;
-
+            cerr << "fanin, connected from " << fiit->first << " to " << nodes[fanin[fanin_loop_connector]].label << " with subword: " << *opswit << endl;
+            cerr << "\t..triphone " << triphone2 << endl;
         }
-
-
     }
 
     for (auto cwnit = nodes.begin(); cwnit != nodes.end(); ++cwnit)
