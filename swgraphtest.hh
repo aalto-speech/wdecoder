@@ -20,6 +20,7 @@ class swgraphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (SubwordGraphTest5);
     CPPUNIT_TEST (SubwordGraphTest6);
     CPPUNIT_TEST (SubwordGraphTest7);
+    CPPUNIT_TEST (SubwordGraphTest8);
     CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -34,6 +35,7 @@ protected:
     void SubwordGraphTest5(void);
     void SubwordGraphTest6(void);
     void SubwordGraphTest7(void);
+    void SubwordGraphTest8(void);
 
 private:
 

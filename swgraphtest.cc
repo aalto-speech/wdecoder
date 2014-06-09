@@ -256,7 +256,7 @@ void swgraphtest::SubwordGraphTest6(void)
     DecoderGraph dg;
     read_fixtures(dg);
 
-    string segname = "data/subword_tie_expand_problem.segs";
+    string segname = "data/segs6.txt";
     map<string, vector<string> > word_segs;
     read_word_segmentations(dg, segname, word_segs);
 
@@ -299,7 +299,7 @@ void swgraphtest::SubwordGraphTest7(void)
     DecoderGraph dg;
     read_fixtures(dg);
 
-    string segname = "data/500.segs";
+    string segname = "data/subword_tie_expand_problem.segs";
     map<string, vector<string> > word_segs;
     read_word_segmentations(dg, segname, word_segs);
 
@@ -336,6 +336,48 @@ void swgraphtest::SubwordGraphTest7(void)
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
 }
 
+
+void swgraphtest::SubwordGraphTest8(void)
+{
+    DecoderGraph dg;
+    read_fixtures(dg);
+
+    string segname = "data/500.segs";
+    map<string, vector<string> > word_segs;
+    read_word_segmentations(dg, segname, word_segs);
+
+    vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
+    set<string> subwords;
+    for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
+    {
+        for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
+        {
+            subwords.insert(*swit);
+            if (swit->length() < 2) continue;
+            vector<DecoderGraph::TriphoneNode> word_triphones;
+            triphonize_subword(dg, *swit, word_triphones);
+            add_triphones(triphone_nodes, word_triphones);
+        }
+    }
+
+    vector<DecoderGraph::Node> nodes(2);
+    triphones_to_states(dg, triphone_nodes, nodes);
+    triphone_nodes.clear();
+    prune_unreachable_nodes(nodes);
+
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    subwordgraphbuilder::create_crossword_network(dg, subwords, cw_nodes, fanout, fanin);
+    subwordgraphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    connect_end_to_start_node(nodes);
+    subwordgraphbuilder::connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
+    subwordgraphbuilder::connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
+    prune_unreachable_nodes(nodes);
+
+    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
+}
 
 
 //ofstream origoutf("acw.dot");

@@ -1,0 +1,8 @@
+aa	a a
+ilia	ili a
+aili	a ili
+ilialle	ili a lle
+iliaalle	ili a a lle
+aaili	a a ili
+iliaa	ili a a
+
