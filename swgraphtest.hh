@@ -43,6 +43,9 @@ private:
     std::string lexname;
 
     void read_fixtures(DecoderGraph &dg);
+    void create_graph(DecoderGraph &dg,
+                      std::vector<DecoderGraph::Node> &nodes,
+                      std::map<std::string, std::vector<std::string> > &word_segs);
 
 };
 
