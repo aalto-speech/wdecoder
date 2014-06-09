@@ -9,5 +9,4 @@ runtests
 .settings/*
 speechdat*
 lm-*
-*.txt
 
