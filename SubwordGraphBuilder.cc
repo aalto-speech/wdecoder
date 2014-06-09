@@ -128,7 +128,6 @@ create_crossword_network(DecoderGraph &dg,
 
     // Add loops for one phone subwords from fanout back to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
-        if (foit->first[0] == '_' && foit->first[4] == '_') continue;
 
         // Connect one phone subwords
         // Both to xy_ and _x_ fanin connectors
@@ -190,7 +189,6 @@ create_crossword_network(DecoderGraph &dg,
             nodes[lidx].arcs.insert(fanin[fanin_loop_connector]);
             cerr << "fanin, connected from " << fiit->first << " to " << nodes[fanin[fanin_loop_connector]].label << " with subword: " << *opswit << endl;
             cerr << "\t..triphone " << triphone << endl;
-
 
             string triphone2 = fiit->first[4] + string(1,'-') + string(1,single_phone[2]) + string("+_");
 

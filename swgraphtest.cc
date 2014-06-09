@@ -127,7 +127,7 @@ void swgraphtest::SubwordGraphTest3(void)
     DecoderGraph dg;
     read_fixtures(dg);
 
-    string segname = "data/segs2.txt";
+    string segname = "data/segs5.txt";
     map<string, vector<string> > word_segs;
     read_word_segmentations(dg, segname, word_segs);
 
@@ -158,6 +158,10 @@ void swgraphtest::SubwordGraphTest3(void)
     subwordgraphbuilder::connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
     subwordgraphbuilder::connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
     prune_unreachable_nodes(nodes);
+
+    ofstream origoutf("acw.dot");
+    print_dot_digraph(dg, nodes, origoutf, true);
+    origoutf.close();
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, true) );
@@ -243,11 +247,7 @@ void swgraphtest::SubwordGraphTest5(void)
     connect_end_to_start_node(nodes);
     subwordgraphbuilder::connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
     subwordgraphbuilder::connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
-    //prune_unreachable_nodes(nodes);
-
-    ofstream origoutf("acw.dot");
-    print_dot_digraph(dg, nodes, origoutf, true);
-    origoutf.close();
+    prune_unreachable_nodes(nodes);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, true) );

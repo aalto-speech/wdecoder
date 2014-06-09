@@ -13,11 +13,11 @@
 class swgraphtest : public CPPUNIT_NS :: TestFixture
 {
     CPPUNIT_TEST_SUITE (swgraphtest);
-    CPPUNIT_TEST (SubwordGraphTest1);
-    CPPUNIT_TEST (SubwordGraphTest2);
+    //CPPUNIT_TEST (SubwordGraphTest1);
+    //CPPUNIT_TEST (SubwordGraphTest2);
     CPPUNIT_TEST (SubwordGraphTest3);
-    CPPUNIT_TEST (SubwordGraphTest4);
-    CPPUNIT_TEST (SubwordGraphTest5);
+    //CPPUNIT_TEST (SubwordGraphTest4);
+    //CPPUNIT_TEST (SubwordGraphTest5);
     CPPUNIT_TEST_SUITE_END ();
 
 public:
