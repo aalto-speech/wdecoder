@@ -78,7 +78,7 @@ create_crossword_network(DecoderGraph &dg,
         nodes.resize(nodes.size()+1);
         nodes.back().flags |= NODE_FAN_OUT_DUMMY;
         foit->second = nodes.size()-1;
-        nodes[foit->second].label.assign(foit->first);
+        //nodes[foit->second].label.assign(foit->first);
         int start_index = foit->second;
 
         for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
@@ -98,7 +98,7 @@ create_crossword_network(DecoderGraph &dg,
                     nodes.resize(nodes.size()+1);
                     nodes.back().flags |= NODE_FAN_IN_DUMMY;
                     fiit->second = nodes.size()-1;
-                    nodes[fiit->second].label.assign(fiit->first);
+                    //nodes[fiit->second].label.assign(fiit->first);
                 }
                 nodes[idx].arcs.insert(fiit->second);
             }

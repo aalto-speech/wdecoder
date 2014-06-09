@@ -812,7 +812,8 @@ void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
 }
 
 void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
-                        set<node_idx_t> &processed_nodes, bool stop_propagation,
+                        set<node_idx_t> &processed_nodes,
+                        bool stop_propagation,
                         node_idx_t node_idx)
 {
     if (node_idx == END_NODE)
@@ -1074,8 +1075,8 @@ void print_dot_digraph(DecoderGraph &dg,
             fstr << " [label=\"" << dg.m_subwords[nd.word_id] << "\"]" << endl;
         else if (nd.hmm_state != -1 && nd.word_id != -1)
             throw string("Problem");
-        else if (nd.label.length() > 0)
-            fstr << " [label=\"" << *it << ":" << nd.label << "\"]" << endl;
+        //else if (nd.label.length() > 0)
+        //    fstr << " [label=\"" << *it << ":" << nd.label << "\"]" << endl;
         else
             fstr << " [label=\"" << *it << ":dummy\"]" << endl;
     }
