@@ -99,9 +99,6 @@ public:
     void read_la_lm(std::string lmfname);
     void read_dgraph(std::string graphfname);
 
-    void read_config(std::string cfgfname);
-    void print_config(std::ostream &outf);
-
     void recognize_lna_file(std::string lnafname,
                             std::ostream &outf=std::cout,
                             int *frame_count=nullptr,

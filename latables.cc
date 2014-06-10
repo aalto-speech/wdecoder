@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 
         string cfgfname = config.arguments[2];
         cerr << "Reading configuration: " << cfgfname << endl;
-        d.read_config(cfgfname);
+        //d.read_config(cfgfname);
 
         string graphfname = config.arguments[3];
         cerr << "Reading graph: " << graphfname << endl;

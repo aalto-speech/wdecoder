@@ -50,8 +50,8 @@ int main(int argc, char* argv[])
 
         string cfgfname = config.arguments[3];
         cerr << "Reading configuration: " << cfgfname << endl;
-        d.read_config(cfgfname);
-        d.print_config(cerr);
+        //d.read_config(cfgfname);
+        //d.print_config(cerr);
 
         string graphfname = config.arguments[4];
         cerr << "Reading graph: " << graphfname << endl;
