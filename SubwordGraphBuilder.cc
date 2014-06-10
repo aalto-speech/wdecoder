@@ -102,7 +102,7 @@ create_crossword_network(DecoderGraph &dg,
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
 
         // Connect one phone subwords
-        // Optional short silence and word break if connecting out from _-x+_ connector
+        // Optional short silence and word break if not connecting out from _-x+_ connector
         for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit) {
 
             string single_phone = dg.m_lexicon[*opswit][0];
