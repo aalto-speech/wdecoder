@@ -6,8 +6,23 @@
 
 #include "Decoder.hh"
 #include "conf.hh"
+#include "str.hh"
 
 using namespace std;
+
+
+vector<float> lm_scales;
+vector<float> beams;
+
+
+void parse_csv(string valstr, vector<float> &values)
+{
+    values.clear();
+    vector<string> fields;
+    str::split_with_quotes(&valstr, " ,", true, &fields);
+    for (unsigned int i=0; i<fields.size(); i++)
+        values.push_back(stof(fields[i]));
+}
 
 
 void
@@ -22,12 +37,20 @@ read_config(Decoder &d, string cfgfname)
         stringstream ss(line);
         string parameter, val;
         ss >> parameter;
-        if (parameter == "lm_scale") ss >> d.m_lm_scale;
+        if (parameter == "lm_scale") {
+            string lmscale_csv;
+            ss >> lmscale_csv;
+            parse_csv(lmscale_csv, lm_scales);
+        }
         else if (parameter == "token_limit") ss >> d.m_token_limit;
         else if (parameter == "node_limit") ss >> d.m_active_node_limit;
         else if (parameter == "duration_scale") ss >> d.m_duration_scale;
         else if (parameter == "transition_scale") ss >> d.m_transition_scale;
-        else if (parameter == "global_beam") ss >> d.m_global_beam;
+        else if (parameter == "global_beam") {
+            string global_beam_csv;
+            ss >> global_beam_csv;
+            parse_csv(global_beam_csv, beams);
+        }
         else if (parameter == "acoustic_beam") ss >> d.m_acoustic_beam;
         else if (parameter == "history_beam") ss >> d.m_history_beam;
         else if (parameter == "word_end_beam") ss >> d.m_word_end_beam;
@@ -54,8 +77,19 @@ read_config(Decoder &d, string cfgfname)
 
 
 void
-print_config(Decoder &d, ostream &outf)
+print_config(Decoder &d,
+             conf::Config &config,
+             ostream &outf)
 {
+    outf << "PH: " << config.arguments[0] << endl;
+    outf << "LEXICON: " << config.arguments[1] << endl;
+    outf << "LM: " << config.arguments[2] << endl;
+    outf << "GRAPH: " << config.arguments[3] << endl;
+    if (config["lookahead-model"].specified) {
+        string lalmfname = config["lookahead-model"].get_str();
+        outf << "LOOKAHEAD LM: " << lalmfname << endl;
+    }
+
     outf << std::boolalpha;
     outf << "lm scale: " << d.m_lm_scale << endl;
     outf << "active node limit: " << d.m_active_node_limit << endl;
@@ -76,14 +110,68 @@ print_config(Decoder &d, ostream &outf)
 }
 
 
+void
+recognize_lnas(Decoder &d,
+               conf::Config &config,
+               string lnalistfname,
+               ostream &resultf,
+               ostream &logf,
+               float lm_scale,
+               float global_beam,
+               float global_ac_beam,
+               float word_end_beam)
+{
+    ifstream lnalistf(lnalistfname);
+    string line;
+
+    d.m_lm_scale = lm_scale;
+    d.m_global_beam = global_beam;
+    d.m_acoustic_beam = global_ac_beam;
+    d.m_word_end_beam = word_end_beam;
+    print_config(d, config, logf);
+
+    int total_frames = 0;
+    double total_time = 0.0;
+    double total_lp = 0.0;
+    int file_count = 0;
+    while (getline(lnalistf, line)) {
+        if (!line.length()) continue;
+        logf << endl << "recognizing: " << line << endl;
+        int curr_frames;
+        double curr_time;
+        double curr_lp, curr_am_lp, curr_lm_lp;
+        d.recognize_lna_file(line, resultf, &curr_frames, &curr_time,
+                             &curr_lp, &curr_am_lp, &curr_lm_lp);
+        total_frames += curr_frames;
+        total_time += curr_time;
+        total_lp += curr_lp;
+        logf << "\trecognized " << curr_frames << " frames in " << curr_time << " seconds." << endl;
+        logf << "\tRTF: " << curr_time / ((double)curr_frames/125.0) << endl;
+        logf << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl;
+        file_count++;
+    }
+    lnalistf.close();
+
+    if (file_count > 1) {
+        logf << endl;
+        logf << file_count << " files recognized" << endl;
+        logf << "total recognition time: " << total_time << endl;
+        logf << "total frame count: " << total_frames << endl;
+        logf << "total RTF: " << total_time/ ((double)total_frames/125.0) << endl;
+        logf << "total log prob: " << total_lp << endl;
+    }
+}
+
+
+
 int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: decode [OPTION...] PH LEXICON LM CFGFILE GRAPH LNALIST\n")
     ('h', "help", "", "", "display help")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
+    ('f', "result-file=STRING", "arg", "", "Base filename for results (.rec and .log)")
     ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model");
-    //('t', "lookahead-tables=STRING", "arg", "", "Precomputed lookahead tables");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
@@ -112,20 +200,11 @@ int main(int argc, char* argv[])
         string cfgfname = config.arguments[3];
         cerr << "Reading configuration: " << cfgfname << endl;
         read_config(d, cfgfname);
-        print_config(d, cerr);
 
         string graphfname = config.arguments[4];
         cerr << "Reading graph: " << graphfname << endl;
         d.read_dgraph(graphfname);
         cerr << "node count: " << d.m_nodes.size() << endl;
-
-        /*
-        if (config["lookahead-tables"].specified) {
-            string latfname = config["lookahead-tables"].get_str();
-            cerr << "Reading precomputed lookahead tables: " << latfname << endl;
-            d.read_bigram_la_tables(latfname);
-        }
-        */
 
         if (config["lookahead-model"].specified) {
             string lalmfname = config["lookahead-model"].get_str();
@@ -134,38 +213,49 @@ int main(int argc, char* argv[])
         }
 
         string lnalistfname = config.arguments[5];
-        ifstream lnalistf(lnalistfname);
-        string line;
 
-        int total_frames = 0;
-        double total_time = 0.0;
-        double total_lp = 0.0;
-        int file_count = 0;
-        while (getline(lnalistf, line)) {
-            if (!line.length()) continue;
-            cerr << endl << "recognizing: " << line << endl;
-            int curr_frames;
-            double curr_time;
-            double curr_lp, curr_am_lp, curr_lm_lp;
-            d.recognize_lna_file(line, cout, &curr_frames, &curr_time,
-                                 &curr_lp, &curr_am_lp, &curr_lm_lp);
-            total_frames += curr_frames;
-            total_time += curr_time;
-            total_lp += curr_lp;
-            cerr << "\trecognized " << curr_frames << " frames in " << curr_time << " seconds." << endl;
-            cerr << "\tRTF: " << curr_time / ((double)curr_frames/125.0) << endl;
-            cerr << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl;
-            file_count++;
+        if (lm_scales.size() == 0) {
+            cerr << "No lm scales set." << endl;
+            exit(0);
         }
-        lnalistf.close();
 
-        if (file_count > 1) {
-            cerr << endl;
-            cerr << file_count << " files recognized" << endl;
-            cerr << "total recognition time: " << total_time << endl;
-            cerr << "total frame count: " << total_frames << endl;
-            cerr << "total RTF: " << total_time/ ((double)total_frames/125.0) << endl;
-            cerr << "total log prob: " << total_lp << endl;
+        if (lm_scales.size() != beams.size()) {
+            cerr << "Number of set lm scales differs from set beams." << endl;
+            exit(0);
+        }
+
+        if (config["result-file"].specified) {
+            string resultfname = config["result-file"].get_str();
+            cerr << "Base filename for results: " << resultfname << endl;
+            for (unsigned int i=0; i<lm_scales.size(); ++i) {
+                string curr_resfname = resultfname + string(".lmscale") + to_string(int(lm_scales[i]))
+                        + string(".beam") + to_string(int(beams[i])) + string(".rec");
+                string curr_logfname = resultfname + string(".lmscale") + to_string(int(lm_scales[i]))
+                        + string(".beam") + to_string(int(beams[i])) + string(".log");
+                ofstream resultf(curr_resfname);
+                ofstream logf(curr_logfname);
+                recognize_lnas(d,
+                               config,
+                               lnalistfname,
+                               resultf,
+                               logf,
+                               lm_scales[i],
+                               beams[i],
+                               beams[i]-40.0,
+                               (2.0/3.0) * beams[i]);
+            }
+        }
+        else {
+            for (unsigned int i=0; i<lm_scales.size(); ++i)
+                recognize_lnas(d,
+                               config,
+                               lnalistfname,
+                               cout,
+                               cerr,
+                               lm_scales[i],
+                               beams[i],
+                               beams[i]-40.0,
+                               (2.0/3.0) * beams[i]);
         }
 
     } catch (string &e) {
