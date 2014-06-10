@@ -44,7 +44,6 @@ read_config(Decoder &d, string cfgfname)
             ss >> d.m_word_boundary_symbol;
             d.m_word_boundary_symbol_idx = d.m_subword_map[d.m_word_boundary_symbol];
         }
-        else if (parameter == "optional_word_boundaries_in_cw") ss >> d.m_optional_word_boundaries_in_cw;
         else if (parameter == "debug") ss >> d.m_debug;
         else if (parameter == "stats") ss >> d.m_stats;
         else throw string("Unknown parameter: ") + parameter;

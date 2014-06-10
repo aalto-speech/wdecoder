@@ -29,7 +29,6 @@ Decoder::Decoder()
     m_bigram_la_in_use = false;
     m_precomputed_lookahead_tables = false;
     m_use_word_boundary_symbol = false;
-    m_optional_word_boundaries_in_cw = false;
     m_force_sentence_end = true;
 
     m_lm_scale = 0.0;

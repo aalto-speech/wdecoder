@@ -227,7 +227,6 @@ public:
     int m_token_count_after_pruning;
     bool m_force_sentence_end;
     bool m_use_word_boundary_symbol;
-    bool m_optional_word_boundaries_in_cw;
     bool m_duration_model_in_use;
     bool m_unigram_la_in_use;
     bool m_bigram_la_in_use;
