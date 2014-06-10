@@ -145,47 +145,6 @@ create_crossword_network(DecoderGraph &dg,
         }
     }
 
-
-    // Add loops for one phone subwords from fanin back to fanin
-    for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
-        if (fiit->first[0] == '_' && fiit->first[4] == '_') continue;
-
-        // Connect one phone subwords
-        // Both to _xy and _x_ fanin connectors
-        // Optional short silence and word break
-        for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit) {
-            string single_phone = dg.m_lexicon[*opswit][0];
-            string triphone = fiit->first[2] + string(1,'-') + fiit->first[4] + string(1,'+') + string(1,single_phone[2]);
-
-            int lidx = connect_word(dg, nodes, *opswit, fiit->second);
-            int wbidx = connect_word(dg, nodes, "<w>", lidx);
-            wbidx = connect_triphone(dg, nodes, "_", wbidx);
-            lidx = connect_triphone(dg, nodes, triphone, lidx);
-            nodes[wbidx].arcs.insert(lidx-2);
-            string fanin_loop_connector = string("_-") + fiit->first[4] + string(1,'+') + string(1,single_phone[2]);
-            if (fanin.find(fanin_loop_connector) == fanin.end()) {
-                cerr << "problem in connecting fanin loop for one phone subword:" << *opswit << endl;
-                cerr << fanin_loop_connector << endl;
-                assert(false);
-            }
-            nodes[lidx].arcs.insert(fanin[fanin_loop_connector]);
-
-            string triphone2 = fiit->first[4] + string(1,'-') + string(1,single_phone[2]) + string("+_");
-
-            lidx = connect_word(dg, nodes, *opswit, fiit->second);
-            wbidx = connect_word(dg, nodes, "<w>", lidx);
-            wbidx = connect_triphone(dg, nodes, "_", wbidx);
-            lidx = connect_triphone(dg, nodes, triphone2, lidx);
-            nodes[wbidx].arcs.insert(lidx-2);
-            fanin_loop_connector = string("_-") + string(1,single_phone[2]) + string("+_");
-            if (fanin.find(fanin_loop_connector) == fanin.end()) {
-                cerr << "problem in connecting fanin loop for one phone subword:" << *opswit << endl;
-                assert(false);
-            }
-            nodes[lidx].arcs.insert(fanin[fanin_loop_connector]);
-        }
-    }
-
     for (auto cwnit = nodes.begin(); cwnit != nodes.end(); ++cwnit)
         if (cwnit->flags == 0) cwnit->flags |= NODE_CW;
 }
