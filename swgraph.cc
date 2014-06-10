@@ -59,16 +59,18 @@ int main(int argc, char* argv[])
         create_crossword_network(dg, subwords, cw_nodes, fanout, fanin);
 
         cerr << "Connecting crossword network.." << endl;
-        connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, true);
+        connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
         connect_end_to_start_node(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
         connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
+        prune_unreachable_nodes(nodes);
 
         cerr << endl;
         cerr << "Tying state prefixes.." << endl;
         tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
         cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
@@ -76,11 +78,15 @@ int main(int argc, char* argv[])
         cerr << endl;
         cerr << "Removing cw dummies.." << endl;
         remove_cw_dummies(nodes);
+
         cerr << "Tying prefixes.." << endl;
         tie_state_prefixes(nodes);
         tie_word_id_prefixes(nodes);
         tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
         cerr << "Tying suffixes.." << endl;
+        tie_state_suffixes(nodes);
+        tie_word_id_suffixes(nodes);
         tie_state_suffixes(nodes);
         tie_word_id_suffixes(nodes);
         tie_state_suffixes(nodes);
@@ -89,7 +95,6 @@ int main(int argc, char* argv[])
         add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);
         write_graph(nodes, graphfname);
-        //dg.print_dot_digraph(nodes);
 
     } catch (string &e) {
         cerr << e << endl;

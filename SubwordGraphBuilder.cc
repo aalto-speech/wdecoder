@@ -54,15 +54,6 @@ create_crossword_network(DecoderGraph &dg,
         }
     }
 
-    // Fanin last triphone + phone from one phone subwords, all combinations to fanin
-    for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
-        if ((fiit->first)[4] == '_') continue;
-        for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
-            string fanint = string("_-") + string(1,(fiit->first)[4]) + string(1,'+') + string(1,*phit);
-            fanin[fanint] = -1;
-        }
-    }
-
     // Fanout last triphone + phone from one phone subwords, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
         if ((foit->first)[0] == '_') continue;
@@ -78,7 +69,6 @@ create_crossword_network(DecoderGraph &dg,
         nodes.resize(nodes.size()+1);
         nodes.back().flags |= NODE_FAN_OUT_DUMMY;
         foit->second = nodes.size()-1;
-        //nodes[foit->second].label.assign(foit->first);
         int start_index = foit->second;
 
         for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
@@ -98,7 +88,6 @@ create_crossword_network(DecoderGraph &dg,
                     nodes.resize(nodes.size()+1);
                     nodes.back().flags |= NODE_FAN_IN_DUMMY;
                     fiit->second = nodes.size()-1;
-                    //nodes[fiit->second].label.assign(fiit->first);
                 }
                 nodes[idx].arcs.insert(fiit->second);
             }
@@ -114,34 +103,38 @@ create_crossword_network(DecoderGraph &dg,
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
 
         // Connect one phone subwords
-        // Both to xy_ and _x_ fanin connectors
-        // Optional short silence and word break
+        // Optional short silence and word break if connecting out from _-x+_ connector
         for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit) {
+
             string single_phone = dg.m_lexicon[*opswit][0];
             string triphone = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + string(1,single_phone[2]);
 
             int tridx = connect_triphone(dg, nodes, triphone, foit->second);
-
-            // just subword
-            int lidx = connect_word(dg, nodes, *opswit, tridx);
-            // optionally word boundary after subword
-            int wbidx = connect_word(dg, nodes, "<w>", lidx);
-            wbidx = connect_triphone(dg, nodes, "_", wbidx);
-
-            // word boundary first then subword
-            int l2idx = connect_word(dg, nodes, "<w>", tridx);
-            l2idx = connect_word(dg, nodes, *opswit, l2idx);
-            l2idx = connect_triphone(dg, nodes, "_", l2idx);
-
             string fanout_loop_connector = foit->first[2] + string(1,'-') + string(1,single_phone[2]) + string("+_");
             if (fanout.find(fanout_loop_connector) == fanout.end()) {
                 cerr << "problem in connecting fanout loop for one phone subword:" << *opswit << endl;
                 cerr << fanout_loop_connector << endl;
                 assert(false);
             }
+
+            // just subword in all cases
+            int lidx = connect_word(dg, nodes, *opswit, tridx);
             nodes[lidx].arcs.insert(fanout[fanout_loop_connector]);
-            nodes[wbidx].arcs.insert(fanout[fanout_loop_connector]);
-            nodes[l2idx].arcs.insert(fanout[fanout_loop_connector]);
+
+            // loops with word boundary only if not _-x+_ connector
+            if (foit->first[0] != '_' || foit->first[4] != '_') {
+                // optionally word boundary after subword
+                int wbidx = connect_word(dg, nodes, "<w>", lidx);
+                wbidx = connect_triphone(dg, nodes, "_", wbidx);
+
+                // word boundary first then subword
+                int l2idx = connect_word(dg, nodes, "<w>", tridx);
+                l2idx = connect_triphone(dg, nodes, "_", l2idx);
+                l2idx = connect_word(dg, nodes, *opswit, l2idx);
+
+                nodes[wbidx].arcs.insert(fanout[fanout_loop_connector]);
+                nodes[l2idx].arcs.insert(fanout[fanout_loop_connector]);
+            }
         }
     }
 
