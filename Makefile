@@ -1,10 +1,7 @@
 cxxflags = -O3 -march=native -std=gnu++0x -Wall
-#cxxflags = -O3 -march=native -std=c++11 -Wall -Wno-sign-compare
-#cxxflags = -g -O3 -march=native -std=gnu++0x -Wall -Wno-sign-compare
-#cxxflags = -g -O3 -march=native -std=gnu++0x -Wall -Wno-sign-compare -fprofile-arcs -ftest-coverage
 #cxxflags = -O0 -gddb -std=gnu++0x -Wall
-#cxxflags = -O0 -g -std=gnu++0x -Wall -Wno-sign-compare
-#cxxflags = -O0 -pg -std=gnu++0x -Wall -Wno-sign-compare
+#cxxflags = -O0 -g -std=gnu++0x -Wall
+#cxxflags = -O0 -pg -std=gnu++0x -Wall
 
 ##################################################
 
@@ -17,8 +14,7 @@ objs = $(srcs:.cc=.o)
 test_progs = runtests
 test_progs_srcs = $(test_progs:=.cc)
 test_progs_objs = $(test_progs:=.o)
-#test_srcs = graphtest.cc swgraphtest.cc decodertest.cc
-test_srcs = swgraphtest.cc
+test_srcs = graphtest.cc swgraphtest.cc decodertest.cc
 test_objs = $(test_srcs:.cc=.o)
 
 ##################################################
