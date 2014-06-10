@@ -44,13 +44,12 @@ create_crossword_network(DecoderGraph &dg,
         }
     }
 
-    // All phone-phone combinations from one phone subwords to both fanout and fanin
+    // All phone-phone combinations from one phone subwords to fanout
     for (auto fphit = phones.begin(); fphit != phones.end(); ++fphit) {
         for (auto sphit = phones.begin(); sphit != phones.end(); ++sphit) {
             string fanint = string("_-") + string(1,*fphit) + string(1,'+') + string(1,*sphit);
             string fanoutt = string(1,*fphit) + string(1,'-') + string(1,*sphit) + string("+_");
             fanout[fanoutt] = -1;
-            fanin[fanint] = -1;
         }
     }
 
