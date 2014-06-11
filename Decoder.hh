@@ -167,6 +167,8 @@ public:
     // Bigram scores conditioned on all possible predecessor words
     void set_bigram_la_scores();
 
+    // Number of nodes with branching
+    int num_branching_nodes();
     // Bigram la scores to all LM nodes, score conditioned on the subword in the same node
     void set_bigram_la_scores_to_lm_nodes();
     // Bigram la maps to word internal HMM nodes

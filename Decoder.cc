@@ -197,7 +197,6 @@ Decoder::read_la_lm(string lmfname)
         cerr << "Setting unigram lookahead scores" << endl;
         int la_state_count = set_unigram_la_scores();
         m_unigram_la_in_use = true;
-        cerr << "Number of distinct lookahead states: " << la_state_count << endl;
     }
 }
 
@@ -1066,6 +1065,23 @@ Decoder::propagate_unigram_la_score(int node_idx,
         if (rait->target_node == START_NODE) continue;
         propagate_unigram_la_score(rait->target_node, score, reverse_arcs, la_score_set, false);
     }
+}
+
+
+int
+Decoder::num_branching_nodes()
+{
+    int num_branching_nodes = 0;
+
+    for (int ni = 0; ni<m_nodes.size(); ni++) {
+        Node &nd = m_nodes[ni];
+        int num_non_self_arcs = 0;
+        for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
+            if (ait->target_node != ni) num_non_self_arcs++;
+        if (num_non_self_arcs > 1) num_branching_nodes++;
+    }
+
+    return num_branching_nodes;
 }
 
 
