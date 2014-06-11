@@ -169,6 +169,9 @@ public:
     int num_branching_nodes();
     // Sets la state indices to nodes, returns number of la states
     int set_la_state_indices_to_nodes();
+    void propagate_la_state_idx(int node_idx,
+                                int la_state_idx,
+                                bool first_node=true);
 
     // Subwords
     std::vector<std::string> m_subwords;

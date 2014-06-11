@@ -1030,7 +1030,7 @@ Decoder::propagate_unigram_la_score(int node_idx,
 
     for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
     {
-        //if (rait->target_node == node_idx) continue;
+        if (rait->target_node == node_idx) continue;
         if (rait->target_node == m_long_silence_loop_start_node && node_idx == m_long_silence_loop_end_node) continue;
         if (rait->target_node == START_NODE) continue;
         propagate_unigram_la_score(rait->target_node, score, reverse_arcs, la_score_set, false);
@@ -1114,9 +1114,46 @@ Decoder::num_branching_nodes()
 }
 
 
-// Sets la state indices to nodes, returns number of la states
-int set_la_state_indices_to_nodes();
+int
+Decoder::set_la_state_indices_to_nodes()
+{
+    propagate_la_state_idx(END_NODE, 0, true);
 
+    set<int> la_state_idxs;
+    for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
+        if (nit->la_state_idx == -1) cerr << "warning: la state idx not set" << endl;
+        la_state_idxs.insert(nit->la_state_idx);
+    }
+    return la_state_idxs.size();
+}
+
+
+void
+Decoder::propagate_la_state_idx(int node_idx,
+                                int la_state_idx,
+                                bool first_node)
+{
+    Node &nd = m_nodes[node_idx];
+    if (nd.la_state_idx != -1) return;
+    nd.la_state_idx = la_state_idx;
+
+    int num_non_self_arcs = 0;
+    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
+        if (ait->target_node != node_idx) num_non_self_arcs++;
+    bool la_state_change = (num_non_self_arcs > 1 || (!first_node && nd.word_id != -1));
+
+    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
+    {
+        if (ait->target_node == node_idx) continue;
+        if (ait->target_node == END_NODE) continue;
+        if (node_idx == m_long_silence_loop_start_node && ait->target_node == m_long_silence_loop_end_node) continue;
+
+        if (la_state_change)
+            propagate_la_state_idx(ait->target_node, ++la_state_idx, true);
+        else
+            propagate_la_state_idx(ait->target_node, la_state_idx, false);
+    }
+}
 
 
 float
