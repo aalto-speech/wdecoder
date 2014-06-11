@@ -157,10 +157,11 @@ public:
                                 bool start_node=true);
 
     // Basic unigram la scores
-    void set_unigram_la_scores();
+    int set_unigram_la_scores(); // Returns number of lookahead states
     void propagate_unigram_la_score(int node_idx,
                                     float score,
                                     std::vector<std::vector<Arc> > &reverse_arcs,
+                                    int &la_score_set,
                                     bool start_node=true);
 
     // Bigram scores conditioned on all possible predecessor words

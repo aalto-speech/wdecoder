@@ -191,11 +191,13 @@ Decoder::read_la_lm(string lmfname)
         set_bigram_la_maps();
         m_bigram_la_in_use = true;
         */
+
     }
     else {
         cerr << "Setting unigram lookahead scores" << endl;
-        set_unigram_la_scores();
+        int la_state_count = set_unigram_la_scores();
         m_unigram_la_in_use = true;
+        cerr << "Number of distinct lookahead states: " << la_state_count << endl;
     }
 }
 
@@ -999,7 +1001,7 @@ bool descending_node_unigram_la_lp_sort(const pair<int, float> &i,
     return (i.second > j.second);
 }
 
-void
+int
 Decoder::set_unigram_la_scores()
 {
     float init_val = -1e20;
@@ -1024,14 +1026,21 @@ Decoder::set_unigram_la_scores()
     vector<vector<Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
 
-    propagate_unigram_la_score(START_NODE, best_lp, reverse_arcs, true);
+    int score_set_count = 0;
+    propagate_unigram_la_score(START_NODE, best_lp, reverse_arcs, score_set_count, true);
     m_nodes[START_NODE].unigram_la_score = best_lp;
 
-    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
-        propagate_unigram_la_score(snit->first, snit->second, reverse_arcs, true);
+    int la_state_count = 0;
+    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit) {
+        score_set_count = 0;
+        propagate_unigram_la_score(snit->first, snit->second, reverse_arcs, score_set_count, true);
+        if (score_set_count > 0) la_state_count++;
+    }
 
     for (unsigned int i=0; i<m_nodes.size(); i++)
         if (m_nodes[i].unigram_la_score < -1e19) cerr << "unigram la problem in node: " << i << endl;
+
+    return la_state_count;
 }
 
 
@@ -1039,12 +1048,14 @@ void
 Decoder::propagate_unigram_la_score(int node_idx,
                                     float score,
                                     vector<vector<Arc> > &reverse_arcs,
+                                    int &la_score_set,
                                     bool start_node)
 {
     Node &node = m_nodes[node_idx];
     if (!start_node) {
         if (node.unigram_la_score > -1e19) return;
         node.unigram_la_score = score;
+        la_score_set++;
         if (node.word_id != -1) return;
     }
 
@@ -1053,7 +1064,7 @@ Decoder::propagate_unigram_la_score(int node_idx,
         //if (rait->target_node == node_idx) continue;
         if (rait->target_node == m_long_silence_loop_start_node && node_idx == m_long_silence_loop_end_node) continue;
         if (rait->target_node == START_NODE) continue;
-        propagate_unigram_la_score(rait->target_node, score, reverse_arcs, false);
+        propagate_unigram_la_score(rait->target_node, score, reverse_arcs, la_score_set, false);
     }
 }
 
