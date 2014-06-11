@@ -87,11 +87,6 @@ Decoder::Decoder()
 
 Decoder::~Decoder()
 {
-    for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit)
-        if (nit->bigram_la_table != nullptr) {
-            delete nit->bigram_la_table;
-            nit->bigram_la_table = nullptr;
-        }
 }
 
 
@@ -179,18 +174,6 @@ Decoder::read_la_lm(string lmfname)
         cerr << "Setting bigram lookahead scores" << endl;
         set_bigram_la_scores();
         m_unigram_la_in_use = true;
-
-        /*
-        if (!m_precomputed_lookahead_tables) {
-            cerr << "Creating bigram lookahead tables" << endl;
-            create_la_tables();
-        }
-        cerr << "Setting bigram lookahead scores" << endl;
-        set_bigram_la_scores_to_lm_nodes();
-        cerr << "Setting bigram lookahead maps" << endl;
-        set_bigram_la_maps();
-        m_bigram_la_in_use = true;
-        */
 
     }
     else {
@@ -594,19 +577,6 @@ Decoder::move_token_to_node(Token token,
     }
 
     if (m_unigram_la_in_use) update_lookahead_prob(token, node.unigram_la_score);
-    else if (m_bigram_la_in_use) {
-        if (node.flags & NODE_BIGRAM_LA_TABLE) {
-            float la_prob = (*(node.bigram_la_table))[token.last_word_id];
-            update_lookahead_prob(token, la_prob);
-        }
-        else if (node.bigram_la_map != nullptr) {
-            //if ((*(node.bigram_la_map)).find(token.last_word_id) == (*(node.bigram_la_map)).end())
-            //    cerr << "la problem" << endl;
-            float la_prob = (*(node.bigram_la_map))[token.last_word_id];
-            update_lookahead_prob(token, la_prob);
-        }
-        else if (node.bigram_la_score != 0.0) update_lookahead_prob(token, node.bigram_la_score);
-    }
 
     // HMM node
     if (node.hmm_state != -1) {
@@ -1068,23 +1038,6 @@ Decoder::propagate_unigram_la_score(int node_idx,
 }
 
 
-int
-Decoder::num_branching_nodes()
-{
-    int num_branching_nodes = 0;
-
-    for (int ni = 0; ni<m_nodes.size(); ni++) {
-        Node &nd = m_nodes[ni];
-        int num_non_self_arcs = 0;
-        for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-            if (ait->target_node != ni) num_non_self_arcs++;
-        if (num_non_self_arcs > 1) num_branching_nodes++;
-    }
-
-    return num_branching_nodes;
-}
-
-
 void
 Decoder::set_bigram_la_scores()
 {
@@ -1133,122 +1086,37 @@ Decoder::set_bigram_la_scores_to_lm_nodes()
             find_successor_words(i, word_ids);
             float dummy = 0.0;
             int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], dummy);
-            node.bigram_la_score = -1e20;
+            node.unigram_la_score = -1e20;
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
                 float la_lm_prob = 0.0;
                 m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-                node.bigram_la_score = max(node.bigram_la_score, la_lm_prob);
+                node.unigram_la_score = max(node.unigram_la_score, la_lm_prob);
             }
-            node.unigram_la_score = node.bigram_la_score;
         }
     }
 }
 
 
-void
-Decoder::set_bigram_la_maps()
+int
+Decoder::num_branching_nodes()
 {
+    int num_branching_nodes = 0;
 
-    vector<vector<Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
-
-    mark_initial_nodes(1000);
-
-    int map_count = 0;
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-
-        Node &node = m_nodes[i];
-        if (i == START_NODE) continue;
-        if (i == END_NODE) continue;
-        if (node.word_id != -1) continue;
-        if (node.flags) continue;
-
-        set<int> predecessor_words;
-        find_predecessor_words(i, predecessor_words, reverse_arcs);
-
-        set<int> successor_words;
-        find_successor_words(i, successor_words);
-
-        node.bigram_la_map = new map<int, float>();
-        for (auto pwit = predecessor_words.begin(); pwit != predecessor_words.end(); ++pwit) {
-            float dummy = 0.0;
-            int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy);
-            (*(node.bigram_la_map))[*pwit] = -1e20;
-            for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
-                float la_lm_prob = 0.0;
-                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*swit], la_lm_prob);
-                (*(node.bigram_la_map))[*pwit] = max((*(node.bigram_la_map))[*pwit], la_lm_prob);
-            }
-        }
-
-        map_count++;
+    for (int ni = 0; ni<m_nodes.size(); ni++) {
+        Node &nd = m_nodes[ni];
+        int num_non_self_arcs = 0;
+        for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
+            if (ait->target_node != ni) num_non_self_arcs++;
+        if (num_non_self_arcs > 1) num_branching_nodes++;
     }
 
-    cerr << "Set bigram lookahead map to " << map_count << " nodes." << endl;
+    return num_branching_nodes;
 }
 
 
-void
-Decoder::create_la_tables(bool fan_out_dummy,
-                          bool fan_in_dummy,
-                          bool initial,
-                          bool silence,
-                          bool all_cw)
-{
-    vector<int> precomputed_lm_nodes(m_subwords.size());
-    for (unsigned int swidx = 0; swidx < m_subwords.size(); swidx++) {
-        if ((int)swidx == m_sentence_end_symbol_idx) continue;
-        float dummy;
-        int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[swidx], dummy);
-        lm_node = m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[m_word_boundary_symbol_idx], dummy);
-        precomputed_lm_nodes[swidx] = lm_node;
-    }
+// Sets la state indices to nodes, returns number of la states
+int set_la_state_indices_to_nodes();
 
-    int la_table_node_count = 0;
-    map<set<int>, int> finished_la_tables;
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-
-        Node &node = m_nodes[i];
-
-        bool la_table_for_this_node = false;
-        if (i == START_NODE) la_table_for_this_node = true;
-        if (fan_out_dummy && (node.flags & NODE_FAN_OUT_DUMMY)) la_table_for_this_node = true;
-        if (fan_in_dummy && (node.flags & NODE_FAN_IN_DUMMY)) la_table_for_this_node = true;
-        if (initial && (node.flags & NODE_INITIAL)) la_table_for_this_node = true;
-        if (silence && (node.flags & NODE_SILENCE)) la_table_for_this_node = true;
-        if (all_cw && (node.flags & NODE_CW)) la_table_for_this_node = true;
-        if (!la_table_for_this_node) continue;
-
-        if (m_debug) cerr << "setting la table to node: " << i << "..";
-
-        node.bigram_la_table = new vector<float>(m_subwords.size(), -1e20);
-        node.flags |= NODE_BIGRAM_LA_TABLE;
-        set<int> word_ids;
-        find_successor_words(i, word_ids);
-        la_table_node_count++;
-
-        if (finished_la_tables.find(word_ids) != finished_la_tables.end()) {
-            int prev_node_id = finished_la_tables[word_ids];
-            (*(node.bigram_la_table)) = (*(m_nodes[prev_node_id].bigram_la_table));
-            if (m_debug) cerr << endl << "used existing table" << endl;
-            continue;
-        }
-
-        for (unsigned int swidx = 0; swidx < m_subwords.size(); swidx++) {
-            if ((int)swidx == m_sentence_end_symbol_idx) continue;
-            int lm_node = precomputed_lm_nodes[swidx];
-            for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-                float la_lm_prob = 0.0;
-                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-                (*(node.bigram_la_table))[swidx] = max((*(node.bigram_la_table))[swidx], la_lm_prob);
-            }
-        }
-
-        finished_la_tables[word_ids] = i;
-        if (m_debug) cerr << endl << "created a new table" << endl;
-        if (m_debug) cerr << "table count " << la_table_node_count << endl;
-    }
-}
 
 
 float
@@ -1305,46 +1173,6 @@ Decoder::score_state_path(string lnafname,
 
     m_lna_reader.close();
     return total_score;
-}
-
-
-void
-Decoder::write_bigram_la_tables(string blafname)
-{
-    ofstream bloutf(blafname);
-    if (!bloutf) throw string("Problem opening file for bigram lookahead scores.");
-
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-        Node &node = m_nodes[i];
-        if (node.bigram_la_table != nullptr) {
-            bloutf << i;
-            for (unsigned int n=0; n<node.bigram_la_table->size(); n++)
-                bloutf << " " << (*(node.bigram_la_table))[n];
-            bloutf << endl;
-        }
-    }
-}
-
-
-void
-Decoder::read_bigram_la_tables(string blafname)
-{
-    ifstream blinf(blafname);
-    if (!blinf) throw string("Problem opening bigram lookahead score file.");
-
-    string line;
-    while (getline(blinf, line)) {
-        int node_idx;
-        float val;
-        stringstream ss(line);
-        ss >> node_idx;
-        m_nodes[node_idx].bigram_la_table = new vector<float>(m_subwords.size());
-        m_nodes[node_idx].flags |= NODE_BIGRAM_LA_TABLE;
-        int curr_sw_idx = 0;
-        while (ss >> val) (*(m_nodes[node_idx].bigram_la_table))[curr_sw_idx] = val;
-    }
-
-    m_precomputed_lookahead_tables = true;
 }
 
 

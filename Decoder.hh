@@ -33,17 +33,13 @@ public:
         Node()
             : word_id(-1), hmm_state(-1),
               flags(0), unigram_la_score(0.0),
-              bigram_la_score(0.0),
-              bigram_la_table(nullptr),
-              bigram_la_map(nullptr) { }
+              la_state_idx(-1) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         int flags;
         std::vector<Arc> arcs;
         float unigram_la_score;
-        float bigram_la_score;
-        std::vector<float> *bigram_la_table;
-        std::map<int, float> *bigram_la_map;
+        int la_state_idx;
     };
 
     class Token;
@@ -166,22 +162,13 @@ public:
 
     // Bigram scores conditioned on all possible predecessor words
     void set_bigram_la_scores();
+    // Bigram la scores to all LM nodes, score conditioned on the subword in the same node
+    void set_bigram_la_scores_to_lm_nodes();
 
     // Number of nodes with branching
     int num_branching_nodes();
-    // Bigram la scores to all LM nodes, score conditioned on the subword in the same node
-    void set_bigram_la_scores_to_lm_nodes();
-    // Bigram la maps to word internal HMM nodes
-    void set_bigram_la_maps();
-    // Full bigram la tables to CW, silence and initial HMM nodes
-    void create_la_tables(bool fan_out_dummy=true,
-                          bool fan_in_dummy=true,
-                          bool initial=true,
-                          bool silence=true,
-                          bool all_cw=false);
-    void write_bigram_la_tables(std::string blafname);
-    void read_bigram_la_tables(std::string blafname);
-
+    // Sets la state indices to nodes, returns number of la states
+    int set_la_state_indices_to_nodes();
 
     // Subwords
     std::vector<std::string> m_subwords;
