@@ -1119,11 +1119,15 @@ Decoder::set_la_state_indices_to_nodes()
 {
     propagate_la_state_idx(END_NODE, 0, true);
 
-    set<int> la_state_idxs;
+    map<int, int> la_state_idxs;
+    int new_idx = 0;
     for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
         if (nit->la_state_idx == -1) cerr << "warning: la state idx not set" << endl;
-        la_state_idxs.insert(nit->la_state_idx);
+        if (la_state_idxs.find(nit->la_state_idx) == la_state_idxs.end())
+            la_state_idxs[nit->la_state_idx] = new_idx++;
+        nit->la_state_idx = la_state_idxs[nit->la_state_idx];
     }
+
     return la_state_idxs.size();
 }
 
