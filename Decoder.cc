@@ -169,14 +169,14 @@ Decoder::read_la_lm(string lmfname)
     m_la_lm.read_arpa(lmfname);
     set_subword_id_la_ngram_symbol_mapping();
 
-    if (m_la_lm.order() > 1) {
-
+    if (m_la_lm.order() == 2) {
         cerr << "Setting bigram lookahead scores" << endl;
-        set_bigram_la_scores();
-        m_unigram_la_in_use = true;
+        set_la_state_indices_to_nodes();
+        set_bigram_la_tables();
+        m_bigram_la_in_use = true;
 
     }
-    else {
+    else if (m_la_lm.order() == 1) {
         cerr << "Setting unigram lookahead scores" << endl;
         int la_state_count = set_unigram_la_scores();
         m_unigram_la_in_use = true;
@@ -1156,6 +1156,52 @@ Decoder::propagate_la_state_idx(int node_idx,
             propagate_la_state_idx(ait->target_node, ++la_state_idx, true);
         else
             propagate_la_state_idx(ait->target_node, la_state_idx, false);
+    }
+}
+
+
+void
+Decoder::set_bigram_la_tables()
+{
+    int max_la_state = 0;
+    for (unsigned int i=0; i<m_nodes.size(); i++)
+        max_la_state = max(max_la_state, m_nodes[i].la_state_idx);
+    m_bigram_la_scores.resize(max_la_state+1);
+    for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
+        (*blsit).resize(m_subwords.size(), -1e10);
+
+    vector<int> precomputed_lm_nodes(m_subwords.size());
+    for (unsigned int swidx = 0; swidx < m_subwords.size(); swidx++) {
+        float dummy;
+        int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[swidx], dummy);
+        precomputed_lm_nodes[swidx] = lm_node;
+    }
+
+    set<int> processed_la_states;
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
+
+        //if (i % 1000 == 0)
+        cerr << "setting bigram score to node i: " << i << ", set tables: " << processed_la_states.size() << endl;
+
+
+        Node &node = m_nodes[i];
+        int la_state_idx = node.la_state_idx;
+        if (processed_la_states.find(la_state_idx) != processed_la_states.end()) continue;
+
+        set<int> word_ids;
+        find_successor_words(i, word_ids);
+
+        for (unsigned int swidx = 0; swidx < m_subwords.size(); swidx++) {
+            if ((int)swidx == m_sentence_end_symbol_idx) continue;
+            int lm_node = precomputed_lm_nodes[swidx];
+            for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
+                float la_lm_prob = 0.0;
+                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
+                m_bigram_la_scores[la_state_idx][swidx] = max(m_bigram_la_scores[la_state_idx][swidx], la_lm_prob);
+            }
+        }
+
+        processed_la_states.insert(la_state_idx);
     }
 }
 

@@ -172,6 +172,7 @@ public:
     void propagate_la_state_idx(int node_idx,
                                 int la_state_idx,
                                 bool first_node=true);
+    void set_bigram_la_tables();
 
     // Subwords
     std::vector<std::string> m_subwords;
@@ -193,6 +194,7 @@ public:
     // Lookahead language model
     Ngram m_la_lm;
     std::vector<int> m_subword_id_to_la_ngram_symbol;
+    std::vector<std::vector<float> > m_bigram_la_scores;
 
     // Audio reader
     LnaReaderCircular m_lna_reader;
