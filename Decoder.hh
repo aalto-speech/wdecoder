@@ -18,8 +18,6 @@
 class Decoder {
 
 public:
-    static const int WORD_BOUNDARY_IDENTIFIER;
-    int SENTENCE_END_WORD_ID;
 
     class Arc {
     public:
@@ -147,6 +145,7 @@ public:
 
     // Lookahead related functions
     void get_reverse_arcs(std::vector<std::vector<Arc> > &reverse_arcs);
+    void find_successor_words(int node_idx, std::vector<int> &word_ids);
     void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=true);
     void find_predecessor_words(int node_idx, std::set<int> &word_ids,
                                 const std::vector<std::vector<Arc> > &reverse_arcs,
@@ -169,10 +168,13 @@ public:
     int num_branching_nodes();
     // Sets la state indices to nodes, returns number of la states
     int set_la_state_indices_to_nodes();
+    int set_la_state_successor_lists();
     void propagate_la_state_idx(int node_idx,
                                 int la_state_idx,
                                 bool first_node=true);
     void set_bigram_la_tables();
+    void compute_bigram_la_score(int la_state_idx,
+                                 int word_id);
 
     // Subwords
     std::vector<std::string> m_subwords;
@@ -195,6 +197,7 @@ public:
     Ngram m_la_lm;
     std::vector<int> m_subword_id_to_la_ngram_symbol;
     std::vector<std::vector<float> > m_bigram_la_scores;
+    std::vector<std::vector<int> > m_la_state_successor_words;
 
     // Audio reader
     LnaReaderCircular m_lna_reader;
