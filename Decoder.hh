@@ -171,6 +171,7 @@ public:
     int set_la_state_successor_lists();
     void propagate_la_state_idx(int node_idx,
                                 int la_state_idx,
+                                int &max_state_idx,
                                 bool first_node=true);
     void set_bigram_la_tables();
     void compute_bigram_la_score(int la_state_idx,

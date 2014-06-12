@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 #include "decodertest.hh"
 
@@ -31,10 +32,11 @@ void decodertest::DecoderTest1(void)
     d.set_la_state_successor_lists();
 
     for (int i=0; i<d.m_nodes.size(); i++) {
+        Decoder::Node &node = d.m_nodes[i];
         int la_state_idx = d.m_nodes[i].la_state_idx;
-        set<int> &computed_successors = d.m_la_state_successor_words[la_state_idx];
+        set<int> &la_state_successors = d.m_la_state_successor_words[la_state_idx];
         set<int> successors;
         d.find_successor_words(i, successors, true);
-        CPPUNIT_ASSERT( computed_successors == successors );
+        CPPUNIT_ASSERT( la_state_successors == successors );
     }
 }

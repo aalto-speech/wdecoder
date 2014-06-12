@@ -1138,7 +1138,8 @@ Decoder::num_branching_nodes()
 int
 Decoder::set_la_state_indices_to_nodes()
 {
-    propagate_la_state_idx(END_NODE, 0, true);
+    int max_state_idx = 0;
+    propagate_la_state_idx(END_NODE, 0, max_state_idx, true);
 
     map<int, int> la_state_idxs;
     int new_idx = 0;
@@ -1150,6 +1151,43 @@ Decoder::set_la_state_indices_to_nodes()
     }
 
     return la_state_idxs.size();
+}
+
+
+void
+Decoder::propagate_la_state_idx(int node_idx,
+                                int la_state_idx,
+                                int &max_state_idx,
+                                bool first_node)
+{
+    Node &nd = m_nodes[node_idx];
+    if (nd.la_state_idx != -1) return;
+
+    if (!first_node && nd.word_id != -1) {
+        nd.la_state_idx = ++max_state_idx;
+        la_state_idx = nd.la_state_idx;
+    }
+    else
+        nd.la_state_idx = la_state_idx;
+
+    int num_non_self_arcs = 0;
+    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
+        if (ait->target_node != node_idx) num_non_self_arcs++;
+    bool la_state_change = num_non_self_arcs > 1;
+
+    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
+    {
+        if (ait->target_node == node_idx) continue;
+        if (ait->target_node == END_NODE) continue;
+        if (node_idx == m_long_silence_loop_start_node && ait->target_node == m_long_silence_loop_end_node) continue;
+
+        if (la_state_change) {
+            max_state_idx++;
+            propagate_la_state_idx(ait->target_node, max_state_idx, max_state_idx, false);
+        }
+        else
+            propagate_la_state_idx(ait->target_node, la_state_idx, max_state_idx, false);
+    }
 }
 
 
@@ -1170,34 +1208,6 @@ Decoder::set_la_state_successor_lists()
     }
 
     return m_la_state_successor_words.size();
-}
-
-
-void
-Decoder::propagate_la_state_idx(int node_idx,
-                                int la_state_idx,
-                                bool first_node)
-{
-    Node &nd = m_nodes[node_idx];
-    if (nd.la_state_idx != -1) return;
-    nd.la_state_idx = la_state_idx;
-
-    int num_non_self_arcs = 0;
-    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-        if (ait->target_node != node_idx) num_non_self_arcs++;
-    bool la_state_change = (num_non_self_arcs > 1 || (!first_node && nd.word_id != -1));
-
-    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-    {
-        if (ait->target_node == node_idx) continue;
-        if (ait->target_node == END_NODE) continue;
-        if (node_idx == m_long_silence_loop_start_node && ait->target_node == m_long_silence_loop_end_node) continue;
-
-        if (la_state_change)
-            propagate_la_state_idx(ait->target_node, ++la_state_idx, false);
-        else
-            propagate_la_state_idx(ait->target_node, la_state_idx, false);
-    }
 }
 
 
