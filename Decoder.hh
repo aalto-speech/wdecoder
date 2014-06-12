@@ -197,7 +197,7 @@ public:
     Ngram m_la_lm;
     std::vector<int> m_subword_id_to_la_ngram_symbol;
     std::vector<std::vector<float> > m_bigram_la_scores;
-    std::vector<std::vector<int> > m_la_state_successor_words;
+    std::vector<std::set<int> > m_la_state_successor_words;
 
     // Audio reader
     LnaReaderCircular m_lna_reader;

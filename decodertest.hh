@@ -26,7 +26,7 @@ protected:
     void DecoderTest1(void);
 
 private:
-
+    Decoder d;
 };
 
 #endif
