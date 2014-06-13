@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <ctime>
 
 #include "decodertest.hh"
 
@@ -28,6 +29,9 @@ void decodertest::tearDown (void)
 
 void decodertest::DecoderTest1(void)
 {
+    time_t startt, endt;
+    time(&startt);
+
     d.set_la_state_indices_to_nodes();
     d.set_la_state_successor_lists();
 
@@ -38,8 +42,7 @@ void decodertest::DecoderTest1(void)
                   ++swit)
             la_successor_words[i].insert(*swit);
 
-    cerr << "checking" << endl;
-    for (int i=0; i<d.m_nodes.size(); i+=10) {
+    for (int i=0; i<d.m_nodes.size(); i+=50) {
         Decoder::Node &node = d.m_nodes[i];
         int la_state_idx = d.m_nodes[i].la_state_idx;
         set<int> &la_state_successors = la_successor_words[la_state_idx];
@@ -47,4 +50,8 @@ void decodertest::DecoderTest1(void)
         d.find_successor_words(i, successors, true);
         CPPUNIT_ASSERT( la_state_successors == successors );
     }
+
+    time(&endt);
+    float timediff = difftime (endt, startt);
+    //cerr << timediff << endl;
 }

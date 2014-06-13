@@ -1138,44 +1138,39 @@ Decoder::num_branching_nodes()
 int
 Decoder::set_la_state_indices_to_nodes()
 {
-    // Propagate initial la indices
-    cerr << "propagating" << endl;
+    // Propagate initial la state indices
     int max_state_idx = 0;
     propagate_la_state_idx(END_NODE, 0, max_state_idx, true);
 
-    // Remap from zero to the max number of la states
-    cerr << "remapping" << endl;
-    map<int, int> remapped_la_state_idxs;
-    set<int> example_la_state_nodes;
-    int new_idx = 0;
+    // Find one node for each initial la state
+    map<int, int> example_la_state_nodes;
     for (int i=0; i<m_nodes.size(); i++) {
         Node &nd = m_nodes[i];
-        if (nd.la_state_idx == -1) cerr << "warning: la state idx not set" << endl;
-        if (remapped_la_state_idxs.find(nd.la_state_idx) == remapped_la_state_idxs.end()) {
-            remapped_la_state_idxs[nd.la_state_idx] = new_idx++;
-            example_la_state_nodes.insert(i);
-        }
-        nd.la_state_idx = remapped_la_state_idxs[nd.la_state_idx];
+        example_la_state_nodes[nd.la_state_idx] = i;
     }
 
-    cerr << "initial la state count: " << remapped_la_state_idxs.size() << endl;
-    cerr << "computing successors for la states" << endl;
-
-    set<set<int> > real_la_state_succs;
-    int counter = 0;
+    // Find real la states
+    map<set<int>, set<int> > real_la_state_succs;
     for (auto nit = example_la_state_nodes.begin(); nit != example_la_state_nodes.end(); ++nit) {
-        if (counter % 100 == 0) cerr << counter << endl;
-        counter++;
-        int la_state_idx = m_nodes[*nit].la_state_idx;
         set<int> curr_succs;
-        find_successor_words(*nit, curr_succs, true);
-        real_la_state_succs.insert(curr_succs);
+        find_successor_words(nit->second, curr_succs, true);
+        real_la_state_succs[curr_succs].insert(nit->first);
     }
 
+    // Remap the indices
+    map<int, int> la_state_remapping;
+    int reidx = 0;
+    for (auto ssit = real_la_state_succs.begin(); ssit != real_la_state_succs.end(); ++ssit) {
+        for (auto idxit = ssit->second.begin(); idxit != ssit->second.end(); ++idxit)
+            la_state_remapping[*idxit] = reidx;
+        reidx++;
+    }
+    for (int i=0; i<m_nodes.size(); i++) {
+        Node &nd = m_nodes[i];
+        nd.la_state_idx = la_state_remapping[nd.la_state_idx];
+    }
 
-    cerr << "real la state count: " << real_la_state_succs.size() << endl;
-
-    return remapped_la_state_idxs.size();
+    return real_la_state_succs.size();
 }
 
 
