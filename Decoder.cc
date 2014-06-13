@@ -168,6 +168,7 @@ Decoder::read_la_lm(string lmfname)
     if (m_la_lm.order() == 2) {
         cerr << "Setting la state indices and successor lists" << endl;
         int la_state_count = set_la_state_indices_to_nodes();
+        cerr << "number of la states: " << la_state_count << endl;
         set_la_state_successor_lists();
         m_bigram_la_scores.resize(m_la_state_successor_words.size());
         for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
@@ -577,14 +578,15 @@ Decoder::move_token_to_node(Token token,
     }
 
     if (m_unigram_la_in_use) update_lookahead_prob(token, node.unigram_la_score);
-    else if (m_bigram_la_in_use) {
-        if (m_bigram_la_scores[node.la_state_idx][token.last_word_id] < -1e10)
-            compute_bigram_la_score(node.la_state_idx, token.last_word_id);
-        update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
-    }
 
     // HMM node
     if (node.hmm_state != -1) {
+
+        if (m_bigram_la_in_use) {
+            if (m_bigram_la_scores[node.la_state_idx][token.last_word_id] < -1e10)
+                compute_bigram_la_score(node.la_state_idx, token.last_word_id);
+            update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
+        }
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
         if (token.am_log_prob < (m_best_am_log_prob-m_acoustic_beam)) {
@@ -614,12 +616,18 @@ Decoder::move_token_to_node(Token token,
         token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
 
+        token.last_word_id = node.word_id;
+        if (m_bigram_la_in_use && node.word_id != m_sentence_end_symbol_idx) {
+            if (m_bigram_la_scores[node.la_state_idx][token.last_word_id] < -1e10)
+                compute_bigram_la_score(node.la_state_idx, token.last_word_id);
+            update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
+        }
+
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
         }
 
-        token.last_word_id = node.word_id;
         advance_in_history(token, node.word_id);
         token.word_end = true;
 
@@ -627,12 +635,11 @@ Decoder::move_token_to_node(Token token,
             token.lm_node = m_ngram_state_sentence_begin;
             advance_in_history(token, m_word_boundary_symbol_idx);
             token.last_word_id = m_word_boundary_symbol_idx;
-        }
-
-        if (m_bigram_la_in_use) {
-            if (m_bigram_la_scores[node.la_state_idx][token.last_word_id] < -1e10)
-                compute_bigram_la_score(node.la_state_idx, token.last_word_id);
-            update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
+            if (m_bigram_la_in_use) {
+                if (m_bigram_la_scores[node.la_state_idx][token.last_word_id] < -1e10)
+                    compute_bigram_la_score(node.la_state_idx, token.last_word_id);
+                update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
+            }
         }
     }
 
