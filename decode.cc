@@ -224,9 +224,6 @@ int main(int argc, char* argv[])
             exit(0);
         }
 
-        cerr << "num branching nodes: " << d.num_branching_nodes() << endl;
-        cerr << "num la states: " << d.set_la_state_indices_to_nodes() << endl;
-
         if (config["result-file"].specified) {
             string resultfname = config["result-file"].get_str();
             cerr << "Base filename for results: " << resultfname << endl;

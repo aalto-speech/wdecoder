@@ -166,14 +166,14 @@ Decoder::read_la_lm(string lmfname)
     set_subword_id_la_ngram_symbol_mapping();
 
     if (m_la_lm.order() == 2) {
-        cerr << "Setting bigram lookahead scores" << endl;
-        set_la_state_indices_to_nodes();
+        cerr << "Setting la state indices and successor lists" << endl;
+        int la_state_count = set_la_state_indices_to_nodes();
         set_la_state_successor_lists();
-        //set_bigram_la_tables();
         m_bigram_la_scores.resize(m_la_state_successor_words.size());
         for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
             (*blsit).resize(m_subwords.size(), -1e20);
         m_bigram_la_in_use = true;
+        //set_bigram_la_tables();
     }
     else if (m_la_lm.order() == 1) {
         cerr << "Setting unigram lookahead scores" << endl;
@@ -1138,19 +1138,44 @@ Decoder::num_branching_nodes()
 int
 Decoder::set_la_state_indices_to_nodes()
 {
+    // Propagate initial la indices
+    cerr << "propagating" << endl;
     int max_state_idx = 0;
     propagate_la_state_idx(END_NODE, 0, max_state_idx, true);
 
-    map<int, int> la_state_idxs;
+    // Remap from zero to the max number of la states
+    cerr << "remapping" << endl;
+    map<int, int> remapped_la_state_idxs;
+    set<int> example_la_state_nodes;
     int new_idx = 0;
-    for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
-        if (nit->la_state_idx == -1) cerr << "warning: la state idx not set" << endl;
-        if (la_state_idxs.find(nit->la_state_idx) == la_state_idxs.end())
-            la_state_idxs[nit->la_state_idx] = new_idx++;
-        nit->la_state_idx = la_state_idxs[nit->la_state_idx];
+    for (int i=0; i<m_nodes.size(); i++) {
+        Node &nd = m_nodes[i];
+        if (nd.la_state_idx == -1) cerr << "warning: la state idx not set" << endl;
+        if (remapped_la_state_idxs.find(nd.la_state_idx) == remapped_la_state_idxs.end()) {
+            remapped_la_state_idxs[nd.la_state_idx] = new_idx++;
+            example_la_state_nodes.insert(i);
+        }
+        nd.la_state_idx = remapped_la_state_idxs[nd.la_state_idx];
     }
 
-    return la_state_idxs.size();
+    cerr << "initial la state count: " << remapped_la_state_idxs.size() << endl;
+    cerr << "computing successors for la states" << endl;
+
+    set<set<int> > real_la_state_succs;
+    int counter = 0;
+    for (auto nit = example_la_state_nodes.begin(); nit != example_la_state_nodes.end(); ++nit) {
+        if (counter % 100 == 0) cerr << counter << endl;
+        counter++;
+        int la_state_idx = m_nodes[*nit].la_state_idx;
+        set<int> curr_succs;
+        find_successor_words(*nit, curr_succs, true);
+        real_la_state_succs.insert(curr_succs);
+    }
+
+
+    cerr << "real la state count: " << real_la_state_succs.size() << endl;
+
+    return remapped_la_state_idxs.size();
 }
 
 
@@ -1204,7 +1229,7 @@ Decoder::set_la_state_successor_lists()
     for (int i=0; i<m_nodes.size(); ++i) {
         Node &nd = m_nodes[i];
         if (m_la_state_successor_words[nd.la_state_idx].size() > 0) continue;
-        find_successor_words(i, m_la_state_successor_words[nd.la_state_idx], true);
+        find_successor_words(i, m_la_state_successor_words[nd.la_state_idx]);
     }
 
     return m_la_state_successor_words.size();
@@ -1218,7 +1243,7 @@ Decoder::compute_bigram_la_score(int la_state_idx,
     float dummy;
     int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
 
-    set<int> &word_ids = m_la_state_successor_words[la_state_idx];
+    vector<int> &word_ids = m_la_state_successor_words[la_state_idx];
     for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
         float la_lm_prob = 0.0;
         m_la_lm.score(la_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
