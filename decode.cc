@@ -171,7 +171,8 @@ int main(int argc, char* argv[])
     ('h', "help", "", "", "display help")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('f', "result-file=STRING", "arg", "", "Base filename for results (.rec and .log)")
-    ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model");
+    ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
+    ('t', "lookahead-tables", "", "", "Set bigram lookahead tables");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
@@ -207,9 +208,10 @@ int main(int argc, char* argv[])
         cerr << "node count: " << d.m_nodes.size() << endl;
 
         if (config["lookahead-model"].specified) {
+            bool la_tables = config["lookahead-tables"].specified;
             string lalmfname = config["lookahead-model"].get_str();
             cerr << "Reading lookahead model: " << lalmfname << endl;
-            d.read_la_lm(lalmfname);
+            d.read_la_lm(lalmfname, la_tables);
         }
 
         string lnalistfname = config.arguments[5];

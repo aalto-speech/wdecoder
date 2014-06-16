@@ -160,12 +160,13 @@ Decoder::read_lm(string lmfname)
 
 
 void
-Decoder::read_la_lm(string lmfname)
+Decoder::read_la_lm(string lmfname, bool la_tables)
 {
     m_la_lm.read_arpa(lmfname);
     set_subword_id_la_ngram_symbol_mapping();
 
     if (m_la_lm.order() == 2) {
+        if (la_tables) {
         cerr << "Setting la state indices and successor lists" << endl;
         int la_state_count = set_la_state_indices_to_nodes();
         cerr << "number of la states: " << la_state_count << endl;
@@ -174,7 +175,11 @@ Decoder::read_la_lm(string lmfname)
         for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
             (*blsit).resize(m_subwords.size(), -1e20);
         m_bigram_la_in_use = true;
-        //set_bigram_la_tables();
+        }
+        else {
+            set_bigram_la_scores();
+            m_unigram_la_in_use = true;
+        }
     }
     else if (m_la_lm.order() == 1) {
         cerr << "Setting unigram lookahead scores" << endl;
@@ -1273,10 +1278,6 @@ Decoder::set_bigram_la_tables()
 
     set<int> processed_la_states;
     for (unsigned int i=0; i<m_nodes.size(); i++) {
-
-        //if (i % 1000 == 0)
-        cerr << "setting bigram score to node i: " << i << ", set tables: " << processed_la_states.size() << endl;
-
 
         Node &node = m_nodes[i];
         int la_state_idx = node.la_state_idx;

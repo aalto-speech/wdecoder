@@ -90,7 +90,7 @@ public:
     void read_duration_model(std::string durfname);
     void read_noway_lexicon(std::string lexfname);
     void read_lm(std::string lmfname);
-    void read_la_lm(std::string lmfname);
+    void read_la_lm(std::string lmfname, bool la_tables);
     void read_dgraph(std::string graphfname);
 
     void recognize_lna_file(std::string lnafname,
