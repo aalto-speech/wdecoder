@@ -27,11 +27,13 @@ void create_word_graph(DecoderGraph &dg,
                        std::map<std::string, std::vector<std::string> > &word_segs);
 void tie_subword_suffixes(std::vector<SubwordNode> &nodes);
 void print_word_graph(DecoderGraph &dg,
-                      std::vector<SubwordNode> &nodes);
+                      std::vector<SubwordNode> &nodes,
+                      std::ostream &outf=std::cout);
 void print_word_graph(DecoderGraph &dg,
                       std::vector<SubwordNode> &nodes,
                       std::vector<int> path,
-                      int node_idx=START_NODE);
+                      int node_idx=START_NODE,
+                      std::ostream &outf=std::cout);
 int reachable_word_graph_nodes(std::vector<SubwordNode> &nodes);
 void reachable_word_graph_nodes(std::vector<SubwordNode> &nodes,
                                 std::set<int> &node_idxs,

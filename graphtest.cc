@@ -919,10 +919,10 @@ void graphtest::GraphTest28(void)
     vector<graphbuilder1::SubwordNode> swnodes;
     graphbuilder1::create_word_graph(dg, swnodes, word_segs);
     tie_subword_suffixes(swnodes);
+
     vector<DecoderGraph::Node> nodes;
     expand_subword_nodes(dg, swnodes, nodes);
     prune_unreachable_nodes(nodes);
-    cerr << endl << "real-like scenario with 500 words:" << endl;
     cerr << "initial expansion, number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
     vector<DecoderGraph::Node> cw_nodes;

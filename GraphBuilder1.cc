@@ -86,9 +86,9 @@ tie_subword_suffixes(vector<SubwordNode> &nodes)
         vector<int> empty;
 
         for (auto sit = node.in_arcs.begin(); sit != node.in_arcs.end(); ++sit) {
-            if (nodes[sit->second].connected_from_start_node
-                    || nodes[sit->second].out_arcs.size() > 1) continue;
-            //if (nodes[sit->second].out_arcs.size() > 1) continue;
+            //if (nodes[sit->second].connected_from_start_node
+            //        || nodes[sit->second].out_arcs.size() > 1) continue;
+            if (nodes[sit->second].out_arcs.size() > 1) continue;
             suffix_counts[sit->first] += 1;
         }
 
@@ -99,23 +99,28 @@ tie_subword_suffixes(vector<SubwordNode> &nodes)
             nodes.resize(nodes.size()+1);
             nodes.back().connected_from_start_node = false;
             nodes.back().subword_ids = sit->first;
-            nodes.back().out_arcs[empty] = END_NODE;
+            //if (i == END_NODE)
+            //    nodes.back().out_arcs[empty] = END_NODE;
             nodes_to_process.insert(nodes.size()-1);
 
             auto er = node.in_arcs.equal_range(sit->first);
             for (auto erit=er.first; erit != er.second; ++erit)
             {
                 // Tie only real suffixes ie. not connected from start node
-                if ((!(nodes[erit->second].connected_from_start_node))
-                    && nodes[erit->second].out_arcs.size() == 1)
-                //if (nodes[erit->second].out_arcs.size() == 1)
+                //if ((!(nodes[erit->second].connected_from_start_node))
+                //    && nodes[erit->second].out_arcs.size() == 1)
+                if (nodes[erit->second].out_arcs.size() == 1)
                 {
                     int src_node_idx = nodes[erit->second].in_arcs.begin()->second;
                     nodes[src_node_idx].out_arcs[erit->first] = nodes.size()-1;
                     nodes.back().in_arcs.insert(make_pair(nodes[src_node_idx].subword_ids, src_node_idx));
+                    for (auto oait = nodes[erit->second].out_arcs.begin();
+                         oait != nodes[erit->second].out_arcs.end(); ++oait)
+                        nodes.back().out_arcs[oait->first] = oait->second;
                     nodes[erit->second].subword_ids.clear();
                     nodes[erit->second].in_arcs.clear();
                     nodes[erit->second].out_arcs.clear();
+                    nodes[erit->second].triphones.clear();
                 }
             }
 
@@ -131,7 +136,8 @@ void
 print_word_graph(DecoderGraph &dg,
                  vector<SubwordNode> &nodes,
                  vector<int> path,
-                 int node_idx)
+                 int node_idx,
+                 std::ostream &outf)
 {
     path.push_back(node_idx);
 
@@ -141,16 +147,16 @@ print_word_graph(DecoderGraph &dg,
                 vector<int> subword_ids = nodes[path[i]].subword_ids;
                 if (subword_ids.size() == 0) continue;
                 for (unsigned int swi=0; swi<subword_ids.size(); ++swi) {
-                    if (swi>0) cout << " ";
-                    if (subword_ids[swi] >= 0) cout << dg.m_subwords[subword_ids[swi]];
+                    if (swi>0) outf << " ";
+                    if (subword_ids[swi] >= 0) outf << dg.m_subwords[subword_ids[swi]];
                 }
-                if (path[i] >= 0) cout << " (" << path[i] << ")";
-                if (i+1 != path.size()) cout << " ";
+                if (path[i] >= 0) outf << " (" << path[i] << ")";
+                if (i+1 != path.size()) outf << " ";
             }
-            cout << endl;
+            outf << endl;
         }
         else {
-            print_word_graph(dg, nodes, path, ait->second);
+            print_word_graph(dg, nodes, path, ait->second, outf);
         }
     }
 }
@@ -158,10 +164,11 @@ print_word_graph(DecoderGraph &dg,
 
 void
 print_word_graph(DecoderGraph &dg,
-                 vector<SubwordNode> &nodes)
+                 vector<SubwordNode> &nodes,
+                 std::ostream &outf)
 {
     vector<int> path;
-    print_word_graph(dg, nodes, path, START_NODE);
+    print_word_graph(dg, nodes, path, START_NODE, outf);
 }
 
 
