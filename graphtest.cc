@@ -907,6 +907,58 @@ void graphtest::GraphTest27(void)
 }
 
 
+// Test cross-word network creation and connecting
+// More like a real scenario with 500 words with all tying etc.
+// Print out some numbers
+void graphtest::GraphTest28(void)
+{
+    DecoderGraph dg;
+    segname = "data/bg.segs";
+    read_fixtures(dg);
+
+    vector<graphbuilder1::SubwordNode> swnodes;
+    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
+    tie_subword_suffixes(swnodes);
+    vector<DecoderGraph::Node> nodes;
+    expand_subword_nodes(dg, swnodes, nodes);
+    prune_unreachable_nodes(nodes);
+    cerr << endl << "real-like scenario with 500 words:" << endl;
+    cerr << "initial expansion, number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    graphbuilder1::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder1::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    connect_end_to_start_node(nodes);
+    cerr << "crossword network added, number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    push_word_ids_left(nodes);
+    tie_state_prefixes(nodes);
+    tie_word_id_prefixes(nodes);
+    push_word_ids_right(nodes);
+    tie_state_prefixes(nodes);
+    cerr << "prefixes tied, number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    push_word_ids_right(nodes);
+    tie_state_suffixes(nodes);
+    tie_word_id_suffixes(nodes);
+    push_word_ids_left(nodes);
+    tie_state_suffixes(nodes);
+    cerr << "suffixes tied, number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    cerr << "asserting no double arcs" << endl;
+    CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
+    cerr << "asserting all words in the graph" << endl;
+    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
+    cerr << "asserting only correct words in the graph" << endl;
+    CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
+    cerr << "asserting all word pairs in the graph" << endl;
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
+    cerr << "asserting only correct word pairs in the graph" << endl;
+    CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
+}
+
+
 // ofstream origoutf("cw_simple.dot");
 // dg.print_dot_digraph(nodes, origoutf);
 // origoutf.close();

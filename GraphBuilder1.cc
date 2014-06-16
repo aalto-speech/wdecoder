@@ -73,41 +73,56 @@ create_word_graph(DecoderGraph &dg,
 void
 tie_subword_suffixes(vector<SubwordNode> &nodes)
 {
-    map<vector<int>, int> suffix_counts;
-    SubwordNode &node = nodes[END_NODE];
-    vector<int> empty;
+    set<int> nodes_to_process;
+    nodes_to_process.insert(END_NODE);
+    set<int> processed_nodes;
 
-    for (auto sit = node.in_arcs.begin(); sit != node.in_arcs.end(); ++sit) {
-        if (nodes[sit->second].connected_from_start_node
-                || nodes[sit->second].out_arcs.size() > 1) continue;
-        suffix_counts[sit->first] += 1;
-    }
+    while(nodes_to_process.size() > 0) {
 
-    for (auto sit = suffix_counts.begin(); sit != suffix_counts.end(); ++sit)
-    {
-        if (sit->second < 2) continue;
+        int i = *(nodes_to_process.rbegin());
 
-        nodes.resize(nodes.size()+1);
-        nodes.back().connected_from_start_node = false;
-        nodes.back().subword_ids = sit->first;
-        nodes.back().out_arcs[empty] = END_NODE;
+        map<vector<int>, int> suffix_counts;
+        SubwordNode &node = nodes[i];
+        vector<int> empty;
 
-        auto er = node.in_arcs.equal_range(sit->first);
-        for (auto erit=er.first; erit != er.second; ++erit)
-        {
-            // Tie only real suffixes ie. not connected from start node
-            if ((!(nodes[erit->second].connected_from_start_node))
-                && nodes[erit->second].out_arcs.size() == 1)
-            {
-                int src_node_idx = nodes[erit->second].in_arcs.begin()->second;
-                nodes[src_node_idx].out_arcs[erit->first] = nodes.size()-1;
-                nodes.back().in_arcs.insert(make_pair(nodes[src_node_idx].subword_ids, src_node_idx));
-                nodes[erit->second].subword_ids.clear();
-                nodes[erit->second].in_arcs.clear();
-                nodes[erit->second].out_arcs.clear();
-            }
+        for (auto sit = node.in_arcs.begin(); sit != node.in_arcs.end(); ++sit) {
+            if (nodes[sit->second].connected_from_start_node
+                    || nodes[sit->second].out_arcs.size() > 1) continue;
+            //if (nodes[sit->second].out_arcs.size() > 1) continue;
+            suffix_counts[sit->first] += 1;
         }
 
+        for (auto sit = suffix_counts.begin(); sit != suffix_counts.end(); ++sit)
+        {
+            if (sit->second < 2) continue;
+
+            nodes.resize(nodes.size()+1);
+            nodes.back().connected_from_start_node = false;
+            nodes.back().subword_ids = sit->first;
+            nodes.back().out_arcs[empty] = END_NODE;
+            nodes_to_process.insert(nodes.size()-1);
+
+            auto er = node.in_arcs.equal_range(sit->first);
+            for (auto erit=er.first; erit != er.second; ++erit)
+            {
+                // Tie only real suffixes ie. not connected from start node
+                if ((!(nodes[erit->second].connected_from_start_node))
+                    && nodes[erit->second].out_arcs.size() == 1)
+                //if (nodes[erit->second].out_arcs.size() == 1)
+                {
+                    int src_node_idx = nodes[erit->second].in_arcs.begin()->second;
+                    nodes[src_node_idx].out_arcs[erit->first] = nodes.size()-1;
+                    nodes.back().in_arcs.insert(make_pair(nodes[src_node_idx].subword_ids, src_node_idx));
+                    nodes[erit->second].subword_ids.clear();
+                    nodes[erit->second].in_arcs.clear();
+                    nodes[erit->second].out_arcs.clear();
+                }
+            }
+
+        }
+
+        nodes_to_process.erase(i);
+        processed_nodes.insert(i);
     }
 }
 
