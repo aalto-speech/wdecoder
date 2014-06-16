@@ -76,97 +76,75 @@ int main(int argc, char* argv[])
         connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        cerr << endl;
-        cerr << "Pushing subword ids left.." << endl;
-        push_word_ids_left(nodes);
-        cerr << "Tying state chain prefixes.." << endl;
-        tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-        cerr << "Tying word id prefixes.." << endl;
-        tie_word_id_prefixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        cerr << endl;
-        cerr << "Pushing subword ids left.." << endl;
-        push_word_ids_left(nodes);
-        cerr << "Tying state chain prefixes.." << endl;
-        tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-        cerr << "Tying word id prefixes.." << endl;
-        tie_word_id_prefixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        cerr << endl;
-        cerr << "Pushing subword ids right.." << endl;
-        push_word_ids_right(nodes);
-        cerr << "Tying state chain prefixes.." << endl;
-        tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        cerr << endl;
-        cerr << "Pushing subword ids right.." << endl;
-        push_word_ids_right(nodes);
-        cerr << "Tying state chain suffixes.." << endl;
-        tie_state_suffixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-        cerr << "Tying word id suffixes.." << endl;
-        tie_word_id_suffixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        cerr << endl;
-        cerr << "Pushing subword ids right.." << endl;
-        push_word_ids_right(nodes);
-        cerr << "Tying state chain suffixes.." << endl;
-        tie_state_suffixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-        cerr << "Tying word id suffixes.." << endl;
-        tie_word_id_suffixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        cerr << endl;
-        cerr << "Pushing subword ids left.." << endl;
-        push_word_ids_left(nodes);
-        cerr << "Tying state chain suffixes.." << endl;
-        tie_state_suffixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        /*
-        if (false) {
-            map<string, vector<string> > triphonized_words;
-            triphonize_all_words(dg, word_segs, triphonized_words);
-            bool words_ok = assert_words(dg, nodes, triphonized_words, false);
-            cerr << "assert_words: " << words_ok << endl;
-            bool pairs_ok = assert_word_pairs(dg, nodes, word_segs, 10000, false);
-            cerr << "assert word pairs: " << pairs_ok << endl;
-            //bool only_words = assert_only_segmented_words(dg, nodes);
-            //cerr << "assert only segmented words: " << only_words << endl;
-            //bool only_word_pairs = assert_only_segmented_cw_word_pairs(dg, nodes);
-            //cerr << "assert only segmented word pairs: " << only_word_pairs << endl;
-        }
-        */
-
-        add_hmm_self_transitions(nodes);
-        add_long_silence(dg, nodes);
-
+        cerr << "Setting word boundary symbols.." << endl;
         if (wb_symbol)
         {
-            nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
             for (int i=0; i<nodes.size(); i++)
-                if (nodes[i].flags & NODE_WORD_BOUNDARY)
+                if (nodes[i].flags & NODE_FAN_OUT_DUMMY) {
+                    nodes[i].flags = 0;
                     nodes[i].word_id =  dg.m_subword_map["<w>"];
+                }
         }
+
+        cerr << endl;
+        cerr << "Pushing subword ids left.." << endl;
+        push_word_ids_left(nodes);
+        cerr << "Tying state chain prefixes.." << endl;
+        tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        cerr << "Tying word id prefixes.." << endl;
+        tie_word_id_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
+        cerr << "Pushing subword ids left.." << endl;
+        push_word_ids_left(nodes);
+        cerr << "Tying state chain prefixes.." << endl;
+        tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        cerr << "Tying word id prefixes.." << endl;
+        tie_word_id_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
+        cerr << "Pushing subword ids right.." << endl;
+        push_word_ids_right(nodes);
+        cerr << "Tying state chain prefixes.." << endl;
+        tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
+        cerr << "Pushing subword ids right.." << endl;
+        push_word_ids_right(nodes);
+        cerr << "Tying state chain suffixes.." << endl;
+        tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        cerr << "Tying word id suffixes.." << endl;
+        tie_word_id_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
+        cerr << "Pushing subword ids right.." << endl;
+        push_word_ids_right(nodes);
+        cerr << "Tying state chain suffixes.." << endl;
+        tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        cerr << "Tying word id suffixes.." << endl;
+        tie_word_id_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
+        cerr << "Pushing subword ids left.." << endl;
+        push_word_ids_left(nodes);
+        cerr << "Tying state chain suffixes.." << endl;
+        tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        if (wb_symbol) nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
+        add_long_silence(dg, nodes);
+        add_hmm_self_transitions(nodes);
 
         write_graph(nodes, graphfname);
-
-        /*
-        for (int i=0; i<dg.m_units.size(); i++) {
-            set<pair<int, int> > results;
-            find_successor_word(nodes, results, i, 0);
-            if (results.size() > 1) {
-                cerr << results.size() << " matches for subword: " << dg.m_units[i] << endl;
-            }
-        }
-        */
 
     } catch (string &e) {
         cerr << e << endl;
