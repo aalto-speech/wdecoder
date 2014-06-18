@@ -127,8 +127,9 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
 void tie_state_prefixes(std::vector<DecoderGraph::Node> &nodes,
                         bool stop_propagation=false,
                         node_idx_t node_idx=START_NODE);
-void tie_state_prefixes_cw(std::vector<DecoderGraph::Node> &nodes,
-                           const std::set<node_idx_t> &start_nodes,
+void tie_state_prefixes_cw(std::vector<DecoderGraph::Node> &cw_nodes,
+                           std::map<std::string, int> &fanout,
+                           std::map<std::string, int> &fanin,
                            bool stop_propagation=false);
 void tie_state_prefixes(std::vector<DecoderGraph::Node> &nodes,
                         std::set<node_idx_t> &processed_nodes,
@@ -138,8 +139,9 @@ void tie_state_prefixes(std::vector<DecoderGraph::Node> &nodes,
 void tie_state_suffixes(std::vector<DecoderGraph::Node> &nodes,
                         bool stop_propagation=false,
                         node_idx_t node_idx=END_NODE);
-void tie_state_suffixes(std::vector<DecoderGraph::Node> &nodes,
-                        const std::set<node_idx_t> &start_nodes,
+void tie_state_suffixes_cw(std::vector<DecoderGraph::Node> &cw_nodes,
+                        std::map<std::string, int> &fanout,
+                        std::map<std::string, int> &fanin,
                         bool stop_propagation=false);
 void tie_state_suffixes(std::vector<DecoderGraph::Node> &nodes,
                         std::set<node_idx_t> &processed_nodes,
@@ -149,9 +151,10 @@ void tie_state_suffixes(std::vector<DecoderGraph::Node> &nodes,
 void tie_word_id_prefixes(std::vector<DecoderGraph::Node> &nodes,
                           bool stop_propagation=false,
                           node_idx_t node_idx=START_NODE);
-void tie_word_id_prefixes(std::vector<DecoderGraph::Node> &nodes,
-                          const std::set<node_idx_t> &start_nodes,
-                          bool stop_propagation=false);
+void tie_word_id_prefixes_cw(std::vector<DecoderGraph::Node> &cw_nodes,
+                             std::map<std::string, int> &fanout,
+                             std::map<std::string, int> &fanin,
+                             bool stop_propagation=false);
 void tie_word_id_prefixes(std::vector<DecoderGraph::Node> &nodes,
                           std::set<node_idx_t> &processed_nodes,
                           bool stop_propagation=false,
@@ -160,9 +163,10 @@ void tie_word_id_prefixes(std::vector<DecoderGraph::Node> &nodes,
 void tie_word_id_suffixes(std::vector<DecoderGraph::Node> &nodes,
                           bool stop_propagation=false,
                           node_idx_t node_idx=END_NODE);
-void tie_word_id_suffixes(std::vector<DecoderGraph::Node> &nodes,
-                          const std::set<node_idx_t> &start_nodes,
-                          bool stop_propagation=false);
+void tie_word_id_suffixes_cw(std::vector<DecoderGraph::Node> &cw_nodes,
+                             std::map<std::string, int> &fanout,
+                             std::map<std::string, int> &fanin,
+                             bool stop_propagation=false);
 void tie_word_id_suffixes(std::vector<DecoderGraph::Node> &nodes,
                           std::set<node_idx_t> &processed_nodes,
                           bool stop_propagation=false,
@@ -216,8 +220,10 @@ void reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes,
                            std::set<node_idx_t> &node_idxs,
                            node_idx_t node_idx=START_NODE);
 void prune_unreachable_nodes(std::vector<DecoderGraph::Node> &nodes);
-void prune_unreachable_nodes(std::vector<DecoderGraph::Node> &nodes,
-                             const std::set<node_idx_t> &start_nodes);
+void prune_unreachable_nodes_cw(std::vector<DecoderGraph::Node> &nodes,
+                                const std::set<node_idx_t> &start_nodes,
+                                std::map<std::string, int> &fanout,
+                                std::map<std::string, int> &fanin);
 void add_hmm_self_transitions(std::vector<DecoderGraph::Node> &nodes);
 void push_word_ids_left(std::vector<DecoderGraph::Node> &nodes);
 void push_word_ids_left(std::vector<DecoderGraph::Node> &nodes,

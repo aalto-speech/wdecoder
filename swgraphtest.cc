@@ -219,7 +219,7 @@ void swgraphtest::SubwordGraphTest9(void)
     DecoderGraph dg;
     read_fixtures(dg);
 
-    string segname = "data/segs.txt";
+    string segname = "data/500.segs";
     map<string, vector<string> > word_segs;
     read_word_segmentations(dg, segname, word_segs);
 
@@ -247,11 +247,16 @@ void swgraphtest::SubwordGraphTest9(void)
     map<string, int> fanout, fanin;
     subwordgraphbuilder::create_crossword_network(dg, subwords, cw_nodes, fanout, fanin);
 
-    set<node_idx_t> fanout_node_idxs;
-    for (int i=0; i<cw_nodes.size(); i++)
-        if (cw_nodes[i].flags & NODE_FAN_OUT_DUMMY)
-            fanout_node_idxs.insert(i);
-    tie_state_prefixes_cw(cw_nodes, fanout_node_idxs);
+    cerr << endl << "cw size: " << cw_nodes.size() << endl;
+    tie_state_prefixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
+    tie_state_prefixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
+    tie_state_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_state_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+    cerr << "tied cw size: " << cw_nodes.size() << endl;
 
     subwordgraphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
     connect_end_to_start_node(nodes);
