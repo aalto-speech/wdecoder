@@ -803,12 +803,27 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
 }
 
 void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
+                        bool stop_propagation,
+                        node_idx_t node_idx)
+{
+    set<node_idx_t> processed_nodes;
+    set_reverse_arcs_also_from_unreachable(nodes);
+    tie_state_prefixes(nodes, processed_nodes, stop_propagation, node_idx);
+    prune_unreachable_nodes(nodes);
+}
+
+void tie_state_prefixes_cw(vector<DecoderGraph::Node> &nodes,
+                        const set<node_idx_t> &start_nodes,
                         bool stop_propagation)
 {
     set<node_idx_t> processed_nodes;
     set_reverse_arcs_also_from_unreachable(nodes);
-    tie_state_prefixes(nodes, processed_nodes, stop_propagation, START_NODE);
-    prune_unreachable_nodes(nodes);
+    for (auto snit = start_nodes.begin(); snit != start_nodes.end(); ++snit) {
+        cerr << *snit << endl;
+        tie_state_prefixes(nodes, processed_nodes, stop_propagation, *snit);
+    }
+    cerr << "processed nodes: " << processed_nodes.size() << endl;
+    prune_unreachable_nodes(nodes, start_nodes);
 }
 
 void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
@@ -816,20 +831,21 @@ void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
                         bool stop_propagation,
                         node_idx_t node_idx)
 {
-    if (node_idx == END_NODE)
-        return;
+//    if (node_idx == END_NODE)
+//        return;
     if (processed_nodes.find(node_idx) != processed_nodes.end())
         return;
     processed_nodes.insert(node_idx);
     DecoderGraph::Node &nd = nodes[node_idx];
     set<unsigned int> temp_arcs = nd.arcs;
 
+    if (nd.arcs.size() == 0) return;
+
     map<pair<int, set<unsigned int> >, set<unsigned int> > targets;
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
         int target_hmm = nodes[*ait].hmm_state;
         if (target_hmm != -1)
-            targets[make_pair(target_hmm, nodes[*ait].reverse_arcs)].insert(
-                *ait);
+            targets[make_pair(target_hmm, nodes[*ait].reverse_arcs)].insert(*ait);
     }
 
     bool arcs_removed = false;
@@ -856,21 +872,34 @@ void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
 }
 
 void tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
+                          bool stop_propagation,
+                          node_idx_t node_idx)
+{
+    set<node_idx_t> processed_nodes;
+    set_reverse_arcs_also_from_unreachable(nodes);
+    tie_word_id_prefixes(nodes, processed_nodes, stop_propagation, node_idx);
+    prune_unreachable_nodes(nodes);
+}
+
+void tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
+                          const set<node_idx_t> &start_nodes,
                           bool stop_propagation)
 {
     set<node_idx_t> processed_nodes;
     set_reverse_arcs_also_from_unreachable(nodes);
-    tie_word_id_prefixes(nodes, processed_nodes, stop_propagation, START_NODE);
-    prune_unreachable_nodes(nodes);
+    for (auto snit = start_nodes.begin(); snit != start_nodes.end(); ++snit)
+        tie_word_id_prefixes(nodes, processed_nodes, stop_propagation, *snit);
+    prune_unreachable_nodes(nodes, start_nodes);
 }
+
 
 void tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
                           set<node_idx_t> &processed_nodes,
                           bool stop_propagation,
                           node_idx_t node_idx)
 {
-    if (node_idx == END_NODE)
-        return;
+//    if (node_idx == END_NODE)
+//        return;
     if (processed_nodes.find(node_idx) != processed_nodes.end())
         return;
     processed_nodes.insert(node_idx);
@@ -908,20 +937,32 @@ void tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
 }
 
 void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
+                        bool stop_propagation,
+                        node_idx_t node_idx)
+{
+    set<node_idx_t> processed_nodes;
+    set_reverse_arcs_also_from_unreachable(nodes);
+    tie_state_suffixes(nodes, processed_nodes, stop_propagation, node_idx);
+    prune_unreachable_nodes(nodes);
+}
+
+void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
+                        const set<node_idx_t> &start_nodes,
                         bool stop_propagation)
 {
     set<node_idx_t> processed_nodes;
     set_reverse_arcs_also_from_unreachable(nodes);
-    tie_state_suffixes(nodes, processed_nodes, stop_propagation, END_NODE);
-    prune_unreachable_nodes(nodes);
+    for (auto snit = start_nodes.begin(); snit != start_nodes.end(); ++snit)
+        tie_state_suffixes(nodes, processed_nodes, stop_propagation, *snit);
+    prune_unreachable_nodes(nodes, start_nodes);
 }
 
 void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
                         set<node_idx_t> &processed_nodes, bool stop_propagation,
                         node_idx_t node_idx)
 {
-    if (node_idx == START_NODE)
-        return;
+//    if (node_idx == START_NODE)
+//        return;
     if (processed_nodes.find(node_idx) != processed_nodes.end())
         return;
     processed_nodes.insert(node_idx);
@@ -961,12 +1002,24 @@ void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
 }
 
 void tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
+                          bool stop_propagation,
+                          node_idx_t node_idx)
+{
+    set<node_idx_t> processed_nodes;
+    set_reverse_arcs_also_from_unreachable(nodes);
+    tie_word_id_suffixes(nodes, processed_nodes, stop_propagation, node_idx);
+    prune_unreachable_nodes(nodes);
+}
+
+void tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
+                          const set<node_idx_t> &start_nodes,
                           bool stop_propagation)
 {
     set<node_idx_t> processed_nodes;
     set_reverse_arcs_also_from_unreachable(nodes);
-    tie_word_id_suffixes(nodes, processed_nodes, stop_propagation, END_NODE);
-    prune_unreachable_nodes(nodes);
+    for (auto snit = start_nodes.begin(); snit != start_nodes.end(); ++snit)
+        tie_word_id_suffixes(nodes, processed_nodes, stop_propagation, *snit);
+    prune_unreachable_nodes(nodes, start_nodes);
 }
 
 void tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
@@ -974,8 +1027,8 @@ void tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
                           bool stop_propagation,
                           node_idx_t node_idx)
 {
-    if (node_idx == START_NODE)
-        return;
+//    if (node_idx == START_NODE)
+//        return;
     if (processed_nodes.find(node_idx) != processed_nodes.end())
         return;
     processed_nodes.insert(node_idx);
@@ -983,8 +1036,7 @@ void tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
     set<unsigned int> temp_arcs = nd.reverse_arcs;
 
     map<pair<int, set<unsigned int> >, set<unsigned int> > targets;
-    for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end();
-            ++ait) {
+    for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end(); ++ait) {
         int word_id = nodes[*ait].word_id;
         if (word_id != -1)
             targets[make_pair(word_id, nodes[*ait].arcs)].insert(*ait);
@@ -1241,6 +1293,14 @@ void reachable_graph_nodes(vector<DecoderGraph::Node> &nodes,
             reachable_graph_nodes(nodes, node_idxs, *ait);
 }
 
+void reachable_graph_nodes(vector<DecoderGraph::Node> &nodes,
+                           set<node_idx_t> &node_idxs,
+                           const set<node_idx_t> &start_nodes)
+{
+    for (auto snit = start_nodes.begin(); snit != start_nodes.end(); ++snit)
+        reachable_graph_nodes(nodes, node_idxs, *snit);
+}
+
 int reachable_graph_nodes(vector<DecoderGraph::Node> &nodes)
 {
     set<node_idx_t> node_idxs;
@@ -1266,8 +1326,37 @@ void prune_unreachable_nodes(vector<DecoderGraph::Node> &nodes)
         DecoderGraph::Node &old_node = nodes[*nit];
         DecoderGraph::Node &new_node = pruned_nodes[index_mapping[*nit]];
         new_node.arcs.clear();
-        for (auto ait = old_node.arcs.begin(); ait != old_node.arcs.end();
-                ++ait) {
+        for (auto ait = old_node.arcs.begin(); ait != old_node.arcs.end(); ++ait) {
+            new_node.arcs.insert(index_mapping[*ait]);
+        }
+    }
+
+    nodes.swap(pruned_nodes);
+
+    return;
+}
+
+
+void prune_unreachable_nodes(vector<DecoderGraph::Node> &nodes,
+                             const set<node_idx_t> &start_nodes)
+{
+    vector<DecoderGraph::Node> pruned_nodes;
+    map<node_idx_t, node_idx_t> index_mapping;
+    set<node_idx_t> old_node_idxs;
+    reachable_graph_nodes(nodes, old_node_idxs, start_nodes);
+    int new_idx = 0;
+    for (auto nit = old_node_idxs.begin(); nit != old_node_idxs.end(); ++nit) {
+        index_mapping[*nit] = new_idx;
+        new_idx++;
+    }
+
+    pruned_nodes.resize(old_node_idxs.size());
+    for (auto nit = old_node_idxs.begin(); nit != old_node_idxs.end(); ++nit) {
+        pruned_nodes[index_mapping[*nit]] = nodes[*nit];
+        DecoderGraph::Node &old_node = nodes[*nit];
+        DecoderGraph::Node &new_node = pruned_nodes[index_mapping[*nit]];
+        new_node.arcs.clear();
+        for (auto ait = old_node.arcs.begin(); ait != old_node.arcs.end(); ++ait) {
             new_node.arcs.insert(index_mapping[*ait]);
         }
     }

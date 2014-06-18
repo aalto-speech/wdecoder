@@ -1,11 +1,11 @@
-cxxflags = -O3 -march=native -std=gnu++0x -Wall
+#cxxflags = -O3 -march=native -std=gnu++0x -Wall
 #cxxflags = -O0 -gddb -std=gnu++0x -Wall
-#cxxflags = -O0 -g -std=gnu++0x -Wall
+cxxflags = -O0 -g -std=gnu++0x -Wall
 #cxxflags = -O0 -pg -std=gnu++0x -Wall
 
 ##################################################
 
-progs = dgraph dgraph2 wgraph swgraph decode score
+progs = dgraph dgraph2 wgraph swgraph swgraph2 decode score
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
 srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc gutils.cc GraphBuilder1.cc GraphBuilder2.cc SubwordGraphBuilder.cc WordGraphBuilder.cc LnaReaderCircular.cc Decoder.cc 
@@ -14,7 +14,7 @@ objs = $(srcs:.cc=.o)
 test_progs = runtests
 test_progs_srcs = $(test_progs:=.cc)
 test_progs_objs = $(test_progs:=.o)
-test_srcs = graphtest.cc
+test_srcs = swgraphtest.cc
 #test_srcs = graphtest.cc swgraphtest.cc
 #test_srcs = decodertest.cc
 test_objs = $(test_srcs:.cc=.o)
