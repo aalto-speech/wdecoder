@@ -7,6 +7,6 @@ runtests
 .cproject
 .settings
 .settings/*
-speechdat*
+speechdat*.txt
 lm-*
 
