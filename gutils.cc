@@ -262,10 +262,10 @@ void find_successor_word(vector<DecoderGraph::Node> &nodes,
 }
 
 void find_nodes_in_depth(vector<DecoderGraph::Node> &nodes,
-                         set<int> &found_nodes,
+                         set<node_idx_t> &found_nodes,
                          int target_depth,
                          int curr_depth,
-                         int curr_node)
+                         node_idx_t curr_node)
 {
     if (curr_depth == target_depth) {
         found_nodes.insert(curr_node);
@@ -278,6 +278,25 @@ void find_nodes_in_depth(vector<DecoderGraph::Node> &nodes,
         find_nodes_in_depth(nodes, found_nodes, target_depth, curr_depth+1, *ait);
     }
 }
+
+void find_nodes_in_depth_reverse(vector<DecoderGraph::Node> &nodes,
+                                 set<node_idx_t> &found_nodes,
+                                 int target_depth,
+                                 int curr_depth,
+                                 node_idx_t curr_node)
+{
+    if (curr_depth == target_depth) {
+        found_nodes.insert(curr_node);
+        return;
+    }
+
+    DecoderGraph::Node &node = nodes[curr_node];
+    for (auto ait = node.reverse_arcs.begin(); ait != node.reverse_arcs.end(); ++ait) {
+        if (*ait == curr_node) continue;
+        find_nodes_in_depth_reverse(nodes, found_nodes, target_depth, curr_depth+1, *ait);
+    }
+}
+
 
 bool assert_path(DecoderGraph &dg,
                  vector<DecoderGraph::Node> &nodes,
@@ -1446,8 +1465,11 @@ push_word_ids_left(vector<DecoderGraph::Node> &nodes)
     set_reverse_arcs_also_from_unreachable(nodes);
     int move_count = 0;
     while (true) {
-        set<node_idx_t> processed_nodes;
-        push_word_ids_left(nodes, move_count, processed_nodes);
+        set<node_idx_t> third_nodes;
+        find_nodes_in_depth(nodes, third_nodes, 3);
+        push_word_ids_left(nodes, move_count, third_nodes);
+        //set<node_idx_t> processed_nodes;
+        //push_word_ids_left(nodes, move_count, processed_nodes);
         if (move_count == 0) break;
         move_count = 0;
     }
@@ -1494,8 +1516,12 @@ push_word_ids_right(vector<DecoderGraph::Node> &nodes)
     set_reverse_arcs_also_from_unreachable(nodes);
     int move_count = 0;
     while (true) {
-        set<node_idx_t> processed_nodes;
-        push_word_ids_right(nodes, move_count, processed_nodes);
+        set<node_idx_t> third_nodes;
+        find_nodes_in_depth_reverse(nodes, third_nodes, 3);
+        push_word_ids_right(nodes, move_count, third_nodes);
+        //clear_reverse_arcs(nodes);
+        //set<node_idx_t> processed_nodes;
+        //push_word_ids_right(nodes, move_count, processed_nodes);
         if (move_count == 0) break;
         move_count = 0;
     }
