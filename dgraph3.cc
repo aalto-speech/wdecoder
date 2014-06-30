@@ -83,20 +83,10 @@ int main(int argc, char* argv[])
         tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
         cerr << "tied crossword network size: " << cw_nodes.size() << endl;
 
-        connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+        connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
         connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        cerr << endl;
-        cerr << "Pushing subword ids left.." << endl;
-        push_word_ids_left(nodes);
-        cerr << "Tying state prefixes.." << endl;
-        tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        cerr << endl;
-        cerr << "Pushing subword ids right.." << endl;
-        push_word_ids_right(nodes);
         cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
@@ -121,15 +111,22 @@ int main(int argc, char* argv[])
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         cerr << endl;
-        cerr << "Pushing subword ids left.." << endl;
-        push_word_ids_left(nodes);
         cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-        cerr << "Tying state prefixes.." << endl;
-        tie_state_prefixes(nodes);
+        cerr << "Tying word id suffixes.." << endl;
+        tie_word_id_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
+        cerr << endl;
+        cerr << "Tying state suffixes.." << endl;
+        tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        cerr << "Tying word id suffixes.." << endl;
+        tie_word_id_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
         cerr << "Removing cw dummies.." << endl;
         remove_cw_dummies(nodes);
         cerr << "Tying state prefixes.." << endl;
