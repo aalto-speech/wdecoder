@@ -213,6 +213,10 @@ int connect_word(DecoderGraph &dg,
                  std::string word,
                  node_idx_t node_idx,
                  int flag_mask=0);
+int connect_word(std::vector<DecoderGraph::Node> &nodes,
+                 int word_id,
+                 node_idx_t node_idx,
+                 int flag_mask=0);
 int connect_dummy(std::vector<DecoderGraph::Node> &nodes,
                   node_idx_t node_idx,
                   int flag_mask=0);

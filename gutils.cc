@@ -1313,6 +1313,18 @@ int connect_word(DecoderGraph &dg,
     return nodes.size()-1;
 }
 
+int connect_word(vector<DecoderGraph::Node> &nodes,
+                 int word_id,
+                 node_idx_t node_idx,
+                 int flag_mask)
+{
+    nodes.resize(nodes.size()+1);
+    nodes.back().word_id = word_id;
+    nodes.back().flags |= flag_mask;
+    nodes[node_idx].arcs.insert(nodes.size()-1);
+    return nodes.size()-1;
+}
+
 int connect_dummy(vector<DecoderGraph::Node> &nodes,
                   node_idx_t node_idx,
                   int flag_mask)
@@ -1607,10 +1619,8 @@ triphones_to_states(DecoderGraph &dg,
             swit != triphone_nodes[curr_tri_idx].subword_id_lookahead.end();
             ++swit)
     {
-        nodes.resize(nodes.size()+1);
-        nodes.back().word_id = swit->first;
-        nodes[curr_state_idx].arcs.insert(nodes.size()-1);
-        triphones_to_states(dg, triphone_nodes, nodes, swit->second, nodes.size()-1);
+        int new_state_idx = connect_word(nodes, swit->first, curr_state_idx);
+        triphones_to_states(dg, triphone_nodes, nodes, swit->second, new_state_idx);
     }
 }
 

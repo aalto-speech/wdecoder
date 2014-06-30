@@ -16,7 +16,7 @@ void create_crossword_network(DecoderGraph &dg,
                               std::vector<DecoderGraph::Node> &nodes,
                               std::map<std::string, int> &fanout,
                               std::map<std::string, int> &fanin,
-                              bool wb_symbol=false);
+                              bool wb_symbol_in_middle=false);
 
 void connect_crossword_network(DecoderGraph &dg,
                                std::vector<DecoderGraph::Node> &nodes,
