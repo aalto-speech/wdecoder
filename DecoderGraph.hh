@@ -16,11 +16,10 @@ public:
 
     class TriphoneNode {
     public:
-        TriphoneNode() : subword_id(-1), hmm_id(-1), connect_to_end_node(false), flags(0) { }
+        TriphoneNode() : subword_id(-1), hmm_id(-1), connect_to_end_node(false) { }
         int subword_id; // -1 for nodes without word identity.
         int hmm_id; // -1 for nodes without acoustics.
         bool connect_to_end_node;
-        int flags;
         std::map<int, unsigned int> hmm_id_lookahead;
         std::map<int, unsigned int> subword_id_lookahead;
     };
