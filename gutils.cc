@@ -133,13 +133,6 @@ void triphonize(DecoderGraph &dg,
     }
     triphonize(tripstring, triphones);
 
-    for (unsigned int i = 1; i < word_id_positions.size(); i++)
-    {
-        word_id_positions[i].second += i;
-        if (word_id_positions[i].second <= word_id_positions[i - 1].second)
-            word_id_positions[i].second = word_id_positions[i - 1].second + 1;
-    }
-
     for (auto triit = triphones.begin(); triit != triphones.end(); ++triit)
     {
         DecoderGraph::TriphoneNode trin;
@@ -147,7 +140,7 @@ void triphonize(DecoderGraph &dg,
         nodes.push_back(trin);
     }
 
-    for (auto wit = word_id_positions.begin(); wit != word_id_positions.end(); ++wit)
+    for (auto wit = word_id_positions.rbegin(); wit != word_id_positions.rend(); ++wit)
     {
         DecoderGraph::TriphoneNode trin;
         trin.subword_id = wit->first;
