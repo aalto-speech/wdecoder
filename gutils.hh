@@ -36,6 +36,13 @@ void triphonize_all_words(DecoderGraph &dg,
 void triphonize_subword(DecoderGraph &dg,
                         const std::string &subword,
                         std::vector<DecoderGraph::TriphoneNode> &nodes);
+void add_triphones(std::vector<DecoderGraph::TriphoneNode> &nodes,
+                   std::vector<DecoderGraph::TriphoneNode> &nodes_to_add);
+void triphones_to_states(DecoderGraph &dg,
+                         std::vector<DecoderGraph::TriphoneNode> &triphone_nodes,
+                         std::vector<DecoderGraph::Node> &nodes,
+                         int curr_triphone_idx=START_NODE,
+                         int curr_state_idx=START_NODE);
 void get_hmm_states(DecoderGraph &dg,
                     const std::vector<std::string> &triphones,
                     std::vector<int> &states);
@@ -250,14 +257,6 @@ void push_word_ids_right(std::vector<DecoderGraph::Node> &nodes,
                          int subword_id=-1);
 int num_hmm_states(std::vector<DecoderGraph::Node> &nodes);
 int num_subword_states(std::vector<DecoderGraph::Node> &nodes);
-
-void add_triphones(std::vector<DecoderGraph::TriphoneNode> &nodes,
-                   std::vector<DecoderGraph::TriphoneNode> &nodes_to_add);
-void triphones_to_states(DecoderGraph &dg,
-                         std::vector<DecoderGraph::TriphoneNode> &triphone_nodes,
-                         std::vector<DecoderGraph::Node> &nodes,
-                         int curr_triphone_idx=START_NODE,
-                         int curr_state_idx=START_NODE);
 
 void collect_cw_fanout_nodes(DecoderGraph &dg,
                              std::vector<DecoderGraph::Node> &nodes,
