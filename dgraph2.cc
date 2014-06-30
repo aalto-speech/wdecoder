@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
         cerr << "Creating crossword network.." << endl;
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
-        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, wb_symbol);
+        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, false);
         cerr << "Connecting crossword network.." << endl;
         connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
         connect_end_to_start_node(nodes);
