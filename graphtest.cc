@@ -923,7 +923,7 @@ void graphtest::GraphTest28(void)
     vector<DecoderGraph::Node> nodes;
     expand_subword_nodes(dg, swnodes, nodes);
     prune_unreachable_nodes(nodes);
-    cerr << "initial expansion, number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    cerr << endl << "initial expansion, number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;

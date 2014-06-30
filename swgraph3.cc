@@ -53,9 +53,20 @@ int main(int argc, char* argv[])
         prune_unreachable_nodes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        push_word_ids_left(nodes);
+        set<node_idx_t> third_nodes;
+        set_reverse_arcs(nodes);
+        find_nodes_in_depth_reverse(nodes, third_nodes, 4);
+        clear_reverse_arcs(nodes);
+        for (auto nii=third_nodes.begin(); nii != third_nodes.end(); ++nii)
+            nodes[*nii].flags |= NODE_LM_RIGHT_LIMIT;
+
+        third_nodes.clear();
+        find_nodes_in_depth(nodes, third_nodes, 4);
+        for (auto nii=third_nodes.begin(); nii !=third_nodes.end(); ++nii)
+            nodes[*nii].flags |= NODE_LM_LEFT_LIMIT;
+
         push_word_ids_right(nodes);
-        //cerr << "Tying state prefixes.." << endl;
+        cerr << "Tying state prefixes.." << endl;
         tie_state_prefixes(nodes);
         push_word_ids_left(nodes);
         tie_state_suffixes(nodes);

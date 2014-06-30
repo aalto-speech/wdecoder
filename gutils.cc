@@ -1447,6 +1447,7 @@ push_word_ids_left(vector<DecoderGraph::Node> &nodes,
 
     if (node.reverse_arcs.size() == 1) subword_id = node.word_id;
     else subword_id = -1;
+    if (node.flags & NODE_LM_LEFT_LIMIT) subword_id = -1;
 
     for (auto ait = node.reverse_arcs.begin(); ait != node.reverse_arcs.end(); ++ait) {
         if (*ait == node_idx) throw string("Call push before setting self-transitions.");
@@ -1465,11 +1466,8 @@ push_word_ids_left(vector<DecoderGraph::Node> &nodes)
     set_reverse_arcs_also_from_unreachable(nodes);
     int move_count = 0;
     while (true) {
-        set<node_idx_t> third_nodes;
-        find_nodes_in_depth(nodes, third_nodes, 3);
-        push_word_ids_left(nodes, move_count, third_nodes);
-        //set<node_idx_t> processed_nodes;
-        //push_word_ids_left(nodes, move_count, processed_nodes);
+        set<node_idx_t> processed_nodes;
+        push_word_ids_left(nodes, move_count, processed_nodes);
         if (move_count == 0) break;
         move_count = 0;
     }
@@ -1498,6 +1496,7 @@ push_word_ids_right(vector<DecoderGraph::Node> &nodes,
 
     if (node.arcs.size() == 1) subword_id = node.word_id;
     else subword_id = -1;
+    if (node.flags & NODE_LM_RIGHT_LIMIT) subword_id = -1;
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         if (*ait == node_idx) throw string("Call push before setting self-transitions.");
@@ -1516,12 +1515,8 @@ push_word_ids_right(vector<DecoderGraph::Node> &nodes)
     set_reverse_arcs_also_from_unreachable(nodes);
     int move_count = 0;
     while (true) {
-        set<node_idx_t> third_nodes;
-        find_nodes_in_depth_reverse(nodes, third_nodes, 3);
-        push_word_ids_right(nodes, move_count, third_nodes);
-        //clear_reverse_arcs(nodes);
-        //set<node_idx_t> processed_nodes;
-        //push_word_ids_right(nodes, move_count, processed_nodes);
+        set<node_idx_t> processed_nodes;
+        push_word_ids_right(nodes, move_count, processed_nodes);
         if (move_count == 0) break;
         move_count = 0;
     }

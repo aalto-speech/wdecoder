@@ -126,10 +126,6 @@ public:
     void set_subword_id_la_ngram_symbol_mapping();
     void clear_word_history();
     void prune_word_history();
-    void find_nodes_in_depth(std::set<int> &found_nodes,
-                             int target_depth,
-                             int curr_depth,
-                             int curr_node);
     void set_hmm_transition_probs();
     void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);

@@ -238,25 +238,6 @@ Decoder::read_dgraph(string fname)
 
 
 void
-Decoder::find_nodes_in_depth(set<int> &found_nodes,
-                             int target_depth,
-                             int curr_depth,
-                             int curr_node)
-{
-    if (curr_depth == target_depth) {
-        found_nodes.insert(curr_node);
-        return;
-    }
-
-    Node &node = m_nodes[curr_node];
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (ait->target_node == curr_node) continue;
-        find_nodes_in_depth(found_nodes, target_depth, curr_depth+1, ait->target_node);
-    }
-}
-
-
-void
 Decoder::set_hmm_transition_probs()
 {
     for (unsigned int i=0; i<m_nodes.size(); i++) {
