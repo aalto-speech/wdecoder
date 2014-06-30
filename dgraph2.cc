@@ -70,9 +70,9 @@ int main(int argc, char* argv[])
         connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        cerr << "Setting word boundary symbols.." << endl;
         if (wb_symbol)
         {
+            cerr << "Setting word boundary symbols.." << endl;
             for (int i=0; i<nodes.size(); i++)
                 if (nodes[i].flags & NODE_FAN_OUT_DUMMY) {
                     nodes[i].flags = 0;
