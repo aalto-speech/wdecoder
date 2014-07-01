@@ -136,6 +136,20 @@ int main(int argc, char* argv[])
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
+        /*
+        cerr << "Pushing subword ids right.." << endl;
+        push_word_ids_right(nodes);
+        cerr << "Tying state prefixes.." << endl;
+        tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        cerr << "Pushing subword ids left.." << endl;
+        push_word_ids_left(nodes);
+        cerr << "Tying state suffixes.." << endl;
+        tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        */
+
         if (wb_symbol) nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
         add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);
