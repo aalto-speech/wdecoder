@@ -575,6 +575,7 @@ Decoder::move_token_to_node(Token token,
         }
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
+
         if (token.am_log_prob < (m_best_am_log_prob-m_acoustic_beam)) {
             m_acoustic_beam_pruned_count++;
             return;

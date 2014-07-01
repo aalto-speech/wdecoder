@@ -84,7 +84,7 @@ print_config(Decoder &d,
     outf << "PH: " << config.arguments[0] << endl;
     outf << "LEXICON: " << config.arguments[1] << endl;
     outf << "LM: " << config.arguments[2] << endl;
-    outf << "GRAPH: " << config.arguments[3] << endl;
+    outf << "GRAPH: " << config.arguments[4] << endl;
     if (config["lookahead-model"].specified) {
         string lalmfname = config["lookahead-model"].get_str();
         outf << "LOOKAHEAD LM: " << lalmfname << endl;
@@ -256,8 +256,8 @@ int main(int argc, char* argv[])
                                cerr,
                                lm_scales[i],
                                beams[i],
-                               beams[i]-40.0,
-                               (2.0/3.0) * beams[i]);
+                               d.m_acoustic_beam,
+                               d.m_word_end_beam);
         }
 
     } catch (string &e) {
