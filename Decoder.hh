@@ -99,7 +99,8 @@ public:
                             double *seconds=nullptr,
                             double *log_prob=nullptr,
                             double *am_prob=nullptr,
-                            double *lm_prob=nullptr);
+                            double *lm_prob=nullptr,
+                            double *propagation_ratio=nullptr);
 
     void initialize();
     void reset_frame_variables();
@@ -130,6 +131,7 @@ public:
     void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
     void reset_history_scores();
+    void find_successor_hmm_nodes(int node_idx, std::set<int> &node_idxs, bool start_node=true);
     void find_paths(std::vector<std::vector<int> > &paths,
                     std::vector<int> &words,
                     int curr_word_pos = 0,
@@ -209,8 +211,15 @@ public:
     std::vector<std::map<int, Token> > m_recombined_tokens;
     std::vector<float> m_best_node_scores;
 
+    std::vector<int> m_branching_counts;
+
     int m_debug;
     int m_stats;
+
+    int m_branching_stats;
+    int m_propagated_count;
+    double m_total_token_count;
+    double m_total_propagated_count;
 
     float m_lm_scale;
     float m_duration_scale;
@@ -218,7 +227,6 @@ public:
     int m_token_limit;
     int m_active_node_limit;
     int m_token_count;
-    int m_propagated_count;
     int m_token_count_after_pruning;
     bool m_force_sentence_end;
     bool m_use_word_boundary_symbol;

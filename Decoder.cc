@@ -22,6 +22,12 @@ Decoder::Decoder()
 {
     m_debug = 0;
     m_stats = 0;
+
+    m_branching_stats = 0;
+    m_propagated_count = 0;
+    m_total_token_count = 0;
+    m_total_propagated_count = 0;
+
     m_duration_model_in_use = false;
     m_unigram_la_in_use = false;
     m_bigram_la_in_use = false;
@@ -33,7 +39,6 @@ Decoder::Decoder()
     m_duration_scale = 0.0;
     m_transition_scale = 0.0;
     m_token_count = 0;
-    m_propagated_count = 0;
     m_token_count_after_pruning = 0;
     m_word_boundary_symbol_idx = -1;
     m_sentence_begin_symbol_idx = -1;
@@ -74,7 +79,6 @@ Decoder::Decoder()
     m_max_state_duration = 80;
 
     m_ngram_state_sentence_begin = -1;
-
     m_decode_start_node = -1;
     m_long_silence_loop_start_node = -1;
     m_long_silence_loop_end_node = -1;
@@ -283,7 +287,8 @@ Decoder::recognize_lna_file(string lnafname,
                             double *seconds,
                             double *log_prob,
                             double *am_prob,
-                            double *lm_prob)
+                            double *lm_prob,
+                            double *propagation_ratio)
 {
     m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
@@ -321,6 +326,11 @@ Decoder::recognize_lna_file(string lnafname,
             print_best_word_history(cerr);
         }
 
+        if (m_branching_stats) {
+            m_total_token_count += double(m_token_count);
+            m_total_propagated_count += double(m_propagated_count);
+        }
+
         frame_idx++;
     }
     time(&end_time);
@@ -352,6 +362,8 @@ Decoder::recognize_lna_file(string lnafname,
     if (log_prob != nullptr) *log_prob = best_token.total_log_prob;
     if (am_prob != nullptr) *am_prob = best_token.am_log_prob;
     if (lm_prob != nullptr) *lm_prob = best_token.lm_log_prob;
+    if (m_branching_stats && propagation_ratio != nullptr)
+        *propagation_ratio = double(m_total_propagated_count) / double(m_total_token_count);
 }
 
 
@@ -386,6 +398,9 @@ Decoder::initialize()
     }
     m_active_histories.insert(tok.history);
     m_recombined_tokens[m_decode_start_node][tok.lm_node] = tok;
+
+    m_total_token_count = 0;
+    m_total_propagated_count = 0;
 }
 
 
@@ -449,10 +464,12 @@ Decoder::propagate_tokens(void)
 
             m_token_count++;
             tit->second.word_end = false;
-            for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+
+            for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
                 move_token_to_node(tit->second, ait->target_node, ait->log_prob);
-                m_propagated_count++;
-            }
+
+            if (m_branching_stats)
+                m_propagated_count += m_branching_counts[*nit];
         }
         node_count++;
     }
@@ -462,7 +479,8 @@ Decoder::propagate_tokens(void)
 
     if (m_stats) {
         cerr << "token count before propagation: " << m_token_count << endl;
-        cerr << "propagated token count: " << m_propagated_count << endl;
+        if (m_branching_stats)
+            cerr << "propagated token count: " << m_propagated_count << endl;
     }
 }
 
@@ -1337,6 +1355,25 @@ Decoder::score_state_path(string lnafname,
 
     m_lna_reader.close();
     return total_score;
+}
+
+
+void
+Decoder::find_successor_hmm_nodes(int node_idx,
+                                  set<int> &node_idxs,
+                                  bool start_node)
+{
+    Node &node = m_nodes[node_idx];
+
+    if (!start_node && node.hmm_state != -1) {
+        node_idxs.insert(node_idx);
+        return;
+    }
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        int target_node = ait->target_node;
+        find_successor_words(target_node, node_idxs, false);
+    }
 }
 
 
