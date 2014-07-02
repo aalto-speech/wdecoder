@@ -294,6 +294,9 @@ Decoder::recognize_lna_file(string lnafname,
     m_acoustics = &m_lna_reader;
     initialize();
 
+    double prop_ratio = 0.0;
+    double prop_normalizer = 0.0;
+
     time_t start_time, end_time;
     time(&start_time);
     int frame_idx = 0;
@@ -329,6 +332,11 @@ Decoder::recognize_lna_file(string lnafname,
         if (m_branching_stats) {
             m_total_token_count += double(m_token_count);
             m_total_propagated_count += double(m_propagated_count);
+            /*
+            double curr_prop_ratio = double(m_propagated_count) / double(m_token_count);
+            prop_ratio += curr_prop_ratio;
+            prop_normalizer += 1.0;
+            */
         }
 
         frame_idx++;
@@ -364,6 +372,10 @@ Decoder::recognize_lna_file(string lnafname,
     if (lm_prob != nullptr) *lm_prob = best_token.lm_log_prob;
     if (m_branching_stats && propagation_ratio != nullptr)
         *propagation_ratio = double(m_total_propagated_count) / double(m_total_token_count);
+//    if (m_branching_stats && propagation_ratio != nullptr)
+//          *propagation_ratio = prop_ratio / prop_normalizer;
+    cerr << "total token count: " << m_total_token_count << endl;
+    cerr << "total propagated token count: " << m_total_propagated_count << endl;
 }
 
 
@@ -1372,7 +1384,7 @@ Decoder::find_successor_hmm_nodes(int node_idx,
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         int target_node = ait->target_node;
-        find_successor_words(target_node, node_idxs, false);
+        find_successor_hmm_nodes(target_node, node_idxs, false);
     }
 }
 

@@ -211,8 +211,6 @@ public:
     std::vector<std::map<int, Token> > m_recombined_tokens;
     std::vector<float> m_best_node_scores;
 
-    std::vector<int> m_branching_counts;
-
     int m_debug;
     int m_stats;
 
@@ -220,6 +218,7 @@ public:
     int m_propagated_count;
     double m_total_token_count;
     double m_total_propagated_count;
+    std::vector<int> m_branching_counts;
 
     float m_lm_scale;
     float m_duration_scale;

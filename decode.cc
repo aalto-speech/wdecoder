@@ -235,7 +235,6 @@ int main(int argc, char* argv[])
             d.m_branching_counts.resize(d.m_nodes.size());
             for (int i=0; i<d.m_nodes.size(); i++) {
                 if (d.m_nodes[i].hmm_state == -1) continue;
-                if (i % 1000 == 0) cerr << "state: " << i << endl;
                 set<int> successor_hmm_nodes;
                 d.find_successor_hmm_nodes(i, successor_hmm_nodes);
                 d.m_branching_counts[i] = successor_hmm_nodes.size();
