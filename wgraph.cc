@@ -87,6 +87,24 @@ int main(int argc, char* argv[])
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
         wordgraphbuilder::create_crossword_network(dg, words, cw_nodes, fanout, fanin);
+
+        cerr << "crossword network size: " << cw_nodes.size() << endl;
+        tie_state_prefixes_cw(cw_nodes, fanout, fanin);
+        tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
+        tie_state_prefixes_cw(cw_nodes, fanout, fanin);
+        tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
+        tie_state_suffixes_cw(cw_nodes, fanout, fanin);
+        tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+        tie_state_suffixes_cw(cw_nodes, fanout, fanin);
+        tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+        tie_state_suffixes_cw(cw_nodes, fanout, fanin);
+        tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+        tie_state_suffixes_cw(cw_nodes, fanout, fanin);
+        tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+        tie_state_prefixes_cw(cw_nodes, fanout, fanin);
+        tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
+        cerr << "tied crossword network size: " << cw_nodes.size() << endl;
+
         cerr << "Connecting crossword network.." << endl;
         graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
         connect_end_to_start_node(nodes);
@@ -109,13 +127,11 @@ int main(int argc, char* argv[])
         cerr << endl;
         cerr << "Removing cw dummies.." << endl;
         remove_cw_dummies(nodes);
-        /*
         cerr << "Tying state prefixes.." << endl;
         tie_state_prefixes(nodes);
         cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-        */
 
         add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);
