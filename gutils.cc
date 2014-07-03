@@ -1049,7 +1049,8 @@ void tie_state_suffixes_cw(vector<DecoderGraph::Node> &nodes,
 }
 
 void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
-                        set<node_idx_t> &processed_nodes, bool stop_propagation,
+                        set<node_idx_t> &processed_nodes,
+                        bool stop_propagation,
                         node_idx_t node_idx)
 {
     if (processed_nodes.find(node_idx) != processed_nodes.end())
@@ -1059,8 +1060,7 @@ void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
     set<unsigned int> temp_arcs = nd.reverse_arcs;
 
     map<pair<int, set<unsigned int> >, set<unsigned int> > targets;
-    for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end();
-            ++ait) {
+    for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end(); ++ait) {
         int target_hmm = nodes[*ait].hmm_state;
         if (target_hmm != -1)
             targets[make_pair(target_hmm, nodes[*ait].arcs)].insert(*ait);
@@ -1080,7 +1080,6 @@ void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
             arcs_removed = true;
             nit++;
         }
-
     }
 
     if (stop_propagation && !arcs_removed)
