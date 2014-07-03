@@ -626,8 +626,10 @@ Decoder::move_token_to_node(Token token,
 
         if (node.word_id == m_sentence_end_symbol_idx) {
             token.lm_node = m_ngram_state_sentence_begin;
-            advance_in_history(token, m_word_boundary_symbol_idx);
-            token.last_word_id = m_word_boundary_symbol_idx;
+            if (m_use_word_boundary_symbol) {
+                advance_in_history(token, m_word_boundary_symbol_idx);
+                token.last_word_id = m_word_boundary_symbol_idx;
+            }
             if (m_bigram_la_in_use) {
                 if (m_bigram_la_scores[node.la_state_idx][token.last_word_id] < -1e10)
                     compute_bigram_la_score(node.la_state_idx, token.last_word_id);
