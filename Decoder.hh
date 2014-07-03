@@ -100,7 +100,7 @@ public:
                             double *log_prob=nullptr,
                             double *am_prob=nullptr,
                             double *lm_prob=nullptr,
-                            double *propagation_ratio=nullptr);
+                            double *total_token_count=nullptr);
 
     void initialize();
     void reset_frame_variables();
@@ -131,7 +131,6 @@ public:
     void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
     void reset_history_scores();
-    void find_successor_hmm_nodes(int node_idx, std::set<int> &node_idxs, bool start_node=true);
     void find_paths(std::vector<std::vector<int> > &paths,
                     std::vector<int> &words,
                     int curr_word_pos = 0,
@@ -214,11 +213,8 @@ public:
     int m_debug;
     int m_stats;
 
-    int m_branching_stats;
-    int m_propagated_count;
+    int m_token_stats;
     double m_total_token_count;
-    double m_total_propagated_count;
-    std::vector<int> m_branching_counts;
 
     float m_lm_scale;
     float m_duration_scale;

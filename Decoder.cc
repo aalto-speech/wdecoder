@@ -23,10 +23,8 @@ Decoder::Decoder()
     m_debug = 0;
     m_stats = 0;
 
-    m_branching_stats = 0;
-    m_propagated_count = 0;
+    m_token_stats = 0;
     m_total_token_count = 0;
-    m_total_propagated_count = 0;
 
     m_duration_model_in_use = false;
     m_unigram_la_in_use = false;
@@ -288,7 +286,7 @@ Decoder::recognize_lna_file(string lnafname,
                             double *log_prob,
                             double *am_prob,
                             double *lm_prob,
-                            double *propagation_ratio)
+                            double *total_token_count)
 {
     m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
@@ -329,16 +327,7 @@ Decoder::recognize_lna_file(string lnafname,
             print_best_word_history(cerr);
         }
 
-        if (m_branching_stats) {
-            m_total_token_count += double(m_token_count);
-            m_total_propagated_count += double(m_propagated_count);
-            /*
-            double curr_prop_ratio = double(m_propagated_count) / double(m_token_count);
-            prop_ratio += curr_prop_ratio;
-            prop_normalizer += 1.0;
-            */
-        }
-
+        m_total_token_count += double(m_token_count);
         frame_idx++;
     }
     time(&end_time);
@@ -370,12 +359,7 @@ Decoder::recognize_lna_file(string lnafname,
     if (log_prob != nullptr) *log_prob = best_token.total_log_prob;
     if (am_prob != nullptr) *am_prob = best_token.am_log_prob;
     if (lm_prob != nullptr) *lm_prob = best_token.lm_log_prob;
-    if (m_branching_stats && propagation_ratio != nullptr)
-        *propagation_ratio = double(m_total_propagated_count) / double(m_total_token_count);
-//    if (m_branching_stats && propagation_ratio != nullptr)
-//          *propagation_ratio = prop_ratio / prop_normalizer;
-    cerr << "total token count: " << m_total_token_count << endl;
-    cerr << "total propagated token count: " << m_total_propagated_count << endl;
+    if (total_token_count != nullptr) *total_token_count = m_total_token_count;
 }
 
 
@@ -412,7 +396,6 @@ Decoder::initialize()
     m_recombined_tokens[m_decode_start_node][tok.lm_node] = tok;
 
     m_total_token_count = 0;
-    m_total_propagated_count = 0;
 }
 
 
@@ -420,7 +403,6 @@ void
 Decoder::reset_frame_variables()
 {
     m_token_count = 0;
-    m_propagated_count = 0;
     m_best_log_prob = -1e20;
     m_best_am_log_prob = -1e20;
     m_best_word_end_prob = -1e20;
@@ -479,9 +461,6 @@ Decoder::propagate_tokens(void)
 
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
                 move_token_to_node(tit->second, ait->target_node, ait->log_prob);
-
-            if (m_branching_stats)
-                m_propagated_count += m_branching_counts[*nit];
         }
         node_count++;
     }
@@ -489,11 +468,8 @@ Decoder::propagate_tokens(void)
     for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit)
         m_recombined_tokens[*nit].clear();
 
-    if (m_stats) {
+    if (m_stats)
         cerr << "token count before propagation: " << m_token_count << endl;
-        if (m_branching_stats)
-            cerr << "propagated token count: " << m_propagated_count << endl;
-    }
 }
 
 
@@ -1367,25 +1343,6 @@ Decoder::score_state_path(string lnafname,
 
     m_lna_reader.close();
     return total_score;
-}
-
-
-void
-Decoder::find_successor_hmm_nodes(int node_idx,
-                                  set<int> &node_idxs,
-                                  bool start_node)
-{
-    Node &node = m_nodes[node_idx];
-
-    if (!start_node && node.hmm_state != -1) {
-        node_idxs.insert(node_idx);
-        return;
-    }
-
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        int target_node = ait->target_node;
-        find_successor_hmm_nodes(target_node, node_idxs, false);
-    }
 }
 
 

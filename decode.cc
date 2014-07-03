@@ -69,7 +69,7 @@ read_config(Decoder &d, string cfgfname)
         }
         else if (parameter == "debug") ss >> d.m_debug;
         else if (parameter == "stats") ss >> d.m_stats;
-        else if (parameter == "branching_stats") ss >> d.m_branching_stats;
+        else if (parameter == "token_stats") ss >> d.m_token_stats;
         else throw string("Unknown parameter: ") + parameter;
     }
 
@@ -134,6 +134,7 @@ recognize_lnas(Decoder &d,
     int total_frames = 0;
     double total_time = 0.0;
     double total_lp = 0.0;
+    double total_token_count = 0.0;
     int file_count = 0;
     while (getline(lnalistf, line)) {
         if (!line.length()) continue;
@@ -141,17 +142,18 @@ recognize_lnas(Decoder &d,
         int curr_frames;
         double curr_time;
         double curr_lp, curr_am_lp, curr_lm_lp;
-        double propagation_ratio;
+        double token_count;
         d.recognize_lna_file(line, resultf, &curr_frames, &curr_time,
-                             &curr_lp, &curr_am_lp, &curr_lm_lp, &propagation_ratio);
+                             &curr_lp, &curr_am_lp, &curr_lm_lp, &token_count);
         total_frames += curr_frames;
         total_time += curr_time;
         total_lp += curr_lp;
+        total_token_count += token_count;
         logf << "\trecognized " << curr_frames << " frames in " << curr_time << " seconds." << endl;
         logf << "\tRTF: " << curr_time / ((double)curr_frames/125.0) << endl;
         logf << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl;
-        if (d.m_branching_stats)
-            logf << "\tToken propagation ratio: " << propagation_ratio << endl;
+        if (d.m_token_stats)
+            logf << "\tAverage token count: " << token_count / (double)curr_frames << endl;
         file_count++;
     }
     lnalistf.close();
@@ -163,6 +165,8 @@ recognize_lnas(Decoder &d,
         logf << "total frame count: " << total_frames << endl;
         logf << "total RTF: " << total_time/ ((double)total_frames/125.0) << endl;
         logf << "total log prob: " << total_lp << endl;
+        if (d.m_token_stats)
+            logf << "total average token count: " << total_token_count / (double)total_frames << endl;
     }
 }
 
@@ -228,17 +232,6 @@ int main(int argc, char* argv[])
         if (lm_scales.size() != beams.size()) {
             cerr << "Number of set lm scales differs from set beams." << endl;
             exit(0);
-        }
-
-        if (d.m_branching_stats) {
-            cerr << "Computing branching counts for each HMM node." << endl;
-            d.m_branching_counts.resize(d.m_nodes.size());
-            for (int i=0; i<d.m_nodes.size(); i++) {
-                if (d.m_nodes[i].hmm_state == -1) continue;
-                set<int> successor_hmm_nodes;
-                d.find_successor_hmm_nodes(i, successor_hmm_nodes);
-                d.m_branching_counts[i] = successor_hmm_nodes.size();
-            }
         }
 
         if (config["result-file"].specified) {
