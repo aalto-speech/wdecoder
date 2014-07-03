@@ -127,8 +127,7 @@ int main(int argc, char* argv[])
         cerr << endl;
         cerr << "Removing cw dummies.." << endl;
         remove_cw_dummies(nodes);
-        cerr << "Tying state prefixes.." << endl;
-        tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
         cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
