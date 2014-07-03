@@ -238,10 +238,10 @@ int main(int argc, char* argv[])
             string resultfname = config["result-file"].get_str();
             cerr << "Base filename for results: " << resultfname << endl;
             for (unsigned int i=0; i<lm_scales.size(); ++i) {
-                string curr_resfname = resultfname + string(".lmscale") + to_string(int(lm_scales[i]))
-                        + string(".beam") + to_string(int(beams[i])) + string(".rec");
-                string curr_logfname = resultfname + string(".lmscale") + to_string(int(lm_scales[i]))
-                        + string(".beam") + to_string(int(beams[i])) + string(".log");
+                string curr_resfname = resultfname + string(".lmscale") + to_string(static_cast<long long>(lm_scales[i]))
+                        + string(".beam") + to_string(static_cast<long long>(beams[i])) + string(".rec");
+                string curr_logfname = resultfname + string(".lmscale") + to_string(static_cast<long long>(lm_scales[i]))
+                        + string(".beam") + to_string(static_cast<long long>(beams[i])) + string(".log");
                 ofstream resultf(curr_resfname);
                 ofstream logf(curr_logfname);
                 recognize_lnas(d,
