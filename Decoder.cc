@@ -185,7 +185,7 @@ Decoder::read_la_lm(string lmfname, bool la_tables)
     }
     else if (m_la_lm.order() == 1) {
         cerr << "Setting unigram lookahead scores" << endl;
-        int la_state_count = set_unigram_la_scores();
+        set_unigram_la_scores();
         m_unigram_la_in_use = true;
     }
 }
@@ -291,9 +291,6 @@ Decoder::recognize_lna_file(string lnafname,
     m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
     initialize();
-
-    double prop_ratio = 0.0;
-    double prop_normalizer = 0.0;
 
     time_t start_time, end_time;
     time(&start_time);
@@ -1125,7 +1122,7 @@ Decoder::num_branching_nodes()
 {
     int num_branching_nodes = 0;
 
-    for (int ni = 0; ni<m_nodes.size(); ni++) {
+    for (int ni = 0; ni<(int)m_nodes.size(); ni++) {
         Node &nd = m_nodes[ni];
         int num_non_self_arcs = 0;
         for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
@@ -1146,7 +1143,7 @@ Decoder::set_la_state_indices_to_nodes()
 
     // Find one node for each initial la state
     map<int, int> example_la_state_nodes;
-    for (int i=0; i<m_nodes.size(); i++) {
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
         Node &nd = m_nodes[i];
         example_la_state_nodes[nd.la_state_idx] = i;
     }
@@ -1167,7 +1164,7 @@ Decoder::set_la_state_indices_to_nodes()
             la_state_remapping[*idxit] = reidx;
         reidx++;
     }
-    for (int i=0; i<m_nodes.size(); i++) {
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
         Node &nd = m_nodes[i];
         nd.la_state_idx = la_state_remapping[nd.la_state_idx];
     }
@@ -1223,7 +1220,7 @@ Decoder::set_la_state_successor_lists()
     }
 
     m_la_state_successor_words.resize(max_la_state_idx+1);
-    for (int i=0; i<m_nodes.size(); ++i) {
+    for (unsigned int i=0; i<m_nodes.size(); ++i) {
         Node &nd = m_nodes[i];
         if (m_la_state_successor_words[nd.la_state_idx].size() > 0) continue;
         find_successor_words(i, m_la_state_successor_words[nd.la_state_idx]);

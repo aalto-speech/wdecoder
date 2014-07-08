@@ -897,7 +897,7 @@ void tie_state_prefixes_cw(vector<DecoderGraph::Node> &nodes,
     set_reverse_arcs_also_from_unreachable(nodes);
 
     set<node_idx_t> start_nodes;
-    for (int i=0; i<nodes.size(); i++)
+    for (unsigned int i=0; i<nodes.size(); i++)
         if (nodes[i].flags & NODE_FAN_OUT_DUMMY)
             start_nodes.insert(i);
 
@@ -966,7 +966,7 @@ void tie_word_id_prefixes_cw(vector<DecoderGraph::Node> &nodes,
     set_reverse_arcs_also_from_unreachable(nodes);
 
     set<node_idx_t> start_nodes;
-    for (int i=0; i<nodes.size(); i++)
+    for (unsigned int i=0; i<nodes.size(); i++)
         if (nodes[i].flags & NODE_FAN_OUT_DUMMY)
             start_nodes.insert(i);
 
@@ -1037,7 +1037,7 @@ void tie_state_suffixes_cw(vector<DecoderGraph::Node> &nodes,
 
     set<node_idx_t> start_nodes;
     set<node_idx_t> end_nodes;
-    for (int i=0; i<nodes.size(); i++)
+    for (unsigned int i=0; i<nodes.size(); i++)
         if (nodes[i].flags & NODE_FAN_OUT_DUMMY)
             start_nodes.insert(i);
         else if (nodes[i].flags & NODE_FAN_IN_DUMMY)
@@ -1109,7 +1109,7 @@ void tie_word_id_suffixes_cw(vector<DecoderGraph::Node> &nodes,
 
     set<node_idx_t> start_nodes;
     set<node_idx_t> end_nodes;
-    for (int i=0; i<nodes.size(); i++)
+    for (unsigned int i=0; i<nodes.size(); i++)
         if (nodes[i].flags & NODE_FAN_OUT_DUMMY)
             start_nodes.insert(i);
         else if (nodes[i].flags & NODE_FAN_IN_DUMMY)
@@ -1265,7 +1265,7 @@ void set_reverse_arcs(vector<DecoderGraph::Node> &nodes,
 
     for (auto ait = nodes[node_idx].arcs.begin(); ait != nodes[node_idx].arcs.end(); ++ait)
     {
-        if (*ait == node_idx) continue;
+        if (*ait == (node_idx_t)node_idx) continue;
         nodes[*ait].reverse_arcs.insert(node_idx);
         set_reverse_arcs(nodes, *ait, processed_nodes);
     }
@@ -1711,7 +1711,7 @@ add_long_silence(DecoderGraph &dg,
 
     string long_silence("__");
     int hmm_index = dg.m_hmm_map[long_silence];
-    Hmm &hmm = dg.m_hmms[hmm_index];
+    //Hmm &hmm = dg.m_hmms[hmm_index];
 
     node_idx_t node_idx = END_NODE;
     node_idx = connect_triphone(dg, nodes, hmm_index, node_idx, NODE_SILENCE);

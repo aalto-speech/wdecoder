@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
         if (wb_symbol)
         {
             cerr << "Setting word boundary symbols.." << endl;
-            for (int i=0; i<nodes.size(); i++)
+            for (unsigned int i=0; i<nodes.size(); i++)
                 if (nodes[i].flags & NODE_FAN_OUT_DUMMY) {
                     nodes[i].flags = 0;
                     nodes[i].word_id =  dg.m_subword_map["<w>"];
