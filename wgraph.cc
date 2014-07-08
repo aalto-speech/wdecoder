@@ -64,8 +64,6 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        time_t rawtime;
-
         vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
         for (auto wit = words.begin(); wit != words.end(); ++wit) {
             vector<DecoderGraph::TriphoneNode> word_triphones;
@@ -81,8 +79,6 @@ int main(int argc, char* argv[])
         prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        time ( &rawtime );
-        cerr << "time: " << ctime (&rawtime) << endl;
         cerr << "Creating crossword network.." << endl;
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
@@ -130,6 +126,10 @@ int main(int argc, char* argv[])
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
         cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        cerr << "Tying state prefixes.." << endl;
+        tie_state_prefixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         add_long_silence(dg, nodes);

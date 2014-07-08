@@ -915,13 +915,12 @@ void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
         return;
     processed_nodes.insert(node_idx);
     DecoderGraph::Node &nd = nodes[node_idx];
-    set<unsigned int> temp_arcs = nd.arcs;
 
-    map<pair<int, set<unsigned int> >, set<unsigned int> > targets;
+    map<pair<int, set<unsigned int> >, vector<unsigned int> > targets;
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
         int target_hmm = nodes[*ait].hmm_state;
         if (target_hmm != -1)
-            targets[make_pair(target_hmm, nodes[*ait].reverse_arcs)].insert(*ait);
+            targets[make_pair(target_hmm, nodes[*ait].reverse_arcs)].push_back(*ait);
     }
 
     bool arcs_removed = false;
@@ -943,6 +942,7 @@ void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
     if (stop_propagation && !arcs_removed)
         return;
 
+    set<unsigned int> temp_arcs = nd.arcs;
     for (auto arcit = temp_arcs.begin(); arcit != temp_arcs.end(); ++arcit)
         tie_state_prefixes(nodes, processed_nodes, stop_propagation, *arcit);
 }
@@ -1057,13 +1057,12 @@ void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
         return;
     processed_nodes.insert(node_idx);
     DecoderGraph::Node &nd = nodes[node_idx];
-    set<unsigned int> temp_arcs = nd.reverse_arcs;
 
-    map<pair<int, set<unsigned int> >, set<unsigned int> > targets;
+    map<pair<int, set<unsigned int> >, vector<unsigned int> > targets;
     for (auto ait = nd.reverse_arcs.begin(); ait != nd.reverse_arcs.end(); ++ait) {
         int target_hmm = nodes[*ait].hmm_state;
         if (target_hmm != -1)
-            targets[make_pair(target_hmm, nodes[*ait].arcs)].insert(*ait);
+            targets[make_pair(target_hmm, nodes[*ait].arcs)].push_back(*ait);
     }
 
     bool arcs_removed = false;
@@ -1085,6 +1084,7 @@ void tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
     if (stop_propagation && !arcs_removed)
         return;
 
+    set<unsigned int> temp_arcs = nd.reverse_arcs;
     for (auto arcit = temp_arcs.begin(); arcit != temp_arcs.end(); ++arcit)
         tie_state_suffixes(nodes, processed_nodes, stop_propagation, *arcit);
 }
