@@ -20,10 +20,12 @@ int main(int argc, char* argv[])
     conf::Config config;
     config("usage: dgraph [OPTION...] PH LEXICON WSEGS GRAPH\n")
     ('b', "word-boundary", "", "", "Use word boundary symbol (<w>)")
+    ('n', "no-push", "", "", "Don't move subword identifiers in the graph")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
     bool wb_symbol = config["word-boundary"].specified;
+    bool no_push = config["no-push"].specified;
 
     DecoderGraph dg;
 
@@ -64,7 +66,10 @@ int main(int argc, char* argv[])
         cerr << "Creating crossword network.." << endl;
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
-        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, true);
+        if (wb_symbol)
+            create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, true);
+        else
+            create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, false);
 
         cerr << "crossword network size: " << cw_nodes.size() << endl;
         tie_state_prefixes_cw(cw_nodes, fanout, fanin);
@@ -136,19 +141,19 @@ int main(int argc, char* argv[])
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        /*
-        cerr << "Pushing subword ids right.." << endl;
-        push_word_ids_right(nodes);
-        cerr << "Tying state prefixes.." << endl;
-        tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        if (!no_push) {
+            cerr << "Pushing subword ids right.." << endl;
+            push_word_ids_right(nodes);
+            cerr << "Tying state prefixes.." << endl;
+            tie_state_prefixes(nodes);
+            cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        cerr << "Pushing subword ids left.." << endl;
-        push_word_ids_left(nodes);
-        cerr << "Tying state suffixes.." << endl;
-        tie_state_suffixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-        */
+            cerr << "Pushing subword ids left.." << endl;
+            push_word_ids_left(nodes);
+            cerr << "Tying state suffixes.." << endl;
+            tie_state_suffixes(nodes);
+            cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        }
 
         if (wb_symbol) nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
         add_long_silence(dg, nodes);
