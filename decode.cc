@@ -220,19 +220,14 @@ int main(int argc, char* argv[])
             string la_type = config["lookahead-type"].get_str();
             string lalmfname = config["lookahead-model"].get_str();
             cerr << "Reading lookahead model: " << lalmfname << endl;
-            if (la_type == "unigram") {
+            if (la_type == "unigram")
                 d.m_la = new UnigramLookahead(d, lalmfname);
-            }
-            else if (la_type == "bigram-full") {
+            else if (la_type == "bigram-full")
                 d.m_la = new FullTableBigramLookahead(d, lalmfname);
-            }
-            else if (la_type == "bigram-scores") {
+            else if (la_type == "bigram-scores")
                 d.m_la = new BigramScoreLookahead(d, lalmfname);
-            }
-            else if (la_type == "bigram-hybrid") {
-                cerr << la_type << " not implemented yet." << endl;
-                exit(0);
-            }
+            else if (la_type == "bigram-hybrid")
+                d.m_la = new HybridBigramLookahead(d, lalmfname);
             else {
                 cerr << "unknown lookahead type: " << la_type << endl;
                 exit(0);

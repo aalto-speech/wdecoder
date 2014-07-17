@@ -46,6 +46,33 @@ private:
 };
 
 
+// Full bigram tables for cross-word and initial nodes
+// Map style data structures in other nodes
+class HybridBigramLookahead : public Decoder::Lookahead {
+public:
+    HybridBigramLookahead(Decoder &decoder,
+                          std::string lafname);
+    ~HybridBigramLookahead() {};
+    float get_lookahead_score(int node_idx, int word_id);
+
+private:
+
+    void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
+    int set_la_state_indices_to_nodes();
+    void propagate_la_state_idx(int node_idx,
+                                int la_state_idx,
+                                int &max_state_idx,
+                                bool first_node=true);
+    int set_la_state_successor_lists();
+    int set_bigram_la_maps();
+
+    std::vector<int> m_node_la_states;
+    std::vector<std::vector<int> > m_la_state_successor_words;
+    std::vector<std::vector<float> > m_bigram_la_scores;
+    std::vector<std::map<int, float> > m_bigram_la_maps;
+};
+
+
 class BigramScoreLookahead : public Decoder::Lookahead {
 public:
     BigramScoreLookahead(Decoder &decoder,

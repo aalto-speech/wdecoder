@@ -138,7 +138,6 @@ public:
     void clear_word_history();
     void prune_word_history();
     void set_hmm_transition_probs();
-    void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
     void find_paths(std::vector<std::vector<int> > &paths,
                     std::vector<int> &words,
@@ -197,14 +196,12 @@ public:
     bool m_force_sentence_end;
     bool m_use_word_boundary_symbol;
     bool m_duration_model_in_use;
-    bool m_precomputed_lookahead_tables;
     std::string m_word_boundary_symbol;
     int m_word_boundary_symbol_idx;
     int m_sentence_begin_symbol_idx;
     int m_sentence_end_symbol_idx;
     int m_max_state_duration;
     int m_ngram_state_sentence_begin;
-    int m_initial_node_depth;
 
     float m_global_beam;
     float m_node_beam;

@@ -27,7 +27,6 @@ Decoder::Decoder()
     m_total_token_count = 0;
 
     m_duration_model_in_use = false;
-    m_precomputed_lookahead_tables = false;
     m_use_word_boundary_symbol = false;
     m_force_sentence_end = true;
 
@@ -39,7 +38,6 @@ Decoder::Decoder()
     m_word_boundary_symbol_idx = -1;
     m_sentence_begin_symbol_idx = -1;
     m_sentence_end_symbol_idx = -1;
-    m_initial_node_depth = 2;
 
     m_dropped_count = 0;
     m_global_beam_pruned_count = 0;
@@ -194,7 +192,6 @@ Decoder::read_dgraph(string fname)
     }
 
     set_hmm_transition_probs();
-    mark_initial_nodes(m_initial_node_depth);
 
     m_long_silence_loop_start_node = m_nodes.size()-1;
     for (auto ait = m_nodes.back().arcs.begin(); ait != m_nodes.back().arcs.end(); ++ait)
@@ -571,7 +568,6 @@ Decoder::move_token_to_node(Token token,
                 update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
             token.total_log_prob = get_token_log_prob(token);
         }
-
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
@@ -807,24 +803,6 @@ Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
                  << "[label=\"" << ait->log_prob << "\"];" << endl;
     }
     fstr << "}" << endl;
-}
-
-
-void
-Decoder::mark_initial_nodes(int max_depth, int curr_depth, int node_idx)
-{
-    Node &node = m_nodes[node_idx];
-
-    if (node_idx != START_NODE) {
-        if (node.word_id != -1) return;
-        node.flags |= NODE_INITIAL;
-    }
-    if (curr_depth == max_depth) return;
-
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (ait->target_node == node_idx) continue;
-        mark_initial_nodes(max_depth, curr_depth+1, ait->target_node);
-    }
 }
 
 
