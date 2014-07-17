@@ -551,8 +551,8 @@ HybridBigramLookahead::get_lookahead_score(int node_idx, int word_id)
         return m_bigram_la_scores[la_state_idx][word_id];
     }
     else {
-        if (m_bigram_la_maps[node_idx].find(word_id) == m_bigram_la_maps[node_idx].end())
-            cerr << "la problem in node: " << node_idx << endl;
+        //if (m_bigram_la_maps[node_idx].find(word_id) == m_bigram_la_maps[node_idx].end())
+        //    cerr << "la problem in node: " << node_idx << endl;
         return m_bigram_la_maps[node_idx][word_id];
     }
 }
