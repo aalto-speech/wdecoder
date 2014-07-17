@@ -488,13 +488,16 @@ Decoder::prune_tokens(bool collect_active_histories)
     float current_word_end_beam = m_best_word_end_prob - m_word_end_beam;
     for (unsigned int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
+        float prob_wo_la = tok.total_log_prob - m_lm_scale * tok.lookahead_log_prob;
         if (tok.total_log_prob < current_glob_beam)
             m_global_beam_pruned_count++;
+        /*
         else if (tok.am_log_prob < current_acoustic_beam)
             m_acoustic_beam_pruned_count++;
         else if (tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam)
             m_history_beam_pruned_count++;
-        else if (tok.word_end && tok.total_log_prob < current_word_end_beam)
+        */
+        else if (tok.word_end && prob_wo_la < current_word_end_beam)
             m_word_end_beam_pruned_count++;
         else if (tok.total_log_prob < (m_best_node_scores[tok.node_idx] - m_node_beam))
             m_node_beam_pruned_count++;
@@ -582,10 +585,12 @@ Decoder::move_token_to_node(Token token,
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
 
+        /*
         if (token.am_log_prob < (m_best_am_log_prob-m_acoustic_beam)) {
             m_acoustic_beam_pruned_count++;
             return;
         }
+        */
 
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
@@ -594,9 +599,12 @@ Decoder::move_token_to_node(Token token,
         }
 
         m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
-        m_best_am_log_prob = max(m_best_am_log_prob, token.am_log_prob);
-        if (token.word_end) m_best_word_end_prob = max(m_best_word_end_prob, token.total_log_prob);
-        token.history->best_am_log_prob = max(token.history->best_am_log_prob, token.am_log_prob);
+        //m_best_am_log_prob = max(m_best_am_log_prob, token.am_log_prob);
+        if (token.word_end) {
+            float lp_wo_la = token.total_log_prob - m_lm_scale * token.lookahead_log_prob;
+            m_best_word_end_prob = max(m_best_word_end_prob, lp_wo_la);
+        }
+        //token.history->best_am_log_prob = max(token.history->best_am_log_prob, token.am_log_prob);
         m_best_node_scores[node_idx] = max(m_best_node_scores[node_idx], token.total_log_prob);
         m_raw_tokens.push_back(token);
         return;
@@ -635,7 +643,9 @@ Decoder::move_token_to_node(Token token,
                     compute_bigram_la_score(node.la_state_idx, token.last_word_id);
                 update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
             }
+            token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         }
+
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
