@@ -150,7 +150,7 @@ recognize_lnas(Decoder &d,
         logf << "\tRTF: " << curr_time / ((double)curr_frames/125.0) << endl;
         logf << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl;
         if (d.m_token_stats)
-            logf << "\tAverage token count: " << token_count / (double)curr_frames << endl;
+            logf << "\tMean token count: " << token_count / (double)curr_frames << endl;
         file_count++;
     }
     lnalistf.close();
