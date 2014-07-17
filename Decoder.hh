@@ -107,7 +107,7 @@ public:
     void propagate_tokens();
     void prune_tokens(bool collect_active_histories=false);
     void move_token_to_node(Token token, int node_idx, float transition_score);
-    inline float get_token_log_prob(float am_score, float lm_score);
+    inline float get_token_log_prob(const Token &token);
     inline void advance_in_history(Token& token, int word_id);
     inline void apply_duration_model(Token &token, int node_idx);
     inline void update_lookahead_prob(Token &token, float lookahead_prob);

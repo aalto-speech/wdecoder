@@ -340,7 +340,7 @@ Decoder::recognize_lna_file(string lnafname,
         Token &tok = *tit;
         if (m_duration_model_in_use && tok.dur > 1) apply_duration_model(tok, tok.node_idx);
         update_lookahead_prob(tok, 0.0);
-        tok.total_log_prob = get_token_log_prob(tok.am_log_prob, tok.lm_log_prob);
+        tok.total_log_prob = get_token_log_prob(tok);
     }
     if (m_force_sentence_end) add_sentence_ends(tokens);
 
@@ -584,7 +584,7 @@ Decoder::move_token_to_node(Token token,
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
 
-        token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+        token.total_log_prob = get_token_log_prob(token);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
@@ -613,7 +613,7 @@ Decoder::move_token_to_node(Token token,
             update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
         }
 
-        token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+        token.total_log_prob = get_token_log_prob(token);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
@@ -633,7 +633,7 @@ Decoder::move_token_to_node(Token token,
                     compute_bigram_la_score(node.la_state_idx, token.last_word_id);
                 update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
             }
-            token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+            token.total_log_prob = get_token_log_prob(token);
         }
 
     }
@@ -679,9 +679,9 @@ Decoder::get_best_token(vector<Token> &tokens)
 
 
 float
-Decoder::get_token_log_prob(float am_score, float lm_score)
+Decoder::get_token_log_prob(const Token &token)
 {
-    return (am_score + m_lm_scale * lm_score);
+    return (token.am_log_prob + m_lm_scale * token.lm_log_prob);
 }
 
 
@@ -727,11 +727,11 @@ Decoder::add_sentence_ends(vector<Token> &tokens)
         if (m_use_word_boundary_symbol && token.history->word_id != m_subword_map[m_word_boundary_symbol]) {
             token.lm_node = m_lm.score(token.lm_node,
                                        m_subword_id_to_ngram_symbol[m_subword_map[m_word_boundary_symbol]], token.lm_log_prob);
-            token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+            token.total_log_prob = get_token_log_prob(token);
             advance_in_history(token, m_subword_map[m_word_boundary_symbol]);
         }
         token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[m_sentence_end_symbol_idx], token.lm_log_prob);
-        token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
+        token.total_log_prob = get_token_log_prob(token);
         advance_in_history(token, m_sentence_end_symbol_idx);
         m_active_histories.insert(token.history);
     }
