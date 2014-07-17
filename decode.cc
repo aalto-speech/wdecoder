@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "Decoder.hh"
+#include "Lookahead.hh"
 #include "conf.hh"
 #include "str.hh"
 
@@ -51,8 +52,8 @@ read_config(Decoder &d, string cfgfname)
             ss >> global_beam_csv;
             parse_csv(global_beam_csv, beams);
         }
-        else if (parameter == "acoustic_beam") ss >> d.m_acoustic_beam;
-        else if (parameter == "history_beam") ss >> d.m_history_beam;
+        else if (parameter == "acoustic_beam") continue;
+        else if (parameter == "history_beam") continue;
         else if (parameter == "word_end_beam") ss >> d.m_word_end_beam;
         else if (parameter == "node_beam") ss >> d.m_node_beam;
         else if (parameter == "word_boundary_penalty") ss >> d.m_word_boundary_penalty;
@@ -102,8 +103,6 @@ print_config(Decoder &d,
     if (d.m_use_word_boundary_symbol)
         outf << "word boundary symbol: " << d.m_word_boundary_symbol << endl;
     outf << "global beam: " << d.m_global_beam << endl;
-    outf << "acoustic global beam: " << d.m_acoustic_beam << endl;
-    outf << "acoustic history beam: " << d.m_history_beam << endl;
     outf << "word end beam: " << d.m_word_end_beam << endl;
     outf << "node beam: " << d.m_node_beam << endl;
     outf << "word boundary penalty: " << d.m_word_boundary_penalty << endl;
@@ -119,7 +118,6 @@ recognize_lnas(Decoder &d,
                ostream &logf,
                float lm_scale,
                float global_beam,
-               float global_ac_beam,
                float word_end_beam)
 {
     ifstream lnalistf(lnalistfname);
@@ -127,7 +125,6 @@ recognize_lnas(Decoder &d,
 
     d.m_lm_scale = lm_scale;
     d.m_global_beam = global_beam;
-    d.m_acoustic_beam = global_ac_beam;
     d.m_word_end_beam = word_end_beam;
     print_config(d, config, logf);
 
@@ -180,7 +177,11 @@ int main(int argc, char* argv[])
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('f', "result-file=STRING", "arg", "", "Base filename for results (.rec and .log)")
     ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
-    ('t', "lookahead-tables", "", "", "Set bigram lookahead tables");
+    ('t', "lookahead-type=STRING", "arg", "", "Set bigram lookahead tables\n"
+            "\tunigram\n"
+            "\tbigram-full\n"
+            "\tbigram-hybrid\n"
+            "\tbigram-scores");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
@@ -216,10 +217,28 @@ int main(int argc, char* argv[])
         cerr << "node count: " << d.m_nodes.size() << endl;
 
         if (config["lookahead-model"].specified) {
-            bool la_tables = config["lookahead-tables"].specified;
+            string la_type = config["lookahead-type"].get_str();
             string lalmfname = config["lookahead-model"].get_str();
             cerr << "Reading lookahead model: " << lalmfname << endl;
-            d.read_la_lm(lalmfname, la_tables);
+            if (la_type == "unigram") {
+                d.m_la = new UnigramLookahead(d, lalmfname);
+            }
+            else if (la_type == "bigram-full") {
+                cerr << la_type << " not implemented yet." << endl;
+                exit(0);
+            }
+            else if (la_type == "bigram-scores") {
+                cerr << la_type << " not implemented yet." << endl;
+                exit(0);
+            }
+            else if (la_type == "bigram-hybrid") {
+                cerr << la_type << " not implemented yet." << endl;
+                exit(0);
+            }
+            else {
+                cerr << "unknown lookahead type: " << la_type << endl;
+                exit(0);
+            }
         }
 
         string lnalistfname = config.arguments[5];
@@ -251,7 +270,6 @@ int main(int argc, char* argv[])
                                logf,
                                lm_scales[i],
                                beams[i],
-                               beams[i]-40.0,
                                (2.0/3.0) * beams[i]);
             }
         }
@@ -264,7 +282,6 @@ int main(int argc, char* argv[])
                                cerr,
                                lm_scales[i],
                                beams[i],
-                               d.m_acoustic_beam,
                                d.m_word_end_beam);
         }
 

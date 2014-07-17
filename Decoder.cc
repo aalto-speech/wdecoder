@@ -27,8 +27,6 @@ Decoder::Decoder()
     m_total_token_count = 0;
 
     m_duration_model_in_use = false;
-    m_unigram_la_in_use = false;
-    m_bigram_la_in_use = false;
     m_precomputed_lookahead_tables = false;
     m_use_word_boundary_symbol = false;
     m_force_sentence_end = true;
@@ -47,23 +45,19 @@ Decoder::Decoder()
     m_global_beam_pruned_count = 0;
     m_word_end_beam_pruned_count = 0;
     m_node_beam_pruned_count = 0;
-    m_history_beam_pruned_count = 0;
-    m_acoustic_beam_pruned_count = 0;
     m_max_state_duration_pruned_count = 0;
     m_histogram_pruned_count = 0;
 
     m_acoustics = nullptr;
 
+    m_la = nullptr;
+
     m_best_log_prob = -1e20;
-    m_best_am_log_prob = -1e20;
     m_best_word_end_prob = -1e20;
     m_histogram_bin_limit = 0;
 
     m_global_beam = 0.0;
-    m_acoustic_beam = 0.0;
     m_current_word_end_beam = 0.0;
-    m_history_beam = 0.0;
-    m_silence_beam = 0.0;
     m_word_end_beam = 0.0;
     m_node_beam = 0.0;
 
@@ -162,36 +156,6 @@ Decoder::read_lm(string lmfname)
 
 
 void
-Decoder::read_la_lm(string lmfname, bool la_tables)
-{
-    m_la_lm.read_arpa(lmfname);
-    set_subword_id_la_ngram_symbol_mapping();
-
-    if (m_la_lm.order() == 2) {
-        if (la_tables) {
-        cerr << "Setting la state indices and successor lists" << endl;
-        int la_state_count = set_la_state_indices_to_nodes();
-        cerr << "number of la states: " << la_state_count << endl;
-        set_la_state_successor_lists();
-        m_bigram_la_scores.resize(m_la_state_successor_words.size());
-        for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
-            (*blsit).resize(m_subwords.size(), -1e20);
-        m_bigram_la_in_use = true;
-        }
-        else {
-            set_bigram_la_scores();
-            m_unigram_la_in_use = true;
-        }
-    }
-    else if (m_la_lm.order() == 1) {
-        cerr << "Setting unigram lookahead scores" << endl;
-        set_unigram_la_scores();
-        m_unigram_la_in_use = true;
-    }
-}
-
-
-void
 Decoder::read_dgraph(string fname)
 {
     ifstream ginf(fname);
@@ -268,17 +232,6 @@ Decoder::set_subword_id_ngram_symbol_mapping()
 
 
 void
-Decoder::set_subword_id_la_ngram_symbol_mapping()
-{
-    m_subword_id_to_la_ngram_symbol.resize(m_subwords.size(), -1);
-    for (unsigned int i=0; i<m_subwords.size(); i++) {
-        string tmp(m_subwords[i]);
-        m_subword_id_to_la_ngram_symbol[i] = m_la_lm.vocabulary_lookup[tmp];
-    }
-}
-
-
-void
 Decoder::recognize_lna_file(string lnafname,
                             ostream &outf,
                             int *frame_count,
@@ -310,11 +263,8 @@ Decoder::recognize_lna_file(string lnafname,
         if (m_stats) {
             cerr << endl << "recognized frame: " << frame_idx << endl;
             cerr << "current global beam: " << m_global_beam << endl;
-            cerr << "current acoustic beam: " << m_acoustic_beam << endl;
             cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
-            cerr << "tokens pruned by acoustic beam: " << m_acoustic_beam_pruned_count << endl;
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
-            cerr << "tokens pruned by acoustic history beam: " << m_history_beam_pruned_count << endl;
             cerr << "tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
             cerr << "tokens pruned by node beam: " << m_node_beam_pruned_count << endl;
             cerr << "tokens pruned by histogram token limit: " << m_histogram_pruned_count << endl;
@@ -401,18 +351,14 @@ Decoder::reset_frame_variables()
 {
     m_token_count = 0;
     m_best_log_prob = -1e20;
-    m_best_am_log_prob = -1e20;
     m_best_word_end_prob = -1e20;
     m_global_beam_pruned_count = 0;
-    m_acoustic_beam_pruned_count = 0;
     m_max_state_duration_pruned_count = 0;
-    m_history_beam_pruned_count = 0;
     m_word_end_beam_pruned_count = 0;
     m_node_beam_pruned_count = 0;
     m_histogram_pruned_count = 0;
     m_dropped_count = 0;
     m_token_count_after_pruning = 0;
-    reset_history_scores();
     m_active_histories.clear();
     fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
 }
@@ -571,16 +517,11 @@ Decoder::move_token_to_node(Token token,
         token.dur = 1;
     }
 
-    if (m_unigram_la_in_use) update_lookahead_prob(token, node.unigram_la_score);
-
     // HMM node
     if (node.hmm_state != -1) {
 
-        if (m_bigram_la_in_use) {
-            if (m_bigram_la_scores[node.la_state_idx][token.last_word_id] < -1e10)
-                compute_bigram_la_score(node.la_state_idx, token.last_word_id);
-            update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
-        }
+        if (m_la != nullptr)
+            update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
 
@@ -607,11 +548,8 @@ Decoder::move_token_to_node(Token token,
         token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
         token.last_word_id = node.word_id;
 
-        if (m_bigram_la_in_use && node.word_id != m_sentence_end_symbol_idx) {
-            if (m_bigram_la_scores[node.la_state_idx][token.last_word_id] < -1e10)
-                compute_bigram_la_score(node.la_state_idx, token.last_word_id);
-            update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
-        }
+        if (m_la != nullptr)
+            update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
 
         token.total_log_prob = get_token_log_prob(token);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
@@ -628,11 +566,9 @@ Decoder::move_token_to_node(Token token,
                 advance_in_history(token, m_word_boundary_symbol_idx);
                 token.last_word_id = m_word_boundary_symbol_idx;
             }
-            if (m_bigram_la_in_use) {
-                if (m_bigram_la_scores[node.la_state_idx][token.last_word_id] < -1e10)
-                    compute_bigram_la_score(node.la_state_idx, token.last_word_id);
-                update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
-            }
+
+            if (m_la != nullptr)
+                update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
             token.total_log_prob = get_token_log_prob(token);
         }
 
@@ -888,405 +824,6 @@ Decoder::mark_initial_nodes(int max_depth, int curr_depth, int node_idx)
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         if (ait->target_node == node_idx) continue;
         mark_initial_nodes(max_depth, curr_depth+1, ait->target_node);
-    }
-}
-
-
-void
-Decoder::reset_history_scores()
-{
-    for (auto histit = m_word_history_leafs.begin(); histit != m_word_history_leafs.end(); ++histit) {
-        WordHistory *history = *histit;
-        history->best_am_log_prob = -1e20;
-        if (history->previous != NULL) {
-            history->previous->best_am_log_prob = -1e20;
-            if (history->previous->previous != NULL) {
-                history->previous->previous->best_am_log_prob = -1e20;
-                if (history->previous->previous->previous != NULL) {
-                    history->previous->previous->previous->best_am_log_prob = -1e20;
-                }
-            }
-        }
-    }
-}
-
-
-void
-Decoder::find_successor_words(int node_idx,
-                              vector<int> &word_ids)
-{
-    set<int> successor_words;
-    find_successor_words(node_idx, successor_words);
-    word_ids.resize(successor_words.size());
-    int i = 0;
-    for (auto wit = successor_words.begin(); wit != successor_words.end(); ++wit)
-        word_ids[i++] = *wit;
-}
-
-
-void
-Decoder::find_successor_words(int node_idx,
-                              set<int> &word_ids,
-                              bool start_node)
-{
-    Node &node = m_nodes[node_idx];
-
-    if (!start_node && node.word_id != -1) {
-        word_ids.insert(node.word_id);
-        return;
-    }
-
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        int target_node = ait->target_node;
-        if (target_node == node_idx) continue;
-        if (node_idx == m_long_silence_loop_start_node
-                && target_node == m_long_silence_loop_end_node)
-            continue;
-        find_successor_words(target_node, word_ids, false);
-    }
-}
-
-
-void
-Decoder::get_reverse_arcs(vector<vector<Arc> > &reverse_arcs)
-{
-    reverse_arcs.clear();
-    reverse_arcs.resize(m_nodes.size());
-
-    for (int ni = 0; ni < (int)m_nodes.size(); ni++) {
-        for (auto ait = m_nodes[ni].arcs.begin(); ait != m_nodes[ni].arcs.end(); ++ait) {
-            if (ni == ait->target_node) continue;
-            reverse_arcs[ait->target_node].resize(reverse_arcs[ait->target_node].size()+1);
-            reverse_arcs[ait->target_node].back().target_node = ni;
-        }
-    }
-}
-
-
-void
-Decoder::find_predecessor_words(int node_idx,
-                                set<int> &word_ids,
-                                const std::vector<std::vector<Arc> > &reverse_arcs,
-                                bool start_node)
-{
-    Node &node = m_nodes[node_idx];
-
-    if (!start_node && node.word_id != -1) {
-        word_ids.insert(node.word_id);
-        return;
-    }
-
-    for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
-        int target_node = ait->target_node;
-        if (target_node == node_idx) continue;
-        if (node_idx == m_long_silence_loop_end_node
-                && target_node == m_long_silence_loop_start_node)
-            continue;
-        find_predecessor_words(target_node, word_ids, reverse_arcs, false);
-    }
-}
-
-
-bool descending_node_unigram_la_lp_sort(const pair<int, float> &i,
-                                        const pair<int, float> &j)
-{
-    return (i.second > j.second);
-}
-
-int
-Decoder::set_unigram_la_scores()
-{
-    float init_val = -1e20;
-    int total_lm_nodes = 0;
-    float best_lp = init_val;
-    vector<pair<unsigned int, float> > sorted_nodes;
-
-    for (int i=0; i<(int)m_nodes.size(); i++) {
-        Node &node = m_nodes[i];
-        node.unigram_la_score = init_val;
-
-        if (node.word_id == -1) continue;
-
-        total_lm_nodes++;
-        float la_prob = 0.0;
-        m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], la_prob);
-        sorted_nodes.push_back(make_pair(i, la_prob));
-        best_lp = max(best_lp, la_prob);
-    }
-
-    sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_unigram_la_lp_sort);
-    vector<vector<Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
-
-    int score_set_count = 0;
-    propagate_unigram_la_score(START_NODE, best_lp, reverse_arcs, score_set_count, true);
-    m_nodes[START_NODE].unigram_la_score = best_lp;
-
-    int la_state_count = 0;
-    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit) {
-        score_set_count = 0;
-        propagate_unigram_la_score(snit->first, snit->second, reverse_arcs, score_set_count, true);
-        if (score_set_count > 0) la_state_count++;
-    }
-
-    for (unsigned int i=0; i<m_nodes.size(); i++)
-        if (m_nodes[i].unigram_la_score < -1e19) cerr << "unigram la problem in node: " << i << endl;
-
-    return la_state_count;
-}
-
-
-void
-Decoder::propagate_unigram_la_score(int node_idx,
-                                    float score,
-                                    vector<vector<Arc> > &reverse_arcs,
-                                    int &la_score_set,
-                                    bool start_node)
-{
-    Node &node = m_nodes[node_idx];
-    if (!start_node) {
-        if (node.unigram_la_score > -1e19) return;
-        node.unigram_la_score = score;
-        la_score_set++;
-        if (node.word_id != -1) return;
-    }
-
-    for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
-    {
-        if (rait->target_node == node_idx) continue;
-        if (rait->target_node == m_long_silence_loop_start_node && node_idx == m_long_silence_loop_end_node) continue;
-        if (rait->target_node == START_NODE) continue;
-        propagate_unigram_la_score(rait->target_node, score, reverse_arcs, la_score_set, false);
-    }
-}
-
-
-void
-Decoder::set_bigram_la_scores()
-{
-    vector<vector<Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
-
-    set_bigram_la_scores_to_lm_nodes();
-
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-
-        Node &node = m_nodes[i];
-        if (node.word_id != -1) continue;
-
-        set<int> pred_word_ids;
-        find_predecessor_words(i, pred_word_ids, reverse_arcs);
-
-        set<int> succ_word_ids;
-        find_successor_words(i, succ_word_ids);
-
-        float node_best_la_prob = -1e20;
-        for (auto pwit = pred_word_ids.begin(); pwit != pred_word_ids.end(); ++pwit) {
-            float dummy = 0.0;
-            int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy);
-
-            for (auto swit = succ_word_ids.begin(); swit != succ_word_ids.end(); ++swit) {
-                float la_lm_prob = 0.0;
-                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*swit], la_lm_prob);
-                node_best_la_prob = max(node_best_la_prob, la_lm_prob);
-            }
-
-            m_nodes[i].unigram_la_score = node_best_la_prob;
-        }
-    }
-}
-
-
-void
-Decoder::set_bigram_la_scores_to_lm_nodes()
-{
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-        Node &node = m_nodes[i];
-        if (node.word_id != -1
-                && node.word_id != m_sentence_end_symbol_idx
-                && (!(node.flags & NODE_BIGRAM_LA_TABLE))) {
-            set<int> word_ids;
-            find_successor_words(i, word_ids);
-            float dummy = 0.0;
-            int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], dummy);
-            node.unigram_la_score = -1e20;
-            for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-                float la_lm_prob = 0.0;
-                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-                node.unigram_la_score = max(node.unigram_la_score, la_lm_prob);
-            }
-        }
-    }
-}
-
-
-int
-Decoder::num_branching_nodes()
-{
-    int num_branching_nodes = 0;
-
-    for (int ni = 0; ni<(int)m_nodes.size(); ni++) {
-        Node &nd = m_nodes[ni];
-        int num_non_self_arcs = 0;
-        for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-            if (ait->target_node != ni) num_non_self_arcs++;
-        if (num_non_self_arcs > 1) num_branching_nodes++;
-    }
-
-    return num_branching_nodes;
-}
-
-
-int
-Decoder::set_la_state_indices_to_nodes()
-{
-    // Propagate initial la state indices
-    int max_state_idx = 0;
-    propagate_la_state_idx(END_NODE, 0, max_state_idx, true);
-
-    // Find one node for each initial la state
-    map<int, int> example_la_state_nodes;
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-        Node &nd = m_nodes[i];
-        example_la_state_nodes[nd.la_state_idx] = i;
-    }
-
-    // Find real la states
-    map<set<int>, set<int> > real_la_state_succs;
-    for (auto nit = example_la_state_nodes.begin(); nit != example_la_state_nodes.end(); ++nit) {
-        set<int> curr_succs;
-        find_successor_words(nit->second, curr_succs, true);
-        real_la_state_succs[curr_succs].insert(nit->first);
-    }
-
-    // Remap the indices
-    map<int, int> la_state_remapping;
-    int reidx = 0;
-    for (auto ssit = real_la_state_succs.begin(); ssit != real_la_state_succs.end(); ++ssit) {
-        for (auto idxit = ssit->second.begin(); idxit != ssit->second.end(); ++idxit)
-            la_state_remapping[*idxit] = reidx;
-        reidx++;
-    }
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-        Node &nd = m_nodes[i];
-        nd.la_state_idx = la_state_remapping[nd.la_state_idx];
-    }
-
-    return real_la_state_succs.size();
-}
-
-
-void
-Decoder::propagate_la_state_idx(int node_idx,
-                                int la_state_idx,
-                                int &max_state_idx,
-                                bool first_node)
-{
-    Node &nd = m_nodes[node_idx];
-    if (nd.la_state_idx != -1) return;
-
-    if (!first_node && nd.word_id != -1) {
-        nd.la_state_idx = ++max_state_idx;
-        la_state_idx = nd.la_state_idx;
-    }
-    else
-        nd.la_state_idx = la_state_idx;
-
-    int num_non_self_arcs = 0;
-    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-        if (ait->target_node != node_idx) num_non_self_arcs++;
-    bool la_state_change = num_non_self_arcs > 1;
-
-    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-    {
-        if (ait->target_node == node_idx) continue;
-        if (ait->target_node == END_NODE) continue;
-        if (node_idx == m_long_silence_loop_start_node && ait->target_node == m_long_silence_loop_end_node) continue;
-
-        if (la_state_change) {
-            max_state_idx++;
-            propagate_la_state_idx(ait->target_node, max_state_idx, max_state_idx, false);
-        }
-        else
-            propagate_la_state_idx(ait->target_node, la_state_idx, max_state_idx, false);
-    }
-}
-
-
-int
-Decoder::set_la_state_successor_lists()
-{
-    int max_la_state_idx = 0;
-    for (auto nit = m_nodes.begin(); nit != m_nodes.end(); ++nit) {
-        if (nit->la_state_idx == -1) cerr << "warning: la state idx not set" << endl;
-        max_la_state_idx = max(max_la_state_idx, nit->la_state_idx);
-    }
-
-    m_la_state_successor_words.resize(max_la_state_idx+1);
-    for (unsigned int i=0; i<m_nodes.size(); ++i) {
-        Node &nd = m_nodes[i];
-        if (m_la_state_successor_words[nd.la_state_idx].size() > 0) continue;
-        find_successor_words(i, m_la_state_successor_words[nd.la_state_idx]);
-    }
-
-    return m_la_state_successor_words.size();
-}
-
-
-void
-Decoder::compute_bigram_la_score(int la_state_idx,
-                                 int word_id)
-{
-    float dummy;
-    int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
-
-    vector<int> &word_ids = m_la_state_successor_words[la_state_idx];
-    for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-        float la_lm_prob = 0.0;
-        m_la_lm.score(la_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-        m_bigram_la_scores[la_state_idx][word_id] = max(m_bigram_la_scores[la_state_idx][word_id], la_lm_prob);
-    }
-}
-
-
-void
-Decoder::set_bigram_la_tables()
-{
-    int max_la_state = 0;
-    for (unsigned int i=0; i<m_nodes.size(); i++)
-        max_la_state = max(max_la_state, m_nodes[i].la_state_idx);
-    m_bigram_la_scores.resize(max_la_state+1);
-    for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
-        (*blsit).resize(m_subwords.size(), -1e10);
-
-    vector<int> precomputed_lm_nodes(m_subwords.size());
-    for (unsigned int swidx = 0; swidx < m_subwords.size(); swidx++) {
-        float dummy;
-        int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[swidx], dummy);
-        precomputed_lm_nodes[swidx] = lm_node;
-    }
-
-    set<int> processed_la_states;
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-
-        Node &node = m_nodes[i];
-        int la_state_idx = node.la_state_idx;
-        if (processed_la_states.find(la_state_idx) != processed_la_states.end()) continue;
-
-        set<int> word_ids;
-        find_successor_words(i, word_ids);
-
-        for (unsigned int swidx = 0; swidx < m_subwords.size(); swidx++) {
-            if ((int)swidx == m_sentence_end_symbol_idx) continue;
-            int lm_node = precomputed_lm_nodes[swidx];
-            for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-                float la_lm_prob = 0.0;
-                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-                m_bigram_la_scores[la_state_idx][swidx] = max(m_bigram_la_scores[la_state_idx][swidx], la_lm_prob);
-            }
-        }
-
-        processed_la_states.insert(la_state_idx);
     }
 }
 

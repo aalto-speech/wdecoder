@@ -28,16 +28,11 @@ public:
 
     class Node {
     public:
-        Node()
-            : word_id(-1), hmm_state(-1),
-              flags(0), unigram_la_score(0.0),
-              la_state_idx(-1) { }
+        Node() : word_id(-1), hmm_state(-1), flags(0) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         int flags;
         std::vector<Arc> arcs;
-        float unigram_la_score;
-        int la_state_idx;
     };
 
     class Token;
@@ -83,6 +78,23 @@ public:
         { }
     };
 
+    class Lookahead {
+    public:
+        virtual float get_lookahead_score(int node_idx, int lm_state_idx) const = 0;
+        void set_subword_id_la_ngram_symbol_mapping();
+        void get_reverse_arcs(std::vector<std::vector<Arc> > &reverse_arcs);
+        void find_successor_words(int node_idx, std::vector<int> &word_ids);
+        void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=true);
+        void find_predecessor_words(int node_idx, std::set<int> &word_ids,
+                                            const std::vector<std::vector<Arc> > &reverse_arcs,
+                                            bool start_node=true);
+        virtual ~Lookahead() {};
+
+        Decoder *decoder;
+        Ngram m_la_lm;
+        std::vector<int> m_subword_id_to_la_ngram_symbol;
+    };
+
     Decoder();
     ~Decoder();
 
@@ -90,7 +102,6 @@ public:
     void read_duration_model(std::string durfname);
     void read_noway_lexicon(std::string lexfname);
     void read_lm(std::string lmfname);
-    void read_la_lm(std::string lmfname, bool la_tables);
     void read_dgraph(std::string graphfname);
 
     void recognize_lna_file(std::string lnafname,
@@ -124,13 +135,11 @@ public:
                            std::string sfname,
                            bool duration_model=true);
     void set_subword_id_ngram_symbol_mapping();
-    void set_subword_id_la_ngram_symbol_mapping();
     void clear_word_history();
     void prune_word_history();
     void set_hmm_transition_probs();
     void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
-    void reset_history_scores();
     void find_paths(std::vector<std::vector<int> > &paths,
                     std::vector<int> &words,
                     int curr_word_pos = 0,
@@ -138,41 +147,6 @@ public:
                     int curr_node_idx = -1);
     void path_to_graph(std::vector<int> &path,
                        std::vector<Node> &nodes);
-
-
-    // Lookahead related functions
-    void get_reverse_arcs(std::vector<std::vector<Arc> > &reverse_arcs);
-    void find_successor_words(int node_idx, std::vector<int> &word_ids);
-    void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=true);
-    void find_predecessor_words(int node_idx, std::set<int> &word_ids,
-                                const std::vector<std::vector<Arc> > &reverse_arcs,
-                                bool start_node=true);
-
-    // Basic unigram la scores
-    int set_unigram_la_scores(); // Returns number of lookahead states
-    void propagate_unigram_la_score(int node_idx,
-                                    float score,
-                                    std::vector<std::vector<Arc> > &reverse_arcs,
-                                    int &la_score_set,
-                                    bool start_node=true);
-
-    // Bigram scores conditioned on all possible predecessor words
-    void set_bigram_la_scores();
-    // Bigram la scores to all LM nodes, score conditioned on the subword in the same node
-    void set_bigram_la_scores_to_lm_nodes();
-
-    // Number of nodes with branching
-    int num_branching_nodes();
-    // Sets la state indices to nodes, returns number of la states
-    int set_la_state_indices_to_nodes();
-    int set_la_state_successor_lists();
-    void propagate_la_state_idx(int node_idx,
-                                int la_state_idx,
-                                int &max_state_idx,
-                                bool first_node=true);
-    void set_bigram_la_tables();
-    void compute_bigram_la_score(int la_state_idx,
-                                 int word_id);
 
     // Subwords
     std::vector<std::string> m_subwords;
@@ -192,10 +166,7 @@ public:
     std::vector<int> m_subword_id_to_ngram_symbol;
 
     // Lookahead language model
-    Ngram m_la_lm;
-    std::vector<int> m_subword_id_to_la_ngram_symbol;
-    std::vector<std::vector<float> > m_bigram_la_scores;
-    std::vector<std::vector<int> > m_la_state_successor_words;
+    Lookahead *m_la;
 
     // Audio reader
     LnaReaderCircular m_lna_reader;
@@ -226,8 +197,6 @@ public:
     bool m_force_sentence_end;
     bool m_use_word_boundary_symbol;
     bool m_duration_model_in_use;
-    bool m_unigram_la_in_use;
-    bool m_bigram_la_in_use;
     bool m_precomputed_lookahead_tables;
     std::string m_word_boundary_symbol;
     int m_word_boundary_symbol_idx;
@@ -238,22 +207,16 @@ public:
     int m_initial_node_depth;
 
     float m_global_beam;
-    float m_acoustic_beam;
     float m_node_beam;
-    float m_history_beam;
-    float m_silence_beam;
     float m_word_end_beam;
     float m_current_word_end_beam;
     float m_word_boundary_penalty;
 
     float m_best_log_prob;
-    float m_best_am_log_prob;
     float m_best_word_end_prob;
     int m_histogram_bin_limit;
 
     int m_global_beam_pruned_count;
-    int m_acoustic_beam_pruned_count;
-    int m_history_beam_pruned_count;
     int m_word_end_beam_pruned_count;
     int m_node_beam_pruned_count;
     int m_max_state_duration_pruned_count;
