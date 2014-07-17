@@ -80,7 +80,7 @@ public:
 
     class Lookahead {
     public:
-        virtual float get_lookahead_score(int node_idx, int lm_state_idx) const = 0;
+        virtual float get_lookahead_score(int node_idx, int word_id) = 0;
         void set_subword_id_la_ngram_symbol_mapping();
         void get_reverse_arcs(std::vector<std::vector<Arc> > &reverse_arcs);
         void find_successor_words(int node_idx, std::vector<int> &word_ids);

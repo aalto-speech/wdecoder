@@ -224,8 +224,7 @@ int main(int argc, char* argv[])
                 d.m_la = new UnigramLookahead(d, lalmfname);
             }
             else if (la_type == "bigram-full") {
-                cerr << la_type << " not implemented yet." << endl;
-                exit(0);
+                d.m_la = new FullTableBigramLookahead(d, lalmfname);
             }
             else if (la_type == "bigram-scores") {
                 cerr << la_type << " not implemented yet." << endl;
