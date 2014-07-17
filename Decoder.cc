@@ -477,31 +477,33 @@ Decoder::prune_tokens(bool collect_active_histories)
     pruned_tokens.reserve(50000);
 
     // Global beam pruning
-    // Global acoustic beam pruning
-    // History acoustic beam pruning
+    // Node beam pruning
     // Word end beam pruning
     float current_glob_beam = m_best_log_prob - m_global_beam;
-    float current_acoustic_beam = m_best_am_log_prob - m_acoustic_beam;
     float current_word_end_beam = m_best_word_end_prob - m_word_end_beam;
     for (unsigned int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
-        float prob_wo_la = tok.total_log_prob - m_lm_scale * tok.lookahead_log_prob;
-        if (tok.total_log_prob < current_glob_beam)
+
+        if (tok.total_log_prob < current_glob_beam) {
             m_global_beam_pruned_count++;
-        /*
-        else if (tok.am_log_prob < current_acoustic_beam)
-            m_acoustic_beam_pruned_count++;
-        else if (tok.am_log_prob < tok.history->best_am_log_prob-m_history_beam)
-            m_history_beam_pruned_count++;
-        */
-        else if (tok.word_end && prob_wo_la < current_word_end_beam)
-            m_word_end_beam_pruned_count++;
-        else if (tok.total_log_prob < (m_best_node_scores[tok.node_idx] - m_node_beam))
-            m_node_beam_pruned_count++;
-        else {
-            tok.histogram_bin = (int) round((float)(HISTOGRAM_BIN_COUNT-1) * (tok.total_log_prob-current_glob_beam)/m_global_beam);
-            pruned_tokens.push_back(tok);
+            continue;
         }
+
+        if (tok.total_log_prob < (m_best_node_scores[tok.node_idx] - m_node_beam)) {
+            m_node_beam_pruned_count++;
+            continue;
+        }
+
+        if (tok.word_end) {
+            float prob_wo_la = tok.total_log_prob - m_lm_scale * tok.lookahead_log_prob;
+            if (prob_wo_la < current_word_end_beam) {
+                m_word_end_beam_pruned_count++;
+                continue;
+            }
+        }
+
+        tok.histogram_bin = (int) round((float)(HISTOGRAM_BIN_COUNT-1) * (tok.total_log_prob-current_glob_beam)/m_global_beam);
+        pruned_tokens.push_back(tok);
     }
     m_raw_tokens.clear();
 
@@ -582,13 +584,6 @@ Decoder::move_token_to_node(Token token,
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
 
-        /*
-        if (token.am_log_prob < (m_best_am_log_prob-m_acoustic_beam)) {
-            m_acoustic_beam_pruned_count++;
-            return;
-        }
-        */
-
         token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
@@ -596,12 +591,10 @@ Decoder::move_token_to_node(Token token,
         }
 
         m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
-        //m_best_am_log_prob = max(m_best_am_log_prob, token.am_log_prob);
         if (token.word_end) {
             float lp_wo_la = token.total_log_prob - m_lm_scale * token.lookahead_log_prob;
             m_best_word_end_prob = max(m_best_word_end_prob, lp_wo_la);
         }
-        //token.history->best_am_log_prob = max(token.history->best_am_log_prob, token.am_log_prob);
         m_best_node_scores[node_idx] = max(m_best_node_scores[node_idx], token.total_log_prob);
         m_raw_tokens.push_back(token);
         return;
@@ -612,15 +605,15 @@ Decoder::move_token_to_node(Token token,
     // Update history
     if (node.word_id != -1) {
         token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
-        token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
-
         token.last_word_id = node.word_id;
+
         if (m_bigram_la_in_use && node.word_id != m_sentence_end_symbol_idx) {
             if (m_bigram_la_scores[node.la_state_idx][token.last_word_id] < -1e10)
                 compute_bigram_la_score(node.la_state_idx, token.last_word_id);
             update_lookahead_prob(token, m_bigram_la_scores[node.la_state_idx][token.last_word_id]);
         }
 
+        token.total_log_prob = get_token_log_prob(token.am_log_prob, token.lm_log_prob);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
