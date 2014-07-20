@@ -21,9 +21,10 @@ public:
 
     class Arc {
     public:
-        Arc() : log_prob(0.0), target_node(-1) { }
+        Arc() : log_prob(0.0), target_node(-1), update_lookahead(true) { }
         float log_prob;
         int target_node;
+        bool update_lookahead;
     };
 
     class Node {
@@ -120,7 +121,10 @@ public:
     void reset_frame_variables();
     void propagate_tokens();
     void prune_tokens(bool collect_active_histories=false);
-    void move_token_to_node(Token token, int node_idx, float transition_score);
+    void move_token_to_node(Token token,
+                            int node_idx,
+                            float transition_score,
+                            bool update_lookahead=true);
     inline float get_token_log_prob(const Token &token);
     inline void advance_in_history(Token& token, int word_id);
     inline void apply_duration_model(Token &token, int node_idx);

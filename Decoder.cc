@@ -400,7 +400,7 @@ Decoder::propagate_tokens(void)
             tit->second.word_end = false;
 
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-                move_token_to_node(tit->second, ait->target_node, ait->log_prob);
+                move_token_to_node(tit->second, ait->target_node, ait->log_prob, ait->update_lookahead);
         }
         node_count++;
     }
@@ -493,7 +493,8 @@ Decoder::prune_tokens(bool collect_active_histories)
 void
 Decoder::move_token_to_node(Token token,
                             int node_idx,
-                            float transition_score)
+                            float transition_score,
+                            bool update_lookahead)
 {
     token.am_log_prob += m_transition_scale * transition_score;
 
@@ -517,7 +518,7 @@ Decoder::move_token_to_node(Token token,
     // HMM node
     if (node.hmm_state != -1) {
 
-        if (m_la != nullptr)
+        if (update_lookahead)
             update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
@@ -545,7 +546,7 @@ Decoder::move_token_to_node(Token token,
         token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
         token.last_word_id = node.word_id;
 
-        if (m_la != nullptr)
+        if (update_lookahead)
             update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
 
         token.total_log_prob = get_token_log_prob(token);
@@ -564,14 +565,14 @@ Decoder::move_token_to_node(Token token,
                 token.last_word_id = m_word_boundary_symbol_idx;
             }
 
-            if (m_la != nullptr)
+            if (update_lookahead)
                 update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
             token.total_log_prob = get_token_log_prob(token);
         }
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-        move_token_to_node(token, ait->target_node, ait->log_prob);
+        move_token_to_node(token, ait->target_node, ait->log_prob, ait->update_lookahead);
 }
 
 

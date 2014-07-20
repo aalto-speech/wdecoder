@@ -128,6 +128,7 @@ UnigramLookahead::UnigramLookahead(Decoder &decoder,
     this->decoder = &decoder;
     set_subword_id_la_ngram_symbol_mapping();
     set_unigram_la_scores();
+    set_arc_la_updates();
 }
 
 
@@ -175,6 +176,27 @@ UnigramLookahead::set_unigram_la_scores()
         if (m_la_scores[i] < -1e19) cerr << "unigram la problem in node: " << i << endl;
 
     return la_state_count;
+}
+
+
+float
+UnigramLookahead::set_arc_la_updates()
+{
+    float update_count = 0.0;
+    float no_update_count = 0.0;
+    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
+        Decoder::Node &node = decoder->m_nodes[i];
+        if (node.flags & NODE_DECODE_START) continue;
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+            int j = ait->target_node;
+            if (m_la_scores[i] == m_la_scores[j]) {
+                ait->update_lookahead = false;
+                no_update_count += 1.0;
+            }
+            else update_count += 1.0;
+        }
+    }
+    return update_count / (update_count + no_update_count);
 }
 
 
@@ -599,7 +621,7 @@ FullTableBigramLookahead2::FullTableBigramLookahead2(Decoder &decoder,
     set_la_state_successor_lists();
     cerr << "Number of lookahead states: " << la_state_count << endl;
 
-    assert(m_la_state_successor_words.size() == la_state_count);
+    assert((int)m_la_state_successor_words.size() == la_state_count);
     m_bigram_la_scores.resize(m_la_state_successor_words.size());
     for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
         (*blsit).resize(decoder.m_subwords.size(), -1e20);
@@ -616,7 +638,6 @@ FullTableBigramLookahead2::set_one_predecessor_la_scores()
 
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
 
-        Decoder::Node &node = decoder->m_nodes[i];
         int tmp = 0;
         bool one_predecessor = detect_one_predecessor_node(i, tmp, reverse_arcs);
         if (!one_predecessor) continue;

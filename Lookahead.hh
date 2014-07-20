@@ -6,6 +6,14 @@
 #include "Decoder.hh"
 
 
+class NoLookahead : public Decoder::Lookahead {
+public:
+    NoLookahead() {};
+    ~NoLookahead() {};
+    float get_lookahead_score(int node_idx, int word_id) { return 0.0; }
+};
+
+
 class UnigramLookahead : public Decoder::Lookahead {
 public:
     UnigramLookahead(Decoder &decoder,
@@ -15,6 +23,7 @@ public:
 
 private:
     int set_unigram_la_scores();
+    float set_arc_la_updates();
     void propagate_unigram_la_score(int node_idx,
                                     float score,
                                     std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
