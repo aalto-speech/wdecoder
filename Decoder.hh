@@ -85,9 +85,12 @@ public:
         void get_reverse_arcs(std::vector<std::vector<Arc> > &reverse_arcs);
         void find_successor_words(int node_idx, std::vector<int> &word_ids);
         void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=true);
-        void find_predecessor_words(int node_idx, std::set<int> &word_ids,
-                                            const std::vector<std::vector<Arc> > &reverse_arcs,
-                                            bool start_node=true);
+        void find_predecessor_words(int node_idx,
+                                    std::set<int> &word_ids,
+                                    const std::vector<std::vector<Arc> > &reverse_arcs);
+        bool detect_one_predecessor_node(int node_idx,
+                                         int &predecessor_count,
+                                         const std::vector<std::vector<Arc> > &reverse_arcs);
         virtual ~Lookahead() {};
 
         Decoder *decoder;

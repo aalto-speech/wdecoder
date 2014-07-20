@@ -228,6 +228,8 @@ int main(int argc, char* argv[])
                 d.m_la = new BigramScoreLookahead(d, lalmfname);
             else if (la_type == "bigram-hybrid")
                 d.m_la = new HybridBigramLookahead(d, lalmfname);
+            else if (la_type == "bigram-2")
+                d.m_la = new FullTableBigramLookahead2(d, lalmfname);
             else {
                 cerr << "unknown lookahead type: " << la_type << endl;
                 exit(0);
