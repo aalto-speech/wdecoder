@@ -23,12 +23,13 @@ public:
 
 private:
     int set_unigram_la_scores();
-    float set_arc_la_updates();
     void propagate_unigram_la_score(int node_idx,
                                     float score,
                                     std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
                                     int &la_score_set,
                                     bool start_node=true);
+    float set_arc_la_updates();
+
     std::vector<float> m_la_scores;
 };
 
@@ -48,6 +49,7 @@ private:
                                 int &max_state_idx,
                                 bool first_node=true);
     int set_la_state_successor_lists();
+    float set_arc_la_updates();
 
     std::vector<int> m_node_la_states;
     std::vector<std::vector<int> > m_la_state_successor_words;
@@ -74,6 +76,7 @@ private:
                                 bool first_node=true);
     int set_la_state_successor_lists();
     int set_bigram_la_maps();
+    float set_arc_la_updates();
 
     std::vector<int> m_node_la_states;
     std::vector<std::vector<int> > m_la_state_successor_words;
@@ -92,6 +95,8 @@ public:
 private:
     void set_bigram_la_scores_to_hmm_nodes();
     void set_bigram_la_scores_to_lm_nodes();
+    float set_arc_la_updates();
+
     std::vector<float> m_la_scores;
 };
 
@@ -108,6 +113,7 @@ private:
     int set_one_predecessor_la_scores();
     int set_la_state_indices_to_nodes();
     int set_la_state_successor_lists();
+    float set_arc_la_updates();
 
     std::vector<int> m_node_la_states;
     std::vector<std::vector<int> > m_la_state_successor_words;

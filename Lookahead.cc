@@ -179,27 +179,6 @@ UnigramLookahead::set_unigram_la_scores()
 }
 
 
-float
-UnigramLookahead::set_arc_la_updates()
-{
-    float update_count = 0.0;
-    float no_update_count = 0.0;
-    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
-        Decoder::Node &node = decoder->m_nodes[i];
-        if (node.flags & NODE_DECODE_START) continue;
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-            int j = ait->target_node;
-            if (m_la_scores[i] == m_la_scores[j]) {
-                ait->update_lookahead = false;
-                no_update_count += 1.0;
-            }
-            else update_count += 1.0;
-        }
-    }
-    return update_count / (update_count + no_update_count);
-}
-
-
 void
 UnigramLookahead::propagate_unigram_la_score(int node_idx,
                                              float score,
@@ -232,6 +211,27 @@ UnigramLookahead::get_lookahead_score(int node_idx, int lm_state_idx)
 }
 
 
+float
+UnigramLookahead::set_arc_la_updates()
+{
+    float update_count = 0.0;
+    float no_update_count = 0.0;
+    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
+        Decoder::Node &node = decoder->m_nodes[i];
+        if (node.flags & NODE_DECODE_START) continue;
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+            int j = ait->target_node;
+            if (m_la_scores[i] == m_la_scores[j]) {
+                ait->update_lookahead = false;
+                no_update_count += 1.0;
+            }
+            else update_count += 1.0;
+        }
+    }
+    return update_count / (update_count + no_update_count);
+}
+
+
 FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
                                                    string lafname)
 {
@@ -239,14 +239,19 @@ FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
     this->decoder = &decoder;
     set_subword_id_la_ngram_symbol_mapping();
 
-    cerr << "Setting lookahead state indices and successor lists" << endl;
+    cerr << "Setting lookahead state indices" << endl;
     m_node_la_states.resize(decoder.m_nodes.size(), -1);
     int la_state_count = set_la_state_indices_to_nodes();
-    set_la_state_successor_lists();
     cerr << "Number of lookahead states: " << la_state_count << endl;
+
+    cerr << "Setting successor lists" << endl;
+    set_la_state_successor_lists();
+
     m_bigram_la_scores.resize(m_la_state_successor_words.size());
     for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
         (*blsit).resize(decoder.m_subwords.size(), -1e20);
+
+    //set_arc_la_updates();
 }
 
 
@@ -362,6 +367,27 @@ FullTableBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 }
 
 
+float
+FullTableBigramLookahead::set_arc_la_updates()
+{
+    float update_count = 0.0;
+    float no_update_count = 0.0;
+    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
+        Decoder::Node &node = decoder->m_nodes[i];
+        if (node.flags & NODE_DECODE_START) continue;
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+            int j = ait->target_node;
+            if (m_node_la_states[i] == m_node_la_states[j]) {
+                ait->update_lookahead = false;
+                no_update_count += 1.0;
+            }
+            else update_count += 1.0;
+        }
+    }
+    return update_count / (update_count + no_update_count);
+}
+
+
 BigramScoreLookahead::BigramScoreLookahead(Decoder &decoder,
                                            string lafname)
 {
@@ -372,6 +398,7 @@ BigramScoreLookahead::BigramScoreLookahead(Decoder &decoder,
     m_la_scores.resize(decoder.m_nodes.size(), -1e20);
     set_bigram_la_scores_to_hmm_nodes();
     set_bigram_la_scores_to_lm_nodes();
+    set_arc_la_updates();
 }
 
 
@@ -437,6 +464,27 @@ BigramScoreLookahead::get_lookahead_score(int node_idx, int lm_state_idx)
 }
 
 
+float
+BigramScoreLookahead::set_arc_la_updates()
+{
+    float update_count = 0.0;
+    float no_update_count = 0.0;
+    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
+        Decoder::Node &node = decoder->m_nodes[i];
+        if (node.flags & NODE_DECODE_START) continue;
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+            int j = ait->target_node;
+            if (m_la_scores[i] == m_la_scores[j]) {
+                ait->update_lookahead = false;
+                no_update_count += 1.0;
+            }
+            else update_count += 1.0;
+        }
+    }
+    return update_count / (update_count + no_update_count);
+}
+
+
 HybridBigramLookahead::HybridBigramLookahead(Decoder &decoder,
                                              string lafname)
 {
@@ -457,6 +505,8 @@ HybridBigramLookahead::HybridBigramLookahead(Decoder &decoder,
     m_bigram_la_maps.resize(decoder.m_nodes.size());
     int map_count = set_bigram_la_maps();
     cerr << "Nodes with a bigram lookahead map: " << map_count << endl;
+
+    set_arc_la_updates();
 }
 
 
@@ -604,6 +654,38 @@ HybridBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 }
 
 
+float
+HybridBigramLookahead::set_arc_la_updates()
+{
+    float update_count = 0.0;
+    float no_update_count = 0.0;
+    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
+        Decoder::Node &node = decoder->m_nodes[i];
+        if (node.flags & NODE_DECODE_START) continue;
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+            int j = ait->target_node;
+
+            if (m_bigram_la_maps[i].size() > 0 &&
+                m_bigram_la_maps[j].size() > 0 -1e10 &&
+                m_bigram_la_maps[i] == m_bigram_la_maps[j])
+            {
+                ait->update_lookahead = false;
+                no_update_count += 1.0;
+            }
+            else if (m_node_la_states[i] != -1 &&
+                     m_node_la_states[j] != -1 &&
+                     m_node_la_states[i] == m_node_la_states[j])
+            {
+                ait->update_lookahead = false;
+                no_update_count += 1.0;
+            }
+            else update_count += 1.0;
+        }
+    }
+    return update_count / (update_count + no_update_count);
+}
+
+
 FullTableBigramLookahead2::FullTableBigramLookahead2(Decoder &decoder,
                                                      string lafname)
 {
@@ -625,6 +707,8 @@ FullTableBigramLookahead2::FullTableBigramLookahead2(Decoder &decoder,
     m_bigram_la_scores.resize(m_la_state_successor_words.size());
     for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
         (*blsit).resize(decoder.m_subwords.size(), -1e20);
+
+    set_arc_la_updates();
 }
 
 
@@ -740,5 +824,37 @@ FullTableBigramLookahead2::get_lookahead_score(int node_idx, int word_id)
     }
 
     return m_bigram_la_scores[la_state_idx][word_id];
+}
+
+
+float
+FullTableBigramLookahead2::set_arc_la_updates()
+{
+    float update_count = 0.0;
+    float no_update_count = 0.0;
+    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
+        Decoder::Node &node = decoder->m_nodes[i];
+        if (node.flags & NODE_DECODE_START) continue;
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+            int j = ait->target_node;
+
+            if (m_one_predecessor_la_scores[i] > -1e10 &&
+                m_one_predecessor_la_scores[j] > -1e10 &&
+                m_one_predecessor_la_scores[i] == m_one_predecessor_la_scores[j])
+            {
+                ait->update_lookahead = false;
+                no_update_count += 1.0;
+            }
+            else if (m_node_la_states[i] != -1 &&
+                     m_node_la_states[j] != -1 &&
+                     m_node_la_states[i] == m_node_la_states[j])
+            {
+                ait->update_lookahead = false;
+                no_update_count += 1.0;
+            }
+            else update_count += 1.0;
+        }
+    }
+    return update_count / (update_count + no_update_count);
 }
 
