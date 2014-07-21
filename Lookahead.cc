@@ -634,17 +634,18 @@ HybridBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
     if (decoder->m_nodes[node_idx].flags & NODE_BIGRAM_LA_TABLE) {
         int la_state_idx = m_node_la_states[node_idx];
-        if (m_bigram_la_scores[la_state_idx][word_id] < -1e10) {
+        float &score = m_bigram_la_scores[la_state_idx][word_id];
+        if (score < -1e10) {
             float dummy;
             int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
             vector<int> &word_ids = m_la_state_successor_words[la_state_idx];
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
                 float la_lm_prob = 0.0;
                 m_la_lm.score(la_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-                m_bigram_la_scores[la_state_idx][word_id] = max(m_bigram_la_scores[la_state_idx][word_id], la_lm_prob);
+                score = max(score, la_lm_prob);
             }
         }
-        return m_bigram_la_scores[la_state_idx][word_id];
+        return score;
     }
     else {
         //if (m_bigram_la_maps[node_idx].find(word_id) == m_bigram_la_maps[node_idx].end())
@@ -811,19 +812,20 @@ FullTableBigramLookahead2::get_lookahead_score(int node_idx, int word_id)
         return m_one_predecessor_la_scores[node_idx];
 
     int la_state_idx = m_node_la_states[node_idx];
-    assert(la_state_idx != -1);
-    if (m_bigram_la_scores[la_state_idx][word_id] < -1e10) {
+    float &score = m_bigram_la_scores[la_state_idx][word_id];
+
+    if (score < -1e10) {
         float dummy;
         int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
         vector<int> &word_ids = m_la_state_successor_words[la_state_idx];
         for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
             float la_lm_prob = 0.0;
             m_la_lm.score(la_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-            m_bigram_la_scores[la_state_idx][word_id] = max(m_bigram_la_scores[la_state_idx][word_id], la_lm_prob);
+            score = max(score, la_lm_prob);
         }
     }
 
-    return m_bigram_la_scores[la_state_idx][word_id];
+    return score;
 }
 
 
