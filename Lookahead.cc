@@ -251,7 +251,7 @@ FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
     for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
         (*blsit).resize(decoder.m_subwords.size(), -1e20);
 
-    //set_arc_la_updates();
+    set_arc_la_updates();
 }
 
 
