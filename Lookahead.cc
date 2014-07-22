@@ -121,6 +121,17 @@ Decoder::Lookahead::detect_one_predecessor_node(int node_idx,
 }
 
 
+void
+NoLookahead::set_arc_la_updates()
+{
+    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
+        Decoder::Node &node = decoder->m_nodes[i];
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+            ait->update_lookahead = false;
+    }
+}
+
+
 UnigramLookahead::UnigramLookahead(Decoder &decoder,
                                    string lafname)
 {

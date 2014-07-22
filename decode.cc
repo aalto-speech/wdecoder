@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
                 exit(0);
             }
         }
-        else d.m_la = new NoLookahead();
+        else d.m_la = new NoLookahead(d);
 
         string lnalistfname = config.arguments[5];
 

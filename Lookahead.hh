@@ -8,9 +8,10 @@
 
 class NoLookahead : public Decoder::Lookahead {
 public:
-    NoLookahead() {};
+    NoLookahead(Decoder &decoder) { set_arc_la_updates(); };
     ~NoLookahead() {};
     float get_lookahead_score(int node_idx, int word_id) { return 0.0; }
+    void set_arc_la_updates();
 };
 
 
