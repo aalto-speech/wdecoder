@@ -132,7 +132,6 @@ public:
 
 private:
 
-    int set_one_predecessor_la_scores();
     int set_la_state_indices_to_nodes();
     int set_la_state_successor_lists();
     float set_arc_la_updates();
@@ -144,8 +143,6 @@ private:
     std::vector<int> m_node_la_states;
     std::vector<std::vector<int> > m_la_state_successor_words;
     std::vector<SimpleHashCache<float> > m_bigram_la_scores;
-    std::vector<float> m_one_predecessor_la_scores;
-    std::vector<bool> m_one_predecessor_la_scores_set;
 };
 
 

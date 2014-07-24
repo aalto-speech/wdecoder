@@ -150,8 +150,8 @@ Decoder::Lookahead::mark_tail_nodes(int max_depth,
     Decoder::Node &node = decoder->m_nodes[node_idx];
 
     if (node_idx != END_NODE) {
-        if (node.word_id != -1) return;
         node.flags |= NODE_TAIL;
+        if (node.word_id != -1) return;
     }
     if (curr_depth == max_depth) return;
 
@@ -901,65 +901,46 @@ CacheBigramLookahead::CacheBigramLookahead(Decoder &decoder,
     this->decoder = &decoder;
     set_subword_id_la_ngram_symbol_mapping();
 
-    mark_initial_nodes(1000);
-
-    m_one_predecessor_la_scores.resize(decoder.m_nodes.size(), -1e20);
-    m_one_predecessor_la_scores_set.resize(decoder.m_nodes.size(), false);
-    int count = set_one_predecessor_la_scores();
-    cerr << "Number of nodes with one predecessor: " << count << endl;
-
-    cerr << "Setting lookahead state indices and successor lists" << endl;
-    m_node_la_states.resize(decoder.m_nodes.size(), -1);
-    int la_state_count = set_la_state_indices_to_nodes();
-    set_la_state_successor_lists();
-    cerr << "Number of lookahead states: " << la_state_count << endl;
-
-    assert((int)m_la_state_successor_words.size() == la_state_count);
-    m_bigram_la_scores.resize(m_la_state_successor_words.size());
-    //for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
-    //    (*blsit).set_max_items(decoder.m_subwords.size());
-
-    set_arc_la_updates();
-}
-
-
-int
-CacheBigramLookahead::set_one_predecessor_la_scores()
-{
-    int one_predecessor_nodes = 0;
+    mark_initial_nodes(10);
 
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
+    mark_tail_nodes(1000, reverse_arcs);
 
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
+    int tail_count = 0;
+    int initial_count = 0;
+    for (int i=0; i<decoder.m_nodes.size(); i++) {
+        if (decoder.m_nodes[i].flags & NODE_TAIL) tail_count++;
+        if (decoder.m_nodes[i].flags & NODE_INITIAL) initial_count++;
+    }
+    cerr << "tail count: " << tail_count << endl;
+    cerr << "initial count: " << initial_count << endl;
 
-        int tmp = 0;
-        bool one_predecessor = detect_one_predecessor_node(i, tmp, reverse_arcs);
-        if (!one_predecessor) continue;
+    cerr << "Setting lookahead state" << endl;
+    m_node_la_states.resize(decoder.m_nodes.size(), -1);
+    int max_la_state_idx = set_la_state_indices_to_nodes();
+    cerr << "Maximum la state idx: " << max_la_state_idx << endl;
 
-        set<int> pred_word_ids;
-        find_predecessor_words(i, pred_word_ids, reverse_arcs);
-        assert(pred_word_ids.size() == 1);
-        int pred_word_id = (*(pred_word_ids.begin()));
+    cerr << "Setting successor lists" << endl;
+    set_la_state_successor_lists();
 
-        /*
-        set<int> word_ids;
-        find_successor_words(i, word_ids);
-        float dummy = 0.0;
-        int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[pred_word_id], dummy);
-        m_one_predecessor_la_scores[i] = -1e20;
-        for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-            float la_lm_prob = 0.0;
-            m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-            m_one_predecessor_la_scores[i] = max(m_one_predecessor_la_scores[i], la_lm_prob);
+    set<int> big_la_states;
+    for (unsigned int i=0; i<decoder.m_nodes.size(); i++) {
+        if ((decoder.m_nodes[i].flags & NODE_CW) ||
+            (decoder.m_nodes[i].flags & NODE_INITIAL)) {
+            big_la_states.insert(m_node_la_states[i]);
         }
-        */
-        m_one_predecessor_la_scores_set[i] = true;
-
-        one_predecessor_nodes++;
     }
 
-    return one_predecessor_nodes;
+    m_bigram_la_scores.resize(max_la_state_idx);
+    for (int i=0; i<max_la_state_idx; ++i) {
+        if (big_la_states.find(i) != big_la_states.end())
+            m_bigram_la_scores[i].set_max_items(50000);
+        else
+            m_bigram_la_scores[i].set_max_items(5000);
+    }
+
+    set_arc_la_updates();
 }
 
 
@@ -971,36 +952,29 @@ CacheBigramLookahead::set_la_state_indices_to_nodes()
     propagate_la_state_idx(END_NODE, 0, max_state_idx, true);
 
     // Find one node for each initial la state
-    map<int, int> example_la_state_nodes;
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++)
-        example_la_state_nodes[m_node_la_states[i]] = i;
-
-    // Find real la states
-    cerr << "number of initial la states: " << example_la_state_nodes.size() << endl;
-    cerr << "finding real la states" << endl;
-    map<set<int>, set<int> > real_la_state_succs;
-    int counter = 0;
-    for (auto nit = example_la_state_nodes.begin(); nit != example_la_state_nodes.end(); ++nit) {
-        set<int> curr_succs;
-        find_successor_words(nit->second, curr_succs, true);
-        real_la_state_succs[curr_succs].insert(nit->first);
-        counter++;
-        if (counter % 10000 == 0) cerr << "..." << counter << endl;
+    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
+        if (decoder->m_nodes[i].flags & NODE_TAIL) {
+            m_node_la_states[i] = m_node_la_states[END_NODE];
+            continue;
+        }
     }
 
-
-    // Remap the indices
-    map<int, int> la_state_remapping;
-    int reidx = 0;
-    for (auto ssit = real_la_state_succs.begin(); ssit != real_la_state_succs.end(); ++ssit) {
-        for (auto idxit = ssit->second.begin(); idxit != ssit->second.end(); ++idxit)
-            la_state_remapping[*idxit] = reidx;
-        reidx++;
+    set<int> la_states;
+    set<int> big_la_states;
+    int maxi = -1;
+    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
+        la_states.insert(m_node_la_states[i]);
+        if ((decoder->m_nodes[i].flags & NODE_CW) ||
+            (decoder->m_nodes[i].flags & NODE_INITIAL)) {
+            big_la_states.insert(m_node_la_states[i]);
+        }
+        maxi = max(maxi, m_node_la_states[i]);
     }
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++)
-        m_node_la_states[i] = la_state_remapping[m_node_la_states[i]];
 
-    return real_la_state_succs.size();
+    cerr << "number of la states: " << la_states.size() << endl;
+    cerr << "number of big la states: " << big_la_states.size() << endl;
+
+    return maxi;
 }
 
 
@@ -1028,9 +1002,6 @@ CacheBigramLookahead::set_la_state_successor_lists()
 float
 CacheBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
-    if (m_one_predecessor_la_scores_set[node_idx])
-        return m_one_predecessor_la_scores[node_idx];
-
     int la_state_idx = m_node_la_states[node_idx];
     float prob = -1e20;
     if (m_bigram_la_scores[la_state_idx].find(word_id, &prob))
@@ -1061,16 +1032,9 @@ CacheBigramLookahead::set_arc_la_updates()
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
             int j = ait->target_node;
 
-            if (m_one_predecessor_la_scores_set[i] &&
-                m_one_predecessor_la_scores_set[j] &&
-                m_one_predecessor_la_scores[i] == m_one_predecessor_la_scores[j])
-            {
-                ait->update_lookahead = false;
-                no_update_count += 1.0;
-            }
-            else if (m_node_la_states[i] != -1 &&
-                     m_node_la_states[j] != -1 &&
-                     m_node_la_states[i] == m_node_la_states[j])
+            if (m_node_la_states[i] != -1 &&
+                m_node_la_states[j] != -1 &&
+                m_node_la_states[i] == m_node_la_states[j])
             {
                 ait->update_lookahead = false;
                 no_update_count += 1.0;
