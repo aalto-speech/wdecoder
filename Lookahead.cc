@@ -893,7 +893,7 @@ FullTableBigramLookahead2::set_arc_la_updates()
 }
 
 
-
+/*
 CacheBigramLookahead::CacheBigramLookahead(Decoder &decoder,
                                            string lafname)
 {
@@ -1078,3 +1078,6 @@ CacheBigramLookahead::propagate_la_state_idx(int node_idx,
             propagate_la_state_idx(ait->target_node, la_state_idx, max_state_idx, false);
     }
 }
+*/
+
+

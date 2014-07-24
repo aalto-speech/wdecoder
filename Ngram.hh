@@ -75,7 +75,6 @@ private:
     std::vector<Node> nodes;
     std::vector<int> arc_words;
     std::vector<int> arc_target_nodes;
-    std::map<int, int> root_node_next;
     std::map<int, int> ngram_counts_per_order;
     int max_order;
 };
