@@ -21,5 +21,6 @@ typedef unsigned int node_idx_t;
 #define NODE_DECODE_START               0x0040
 #define NODE_LM_LEFT_LIMIT              0x0080
 #define NODE_LM_RIGHT_LIMIT             0x0100
+#define NODE_TAIL                       0x0200
 
 #endif /* DEFS_HH */

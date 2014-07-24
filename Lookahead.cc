@@ -142,6 +142,27 @@ Decoder::Lookahead::mark_initial_nodes(int max_depth,
 
 
 void
+Decoder::Lookahead::mark_tail_nodes(int max_depth,
+                                    vector<vector<Decoder::Arc> > &reverse_arcs,
+                                    int curr_depth,
+                                    int node_idx)
+{
+    Decoder::Node &node = decoder->m_nodes[node_idx];
+
+    if (node_idx != END_NODE) {
+        if (node.word_id != -1) return;
+        node.flags |= NODE_TAIL;
+    }
+    if (curr_depth == max_depth) return;
+
+    for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
+        if (ait->target_node == node_idx) continue;
+        mark_tail_nodes(max_depth, reverse_arcs, curr_depth+1, ait->target_node);
+    }
+}
+
+
+void
 NoLookahead::set_arc_la_updates()
 {
     for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
@@ -880,7 +901,7 @@ CacheBigramLookahead::CacheBigramLookahead(Decoder &decoder,
     this->decoder = &decoder;
     set_subword_id_la_ngram_symbol_mapping();
 
-    mark_initial_nodes(10);
+    mark_initial_nodes(1000);
 
     m_one_predecessor_la_scores.resize(decoder.m_nodes.size(), -1e20);
     m_one_predecessor_la_scores_set.resize(decoder.m_nodes.size(), false);

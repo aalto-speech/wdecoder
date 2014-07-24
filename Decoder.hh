@@ -93,6 +93,10 @@ public:
                                          int &predecessor_count,
                                          const std::vector<std::vector<Arc> > &reverse_arcs);
         void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
+        void mark_tail_nodes(int max_depth,
+                             std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
+                             int curr_depth=0,
+                             int node=END_NODE);
         virtual ~Lookahead() {};
 
         Decoder *decoder;

@@ -121,8 +121,8 @@ int main(int argc, char* argv[])
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         cerr << endl;
-        cerr << "Removing cw dummies.." << endl;
-        remove_cw_dummies(nodes);
+        //cerr << "Removing cw dummies.." << endl;
+        //remove_cw_dummies(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
         cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
