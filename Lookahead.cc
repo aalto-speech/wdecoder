@@ -918,8 +918,8 @@ CacheBigramLookahead::CacheBigramLookahead(Decoder &decoder,
 
     cerr << "Setting lookahead state" << endl;
     m_node_la_states.resize(decoder.m_nodes.size(), -1);
-    int max_la_state_idx = set_la_state_indices_to_nodes();
-    cerr << "Maximum la state idx: " << max_la_state_idx << endl;
+    int la_count = set_la_state_indices_to_nodes();
+    cerr << "Number of lookahead states: " << la_count << endl;
 
     cerr << "Setting successor lists" << endl;
     set_la_state_successor_lists();
@@ -931,13 +931,14 @@ CacheBigramLookahead::CacheBigramLookahead(Decoder &decoder,
             big_la_states.insert(m_node_la_states[i]);
         }
     }
+    cerr << "number of big la states: " << big_la_states.size() << endl;
 
-    m_bigram_la_scores.resize(max_la_state_idx);
-    for (int i=0; i<max_la_state_idx; ++i) {
+    m_bigram_la_scores.resize(la_count);
+    for (int i=0; i<la_count; ++i) {
         if (big_la_states.find(i) != big_la_states.end())
-            m_bigram_la_scores[i].set_max_items(50000);
-        else
             m_bigram_la_scores[i].set_max_items(5000);
+        else
+            m_bigram_la_scores[i].set_max_items(500);
     }
 
     set_arc_la_updates();
@@ -951,30 +952,26 @@ CacheBigramLookahead::set_la_state_indices_to_nodes()
     int max_state_idx = 0;
     propagate_la_state_idx(END_NODE, 0, max_state_idx, true);
 
-    // Find one node for each initial la state
+    // Remap indices
+    // Set tail nodes to the same la state as the end node
+    map<int, int> remap;
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         if (decoder->m_nodes[i].flags & NODE_TAIL) {
             m_node_la_states[i] = m_node_la_states[END_NODE];
-            continue;
         }
+        remap[m_node_la_states[i]] = 0;
     }
 
-    set<int> la_states;
-    set<int> big_la_states;
-    int maxi = -1;
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-        la_states.insert(m_node_la_states[i]);
-        if ((decoder->m_nodes[i].flags & NODE_CW) ||
-            (decoder->m_nodes[i].flags & NODE_INITIAL)) {
-            big_la_states.insert(m_node_la_states[i]);
-        }
-        maxi = max(maxi, m_node_la_states[i]);
+    int idx = 0;
+    for (auto rmit = remap.begin(); rmit != remap.end(); ++rmit) {
+        rmit->second = idx;
+        idx++;
     }
 
-    cerr << "number of la states: " << la_states.size() << endl;
-    cerr << "number of big la states: " << big_la_states.size() << endl;
+    for (unsigned int i=0; i<decoder->m_nodes.size(); i++)
+        m_node_la_states[i] = remap[m_node_la_states[i]];
 
-    return maxi;
+    return remap.size();
 }
 
 
