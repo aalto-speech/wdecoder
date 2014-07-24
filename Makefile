@@ -1,4 +1,4 @@
-cxxflags = -O3 -march=native -std=gnu++0x -Wall
+cxxflags = -O3 -march=native -DNDEBUG -std=gnu++0x -Wall
 #cxxflags = -O0 -gddb -std=gnu++0x -Wall
 #cxxflags = -O0 -g -std=gnu++0x -Wall
 #cxxflags = -O0 -pg -std=gnu++0x -Wall

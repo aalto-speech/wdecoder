@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "SimpleHashCache.hh"
 #include "Decoder.hh"
 
 
@@ -69,7 +70,6 @@ public:
 
 private:
 
-    void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
     int set_la_state_indices_to_nodes();
     void propagate_la_state_idx(int node_idx,
                                 int la_state_idx,
@@ -120,6 +120,32 @@ private:
     std::vector<std::vector<int> > m_la_state_successor_words;
     std::vector<std::vector<float> > m_bigram_la_scores;
     std::vector<float> m_one_predecessor_la_scores;
+};
+
+
+class CacheBigramLookahead : public Decoder::Lookahead {
+public:
+    CacheBigramLookahead(Decoder &decoder,
+                          std::string lafname);
+    ~CacheBigramLookahead() {};
+    float get_lookahead_score(int node_idx, int word_id);
+
+private:
+
+    int set_one_predecessor_la_scores();
+    int set_la_state_indices_to_nodes();
+    int set_la_state_successor_lists();
+    float set_arc_la_updates();
+    void propagate_la_state_idx(int node_idx,
+                                int la_state_idx,
+                                int &max_state_idx,
+                                bool first_node=true);
+
+    std::vector<int> m_node_la_states;
+    std::vector<std::vector<int> > m_la_state_successor_words;
+    std::vector<SimpleHashCache<float> > m_bigram_la_scores;
+    std::vector<float> m_one_predecessor_la_scores;
+    std::vector<bool> m_one_predecessor_la_scores_set;
 };
 
 

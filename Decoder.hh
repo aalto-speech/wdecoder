@@ -92,6 +92,7 @@ public:
         bool detect_one_predecessor_node(int node_idx,
                                          int &predecessor_count,
                                          const std::vector<std::vector<Arc> > &reverse_arcs);
+        void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
         virtual ~Lookahead() {};
 
         Decoder *decoder;
