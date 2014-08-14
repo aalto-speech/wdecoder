@@ -981,6 +981,14 @@ LargeBigramLookahead::set_la_state_indices_to_nodes()
 int
 LargeBigramLookahead::initialize_la_states()
 {
+    std::vector<int> la_ngram_symbol_to_subword_id;
+    int maxidx = 0;
+    for (int i=0; i<m_subword_id_to_la_ngram_symbol.size(); i++)
+        maxidx = max(maxidx, m_subword_id_to_la_ngram_symbol[i]);
+    la_ngram_symbol_to_subword_id.resize(maxidx);
+    for (int i=0; i<m_subword_id_to_la_ngram_symbol.size(); i++)
+        la_ngram_symbol_to_subword_id[m_subword_id_to_la_ngram_symbol[i]] = i;
+
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
@@ -990,15 +998,17 @@ LargeBigramLookahead::initialize_la_states()
         find_preceeding_la_states(i, la_states, reverse_arcs);
 
         int word_id = decoder->m_nodes[i].word_id;
+
         float curr_score = 0.0;
         m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], curr_score);
         for (auto lasit = la_states.begin(); lasit != la_states.end(); ++lasit) {
-
             if (curr_score > m_lookahead_states[*lasit].m_best_unigram_score) {
                 m_lookahead_states[*lasit].m_best_unigram_word_id = word_id;
                 m_lookahead_states[*lasit].m_best_unigram_score = curr_score;
             }
         }
+
+
     }
 
     return m_lookahead_states.size();

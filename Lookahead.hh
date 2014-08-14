@@ -143,6 +143,7 @@ private:
                                    std::set<int> &la_states,
                                    const std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
                                    bool first_node=true);
+    std::map<int, std::vector<int> > get_reverse_bigrams();
 
     class LookaheadState {
     public:

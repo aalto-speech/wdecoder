@@ -31,9 +31,8 @@ public:
     void read_arpa(std::string arpafname);
     int score(int node_idx, int word, double &score);
     int score(int node_idx, int word, float &score);
-    int order() {
-        return max_order;
-    };
+    int order() { return max_order; };
+    void get_reverse_bigrams(std::map<int, std::vector<int> > &reverse_bigrams);
 
     int root_node;
     int sentence_start_node;
