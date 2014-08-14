@@ -996,6 +996,7 @@ LargeBigramLookahead::initialize_la_states()
 
         int word_id = decoder->m_nodes[i].word_id;
 
+        // Set best unigram scores
         float curr_score = 0.0;
         m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], curr_score);
         for (auto lasit = la_states.begin(); lasit != la_states.end(); ++lasit) {
@@ -1005,7 +1006,21 @@ LargeBigramLookahead::initialize_la_states()
             }
         }
 
-
+        // Set bigram scores
+        vector<int> &pred_words = reverse_bigrams[word_id];
+        for (auto pwit = pred_words.begin(); pwit != pred_words.end(); ++pwit) {
+            float dummy_prob = 0.0;
+            int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy_prob);
+            float la_prob = 0.0;
+            m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[word_id], la_prob);
+            for (auto lasit = la_states.begin(); lasit != la_states.end(); ++lasit) {
+                std::map<int, float> &la_scores = m_lookahead_states[*lasit].m_scores;
+                if (la_scores.find(*pwit) == la_scores.end())
+                    la_scores[*pwit] = la_prob;
+                else
+                    la_scores[*pwit] = max(la_prob, la_scores[*pwit]);
+            }
+        }
     }
 
     return m_lookahead_states.size();
@@ -1015,7 +1030,18 @@ LargeBigramLookahead::initialize_la_states()
 float
 LargeBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
-    return 0.0;
+    int la_state = m_node_la_states[node_idx];
+    LookaheadState &state = m_lookahead_states[la_state];
+
+    if (state.m_scores.find(word_id) != state.m_scores.end())
+        return state.m_scores[word_id];
+    else {
+        float prob = 0.0;
+        int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], prob);
+        prob = 0.0;
+        m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[state.m_best_unigram_word_id], prob);
+        return prob;
+    }
 }
 
 
