@@ -29,7 +29,7 @@ Ngram::score(int node_idx, int word, double &score)
         }
     }
 
-    throw string("problem in n-gram score");
+    throw string("Problem in assigning an n-gram score.");
 }
 
 
@@ -52,16 +52,24 @@ Ngram::score(int node_idx, int word, float &score)
         }
     }
 
-    throw string("problem in n-gram score");
+    throw string("Problem in assigning an n-gram score.");
 }
 
 
 void
 Ngram::get_reverse_bigrams(map<int, vector<int> > &reverse_bigrams)
 {
-    if (order() != 2) throw string("error, model is not bigram");
+    if (order() != 2) throw string("Error, not a bigram model.");
 
-
+    Node &root_nd = nodes[root_node];
+    for (int i=root_nd.first_arc; i<=root_nd.last_arc; i++) {
+        int first_word = arc_words[i];
+        Node &arc_target_node = nodes[arc_target_nodes[i]];
+        for (int j=arc_target_node.first_arc; j<=arc_target_node.last_arc; j++) {
+            int second_word = arc_words[j];
+            reverse_bigrams[second_word].push_back(first_word);
+        }
+    }
 }
 
 
