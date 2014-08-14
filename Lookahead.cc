@@ -893,8 +893,7 @@ FullTableBigramLookahead2::set_arc_la_updates()
 }
 
 
-/*
-CacheBigramLookahead::CacheBigramLookahead(Decoder &decoder,
+LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
                                            string lafname)
 {
     m_la_lm.read_arpa(lafname);
@@ -921,6 +920,8 @@ CacheBigramLookahead::CacheBigramLookahead(Decoder &decoder,
     int la_count = set_la_state_indices_to_nodes();
     cerr << "Number of lookahead states: " << la_count << endl;
 
+    m_lookahead_states.resize(la_count+1);
+
     cerr << "Setting successor lists" << endl;
     set_la_state_successor_lists();
 
@@ -933,12 +934,11 @@ CacheBigramLookahead::CacheBigramLookahead(Decoder &decoder,
     }
     cerr << "number of big la states: " << big_la_states.size() << endl;
 
-    m_bigram_la_scores.resize(la_count);
     for (int i=0; i<la_count; ++i) {
         if (big_la_states.find(i) != big_la_states.end())
-            m_bigram_la_scores[i].set_max_items(5000);
+            m_lookahead_states[i].m_scores.set_max_items(5000);
         else
-            m_bigram_la_scores[i].set_max_items(500);
+            m_lookahead_states[i].m_scores.set_max_items(500);
     }
 
     set_arc_la_updates();
@@ -946,7 +946,7 @@ CacheBigramLookahead::CacheBigramLookahead(Decoder &decoder,
 
 
 int
-CacheBigramLookahead::set_la_state_indices_to_nodes()
+LargeBigramLookahead::set_la_state_indices_to_nodes()
 {
     // Propagate initial la state indices
     int max_state_idx = 0;
@@ -976,50 +976,28 @@ CacheBigramLookahead::set_la_state_indices_to_nodes()
 
 
 int
-CacheBigramLookahead::set_la_state_successor_lists()
+LargeBigramLookahead::set_la_state_successor_lists()
 {
-    int max_la_state_idx = 0;
-
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         if (m_node_la_states[i] == -1) continue;
-        max_la_state_idx = max(max_la_state_idx, m_node_la_states[i]);
+        int la_state = m_node_la_states[i];
+        if (m_lookahead_states[la_state].m_successor_words.size() > 0) continue;
+        find_successor_words(i, m_lookahead_states[la_state].m_successor_words);
     }
 
-    m_la_state_successor_words.resize(max_la_state_idx+1);
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-        if (m_node_la_states[i] == -1) continue;
-        if (m_la_state_successor_words[m_node_la_states[i]].size() > 0) continue;
-        find_successor_words(i, m_la_state_successor_words[m_node_la_states[i]]);
-    }
-
-    return m_la_state_successor_words.size();
+    return m_lookahead_states.size();
 }
 
 
 float
-CacheBigramLookahead::get_lookahead_score(int node_idx, int word_id)
+LargeBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
-    int la_state_idx = m_node_la_states[node_idx];
-    float prob = -1e20;
-    if (m_bigram_la_scores[la_state_idx].find(word_id, &prob))
-        return prob;
-
-    float dummy;
-    int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
-    vector<int> &word_ids = m_la_state_successor_words[la_state_idx];
-    for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-        float la_lm_prob = 0.0;
-        m_la_lm.score(la_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-        prob = max(prob, la_lm_prob);
-    }
-    bool rm = m_bigram_la_scores[la_state_idx].insert(word_id, prob, nullptr);
-
-    return prob;
+    return 0.0;
 }
 
 
 float
-CacheBigramLookahead::set_arc_la_updates()
+LargeBigramLookahead::set_arc_la_updates()
 {
     float update_count = 0.0;
     float no_update_count = 0.0;
@@ -1044,7 +1022,7 @@ CacheBigramLookahead::set_arc_la_updates()
 
 
 void
-CacheBigramLookahead::propagate_la_state_idx(int node_idx,
+LargeBigramLookahead::propagate_la_state_idx(int node_idx,
                                              int la_state_idx,
                                              int &max_state_idx,
                                              bool first_node)
@@ -1078,6 +1056,4 @@ CacheBigramLookahead::propagate_la_state_idx(int node_idx,
             propagate_la_state_idx(ait->target_node, la_state_idx, max_state_idx, false);
     }
 }
-*/
-
 
