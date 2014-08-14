@@ -139,15 +139,21 @@ private:
                                 int la_state_idx,
                                 int &max_state_idx,
                                 bool first_node=true);
+    void find_preceeding_la_states(int node_idx,
+                                   std::set<int> &la_states,
+                                   const std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
+                                   bool first_node=true);
 
     class LookaheadState {
     public:
-        LookaheadState() : m_best_unigram_word_id(-1) { }
+        LookaheadState() : m_best_unigram_word_id(-1),
+                           m_best_unigram_score(-1e20) { }
         //std::set<int> m_successor_words;
         //std::map<int, int> m_predecessor_contexts;
         //SimpleHashCache<float> m_scores;
         std::map<int, float> m_scores;
         int m_best_unigram_word_id;
+        float m_best_unigram_score;
     };
 
     std::vector<int> m_node_la_states;

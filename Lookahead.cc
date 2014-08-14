@@ -981,19 +981,23 @@ LargeBigramLookahead::set_la_state_indices_to_nodes()
 int
 LargeBigramLookahead::initialize_la_states()
 {
+    vector<vector<Decoder::Arc> > reverse_arcs;
+    get_reverse_arcs(reverse_arcs);
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-        if (m_node_la_states[i] == -1) continue;
-        int la_state = m_node_la_states[i];
-        if (m_lookahead_states[la_state].m_best_unigram_word_id != -1) continue;
+        if (i % 1000 == 0) cerr << "processing node " << i << endl;
+        if (decoder->m_nodes[i].word_id == -1) continue;
+        set<int> la_states;
+        find_preceeding_la_states(i, la_states, reverse_arcs);
 
-        set<int> successor_words;
-        find_successor_words(i, successor_words);
+        int word_id = decoder->m_nodes[i].word_id;
+        float curr_score = 0.0;
+        m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], curr_score);
+        for (auto lasit = la_states.begin(); lasit != la_states.end(); ++lasit) {
 
-        int best_id = -1;
-        float best_score = -1e20;
-        for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
-            float curr_score = 0.0;
-            m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*swit], curr_score);
+            if (curr_score > m_lookahead_states[*lasit].m_best_unigram_score) {
+                m_lookahead_states[*lasit].m_best_unigram_word_id = word_id;
+                m_lookahead_states[*lasit].m_best_unigram_score = curr_score;
+            }
         }
     }
 
@@ -1068,4 +1072,30 @@ LargeBigramLookahead::propagate_la_state_idx(int node_idx,
             propagate_la_state_idx(ait->target_node, la_state_idx, max_state_idx, false);
     }
 }
+
+void
+LargeBigramLookahead::find_preceeding_la_states(int node_idx,
+                                                set<int> &la_states,
+                                                const vector<vector<Decoder::Arc> > &reverse_arcs,
+                                                bool first_node)
+{
+    if (!first_node) {
+        int la_state = m_node_la_states[node_idx];
+        la_states.insert(la_state);
+
+        if (node_idx == START_NODE || decoder->m_nodes[node_idx].word_id != -1)
+            return;
+    }
+
+
+    for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
+        int target_node = ait->target_node;
+        if (target_node == node_idx) continue;
+        if (node_idx == decoder->m_long_silence_loop_end_node
+            && target_node == decoder->m_long_silence_loop_start_node)
+            continue;
+        find_preceeding_la_states(target_node, la_states, reverse_arcs, false);
+    }
+}
+
 
