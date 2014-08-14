@@ -908,7 +908,7 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
 
     int tail_count = 0;
     int initial_count = 0;
-    for (int i=0; i<decoder.m_nodes.size(); i++) {
+    for (int i=0; i<(int)decoder.m_nodes.size(); i++) {
         if (decoder.m_nodes[i].flags & NODE_TAIL) tail_count++;
         if (decoder.m_nodes[i].flags & NODE_INITIAL) initial_count++;
     }
@@ -981,16 +981,13 @@ LargeBigramLookahead::set_la_state_indices_to_nodes()
 int
 LargeBigramLookahead::initialize_la_states()
 {
-    std::vector<int> la_ngram_symbol_to_subword_id;
-    int maxidx = 0;
-    for (int i=0; i<m_subword_id_to_la_ngram_symbol.size(); i++)
-        maxidx = max(maxidx, m_subword_id_to_la_ngram_symbol[i]);
-    la_ngram_symbol_to_subword_id.resize(maxidx);
-    for (int i=0; i<m_subword_id_to_la_ngram_symbol.size(); i++)
-        la_ngram_symbol_to_subword_id[m_subword_id_to_la_ngram_symbol[i]] = i;
+    map<int, vector<int> > reverse_bigrams;
+    m_la_lm.get_reverse_bigrams(reverse_bigrams);
+    convert_reverse_bigram_idxs(reverse_bigrams);
 
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
+
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         if (i % 1000 == 0) cerr << "processing node " << i << endl;
         if (decoder->m_nodes[i].word_id == -1) continue;
@@ -1083,6 +1080,7 @@ LargeBigramLookahead::propagate_la_state_idx(int node_idx,
     }
 }
 
+
 void
 LargeBigramLookahead::find_preceeding_la_states(int node_idx,
                                                 set<int> &la_states,
@@ -1109,3 +1107,24 @@ LargeBigramLookahead::find_preceeding_la_states(int node_idx,
 }
 
 
+void
+LargeBigramLookahead::convert_reverse_bigram_idxs(map<int, vector<int> > &reverse_bigrams)
+{
+    vector<int> la_ngram_symbol_to_subword_id;
+    int maxidx = 0;
+    for (int i=0; i<(int)m_subword_id_to_la_ngram_symbol.size(); i++)
+        maxidx = max(maxidx, m_subword_id_to_la_ngram_symbol[i]);
+    la_ngram_symbol_to_subword_id.resize(maxidx);
+    for (int i=0; i<(int)m_subword_id_to_la_ngram_symbol.size(); i++)
+        la_ngram_symbol_to_subword_id[m_subword_id_to_la_ngram_symbol[i]] = i;
+
+    map<int, vector<int> > new_rev_bigrams;
+    for (auto rbgit = reverse_bigrams.begin(); rbgit != reverse_bigrams.end(); ++rbgit) {
+        int new_idx = la_ngram_symbol_to_subword_id[rbgit->first];
+        new_rev_bigrams[new_idx] = rbgit->second;
+        for (int i=0; i<(int)rbgit->second.size(); i++)
+            rbgit->second[i] = la_ngram_symbol_to_subword_id[rbgit->second[i]];
+    }
+
+    new_rev_bigrams.swap(reverse_bigrams);
+}
