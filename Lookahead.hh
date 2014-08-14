@@ -133,7 +133,7 @@ public:
 private:
 
     int set_la_state_indices_to_nodes();
-    int set_la_state_successor_lists();
+    int initialize_la_states();
     float set_arc_la_updates();
     void propagate_la_state_idx(int node_idx,
                                 int la_state_idx,
@@ -143,9 +143,10 @@ private:
     class LookaheadState {
     public:
         LookaheadState() : m_best_unigram_word_id(-1) { }
-        std::set<int> m_successor_words;
-        std::map<int, int> m_predecessor_contexts;
-        SimpleHashCache<float> m_scores;
+        //std::set<int> m_successor_words;
+        //std::map<int, int> m_predecessor_contexts;
+        //SimpleHashCache<float> m_scores;
+        std::map<int, float> m_scores;
         int m_best_unigram_word_id;
     };
 

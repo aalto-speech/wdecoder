@@ -922,9 +922,7 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
 
     m_lookahead_states.resize(la_count+1);
 
-    cerr << "Setting successor lists" << endl;
-    set_la_state_successor_lists();
-
+    /*
     set<int> big_la_states;
     for (unsigned int i=0; i<decoder.m_nodes.size(); i++) {
         if ((decoder.m_nodes[i].flags & NODE_CW) ||
@@ -932,16 +930,21 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
             big_la_states.insert(m_node_la_states[i]);
         }
     }
-    cerr << "number of big la states: " << big_la_states.size() << endl;
 
+    cerr << "number of big la states: " << big_la_states.size() << endl;
     for (int i=0; i<la_count; ++i) {
         if (big_la_states.find(i) != big_la_states.end())
             m_lookahead_states[i].m_scores.set_max_items(5000);
         else
             m_lookahead_states[i].m_scores.set_max_items(500);
     }
+    */
 
+    cerr << "Setting la update info to arcs" << endl;
     set_arc_la_updates();
+
+    cerr << "Initializing la states" << endl;
+    initialize_la_states();
 }
 
 
@@ -976,13 +979,22 @@ LargeBigramLookahead::set_la_state_indices_to_nodes()
 
 
 int
-LargeBigramLookahead::set_la_state_successor_lists()
+LargeBigramLookahead::initialize_la_states()
 {
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         if (m_node_la_states[i] == -1) continue;
         int la_state = m_node_la_states[i];
-        if (m_lookahead_states[la_state].m_successor_words.size() > 0) continue;
-        find_successor_words(i, m_lookahead_states[la_state].m_successor_words);
+        if (m_lookahead_states[la_state].m_best_unigram_word_id != -1) continue;
+
+        set<int> successor_words;
+        find_successor_words(i, successor_words);
+
+        int best_id = -1;
+        float best_score = -1e20;
+        for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
+            float curr_score = 0.0;
+            m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*swit], curr_score);
+        }
     }
 
     return m_lookahead_states.size();

@@ -181,7 +181,8 @@ int main(int argc, char* argv[])
             "\tunigram\n"
             "\tbigram-full\n"
             "\tbigram-hybrid\n"
-            "\tbigram-scores");
+            "\tbigram-scores\n"
+            "\tlarge-bigram");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
