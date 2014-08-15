@@ -922,24 +922,6 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
 
     m_lookahead_states.resize(la_count+1);
 
-    /*
-    set<int> big_la_states;
-    for (unsigned int i=0; i<decoder.m_nodes.size(); i++) {
-        if ((decoder.m_nodes[i].flags & NODE_CW) ||
-            (decoder.m_nodes[i].flags & NODE_INITIAL)) {
-            big_la_states.insert(m_node_la_states[i]);
-        }
-    }
-
-    cerr << "number of big la states: " << big_la_states.size() << endl;
-    for (int i=0; i<la_count; ++i) {
-        if (big_la_states.find(i) != big_la_states.end())
-            m_lookahead_states[i].m_scores.set_max_items(5000);
-        else
-            m_lookahead_states[i].m_scores.set_max_items(500);
-    }
-    */
-
     cerr << "Setting la update info to arcs" << endl;
     set_arc_la_updates();
 
@@ -989,6 +971,7 @@ LargeBigramLookahead::initialize_la_states()
     get_reverse_arcs(reverse_arcs);
 
     // Propagate unigram scores
+    cerr << "Propagating unigram scores" << endl;
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         if (i % 10000 == 0) cerr << "processing node " << i << endl;
         if (decoder->m_nodes[i].word_id == -1) continue;
@@ -1008,6 +991,7 @@ LargeBigramLookahead::initialize_la_states()
     }
 
     // Propagate bigram scores
+    cerr << "Propagating bigram scores" << endl;
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         if (i % 10000 == 0) cerr << "processing node " << i << endl;
         if (decoder->m_nodes[i].word_id == -1) continue;
@@ -1131,7 +1115,7 @@ LargeBigramLookahead::find_preceeding_la_states(int node_idx,
     if (!first_node) {
         int la_state = m_node_la_states[node_idx];
         la_states.insert(la_state);
-        if (node_idx == START_NODE || decoder->m_nodes[node_idx].word_id != -1)
+        if (node_idx == END_NODE || decoder->m_nodes[node_idx].word_id != -1)
             return;
     }
 

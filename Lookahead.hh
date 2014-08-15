@@ -149,9 +149,6 @@ private:
     public:
         LookaheadState() : m_best_unigram_word_id(-1),
                            m_best_unigram_score(-1e20) { }
-        //std::set<int> m_successor_words;
-        //std::map<int, int> m_predecessor_contexts;
-        //SimpleHashCache<float> m_scores;
         std::map<int, float> m_scores;
         int m_best_unigram_word_id;
         float m_best_unigram_score;
