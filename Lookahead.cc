@@ -1140,7 +1140,7 @@ LargeBigramLookahead::convert_reverse_bigram_idxs(map<int, vector<int> > &revers
     int maxidx = 0;
     for (int i=0; i<(int)m_subword_id_to_la_ngram_symbol.size(); i++)
         maxidx = max(maxidx, m_subword_id_to_la_ngram_symbol[i]);
-    la_ngram_symbol_to_subword_id.resize(maxidx);
+    la_ngram_symbol_to_subword_id.resize(maxidx+1);
     for (int i=0; i<(int)m_subword_id_to_la_ngram_symbol.size(); i++)
         la_ngram_symbol_to_subword_id[m_subword_id_to_la_ngram_symbol[i]] = i;
 
