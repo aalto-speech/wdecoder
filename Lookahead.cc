@@ -988,15 +988,15 @@ LargeBigramLookahead::initialize_la_states()
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
 
+    // Propagate unigram scores
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-        if (i % 1000 == 0) cerr << "processing node " << i << endl;
+        if (i % 10000 == 0) cerr << "processing node " << i << endl;
         if (decoder->m_nodes[i].word_id == -1) continue;
         set<int> la_states;
         find_preceeding_la_states(i, la_states, reverse_arcs);
 
         int word_id = decoder->m_nodes[i].word_id;
 
-        // Set best unigram scores
         float curr_score = 0.0;
         m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], curr_score);
         for (auto lasit = la_states.begin(); lasit != la_states.end(); ++lasit) {
@@ -1005,15 +1005,30 @@ LargeBigramLookahead::initialize_la_states()
                 m_lookahead_states[*lasit].m_best_unigram_score = curr_score;
             }
         }
+    }
 
-        // Set bigram scores
+    // Propagate bigram scores
+    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
+        if (i % 10000 == 0) cerr << "processing node " << i << endl;
+        if (decoder->m_nodes[i].word_id == -1) continue;
+        set<int> la_states;
+        find_preceeding_la_states(i, la_states, reverse_arcs);
+
+        int word_id = decoder->m_nodes[i].word_id;
+
         vector<int> &pred_words = reverse_bigrams[word_id];
         for (auto pwit = pred_words.begin(); pwit != pred_words.end(); ++pwit) {
             float dummy_prob = 0.0;
             int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy_prob);
             float la_prob = 0.0;
             m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[word_id], la_prob);
+
             for (auto lasit = la_states.begin(); lasit != la_states.end(); ++lasit) {
+
+                float unigram_prob = 0.0;
+                m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[m_lookahead_states[*lasit].m_best_unigram_word_id], unigram_prob);
+                if (unigram_prob > la_prob) continue;
+
                 std::map<int, float> &la_scores = m_lookahead_states[*lasit].m_scores;
                 if (la_scores.find(*pwit) == la_scores.end())
                     la_scores[*pwit] = la_prob;
@@ -1116,11 +1131,9 @@ LargeBigramLookahead::find_preceeding_la_states(int node_idx,
     if (!first_node) {
         int la_state = m_node_la_states[node_idx];
         la_states.insert(la_state);
-
         if (node_idx == START_NODE || decoder->m_nodes[node_idx].word_id != -1)
             return;
     }
-
 
     for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
         int target_node = ait->target_node;
