@@ -133,7 +133,6 @@ public:
 private:
 
     int set_la_state_indices_to_nodes();
-    int initialize_la_states();
     float set_arc_la_updates();
     void propagate_la_state_idx(int node_idx,
                                 int la_state_idx,
