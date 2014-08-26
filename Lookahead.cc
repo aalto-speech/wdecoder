@@ -992,6 +992,8 @@ LargeBigramLookahead::initialize_la_states()
 
     // Propagate bigram scores
     cerr << "Propagating bigram scores" << endl;
+    int bigram_score_count = 0;
+    int bigram_score_node_count = 0;
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         if (i % 10000 == 0) cerr << "processing node " << i << endl;
         if (decoder->m_nodes[i].word_id == -1) continue;
@@ -1001,6 +1003,7 @@ LargeBigramLookahead::initialize_la_states()
         int word_id = decoder->m_nodes[i].word_id;
 
         vector<int> &pred_words = reverse_bigrams[word_id];
+        bool scores_set = false;
         for (auto pwit = pred_words.begin(); pwit != pred_words.end(); ++pwit) {
             float dummy_prob = 0.0;
             int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy_prob);
@@ -1018,9 +1021,17 @@ LargeBigramLookahead::initialize_la_states()
                     la_scores[*pwit] = la_prob;
                 else
                     la_scores[*pwit] = max(la_prob, la_scores[*pwit]);
+
+                bigram_score_count++;
+                scores_set = true;
             }
         }
+
+        if (scores_set) bigram_score_node_count++;
     }
+
+    cerr << "Bigram score count: " << bigram_score_count << endl;
+    cerr << "Bigram score node count: " << bigram_score_node_count << endl;
 
     return m_lookahead_states.size();
 }
