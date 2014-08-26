@@ -145,6 +145,16 @@ private:
                                    bool first_node=true);
     void convert_reverse_bigram_idxs(std::map<int, std::vector<int> > &reverse_bigrams);
 
+    void propagate_unigram_la_score(int node_idx,
+                                    float score,
+                                    int word_id,
+                                    std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
+                                    int &la_score_set,
+                                    bool start_node);
+    int set_unigram_la_scores();
+
+    int set_bigram_la_scores();
+
     class LookaheadState {
     public:
         LookaheadState() : m_best_unigram_word_id(-1),
