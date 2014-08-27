@@ -931,13 +931,14 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
     // Propagate unigram scores
     cerr << "Propagating unigram scores" << endl;
     set_unigram_la_scores();
-
     // Propagate bigram scores
+
     cerr << "Propagating bigram scores" << endl;
     time_t rawtime;
     time(&rawtime);
     cerr << "time: " << ctime(&rawtime) << endl;
-    set_bigram_la_scores();
+    int bigram_score_count = set_bigram_la_scores_2();
+    cerr << "number of bigram scores: " << bigram_score_count << endl;
     time(&rawtime);
     cerr << "time: " << ctime(&rawtime) << endl;
 }
@@ -1238,12 +1239,9 @@ LargeBigramLookahead::set_bigram_la_scores_2()
     get_reverse_arcs(reverse_arcs);
 
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-        if (i % 10000 == 0) cerr << "processing node " << i << endl;
         if (decoder->m_nodes[i].word_id == -1) continue;
-
         int word_id = decoder->m_nodes[i].word_id;
-
-        vector<int> &pred_words = reverse_bigrams[word_id];
+        vector<int> pred_words = reverse_bigrams[word_id];
         set<int> processed_la_states;
         propagate_bigram_la_scores(i, word_id, pred_words, reverse_arcs,
                                    processed_la_states, true, false);
