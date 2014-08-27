@@ -67,6 +67,7 @@ Decoder::Lookahead::get_reverse_arcs(vector<vector<Decoder::Arc> > &reverse_arcs
             if (ni == ait->target_node) continue;
             reverse_arcs[ait->target_node].resize(reverse_arcs[ait->target_node].size()+1);
             reverse_arcs[ait->target_node].back().target_node = ni;
+            reverse_arcs[ait->target_node].back().update_lookahead = ait->update_lookahead;
         }
     }
 }
@@ -1245,7 +1246,7 @@ LargeBigramLookahead::set_bigram_la_scores_2()
         vector<int> &pred_words = reverse_bigrams[word_id];
         set<int> processed_la_states;
         propagate_bigram_la_scores(i, word_id, pred_words, reverse_arcs,
-                                   processed_la_states, true);
+                                   processed_la_states, true, false);
     }
 
     int bigram_score_count = 0;
@@ -1262,15 +1263,56 @@ LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
                                                  vector<int> &predecessor_words,
                                                  vector<vector<Decoder::Arc> > &reverse_arcs,
                                                  set<int> &processed_la_states,
-                                                 bool start_node)
+                                                 bool start_node,
+                                                 bool la_state_change)
 {
-    exit(1);
+    int la_state = m_node_la_states[node_idx];
+    if (!start_node && la_state_change
+        && processed_la_states.find(la_state) != processed_la_states.end())
+    {
+        for (auto pwit = predecessor_words.begin(); pwit != predecessor_words.end(); )
+        {
+            float la_prob;
+            int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], la_prob);
+            la_prob = 0.0;
+            m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[word_id], la_prob);
+
+            float unigram_prob = 0.0;
+            m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[m_lookahead_states[la_state].m_best_unigram_word_id], unigram_prob);
+
+            if (unigram_prob > la_prob) {
+                pwit = predecessor_words.erase(pwit);
+            }
+            else {
+                map<int, float> &la_scores = m_lookahead_states[la_state].m_scores;
+                if (la_scores.find(*pwit) == la_scores.end()) {
+                    la_scores[*pwit] = la_prob;
+                    ++pwit;
+                }
+                else {
+                    if (la_scores[*pwit] > la_prob) {
+                        pwit = predecessor_words.erase(pwit);
+                    }
+                    else {
+                        la_scores[*pwit] = la_prob;
+                        ++pwit;
+                    }
+                }
+            }
+        }
+
+        processed_la_states.insert(la_state);
+        if (predecessor_words.size() == 0) return;
+    }
+
+    if (!start_node && decoder->m_nodes[node_idx].word_id != -1) return;
 
     for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
     {
         if (rait->target_node == node_idx) continue;
         if (rait->target_node == decoder->m_long_silence_loop_start_node && node_idx == decoder->m_long_silence_loop_end_node) continue;
         propagate_bigram_la_scores(rait->target_node, word_id, predecessor_words,
-                                   reverse_arcs, processed_la_states, false);
+                                   reverse_arcs, processed_la_states, false, rait->update_lookahead);
     }
 }
+

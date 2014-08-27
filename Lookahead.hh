@@ -158,7 +158,8 @@ private:
                                     std::vector<int> &predecessor_words,
                                     std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
                                     std::set<int> &processed_la_states,
-                                    bool start_node);
+                                    bool start_node,
+                                    bool la_state_change);
 
     class LookaheadState {
     public:
