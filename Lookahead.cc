@@ -1268,7 +1268,7 @@ LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
 {
     int la_state = m_node_la_states[node_idx];
     if (!start_node && la_state_change
-        && processed_la_states.find(la_state) != processed_la_states.end())
+        && processed_la_states.find(la_state) == processed_la_states.end())
     {
         for (auto pwit = predecessor_words.begin(); pwit != predecessor_words.end(); )
         {
