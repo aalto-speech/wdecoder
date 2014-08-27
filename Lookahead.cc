@@ -1186,6 +1186,26 @@ LargeBigramLookahead::set_unigram_la_scores()
 }
 
 
+void
+LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
+                                                 float score,
+                                                 int word_id,
+                                                 vector<vector<Decoder::Arc> > &reverse_arcs,
+                                                 int &la_score_set,
+                                                 bool start_node)
+{
+    exit(1);
+
+    for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
+    {
+        if (rait->target_node == node_idx) continue;
+        if (rait->target_node == decoder->m_long_silence_loop_start_node && node_idx == decoder->m_long_silence_loop_end_node) continue;
+        if (rait->target_node == START_NODE) continue;
+        propagate_unigram_la_score(rait->target_node, score, word_id, reverse_arcs, la_score_set, false);
+    }
+}
+
+
 int
 LargeBigramLookahead::set_bigram_la_scores()
 {
@@ -1246,6 +1266,8 @@ LargeBigramLookahead::set_bigram_la_scores()
     cerr << "Bigram score node count: " << bigram_score_node_count << endl;
     cerr << "Unigram score better: " << unigram_better_count << endl;
     cerr << "Bigram score better: " << bigram_better_count << endl;
+
+    return bigram_score_count;
 }
 
 

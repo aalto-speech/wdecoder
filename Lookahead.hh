@@ -152,6 +152,12 @@ private:
                                     bool start_node);
     int set_unigram_la_scores();
 
+    void propagate_bigram_la_scores(int node_idx,
+                                    float score,
+                                    int word_id,
+                                    std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
+                                    int &la_score_set,
+                                    bool start_node);
     int set_bigram_la_scores();
 
     class LookaheadState {
