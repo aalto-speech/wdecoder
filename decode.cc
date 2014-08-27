@@ -222,10 +222,6 @@ int main(int argc, char* argv[])
             string lalmfname = config["lookahead-model"].get_str();
             cerr << "Reading lookahead model: " << lalmfname << endl;
 
-            time_t rawtime;
-            time ( &rawtime );
-            cerr << "time: " << ctime (&rawtime) << endl;
-
             if (la_type == "unigram")
                 d.m_la = new UnigramLookahead(d, lalmfname);
             else if (la_type == "bigram-full")
@@ -242,9 +238,6 @@ int main(int argc, char* argv[])
                 cerr << "unknown lookahead type: " << la_type << endl;
                 exit(0);
             }
-
-            time ( &rawtime );
-            cerr << "time: " << ctime (&rawtime) << endl;
         }
         else d.m_la = new NoLookahead(d);
 

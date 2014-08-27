@@ -1105,7 +1105,6 @@ LargeBigramLookahead::propagate_unigram_la_score(int node_idx,
                                                  float score,
                                                  int word_id,
                                                  vector<vector<Decoder::Arc> > &reverse_arcs,
-                                                 int &la_score_set,
                                                  bool start_node)
 {
     Decoder::Node &node = decoder->m_nodes[node_idx];
@@ -1114,7 +1113,6 @@ LargeBigramLookahead::propagate_unigram_la_score(int node_idx,
         if (la_state.m_best_unigram_score > score) return;
         la_state.m_best_unigram_score = score;
         la_state.m_best_unigram_word_id = word_id;
-        la_score_set++;
         if (node.word_id != -1) return;
     }
 
@@ -1122,8 +1120,7 @@ LargeBigramLookahead::propagate_unigram_la_score(int node_idx,
     {
         if (rait->target_node == node_idx) continue;
         if (rait->target_node == decoder->m_long_silence_loop_start_node && node_idx == decoder->m_long_silence_loop_end_node) continue;
-        if (rait->target_node == START_NODE) continue;
-        propagate_unigram_la_score(rait->target_node, score, word_id, reverse_arcs, la_score_set, false);
+        propagate_unigram_la_score(rait->target_node, score, word_id, reverse_arcs, false);
     }
 }
 
@@ -1134,44 +1131,24 @@ bool descending_node_unigram_la_lp_sort_2(const pair<int, pair<int, float> > &i,
     return (i.second.second > j.second.second);
 }
 
-int
+void
 LargeBigramLookahead::set_unigram_la_scores()
 {
-    float init_val = -1e20;
-    int total_lm_nodes = 0;
-    float best_lp = init_val;
-    int best_word_id = -1;
     vector<pair<unsigned int, pair<int, float> > > sorted_nodes;
-
     for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
         Decoder::Node &node = decoder->m_nodes[i];
         if (node.word_id == -1) continue;
-        total_lm_nodes++;
         float la_prob = 0.0;
         m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], la_prob);
         sorted_nodes.push_back(make_pair(i, make_pair(node.word_id, la_prob)));
-        if (la_prob > best_lp && m_la_lm.vocabulary[m_subword_id_to_la_ngram_symbol[node.word_id]] != "</s>") {
-            best_lp = la_prob;
-            best_word_id = node.word_id;
-        }
     }
 
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
-
-    int score_set_count = 0;
-    propagate_unigram_la_score(START_NODE, best_lp, best_word_id, reverse_arcs, score_set_count, true);
-    m_lookahead_states[m_node_la_states[START_NODE]].m_best_unigram_score = best_lp;
-    m_lookahead_states[m_node_la_states[START_NODE]].m_best_unigram_word_id = best_word_id;
-
-    int la_state_count = 0;
     sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_unigram_la_lp_sort_2);
-    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit) {
-        score_set_count = 0;
+    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
         propagate_unigram_la_score(snit->first, snit->second.second, snit->second.first,
-                                   reverse_arcs, score_set_count, true);
-        if (score_set_count > 0) la_state_count++;
-    }
+                                   reverse_arcs, true);
 
     int problem_count = 0;
     for (unsigned int i=0; i<m_lookahead_states.size(); i++)
@@ -1181,8 +1158,6 @@ LargeBigramLookahead::set_unigram_la_scores()
         cerr << "Unigram la problem in " << problem_count << " la states." << endl;
         exit(1);
     }
-
-    return la_state_count;
 }
 
 
@@ -1201,7 +1176,7 @@ LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
         if (rait->target_node == node_idx) continue;
         if (rait->target_node == decoder->m_long_silence_loop_start_node && node_idx == decoder->m_long_silence_loop_end_node) continue;
         if (rait->target_node == START_NODE) continue;
-        propagate_unigram_la_score(rait->target_node, score, word_id, reverse_arcs, la_score_set, false);
+        propagate_bigram_la_scores(rait->target_node, score, word_id, reverse_arcs, la_score_set, false);
     }
 }
 
