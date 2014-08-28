@@ -15,7 +15,8 @@
 class decodertest : public CPPUNIT_NS :: TestFixture
 {
     CPPUNIT_TEST_SUITE (decodertest);
-    CPPUNIT_TEST (DecoderTest1);
+    CPPUNIT_TEST (BigramLookaheadTest1);
+    CPPUNIT_TEST (BigramLookaheadTest2);
     CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -23,7 +24,8 @@ public:
     void tearDown(void);
 
 protected:
-    void DecoderTest1(void);
+    void BigramLookaheadTest1(void);
+    void BigramLookaheadTest2(void);
 
 private:
     Decoder d;

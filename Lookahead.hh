@@ -36,6 +36,15 @@ private:
 };
 
 
+class DummyBigramLookahead : public Decoder::Lookahead {
+public:
+    DummyBigramLookahead(Decoder &decoder,
+                         std::string lafname);
+    ~DummyBigramLookahead() {};
+    float get_lookahead_score(int node_idx, int word_id);
+};
+
+
 class FullTableBigramLookahead : public Decoder::Lookahead {
 public:
     FullTableBigramLookahead(Decoder &decoder,
@@ -89,7 +98,7 @@ private:
 class BigramScoreLookahead : public Decoder::Lookahead {
 public:
     BigramScoreLookahead(Decoder &decoder,
-                             std::string lafname);
+                         std::string lafname);
     ~BigramScoreLookahead() {};
     float get_lookahead_score(int node_idx, int word_id);
 

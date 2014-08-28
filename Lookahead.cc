@@ -286,6 +286,37 @@ UnigramLookahead::set_arc_la_updates()
 }
 
 
+
+DummyBigramLookahead::DummyBigramLookahead(Decoder &decoder,
+                                           string lafname)
+{
+    m_la_lm.read_arpa(lafname);
+    this->decoder = &decoder;
+    set_subword_id_la_ngram_symbol_mapping();
+}
+
+
+float
+DummyBigramLookahead::get_lookahead_score(int node_idx, int word_id)
+{
+    vector<int> successor_words;
+    find_successor_words(node_idx, successor_words);
+
+    float dummy;
+    int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
+
+    float la_prob = -1e20;
+    for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
+    {
+        float curr_prob = 0.0;
+        m_la_lm.score(la_node, m_subword_id_to_la_ngram_symbol[*swit], curr_prob);
+        la_prob = max(la_prob, curr_prob);
+    }
+
+    return la_prob;
+}
+
+
 FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
                                                    string lafname)
 {

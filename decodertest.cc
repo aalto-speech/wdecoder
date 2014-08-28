@@ -5,6 +5,7 @@
 #include <ctime>
 
 #include "decodertest.hh"
+#include "Lookahead.hh"
 
 #include <cppunit/TestFixture.h>
 #include <cppunit/extensions/HelperMacros.h>
@@ -17,8 +18,6 @@ CPPUNIT_TEST_SUITE_REGISTRATION (decodertest);
 
 void decodertest::setUp (void)
 {
-    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
-    d.read_dgraph("data/swsw.test.graph");
 }
 
 
@@ -27,31 +26,43 @@ void decodertest::tearDown (void)
 }
 
 
-void decodertest::DecoderTest1(void)
+void decodertest::BigramLookaheadTest1(void)
 {
-    time_t startt, endt;
-    time(&startt);
+    cerr << endl;
+    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    d.read_noway_lexicon("data/1k.words.lex");
+    d.read_dgraph("data/1k.words.graph");
+    DummyBigramLookahead refla(d, "data/1k.words.2gram.arpa");
+    d.m_la = new FullTableBigramLookahead(d, "data/1k.words.2gram.arpa");
 
-    d.set_la_state_indices_to_nodes();
-    d.set_la_state_successor_lists();
-
-    vector<set<int> > la_successor_words(d.m_la_state_successor_words.size());
-    for (int i=0; i<d.m_la_state_successor_words.size(); i++)
-        for (auto swit = d.m_la_state_successor_words[i].begin();
-                  swit != d.m_la_state_successor_words[i].end();
-                  ++swit)
-            la_successor_words[i].insert(*swit);
-
-    for (int i=0; i<d.m_nodes.size(); i+=50) {
-        Decoder::Node &node = d.m_nodes[i];
-        int la_state_idx = d.m_nodes[i].la_state_idx;
-        set<int> &la_state_successors = la_successor_words[la_state_idx];
-        set<int> successors;
-        d.find_successor_words(i, successors, true);
-        CPPUNIT_ASSERT( la_state_successors == successors );
+    cerr << "node count: " << d.m_nodes.size() << endl;
+    cerr << "evaluating.." << endl;
+    int idx=0;
+    for (int i=0; i<d.m_nodes.size(); i++) {
+        for (int w=0; w<d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
+            idx++;
+            if (idx % 100 != 0) continue;
+            float ref = refla.get_lookahead_score(i, w);
+            float hyp = d.m_la->get_lookahead_score(i, w);
+            CPPUNIT_ASSERT_EQUAL( ref, hyp );
+        }
     }
+}
 
-    time(&endt);
-    float timediff = difftime (endt, startt);
-    //cerr << timediff << endl;
+
+void decodertest::BigramLookaheadTest2(void)
+{
+    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    d.read_noway_lexicon("data/1k.words.lex");
+    d.read_dgraph("data/1k.words.graph");
+    DummyBigramLookahead refla(d, "data/1k.words.2gram.arpa");
+    LargeBigramLookahead lbla(d, "data/1k.words.2gram.arpa");
+
+    for (int i=0; i<d.m_nodes.size(); i++) {
+        for (int w=0; w<d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
+            float ref = refla.get_lookahead_score(i, w);
+            float hyp = lbla.get_lookahead_score(i, w);
+            CPPUNIT_ASSERT_EQUAL( ref, hyp );
+        }
+    }
 }
