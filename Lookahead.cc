@@ -1278,7 +1278,7 @@ LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
             float unigram_prob = 0.0;
             m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[m_lookahead_states[la_state].m_best_unigram_word_id], unigram_prob);
 
-            if (unigram_prob > la_prob) {
+            if (unigram_prob >= la_prob) {
                 pwit = predecessor_words.erase(pwit);
             }
             else {
