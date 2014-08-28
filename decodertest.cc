@@ -56,12 +56,12 @@ void decodertest::BigramLookaheadTest2(void)
     d.read_noway_lexicon("data/1k.words.lex");
     d.read_dgraph("data/1k.words.graph");
     DummyBigramLookahead refla(d, "data/1k.words.2gram.arpa");
-    LargeBigramLookahead lbla(d, "data/1k.words.2gram.arpa");
+    d.m_la = new LargeBigramLookahead(d, "data/1k.words.2gram.arpa");
 
     for (int i=0; i<d.m_nodes.size(); i++) {
         for (int w=0; w<d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
             float ref = refla.get_lookahead_score(i, w);
-            float hyp = lbla.get_lookahead_score(i, w);
+            float hyp = d.m_la->get_lookahead_score(i, w);
             CPPUNIT_ASSERT_EQUAL( ref, hyp );
         }
     }
