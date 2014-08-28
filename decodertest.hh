@@ -16,7 +16,7 @@
 class decodertest : public CPPUNIT_NS :: TestFixture
 {
     CPPUNIT_TEST_SUITE (decodertest);
-    CPPUNIT_TEST (BigramLookaheadTest1);
+    //CPPUNIT_TEST (BigramLookaheadTest1);
     CPPUNIT_TEST (BigramLookaheadTest2);
     CPPUNIT_TEST (BigramLookaheadTest3);
     CPPUNIT_TEST_SUITE_END ();

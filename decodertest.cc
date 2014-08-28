@@ -82,8 +82,11 @@ void decodertest::BigramLookaheadTest3(void)
     DummyBigramLookahead refla(d, "data/1k.words.2gram.arpa");
     d.m_la = new LargeBigramLookahead(d, "data/1k.words.2gram.arpa");
 
+    int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         for (int w=0; w<(int)d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
+            idx++;
+            if (idx % 100 != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
             CPPUNIT_ASSERT_EQUAL( ref, hyp );

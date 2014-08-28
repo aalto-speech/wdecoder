@@ -1125,8 +1125,8 @@ LargeBigramLookahead::convert_reverse_bigram_idxs(map<int, vector<int> > &revers
     for (auto rbgit = reverse_bigrams.begin(); rbgit != reverse_bigrams.end(); ++rbgit) {
         int new_idx = la_ngram_symbol_to_subword_id[rbgit->first];
         new_rev_bigrams[new_idx] = rbgit->second;
-        for (int i=0; i<(int)rbgit->second.size(); i++)
-            rbgit->second[i] = la_ngram_symbol_to_subword_id[rbgit->second[i]];
+        for (int i=0; i<(int)new_rev_bigrams[new_idx].size(); i++)
+            new_rev_bigrams[new_idx][i] = la_ngram_symbol_to_subword_id[new_rev_bigrams[new_idx][i]];
     }
 
     new_rev_bigrams.swap(reverse_bigrams);
@@ -1269,6 +1269,18 @@ LargeBigramLookahead::set_bigram_la_scores_2()
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
 
+    //int tmp = decoder->m_subword_map["samassa"];
+    /*
+    for (auto rbit = reverse_bigrams.begin(); rbit != reverse_bigrams.end(); ++rbit) {
+        cerr << "reverse bigrams for " << decoder->m_subwords[rbit->first]
+             << ": " << rbit->second.size() << endl;
+        if (decoder->m_subwords[rbit->first] == "samassa") {
+            for (auto pit = rbit->second.begin(); pit != rbit->second.end(); ++pit)
+                cerr << "    " << decoder->m_subwords[*pit] << endl;
+        }
+    }
+    */
+
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         if (decoder->m_nodes[i].word_id == -1) continue;
         int word_id = decoder->m_nodes[i].word_id;
@@ -1289,7 +1301,7 @@ LargeBigramLookahead::set_bigram_la_scores_2()
 void
 LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
                                                  int word_id,
-                                                 vector<int> &predecessor_words,
+                                                 vector<int> predecessor_words,
                                                  vector<vector<Decoder::Arc> > &reverse_arcs,
                                                  set<int> &processed_la_states,
                                                  bool start_node,
@@ -1310,7 +1322,8 @@ LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
             m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[m_lookahead_states[la_state].m_best_unigram_word_id], unigram_prob);
 
             if (unigram_prob >= la_prob) {
-                pwit = predecessor_words.erase(pwit);
+                //pwit = predecessor_words.erase(pwit);
+                ++pwit;
             }
             else {
                 map<int, float> &la_scores = m_lookahead_states[la_state].m_scores;
@@ -1321,6 +1334,7 @@ LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
                 else {
                     if (la_scores[*pwit] > la_prob) {
                         pwit = predecessor_words.erase(pwit);
+                        //++pwit;
                     }
                     else {
                         la_scores[*pwit] = la_prob;

@@ -164,7 +164,7 @@ private:
     int set_bigram_la_scores_2();
     void propagate_bigram_la_scores(int node_idx,
                                     int word_id,
-                                    std::vector<int> &predecessor_words,
+                                    std::vector<int> predecessor_words,
                                     std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
                                     std::set<int> &processed_la_states,
                                     bool start_node,
