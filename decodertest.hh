@@ -3,6 +3,7 @@
 
 #define private public
 #include "Decoder.hh"
+#include "Lookahead.hh"
 #undef private
 
 #include <deque>
@@ -17,6 +18,7 @@ class decodertest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST_SUITE (decodertest);
     CPPUNIT_TEST (BigramLookaheadTest1);
     CPPUNIT_TEST (BigramLookaheadTest2);
+    CPPUNIT_TEST (BigramLookaheadTest3);
     CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -26,6 +28,7 @@ public:
 protected:
     void BigramLookaheadTest1(void);
     void BigramLookaheadTest2(void);
+    void BigramLookaheadTest3(void);
 
 private:
     Decoder d;

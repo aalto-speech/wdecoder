@@ -22,7 +22,7 @@ Decoder::Lookahead::set_subword_id_la_ngram_symbol_mapping()
 
 void
 Decoder::Lookahead::find_successor_words(int node_idx,
-                              vector<int> &word_ids)
+                                         vector<int> &word_ids)
 {
     set<int> successor_words;
     find_successor_words(node_idx, successor_words);
@@ -35,8 +35,8 @@ Decoder::Lookahead::find_successor_words(int node_idx,
 
 void
 Decoder::Lookahead::find_successor_words(int node_idx,
-                              set<int> &word_ids,
-                              bool start_node)
+                                         set<int> &word_ids,
+                                         bool start_node)
 {
     Decoder::Node &node = decoder->m_nodes[node_idx];
 
