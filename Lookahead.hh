@@ -150,7 +150,8 @@ private:
     void find_preceeding_la_states(int node_idx,
                                    std::set<int> &la_states,
                                    const std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
-                                   bool first_node=true);
+                                   bool first_node=true,
+                                   bool state_change=true);
     void convert_reverse_bigram_idxs(std::map<int, std::vector<int> > &reverse_bigrams);
 
     void set_unigram_la_scores();
@@ -168,6 +169,7 @@ private:
                                     std::set<int> &processed_la_states,
                                     bool start_node,
                                     bool la_state_change);
+    int set_bigram_la_scores_2();
 
     class LookaheadState {
     public:
