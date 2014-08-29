@@ -1028,17 +1028,17 @@ LargeBigramLookahead::get_lookahead_score(int node_idx, int word_id)
     if (state.m_scores.find(word_id) != state.m_scores.end())
         return state.m_scores[word_id];
     else {
+        /*
         float prob = 0.0;
         int nd = m_word_id_la_state_lookup[word_id];
         m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[state.m_best_unigram_word_id], prob);
         return prob;
-
-        // OPTION 2: takes more memory, faster?
-        /*
-        int nd2 = m_word_id_la_state_lookup[word_id];
-        float prob2 = m_la_lm.nodes[nd].backoff_prob + state.m_best_unigram_score;
-        return prob2;
         */
+
+        // OPTION 2: takes slightly more memory, faster
+        int nd2 = m_word_id_la_state_lookup[word_id];
+        float prob2 = m_la_lm.nodes[nd2].backoff_prob + state.m_best_unigram_score;
+        return prob2;
     }
 }
 
@@ -1219,8 +1219,13 @@ LargeBigramLookahead::set_bigram_la_scores()
 
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
 
-        if (i % 10000 == 0)
-            cerr << "node " << i << "/" << decoder->m_nodes.size() << endl;
+        if (i % 10000 == 0) {
+            int bsc = 0;
+            for (auto lasit=m_lookahead_states.begin(); lasit != m_lookahead_states.end(); ++lasit)
+                bsc += lasit->m_scores.size();
+            cerr << "node " << i << "/" << decoder->m_nodes.size()
+                 << ", bigram scores: " << bsc << endl;
+        }
 
         if (decoder->m_nodes[i].word_id == -1) continue;
         int word_id = decoder->m_nodes[i].word_id;
@@ -1340,9 +1345,9 @@ LargeBigramLookahead::set_bigram_la_scores_2()
 
                 float unigram_prob = 0.0;
                 m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[m_lookahead_states[*lasit].m_best_unigram_word_id], unigram_prob);
-                if (unigram_prob >= la_prob) continue;
+                // if (unigram_prob >= la_prob) continue;
                 // OPTION 2: takes more memory, faster?
-                // if (unigram_prob > la_prob) continue;
+                if (unigram_prob > la_prob) continue;
 
                 map<int, float> &la_scores = m_lookahead_states[*lasit].m_scores;
                 if (la_scores.find(*pwit) == la_scores.end()) {

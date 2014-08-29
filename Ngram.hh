@@ -41,7 +41,7 @@ public:
     std::vector<std::string> vocabulary;
     std::map<std::string, int> vocabulary_lookup;
 
-private:
+//private:
 
     class NgramInfo {
     public:
