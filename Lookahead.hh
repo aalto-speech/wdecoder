@@ -143,6 +143,7 @@ private:
 
     int set_la_state_indices_to_nodes();
     float set_arc_la_updates();
+    void set_word_id_la_states();
     void propagate_la_state_idx(int node_idx,
                                 int la_state_idx,
                                 int &max_state_idx,
@@ -182,6 +183,7 @@ private:
 
     std::vector<int> m_node_la_states;
     std::vector<LookaheadState> m_lookahead_states;
+    std::vector<int> m_word_id_la_state_lookup;
 };
 
 

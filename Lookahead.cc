@@ -952,6 +952,8 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
     m_lookahead_states.resize(la_count);
     cerr << "Number of lookahead states: " << la_count << endl;
 
+    set_word_id_la_states();
+
     set_arc_la_updates();
 
     cerr << "Propagating unigram scores" << endl;
@@ -960,11 +962,31 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
     cerr << "Propagating bigram scores" << endl;
     time_t rawtime;
     time(&rawtime);
-    cerr << "time: " << ctime(&rawtime) << endl;
+    cerr << "time: " << ctime(&rawtime);
+
     int bigram_score_count = set_bigram_la_scores_2();
-    cerr << "number of bigram scores: " << bigram_score_count << endl;
+
     time(&rawtime);
-    cerr << "time: " << ctime(&rawtime) << endl;
+    cerr << "time: " << ctime(&rawtime);
+
+    cerr << "Bigram scores set: " << bigram_score_count << endl;
+    int bigram_score_la_state_count = 0;
+    for (unsigned int i=0; i<m_lookahead_states.size(); i++)
+        if (m_lookahead_states[i].m_scores.size() > 0)
+            bigram_score_la_state_count++;
+    cerr << "La states with bigram scores: " << bigram_score_la_state_count << "/" << m_lookahead_states.size() << endl;
+}
+
+
+void
+LargeBigramLookahead::set_word_id_la_states()
+{
+    m_word_id_la_state_lookup.resize(m_subword_id_to_la_ngram_symbol.size());
+    for (int i=0; i<m_word_id_la_state_lookup.size(); i++) {
+        float prob;
+        int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[i], prob);
+        m_word_id_la_state_lookup[i] = nd;
+    }
 }
 
 
@@ -1006,11 +1028,17 @@ LargeBigramLookahead::get_lookahead_score(int node_idx, int word_id)
     if (state.m_scores.find(word_id) != state.m_scores.end())
         return state.m_scores[word_id];
     else {
-        float prob;
-        int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], prob);
-        prob = 0.0;
+        float prob = 0.0;
+        int nd = m_word_id_la_state_lookup[word_id];
         m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[state.m_best_unigram_word_id], prob);
         return prob;
+
+        // OPTION 2: takes more memory, faster?
+        /*
+        int nd2 = m_word_id_la_state_lookup[word_id];
+        float prob2 = m_la_lm.nodes[nd].backoff_prob + state.m_best_unigram_score;
+        return prob2;
+        */
     }
 }
 
@@ -1176,15 +1204,6 @@ LargeBigramLookahead::set_unigram_la_scores()
     for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
         propagate_unigram_la_score(snit->first, snit->second.second, snit->second.first,
                                    reverse_arcs, true);
-
-    int problem_count = 0;
-    for (unsigned int i=0; i<m_lookahead_states.size(); i++)
-        if (m_lookahead_states[i].m_best_unigram_score < -1e19)
-            problem_count++;
-    if (problem_count > 0) {
-        cerr << "Unigram la problem in " << problem_count << " la states." << endl;
-        exit(1);
-    }
 }
 
 
@@ -1290,9 +1309,6 @@ int
 LargeBigramLookahead::set_bigram_la_scores_2()
 {
     int bigram_score_count = 0;
-    int bigram_score_node_count = 0;
-    int unigram_better_count = 0;
-    int bigram_better_count = 0;
 
     map<int, vector<int> > reverse_bigrams;
     m_la_lm.get_reverse_bigrams(reverse_bigrams);
@@ -1303,7 +1319,7 @@ LargeBigramLookahead::set_bigram_la_scores_2()
 
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
 
-        if (i % 10000 == 0)
+        if (decoder->m_nodes.size() > 50000 && i % 10000 == 0)
             cerr << "node " << i << "/" << decoder->m_nodes.size() << endl;
 
         if (decoder->m_nodes[i].word_id == -1) continue;
@@ -1313,7 +1329,7 @@ LargeBigramLookahead::set_bigram_la_scores_2()
         int word_id = decoder->m_nodes[i].word_id;
 
         vector<int> &pred_words = reverse_bigrams[word_id];
-        bool scores_set = false;
+
         for (auto pwit = pred_words.begin(); pwit != pred_words.end(); ++pwit) {
             float dummy_prob = 0.0;
             int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy_prob);
@@ -1324,10 +1340,9 @@ LargeBigramLookahead::set_bigram_la_scores_2()
 
                 float unigram_prob = 0.0;
                 m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[m_lookahead_states[*lasit].m_best_unigram_word_id], unigram_prob);
-                if (unigram_prob >= la_prob) {
-                    unigram_better_count++;
-                    continue;
-                }
+                if (unigram_prob >= la_prob) continue;
+                // OPTION 2: takes more memory, faster?
+                // if (unigram_prob > la_prob) continue;
 
                 map<int, float> &la_scores = m_lookahead_states[*lasit].m_scores;
                 if (la_scores.find(*pwit) == la_scores.end()) {
@@ -1336,19 +1351,9 @@ LargeBigramLookahead::set_bigram_la_scores_2()
                 }
                 else
                     la_scores[*pwit] = max(la_prob, la_scores[*pwit]);
-
-                scores_set = true;
-                bigram_better_count++;
             }
         }
-
-        if (scores_set) bigram_score_node_count++;
     }
-
-    cerr << "Bigram score count: " << bigram_score_count << endl;
-    cerr << "Bigram score node count: " << bigram_score_node_count << endl;
-    cerr << "Unigram score better: " << unigram_better_count << endl;
-    cerr << "Bigram score better: " << bigram_better_count << endl;
 
     return bigram_score_count;
 }
