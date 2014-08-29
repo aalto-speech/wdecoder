@@ -936,7 +936,7 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
 
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
-    mark_initial_nodes(10);
+    mark_initial_nodes(1000);
     mark_tail_nodes(1000, reverse_arcs);
 
     int tail_count = 0;
