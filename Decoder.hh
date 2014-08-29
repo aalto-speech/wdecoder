@@ -98,6 +98,8 @@ public:
                              int curr_depth=0,
                              int node=END_NODE);
         virtual ~Lookahead() {};
+        virtual void write(std::string ofname) { };
+        virtual void read(std::string ifname) { };
 
         Decoder *decoder;
         Ngram m_la_lm;

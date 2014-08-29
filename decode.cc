@@ -177,12 +177,13 @@ int main(int argc, char* argv[])
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('f', "result-file=STRING", "arg", "", "Base filename for results (.rec and .log)")
     ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
-    ('t', "lookahead-type=STRING", "arg", "", "Set bigram lookahead tables\n"
+    ('t', "lookahead-type=STRING", "arg", "", "Lookahead type\n"
             "\tunigram\n"
             "\tbigram-full\n"
             "\tbigram-hybrid\n"
             "\tbigram-scores\n"
-            "\tlarge-bigram");
+            "\tlarge-bigram")
+    ('w', "write-la-states=STRING", "arg", "", "Writes lookahead model information to a file");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
@@ -240,6 +241,12 @@ int main(int argc, char* argv[])
             }
         }
         else d.m_la = new NoLookahead(d);
+
+        if (config["write-la-states"].specified) {
+            string lasfname = config["write-la-states"].get_str();
+            cerr << "Writing lookahead state information: " << lasfname << endl;
+            d.m_la->write(lasfname);
+        }
 
         string lnalistfname = config.arguments[5];
 
