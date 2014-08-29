@@ -2,6 +2,7 @@
 #include <ctime>
 #include <algorithm>
 #include <string>
+#include <sstream>
 
 #include "Lookahead.hh"
 
@@ -982,7 +983,7 @@ void
 LargeBigramLookahead::set_word_id_la_states()
 {
     m_word_id_la_state_lookup.resize(m_subword_id_to_la_ngram_symbol.size());
-    for (int i=0; i<m_word_id_la_state_lookup.size(); i++) {
+    for (int i=0; i<(int)m_word_id_la_state_lookup.size(); i++) {
         float prob;
         int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[i], prob);
         m_word_id_la_state_lookup[i] = nd;
@@ -1223,7 +1224,7 @@ LargeBigramLookahead::set_bigram_la_scores()
             int bsc = 0;
             for (auto lasit=m_lookahead_states.begin(); lasit != m_lookahead_states.end(); ++lasit)
                 bsc += lasit->m_scores.size();
-            cerr << "node " << i << "/" << decoder->m_nodes.size()
+            cerr << "node " << i << " / " << decoder->m_nodes.size()
                  << ", bigram scores: " << bsc << endl;
         }
 
@@ -1324,8 +1325,13 @@ LargeBigramLookahead::set_bigram_la_scores_2()
 
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
 
-        if (decoder->m_nodes.size() > 50000 && i % 10000 == 0)
-            cerr << "node " << i << "/" << decoder->m_nodes.size() << endl;
+        if (decoder->m_nodes.size() > 50000 && i % 10000 == 0) {
+            int bsc = 0;
+            for (auto lasit=m_lookahead_states.begin(); lasit != m_lookahead_states.end(); ++lasit)
+                bsc += lasit->m_scores.size();
+            cerr << "node " << i << " / " << decoder->m_nodes.size()
+                 << ", bigram scores: " << bsc << endl;
+        }
 
         if (decoder->m_nodes[i].word_id == -1) continue;
         set<int> la_states;
@@ -1346,7 +1352,7 @@ LargeBigramLookahead::set_bigram_la_scores_2()
                 float unigram_prob = 0.0;
                 m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[m_lookahead_states[*lasit].m_best_unigram_word_id], unigram_prob);
                 // if (unigram_prob >= la_prob) continue;
-                // OPTION 2: takes more memory, faster?
+                // OPTION 2: takes more memory, faster
                 if (unigram_prob > la_prob) continue;
 
                 map<int, float> &la_scores = m_lookahead_states[*lasit].m_scores;
@@ -1361,5 +1367,64 @@ LargeBigramLookahead::set_bigram_la_scores_2()
     }
 
     return bigram_score_count;
+}
+
+
+void
+LargeBigramLookahead::write(string ofname)
+{
+    ofstream olafile(ofname);
+    if (!olafile) throw string("Problem opening file: " + ofname);
+
+    olafile << m_lookahead_states.size() << endl;
+    for (int i=0; i<(int)m_lookahead_states.size(); i++) {
+        LookaheadState &la_state = m_lookahead_states[i];
+        olafile << i
+                << " " << la_state.m_best_unigram_word_id
+                << " " << la_state.m_best_unigram_score
+                << " " << la_state.m_scores.size();
+        for (auto bsit = la_state.m_scores.begin(); bsit != la_state.m_scores.end(); ++bsit)
+            olafile << " " << bsit->first << " " << bsit->second;
+        olafile << endl;
+    }
+}
+
+
+void
+LargeBigramLookahead::read(string ifname)
+{
+    ifstream ilafile(ifname);
+    if (!ilafile) throw string("Problem opening file: " + ifname);
+
+    string read_error("Problem reading ARPA file");
+    string line;
+
+    if (!getline(ilafile, line)) throw read_error;
+    int la_state_count;
+
+    stringstream ssline(line);
+    ssline >> la_state_count;
+    m_lookahead_states.resize(la_state_count);
+
+    for (int i=0; i<la_state_count; i++) {
+
+        if (!getline(ilafile, line)) throw read_error;
+        stringstream ssline(line);
+
+        LookaheadState &la_state = m_lookahead_states[i];
+
+        int idx; ssline >> idx;
+        if (i != idx) throw string("Index problem");
+
+        ssline >> la_state.m_best_unigram_word_id;
+        ssline >> la_state.m_best_unigram_score;
+
+        int bigram_score_count; ssline >>bigram_score_count;
+        for (int bsi=0; bsi<bigram_score_count; ++bsi) {
+            int id; float score;
+            ssline >>id >>score;
+            la_state.m_scores[id] = score;
+        }
+    }
 }
 
