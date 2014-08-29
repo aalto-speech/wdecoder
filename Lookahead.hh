@@ -138,6 +138,8 @@ public:
                          std::string lafname);
     ~LargeBigramLookahead() {};
     float get_lookahead_score(int node_idx, int word_id);
+    void write(std::string ofname);
+    void read(std::string ifname);
 
 private:
 
@@ -171,8 +173,6 @@ private:
                                     bool start_node,
                                     bool la_state_change);
     int set_bigram_la_scores_2();
-    void write(std::string ofname);
-    void read(std::string ifname);
 
     class LookaheadState {
     public:
