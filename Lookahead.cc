@@ -1137,7 +1137,7 @@ void
 LargeBigramLookahead::convert_reverse_bigram_idxs(map<int, vector<int> > &reverse_bigrams)
 {
     set<int> words_in_graph;
-    for (int i=0; i<decoder->m_nodes.size(); i++)
+    for (int i=0; i<(int)decoder->m_nodes.size(); i++)
         if (decoder->m_nodes[i].word_id != -1)
             words_in_graph.insert(decoder->m_nodes[i].word_id);
     words_in_graph.insert(decoder->m_subword_map["<s>"]);
@@ -1155,7 +1155,7 @@ LargeBigramLookahead::convert_reverse_bigram_idxs(map<int, vector<int> > &revers
     for (auto rbgit = reverse_bigrams.begin(); rbgit != reverse_bigrams.end(); ++rbgit) {
         int new_idx = la_ngram_symbol_to_subword_id[rbgit->first];
         if (words_in_graph.find(new_idx) == words_in_graph.end()) continue;
-        for (int i=0; i<rbgit->second.size(); i++) {
+        for (int i=0; i<(int)rbgit->second.size(); i++) {
             int new_second_idx = la_ngram_symbol_to_subword_id[rbgit->second[i]];
             if (words_in_graph.find(new_second_idx) != words_in_graph.end())
                 new_rev_bigrams[new_idx].push_back(new_second_idx);
