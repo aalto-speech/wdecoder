@@ -33,8 +33,9 @@ DecoderGraph::read_noway_lexicon(string lexfname)
     if (!lexf) throw string("Problem opening noway lexicon file.");
 
     string line;
-    int linei = 1;
+    int linei = 0;
     while (getline(lexf, line)) {
+        linei++;
         string unit;
         vector<string> phones;
 
@@ -51,9 +52,14 @@ DecoderGraph::read_noway_lexicon(string lexfname)
             unit = unit.substr(0, leftp);
         }
 
+        bool problem_phone = false;
         for (auto pit = phones.begin(); pit != phones.end(); ++pit) {
             if (m_hmm_map.find(*pit) == m_hmm_map.end())
-                throw "Unknown phone " + *pit;
+                problem_phone = true;
+        }
+        if (problem_phone) {
+            cerr << "Unknown phone in line " << linei << ", " << line << endl;
+            continue;
         }
 
         if (m_subword_map.find(unit) == m_subword_map.end()) {
@@ -61,8 +67,6 @@ DecoderGraph::read_noway_lexicon(string lexfname)
             m_subword_map[unit] = m_subwords.size()-1;
         }
         m_lexicon[unit] = phones;
-
-        linei++;
     }
 }
 
