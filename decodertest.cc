@@ -11,6 +11,8 @@
 
 using namespace std;
 
+int eval_ratio = 50;
+
 
 CPPUNIT_TEST_SUITE_REGISTRATION (decodertest);
 
@@ -40,7 +42,7 @@ void decodertest::BigramLookaheadTest1(void)
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         for (int w=0; w<(int)d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
             idx++;
-            if (idx % 100 != 0) continue;
+            if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
             CPPUNIT_ASSERT_EQUAL( ref, hyp );
@@ -50,6 +52,30 @@ void decodertest::BigramLookaheadTest1(void)
 
 
 void decodertest::BigramLookaheadTest2(void)
+{
+    cerr << endl;
+    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    d.read_noway_lexicon("data/1k.words.lex");
+    d.read_dgraph("data/1k.words.graph");
+    DummyBigramLookahead refla(d, "data/1k.words.2gram.arpa");
+    d.m_la = new PrecomputedFullTableBigramLookahead(d, "data/1k.words.2gram.arpa");
+
+    cerr << "node count: " << d.m_nodes.size() << endl;
+    cerr << "evaluating.." << endl;
+    int idx=0;
+    for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        for (int w=0; w<(int)d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
+            idx++;
+            if (idx % eval_ratio != 0) continue;
+            float ref = refla.get_lookahead_score(i, w);
+            float hyp = d.m_la->get_lookahead_score(i, w);
+            CPPUNIT_ASSERT_EQUAL( ref, hyp );
+        }
+    }
+}
+
+
+void decodertest::BigramLookaheadTest3(void)
 {
     cerr << endl;
     d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
@@ -73,7 +99,7 @@ void decodertest::BigramLookaheadTest2(void)
 }
 
 
-void decodertest::BigramLookaheadTest3(void)
+void decodertest::BigramLookaheadTest4(void)
 {
     cerr << endl;
     d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
@@ -86,7 +112,7 @@ void decodertest::BigramLookaheadTest3(void)
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         for (int w=0; w<(int)d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
             idx++;
-            if (idx % 100 != 0) continue;
+            if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
             CPPUNIT_ASSERT_EQUAL( ref, hyp );

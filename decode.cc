@@ -180,6 +180,7 @@ int main(int argc, char* argv[])
     ('t', "lookahead-type=STRING", "arg", "", "Lookahead type\n"
             "\tunigram\n"
             "\tbigram-full\n"
+            "\tbigram-precomputed-full\n"
             "\tbigram-hybrid\n"
             "\tbigram-scores\n"
             "\tbigram-full-2\n"
@@ -228,6 +229,8 @@ int main(int argc, char* argv[])
                 d.m_la = new UnigramLookahead(d, lalmfname);
             else if (la_type == "bigram-full")
                 d.m_la = new FullTableBigramLookahead(d, lalmfname);
+            else if (la_type == "bigram-precomputed-full")
+                d.m_la = new PrecomputedFullTableBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-scores")
                 d.m_la = new BigramScoreLookahead(d, lalmfname);
             else if (la_type == "bigram-hybrid")
