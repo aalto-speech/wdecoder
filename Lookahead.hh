@@ -48,7 +48,8 @@ public:
 class FullTableBigramLookahead : public Decoder::Lookahead {
 public:
     FullTableBigramLookahead(Decoder &decoder,
-                             std::string lafname);
+                             std::string lafname,
+                             bool successor_lists=true);
     ~FullTableBigramLookahead() {};
     float get_lookahead_score(int node_idx, int word_id);
 

@@ -319,7 +319,8 @@ DummyBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 
 
 FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
-                                                   string lafname)
+                                                   string lafname,
+                                                   bool successor_lists)
 {
     m_la_lm.read_arpa(lafname);
     this->decoder = &decoder;
@@ -330,10 +331,12 @@ FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
     int la_state_count = set_la_state_indices_to_nodes();
     cerr << "Number of lookahead states: " << la_state_count << endl;
 
-    cerr << "Setting successor lists" << endl;
-    set_la_state_successor_lists();
+    if (successor_lists) {
+        cerr << "Setting successor lists" << endl;
+        set_la_state_successor_lists();
+    }
 
-    m_bigram_la_scores.resize(m_la_state_successor_words.size());
+    m_bigram_la_scores.resize(la_state_count);
     for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
         (*blsit).resize(decoder.m_subwords.size(), -1e20);
 
@@ -475,9 +478,9 @@ FullTableBigramLookahead::set_arc_la_updates()
 
 
 PrecomputedFullTableBigramLookahead
-::PrecomputedFullTableBigramLookahead(Decoder &decoder, string lafname) : FullTableBigramLookahead(decoder, lafname)
+::PrecomputedFullTableBigramLookahead(Decoder &decoder, string lafname)
+    : FullTableBigramLookahead(decoder, lafname, false)
 {
-    m_la_state_successor_words.resize(0);
     set_word_id_la_states();
     set_unigram_la_scores();
     set_bigram_la_scores();
