@@ -924,7 +924,7 @@ HybridBigramLookahead::set_arc_la_updates()
             int j = ait->target_node;
 
             if (m_bigram_la_maps[i].size() > 0 &&
-                m_bigram_la_maps[j].size() > 0 -1e10 &&
+                m_bigram_la_maps[j].size() > 0 &&
                 m_bigram_la_maps[i] == m_bigram_la_maps[j])
             {
                 ait->update_lookahead = false;
