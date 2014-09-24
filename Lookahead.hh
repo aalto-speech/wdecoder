@@ -122,6 +122,9 @@ protected:
     std::vector<std::vector<int> > m_la_state_successor_words;
     std::vector<std::vector<float> > m_bigram_la_scores;
     std::vector<std::map<int, float> > m_bigram_la_maps;
+    std::vector<std::vector<int> > m_inner_bigram_score_idxs;
+    std::vector<std::vector<float> > m_inner_bigram_scores;
+    std::vector<bool> m_single_inner_bigram_score;
 };
 
 

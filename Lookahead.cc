@@ -855,7 +855,6 @@ HybridBigramLookahead::set_la_state_successor_lists()
 int
 HybridBigramLookahead::set_bigram_la_maps()
 {
-
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
 
@@ -886,6 +885,25 @@ HybridBigramLookahead::set_bigram_la_maps()
         map_count++;
     }
 
+    m_inner_bigram_score_idxs.resize(decoder->m_nodes.size());
+    m_inner_bigram_scores.resize(decoder->m_nodes.size());
+    m_single_inner_bigram_score.resize(decoder->m_nodes.size(), false);
+    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
+        Decoder::Node &node = decoder->m_nodes[i];
+        if (node.flags & NODE_BIGRAM_LA_TABLE) continue;
+
+        map<int, float> &bigram_la_map = m_bigram_la_maps[i];
+        m_inner_bigram_score_idxs[i].resize(bigram_la_map.size());
+        m_inner_bigram_scores[i].resize(bigram_la_map.size());
+        if (bigram_la_map.size() == 1) m_single_inner_bigram_score[i] = true;
+        int idx=0;
+        for (auto sit = bigram_la_map.begin(); sit != bigram_la_map.end(); ++sit) {
+            m_inner_bigram_score_idxs[i][idx] = sit->first;
+            m_inner_bigram_scores[i][idx] = sit->second;
+            idx++;
+        }
+    }
+
     return map_count;
 }
 
@@ -909,9 +927,11 @@ HybridBigramLookahead::get_lookahead_score(int node_idx, int word_id)
         return score;
     }
     else {
-        //if (m_bigram_la_maps[node_idx].find(word_id) == m_bigram_la_maps[node_idx].end())
-        //    cerr << "la problem in node: " << node_idx << endl;
-        return m_bigram_la_maps[node_idx][word_id];
+        //return m_bigram_la_maps[node_idx][word_id];
+        if (m_single_inner_bigram_score[node_idx]) return m_inner_bigram_scores[node_idx][0];
+        std::vector<int> &score_idxs = m_inner_bigram_score_idxs[node_idx];
+        auto lower_b=lower_bound(score_idxs.begin(), score_idxs.end(), word_id);
+        return m_inner_bigram_scores[node_idx][lower_b-score_idxs.begin()];
     }
 }
 
@@ -956,6 +976,7 @@ PrecomputedHybridBigramLookahead
     set_word_id_la_states();
     set_unigram_la_scores();
     set_bigram_la_scores();
+    m_bigram_la_maps.clear();
 }
 
 
@@ -966,8 +987,13 @@ PrecomputedHybridBigramLookahead::get_lookahead_score(int node_idx, int word_id)
         int la_state_idx = m_node_la_states[node_idx];
         return m_bigram_la_scores[la_state_idx][word_id];
     }
-    else
-        return m_bigram_la_maps[node_idx][word_id];
+    else {
+        //return m_bigram_la_maps[node_idx][word_id];
+        if (m_single_inner_bigram_score[node_idx]) return m_inner_bigram_scores[node_idx][0];
+        std::vector<int> &score_idxs = m_inner_bigram_score_idxs[node_idx];
+        auto lower_b=lower_bound(score_idxs.begin(), score_idxs.end(), word_id);
+        return m_inner_bigram_scores[node_idx][lower_b-score_idxs.begin()];
+    }
 }
 
 
