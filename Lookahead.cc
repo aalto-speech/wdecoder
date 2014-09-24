@@ -1064,6 +1064,30 @@ PrecomputedHybridBigramLookahead::find_first_lm_nodes(set<int> &lm_nodes,
 
 
 void
+PrecomputedHybridBigramLookahead::find_cw_lm_nodes(set<int> &lm_nodes)
+{
+    for (int i=0; i<decoder->m_nodes.size(); i++) {
+        Decoder::Node &node = decoder->m_nodes[i];
+        if ((node.flags & NODE_CW) && node.word_id != -1)
+            lm_nodes.insert(i);
+    }
+}
+
+
+void
+PrecomputedHybridBigramLookahead::find_sentence_end_lm_node(set<int> &lm_nodes)
+{
+    int sentence_end_word_id = decoder->m_subword_map["</s>"];
+
+    for (int i=0; i<decoder->m_nodes.size(); i++) {
+        Decoder::Node &node = decoder->m_nodes[i];
+        if (node.word_id == sentence_end_word_id)
+            lm_nodes.insert(i);
+    }
+}
+
+
+void
 PrecomputedHybridBigramLookahead::propagate_unigram_la_score(int node_idx,
                                                              float score,
                                                              int word_id,
@@ -1100,9 +1124,12 @@ PrecomputedHybridBigramLookahead::set_unigram_la_scores()
 
     // Collect all LM nodes and compute unigram la score
     vector<pair<unsigned int, pair<int, float> > > sorted_nodes;
-    set<int> initial_lm_nodes;
-    find_first_lm_nodes(initial_lm_nodes);
-    for (auto nit=initial_lm_nodes.begin(); nit != initial_lm_nodes.end(); ++nit) {
+    set<int> lm_nodes;
+    find_first_lm_nodes(lm_nodes);
+    find_cw_lm_nodes(lm_nodes);
+    find_sentence_end_lm_node(lm_nodes);
+
+    for (auto nit=lm_nodes.begin(); nit != lm_nodes.end(); ++nit) {
         Decoder::Node &node = decoder->m_nodes[*nit];
         float la_prob = 0.0;
         m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], la_prob);
@@ -1138,13 +1165,18 @@ PrecomputedHybridBigramLookahead::set_bigram_la_scores()
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
 
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
+    set<int> lm_nodes;
+    find_first_lm_nodes(lm_nodes);
+    find_cw_lm_nodes(lm_nodes);
+    find_sentence_end_lm_node(lm_nodes);
 
-        if (decoder->m_nodes[i].word_id == -1) continue;
+    for (auto nit=lm_nodes.begin(); nit != lm_nodes.end(); ++nit) {
+
+        if (decoder->m_nodes[*nit].word_id == -1) continue;
         set<int> la_states;
-        find_preceeding_la_states(i, la_states, reverse_arcs);
+        find_preceeding_la_states(*nit, la_states, reverse_arcs);
 
-        int word_id = decoder->m_nodes[i].word_id;
+        int word_id = decoder->m_nodes[*nit].word_id;
 
         vector<int> &pred_words = reverse_bigrams[word_id];
 

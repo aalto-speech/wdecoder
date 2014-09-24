@@ -142,6 +142,8 @@ private:
                                    bool state_change=true);
     void find_first_lm_nodes(std::set<int> &lm_nodes,
                              int node_idx=START_NODE);
+    void find_cw_lm_nodes(std::set<int> &lm_nodes);
+    void find_sentence_end_lm_node(std::set<int> &lm_nodes);
 
     void set_unigram_la_scores();
     void propagate_unigram_la_score(int node_idx,
