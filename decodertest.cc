@@ -30,6 +30,7 @@ void decodertest::tearDown (void)
 void decodertest::BigramLookaheadTest1(void)
 {
     cerr << endl;
+    Decoder d;
     d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
     d.read_noway_lexicon("data/1k.words.lex");
     d.read_dgraph("data/1k.words.graph");
@@ -54,6 +55,7 @@ void decodertest::BigramLookaheadTest1(void)
 void decodertest::BigramLookaheadTest2(void)
 {
     cerr << endl;
+    Decoder d;
     d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
     d.read_noway_lexicon("data/1k.words.lex");
     d.read_dgraph("data/1k.words.graph");
@@ -78,6 +80,7 @@ void decodertest::BigramLookaheadTest2(void)
 void decodertest::BigramLookaheadTest3(void)
 {
     cerr << endl;
+    Decoder d;
     d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
     d.read_noway_lexicon("data/1k.words.lex");
     d.read_dgraph("data/1k.words.graph");
@@ -102,6 +105,7 @@ void decodertest::BigramLookaheadTest3(void)
 void decodertest::BigramLookaheadTest4(void)
 {
     cerr << endl;
+    Decoder d;
     d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
     d.read_noway_lexicon("data/1k.words.lex");
     d.read_dgraph("data/1k.words.graph");
@@ -124,6 +128,7 @@ void decodertest::BigramLookaheadTest4(void)
 void decodertest::BigramLookaheadTest5(void)
 {
     cerr << endl;
+    Decoder d;
     d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
     d.read_noway_lexicon("data/1k.subwords.lex");
     d.read_dgraph("data/1k.subwords.sww.graph");
@@ -159,3 +164,49 @@ void decodertest::BigramLookaheadTest5(void)
         }
     }
 }
+
+
+void decodertest::BigramLookaheadTest6(void)
+{
+    cerr << endl;
+    Decoder d;
+    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    d.read_noway_lexicon("data/1k.subwords.lex");
+    d.read_dgraph("data/1k.subwords.sww.graph");
+    DummyBigramLookahead refla(d, "data/1k.subwords.2g.arpa");
+    d.m_la = new PrecomputedHybridBigramLookahead(d, "data/1k.subwords.2g.arpa");
+
+    cerr << "table nodes" << endl;
+
+    // Table nodes
+    int idx=0;
+    for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        if (d.m_nodes[i].flags & NODE_BIGRAM_LA_TABLE) {
+            for (int w=0; w<(int)d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
+                idx++;
+                if (idx % eval_ratio != 0) continue;
+                float ref = refla.get_lookahead_score(i, w);
+                float hyp = d.m_la->get_lookahead_score(i, w);
+                CPPUNIT_ASSERT_EQUAL( ref, hyp );
+            }
+        }
+    }
+
+    cerr << "dictionary nodes" << endl;
+
+    // Dictionary nodes
+    vector<vector<Decoder::Arc> > reverse_arcs;
+    refla.get_reverse_arcs(reverse_arcs);
+    for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        if (!(d.m_nodes[i].flags & NODE_BIGRAM_LA_TABLE)) {
+            set<int> pred_word_ids;
+            d.m_la->find_predecessor_words(i, pred_word_ids, reverse_arcs);
+            for (auto wit=pred_word_ids.begin(); wit != pred_word_ids.end(); ++wit) {
+                float ref = refla.get_lookahead_score(i, *wit);
+                float hyp = d.m_la->get_lookahead_score(i, *wit);
+                CPPUNIT_ASSERT_EQUAL( ref, hyp );
+            }
+        }
+    }
+}
+

@@ -90,10 +90,10 @@ private:
                                     float score,
                                     int word_id,
                                     std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
+                                    std::vector<std::pair<int, float> > &unigram_la_scores,
                                     bool start_node);
     void set_bigram_la_scores();
 
-    std::vector<std::pair<int, float> > m_unigram_la_scores; // temp for precomputation
     std::vector<int> m_word_id_la_state_lookup;
     bool m_precomputed;
 };
@@ -108,8 +108,7 @@ public:
     ~HybridBigramLookahead() {};
     float get_lookahead_score(int node_idx, int word_id);
 
-private:
-
+protected:
     int set_la_state_indices_to_nodes();
     void propagate_la_state_idx(int node_idx,
                                 int la_state_idx,
@@ -123,6 +122,38 @@ private:
     std::vector<std::vector<int> > m_la_state_successor_words;
     std::vector<std::vector<float> > m_bigram_la_scores;
     std::vector<std::map<int, float> > m_bigram_la_maps;
+};
+
+
+class PrecomputedHybridBigramLookahead : public HybridBigramLookahead {
+public:
+    PrecomputedHybridBigramLookahead(Decoder &decoder,
+                                     std::string lafname);
+    ~PrecomputedHybridBigramLookahead() {};
+    float get_lookahead_score(int node_idx, int word_id);
+
+private:
+    void set_word_id_la_states();
+    void convert_reverse_bigram_idxs(std::map<int, std::vector<int> > &reverse_bigrams);
+    void find_preceeding_la_states(int node_idx,
+                                   std::set<int> &la_states,
+                                   const std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
+                                   bool first_node=true,
+                                   bool state_change=true);
+    void find_first_lm_nodes(std::set<int> &lm_nodes,
+                             int node_idx=START_NODE);
+
+    void set_unigram_la_scores();
+    void propagate_unigram_la_score(int node_idx,
+                                    float score,
+                                    int word_id,
+                                    std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
+                                    std::vector<std::pair<int, float> > &unigram_la_scores,
+                                    bool start_node);
+    void set_bigram_la_scores();
+
+    std::vector<int> m_word_id_la_state_lookup;
+    bool m_precomputed;
 };
 
 
