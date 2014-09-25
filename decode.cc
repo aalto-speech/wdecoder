@@ -183,7 +183,6 @@ int main(int argc, char* argv[])
             "\tbigram-precomputed-full\n"
             "\tbigram-hybrid\n"
             "\tbigram-precomputed-hybrid\n"
-            "\tbigram-scores\n"
             "\tbigram-full-2\n"
             "\tlarge-bigram")
     ('w', "write-la-states=STRING", "arg", "", "Writes lookahead model information to a file");
@@ -232,8 +231,6 @@ int main(int argc, char* argv[])
                 d.m_la = new FullTableBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-precomputed-full")
                 d.m_la = new PrecomputedFullTableBigramLookahead(d, lalmfname);
-            else if (la_type == "bigram-scores")
-                d.m_la = new BigramScoreLookahead(d, lalmfname);
             else if (la_type == "bigram-hybrid")
                 d.m_la = new HybridBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-precomputed-hybrid")

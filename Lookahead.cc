@@ -20,7 +20,6 @@ Decoder::Lookahead::set_subword_id_la_ngram_symbol_mapping()
 }
 
 
-
 void
 Decoder::Lookahead::find_successor_words(int node_idx,
                                          vector<int> &word_ids)
@@ -666,103 +665,6 @@ PrecomputedFullTableBigramLookahead::set_bigram_la_scores()
                     m_bigram_la_scores[*lasit][*pwit] = la_prob;
         }
     }
-}
-
-
-BigramScoreLookahead::BigramScoreLookahead(Decoder &decoder,
-                                           string lafname)
-{
-    m_la_lm.read_arpa(lafname);
-    this->decoder = &decoder;
-    set_subword_id_la_ngram_symbol_mapping();
-
-    m_la_scores.resize(decoder.m_nodes.size(), -1e20);
-    set_bigram_la_scores_to_hmm_nodes();
-    set_bigram_la_scores_to_lm_nodes();
-    set_arc_la_updates();
-}
-
-
-void
-BigramScoreLookahead::set_bigram_la_scores_to_hmm_nodes()
-{
-    vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
-
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-
-        Decoder::Node &node = decoder->m_nodes[i];
-        if (node.word_id != -1) continue;
-
-        set<int> pred_word_ids;
-        find_predecessor_words(i, pred_word_ids, reverse_arcs);
-
-        set<int> succ_word_ids;
-        find_successor_words(i, succ_word_ids);
-
-        float node_best_la_prob = -1e20;
-        for (auto pwit = pred_word_ids.begin(); pwit != pred_word_ids.end(); ++pwit) {
-            float dummy = 0.0;
-            int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy);
-
-            for (auto swit = succ_word_ids.begin(); swit != succ_word_ids.end(); ++swit) {
-                float la_lm_prob = 0.0;
-                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*swit], la_lm_prob);
-                node_best_la_prob = max(node_best_la_prob, la_lm_prob);
-            }
-
-            m_la_scores[i] = node_best_la_prob;
-        }
-    }
-}
-
-
-void
-BigramScoreLookahead::set_bigram_la_scores_to_lm_nodes()
-{
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-        Decoder::Node &node = decoder->m_nodes[i];
-        if (node.word_id != -1 && node.word_id != decoder->m_sentence_end_symbol_idx) {
-            set<int> word_ids;
-            find_successor_words(i, word_ids);
-            float dummy = 0.0;
-            int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[node.word_id], dummy);
-            m_la_scores[i] = -1e20;
-            for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-                float la_lm_prob = 0.0;
-                m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-                m_la_scores[i] = max(m_la_scores[i], la_lm_prob);
-            }
-        }
-    }
-}
-
-
-float
-BigramScoreLookahead::get_lookahead_score(int node_idx, int lm_state_idx)
-{
-    return m_la_scores[node_idx];
-}
-
-
-float
-BigramScoreLookahead::set_arc_la_updates()
-{
-    float update_count = 0.0;
-    float no_update_count = 0.0;
-    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
-        Decoder::Node &node = decoder->m_nodes[i];
-        if (node.flags & NODE_DECODE_START) continue;
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-            int j = ait->target_node;
-            if (m_la_scores[i] == m_la_scores[j]) {
-                ait->update_lookahead = false;
-                no_update_count += 1.0;
-            }
-            else update_count += 1.0;
-        }
-    }
-    return update_count / (update_count + no_update_count);
 }
 
 
