@@ -16,16 +16,6 @@ vector<float> lm_scales;
 vector<float> beams;
 
 
-void parse_csv(string valstr, vector<float> &values)
-{
-    values.clear();
-    vector<string> fields;
-    str::split_with_quotes(&valstr, " ,", true, &fields);
-    for (unsigned int i=0; i<fields.size(); i++)
-        values.push_back(stof(fields[i]));
-}
-
-
 void
 read_config(Decoder &d, string cfgfname)
 {
@@ -38,20 +28,12 @@ read_config(Decoder &d, string cfgfname)
         stringstream ss(line);
         string parameter, val;
         ss >> parameter;
-        if (parameter == "lm_scale") {
-            string lmscale_csv;
-            ss >> lmscale_csv;
-            parse_csv(lmscale_csv, lm_scales);
-        }
+        if (parameter == "lm_scale") ss >> d.m_lm_scale;
         else if (parameter == "token_limit") ss >> d.m_token_limit;
         else if (parameter == "node_limit") ss >> d.m_active_node_limit;
         else if (parameter == "duration_scale") ss >> d.m_duration_scale;
         else if (parameter == "transition_scale") ss >> d.m_transition_scale;
-        else if (parameter == "global_beam") {
-            string global_beam_csv;
-            ss >> global_beam_csv;
-            parse_csv(global_beam_csv, beams);
-        }
+        else if (parameter == "global_beam") ss >> d.m_global_beam;
         else if (parameter == "acoustic_beam") continue;
         else if (parameter == "history_beam") continue;
         else if (parameter == "word_end_beam") ss >> d.m_word_end_beam;
@@ -115,17 +97,11 @@ recognize_lnas(Decoder &d,
                conf::Config &config,
                string lnalistfname,
                ostream &resultf,
-               ostream &logf,
-               float lm_scale,
-               float global_beam,
-               float word_end_beam)
+               ostream &logf)
 {
     ifstream lnalistf(lnalistfname);
     string line;
 
-    d.m_lm_scale = lm_scale;
-    d.m_global_beam = global_beam;
-    d.m_word_end_beam = word_end_beam;
     print_config(d, config, logf);
 
     int total_frames = 0;
@@ -183,7 +159,6 @@ int main(int argc, char* argv[])
             "\tbigram-precomputed-full\n"
             "\tbigram-hybrid\n"
             "\tbigram-precomputed-hybrid\n"
-            "\tbigram-full-2\n"
             "\tlarge-bigram")
     ('w', "write-la-states=STRING", "arg", "", "Writes lookahead model information to a file");
     config.default_parse(argc, argv);
@@ -252,46 +227,17 @@ int main(int argc, char* argv[])
 
         string lnalistfname = config.arguments[5];
 
-        if (lm_scales.size() == 0) {
-            cerr << "No lm scales set." << endl;
-            exit(0);
-        }
-
-        if (lm_scales.size() != beams.size()) {
-            cerr << "Number of set lm scales differs from set beams." << endl;
-            exit(0);
-        }
-
         if (config["result-file"].specified) {
             string resultfname = config["result-file"].get_str();
             cerr << "Base filename for results: " << resultfname << endl;
-            for (unsigned int i=0; i<lm_scales.size(); ++i) {
-                string curr_resfname = resultfname + string(".lmscale") + to_string(static_cast<long long>(lm_scales[i]))
-                        + string(".beam") + to_string(static_cast<long long>(beams[i])) + string(".rec");
-                string curr_logfname = resultfname + string(".lmscale") + to_string(static_cast<long long>(lm_scales[i]))
-                        + string(".beam") + to_string(static_cast<long long>(beams[i])) + string(".log");
-                ofstream resultf(curr_resfname);
-                ofstream logf(curr_logfname);
-                recognize_lnas(d,
-                               config,
-                               lnalistfname,
-                               resultf,
-                               logf,
-                               lm_scales[i],
-                               beams[i],
-                               (2.0/3.0) * beams[i]);
-            }
+            string resfname = resultfname + string(".rec");
+            string logfname = resultfname + string(".log");
+            ofstream resultf(resfname);
+            ofstream logf(logfname);
+            recognize_lnas(d, config, lnalistfname, resultf, logf);
         }
         else {
-            for (unsigned int i=0; i<lm_scales.size(); ++i)
-                recognize_lnas(d,
-                               config,
-                               lnalistfname,
-                               cout,
-                               cerr,
-                               lm_scales[i],
-                               beams[i],
-                               d.m_word_end_beam);
+            recognize_lnas(d, config, lnalistfname, cout, cerr);
         }
 
     } catch (string &e) {

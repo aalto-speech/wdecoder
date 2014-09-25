@@ -361,7 +361,7 @@ Decoder::reset_frame_variables()
 }
 
 
-bool descending_node_sort(const std::pair<int, float> &i, const std::pair<int, float> &j)
+bool descending_node_sort(const pair<int, float> &i, const pair<int, float> &j)
 {
     return (i.second > j.second);
 }
@@ -381,7 +381,7 @@ Decoder::active_nodes_sorted_by_best_lp(vector<int> &nodes)
 
 
 void
-Decoder::propagate_tokens(void)
+Decoder::propagate_tokens()
 {
     vector<int> sorted_active_nodes;
     active_nodes_sorted_by_best_lp(sorted_active_nodes);
@@ -454,7 +454,7 @@ Decoder::prune_tokens(bool collect_active_histories)
     m_active_nodes.clear();
     vector<int> histogram(HISTOGRAM_BIN_COUNT, 0);
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
-        std::map<int, Token> &node_tokens = m_recombined_tokens[tit->node_idx];
+        map<int, Token> &node_tokens = m_recombined_tokens[tit->node_idx];
         auto bntit = node_tokens.find(tit->lm_node);
         if (bntit != node_tokens.end()) {
             if (tit->total_log_prob > bntit->second.total_log_prob) {
@@ -772,7 +772,8 @@ Decoder::print_word_history(WordHistory *history,
 
 
 void
-Decoder::print_dot_digraph(vector<Node> &nodes, ostream &fstr)
+Decoder::print_dot_digraph(vector<Node> &nodes,
+                           ostream &fstr)
 {
     fstr << "digraph {" << endl << endl;
     fstr << "\tnode [shape=ellipse,fontsize=30,fixedsize=false,width=0.95];" << endl;
@@ -865,10 +866,10 @@ Decoder::score_state_path(string lnafname,
 
 
 void
-Decoder::find_paths(std::vector<std::vector<int> > &paths,
-                    std::vector<int> &words,
+Decoder::find_paths(vector<vector<int> > &paths,
+                    vector<int> &words,
                     int curr_word_pos,
-                    std::vector<int> curr_path,
+                    vector<int> curr_path,
                     int curr_node_idx)
 {
     if (curr_node_idx == -1) {
