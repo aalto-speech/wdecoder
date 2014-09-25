@@ -100,7 +100,7 @@ private:
 
 
 // Full bigram tables for cross-word and initial nodes
-// Map style data structures in other nodes
+// Vectors with binary search in inner nodes
 class HybridBigramLookahead : public Decoder::Lookahead {
 public:
     HybridBigramLookahead(Decoder &decoder,
@@ -128,6 +128,7 @@ protected:
 };
 
 
+// Precomputed table values
 class PrecomputedHybridBigramLookahead : public HybridBigramLookahead {
 public:
     PrecomputedHybridBigramLookahead(Decoder &decoder,
