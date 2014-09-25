@@ -162,27 +162,6 @@ private:
 };
 
 
-class FullTableBigramLookahead2 : public Decoder::Lookahead {
-public:
-    FullTableBigramLookahead2(Decoder &decoder,
-                              std::string lafname);
-    ~FullTableBigramLookahead2() {};
-    float get_lookahead_score(int node_idx, int word_id);
-
-private:
-
-    int set_one_predecessor_la_scores();
-    int set_la_state_indices_to_nodes();
-    int set_la_state_successor_lists();
-    float set_arc_la_updates();
-
-    std::vector<int> m_node_la_states;
-    std::vector<std::vector<int> > m_la_state_successor_words;
-    std::vector<std::vector<float> > m_bigram_la_scores;
-    std::vector<float> m_one_predecessor_la_scores;
-};
-
-
 class LargeBigramLookahead : public Decoder::Lookahead {
 public:
     LargeBigramLookahead(Decoder &decoder,

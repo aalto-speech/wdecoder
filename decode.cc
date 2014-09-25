@@ -235,8 +235,6 @@ int main(int argc, char* argv[])
                 d.m_la = new HybridBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-precomputed-hybrid")
                 d.m_la = new PrecomputedHybridBigramLookahead(d, lalmfname);
-            else if (la_type == "bigram-full-2")
-                d.m_la = new FullTableBigramLookahead2(d, lalmfname);
             else if (la_type == "large-bigram")
                 d.m_la = new LargeBigramLookahead(d, lalmfname);
             else {

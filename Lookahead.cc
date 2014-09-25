@@ -994,7 +994,7 @@ PrecomputedHybridBigramLookahead::find_first_lm_nodes(set<int> &lm_nodes,
 void
 PrecomputedHybridBigramLookahead::find_cw_lm_nodes(set<int> &lm_nodes)
 {
-    for (int i=0; i<decoder->m_nodes.size(); i++) {
+    for (int i=0; i<(int)decoder->m_nodes.size(); i++) {
         Decoder::Node &node = decoder->m_nodes[i];
         if ((node.flags & NODE_CW) && node.word_id != -1)
             lm_nodes.insert(i);
@@ -1007,7 +1007,7 @@ PrecomputedHybridBigramLookahead::find_sentence_end_lm_node(set<int> &lm_nodes)
 {
     int sentence_end_word_id = decoder->m_subword_map["</s>"];
 
-    for (int i=0; i<decoder->m_nodes.size(); i++) {
+    for (int i=0; i<(int)decoder->m_nodes.size(); i++) {
         Decoder::Node &node = decoder->m_nodes[i];
         if (node.word_id == sentence_end_word_id)
             lm_nodes.insert(i);
@@ -1119,180 +1119,6 @@ PrecomputedHybridBigramLookahead::set_bigram_la_scores()
                     m_bigram_la_scores[*lasit][*pwit] = la_prob;
         }
     }
-}
-
-
-FullTableBigramLookahead2::FullTableBigramLookahead2(Decoder &decoder,
-                                                     string lafname)
-{
-    m_la_lm.read_arpa(lafname);
-    this->decoder = &decoder;
-    set_subword_id_la_ngram_symbol_mapping();
-
-    m_one_predecessor_la_scores.resize(decoder.m_nodes.size(), -1e20);
-    int count = set_one_predecessor_la_scores();
-    cerr << "Number of nodes with one predecessor: " << count << endl;
-
-    cerr << "Setting lookahead state indices and successor lists" << endl;
-    m_node_la_states.resize(decoder.m_nodes.size(), -1);
-    int la_state_count = set_la_state_indices_to_nodes();
-    set_la_state_successor_lists();
-    cerr << "Number of lookahead states: " << la_state_count << endl;
-
-    assert((int)m_la_state_successor_words.size() == la_state_count);
-    m_bigram_la_scores.resize(m_la_state_successor_words.size());
-    for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
-        (*blsit).resize(decoder.m_subwords.size(), -1e20);
-
-    set_arc_la_updates();
-}
-
-
-int
-FullTableBigramLookahead2::set_one_predecessor_la_scores()
-{
-    int one_predecessor_nodes = 0;
-
-    vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
-
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-
-        int tmp = 0;
-        bool one_predecessor = detect_one_predecessor_node(i, tmp, reverse_arcs);
-        if (!one_predecessor) continue;
-
-        set<int> pred_word_ids;
-        find_predecessor_words(i, pred_word_ids, reverse_arcs);
-        assert(pred_word_ids.size() == 1);
-        int pred_word_id = (*(pred_word_ids.begin()));
-
-        set<int> word_ids;
-        find_successor_words(i, word_ids);
-        float dummy = 0.0;
-        int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[pred_word_id], dummy);
-        m_one_predecessor_la_scores[i] = -1e20;
-        for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-            float la_lm_prob = 0.0;
-            m_la_lm.score(lm_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-            m_one_predecessor_la_scores[i] = max(m_one_predecessor_la_scores[i], la_lm_prob);
-        }
-
-        one_predecessor_nodes++;
-    }
-
-    return one_predecessor_nodes;
-}
-
-
-int
-FullTableBigramLookahead2::set_la_state_indices_to_nodes()
-{
-    // Find one node for each initial la state
-    set<int> la_state_nodes;
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-        if (m_one_predecessor_la_scores[i] > -1e10) continue;
-        la_state_nodes.insert(i);
-    }
-    cerr << "Number of nodes with a lookahead table: " << la_state_nodes.size() << endl;
-
-    // Find real la states
-    map<set<int>, set<int> > real_la_state_succs;
-    for (auto nit = la_state_nodes.begin(); nit != la_state_nodes.end(); ++nit) {
-        set<int> curr_succs;
-        find_successor_words(*nit, curr_succs, true);
-        real_la_state_succs[curr_succs].insert(*nit);
-    }
-
-    map<int, int> la_state_mapping;
-    int laidx = 0;
-    for (auto ssit = real_la_state_succs.begin(); ssit != real_la_state_succs.end(); ++ssit) {
-        for (auto idxit = ssit->second.begin(); idxit != ssit->second.end(); ++idxit)
-            la_state_mapping[*idxit] = laidx;
-        laidx++;
-    }
-
-    for (auto smit=la_state_mapping.begin(); smit != la_state_mapping.end(); ++smit)
-        m_node_la_states[smit->first] = smit->second;
-
-    return real_la_state_succs.size();
-}
-
-
-int
-FullTableBigramLookahead2::set_la_state_successor_lists()
-{
-    int max_la_state_idx = 0;
-
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-        if (m_node_la_states[i] == -1) continue;
-        max_la_state_idx = max(max_la_state_idx, m_node_la_states[i]);
-    }
-
-    m_la_state_successor_words.resize(max_la_state_idx+1);
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
-        if (m_node_la_states[i] == -1) continue;
-        if (m_la_state_successor_words[m_node_la_states[i]].size() > 0) continue;
-        find_successor_words(i, m_la_state_successor_words[m_node_la_states[i]]);
-    }
-
-    return m_la_state_successor_words.size();
-}
-
-
-float
-FullTableBigramLookahead2::get_lookahead_score(int node_idx, int word_id)
-{
-    if (m_one_predecessor_la_scores[node_idx] > -1e10)
-        return m_one_predecessor_la_scores[node_idx];
-
-    int la_state_idx = m_node_la_states[node_idx];
-    float &score = m_bigram_la_scores[la_state_idx][word_id];
-
-    if (score < -1e10) {
-        float dummy;
-        int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
-        vector<int> &word_ids = m_la_state_successor_words[la_state_idx];
-        for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-            float la_lm_prob = 0.0;
-            m_la_lm.score(la_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-            score = max(score, la_lm_prob);
-        }
-    }
-
-    return score;
-}
-
-
-float
-FullTableBigramLookahead2::set_arc_la_updates()
-{
-    float update_count = 0.0;
-    float no_update_count = 0.0;
-    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
-        Decoder::Node &node = decoder->m_nodes[i];
-        if (node.flags & NODE_DECODE_START) continue;
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-            int j = ait->target_node;
-
-            if (m_one_predecessor_la_scores[i] > -1e10 &&
-                m_one_predecessor_la_scores[j] > -1e10 &&
-                m_one_predecessor_la_scores[i] == m_one_predecessor_la_scores[j])
-            {
-                ait->update_lookahead = false;
-                no_update_count += 1.0;
-            }
-            else if (m_node_la_states[i] != -1 &&
-                     m_node_la_states[j] != -1 &&
-                     m_node_la_states[i] == m_node_la_states[j])
-            {
-                ait->update_lookahead = false;
-                no_update_count += 1.0;
-            }
-            else update_count += 1.0;
-        }
-    }
-    return update_count / (update_count + no_update_count);
 }
 
 
