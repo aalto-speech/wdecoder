@@ -12,10 +12,6 @@
 using namespace std;
 
 
-vector<float> lm_scales;
-vector<float> beams;
-
-
 void
 read_config(Decoder &d, string cfgfname)
 {
