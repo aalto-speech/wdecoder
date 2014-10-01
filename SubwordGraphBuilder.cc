@@ -260,23 +260,51 @@ create_forced_path(DecoderGraph &dg,
         }
     }
 
-    /*
     for (int t=0; t<(int)tnodes.size(); t++)
         if (tnodes[t].hmm_id != -1)
             cerr << dg.m_hmms[tnodes[t].hmm_id].label << " ";
         else
             cerr << "(" << dg.m_subwords[tnodes[t].subword_id] << ") ";
     cerr << endl;
-    */
 
     nodes.clear();
     nodes.resize(1);
     int idx = 0;
+    int crossword_start = -1;
+    string crossword_left;
+    string crossword_right;
     for (int t=0; t<(int)tnodes.size(); t++)
-        if (tnodes[t].hmm_id != -1)
+        if (tnodes[t].hmm_id != -1) {
+            if (dg.m_hmms[tnodes[t].hmm_id].label.length() == 5
+                && dg.m_hmms[tnodes[t].hmm_id].label[4] == '_') {
+                crossword_start = idx;
+                crossword_left = dg.m_hmms[tnodes[t].hmm_id].label;
+            }
+
             idx = connect_triphone(dg, nodes, tnodes[t].hmm_id, idx);
+
+            if (crossword_start != -1
+                && dg.m_hmms[tnodes[t].hmm_id].label.length() == 5
+                && dg.m_hmms[tnodes[t].hmm_id].label[0] == '_')
+            {
+                idx = connect_dummy(nodes, idx);
+                crossword_right = dg.m_hmms[tnodes[t].hmm_id].label;
+                crossword_left[4] = crossword_right[2];
+                crossword_right[0] = crossword_left[2];
+                cerr << "left: " << crossword_left << endl;
+                cerr << "right: " << crossword_right << endl;
+                int tmp = connect_triphone(dg, nodes, crossword_left, crossword_start);
+                tmp = connect_triphone(dg, nodes, "_", tmp);
+                tmp = connect_triphone(dg, nodes, crossword_right, tmp);
+                nodes[tmp].arcs.insert(idx);
+            }
+
+        }
         else
             idx = connect_word(nodes, tnodes[t].subword_id, idx);
+
+    nodes[3].arcs.insert(1);
+    nodes[nodes.size()-1].arcs.insert(nodes.size()-3);
 }
 
 
