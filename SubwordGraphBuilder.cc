@@ -238,5 +238,47 @@ connect_one_phone_subwords_from_cw_to_end(DecoderGraph &dg,
 }
 
 
+void
+create_forced_path(DecoderGraph &dg,
+                   vector<DecoderGraph::Node> &nodes,
+                   vector<string> &sentence)
+{
+    vector<string> word;
+    vector<DecoderGraph::TriphoneNode> tnodes;
+    tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
+    for (int i=2; i<(int)sentence.size()-1; i++) {
+        if (sentence[i] == "<w>") {
+            vector<DecoderGraph::TriphoneNode> word_tnodes;
+            triphonize(dg, word, word_tnodes);
+            tnodes.insert(tnodes.end(), word_tnodes.begin(), word_tnodes.end());
+            tnodes.insert(tnodes.begin()+(tnodes.size()-1), DecoderGraph::TriphoneNode(dg.m_subword_map["<w>"], -1));
+            tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
+            word.clear();
+        }
+        else {
+            word.push_back(sentence[i]);
+        }
+    }
+
+    /*
+    for (int t=0; t<(int)tnodes.size(); t++)
+        if (tnodes[t].hmm_id != -1)
+            cerr << dg.m_hmms[tnodes[t].hmm_id].label << " ";
+        else
+            cerr << "(" << dg.m_subwords[tnodes[t].subword_id] << ") ";
+    cerr << endl;
+    */
+
+    nodes.clear();
+    nodes.resize(1);
+    int idx = 0;
+    for (int t=0; t<(int)tnodes.size(); t++)
+        if (tnodes[t].hmm_id != -1)
+            idx = connect_triphone(dg, nodes, tnodes[t].hmm_id, idx);
+        else
+            idx = connect_word(nodes, tnodes[t].subword_id, idx);
+}
+
+
 }
 

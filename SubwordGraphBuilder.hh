@@ -33,6 +33,10 @@ void connect_one_phone_subwords_from_cw_to_end(DecoderGraph &dg,
                                                std::vector<DecoderGraph::Node> &nodes,
                                                std::map<std::string, int> &fanin);
 
+void create_forced_path(DecoderGraph &dg,
+                        std::vector<DecoderGraph::Node> &nodes,
+                        std::vector<std::string> &sentence);
+
 }
 
 #endif /* SUBWORD_GRAPH_BUILDER_HH */

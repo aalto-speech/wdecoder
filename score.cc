@@ -4,6 +4,8 @@
 #include <climits>
 #include <sstream>
 
+#include "SubwordGraphBuilder.hh"
+#include "gutils.hh"
 #include "Decoder.hh"
 #include "Lookahead.hh"
 #include "conf.hh"
@@ -83,14 +85,32 @@ print_config(Decoder &d,
 }
 
 
+void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
+                               vector<Decoder::Node> &dnodes)
+{
+    dnodes.resize(nodes.size());
+    for (int i=0; i<(int)nodes.size(); i++) {
+        dnodes[i].hmm_state = nodes[i].hmm_state;
+        dnodes[i].word_id = nodes[i].word_id;
+        dnodes[i].flags = nodes[i].flags;
+        dnodes[i].arcs.resize(nodes[i].arcs.size());
+        int apos=0;
+        for (auto ait=nodes[i].arcs.begin(); ait != nodes[i].arcs.end(); ++ait) {
+            dnodes[i].arcs[apos].target_node = (int)(*ait);
+            apos++;
+        }
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: score [OPTION...] PH LEXICON LM CFGFILE GRAPH LNALIST RESLIST\n")
+    config("usage: score [OPTION...] PH LEXICON LM CFGFILE LNALIST RESLIST\n")
     ('h', "help", "", "", "display help")
     ('d', "duration-model=STRING", "arg", "", "Duration model");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 7) config.print_help(stderr, 1);
+    if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
     try {
 
@@ -118,21 +138,16 @@ int main(int argc, char* argv[])
         cerr << "Reading configuration: " << cfgfname << endl;
         read_config(d, cfgfname);
 
-        string graphfname = config.arguments[4];
-        cerr << "Reading graph: " << graphfname << endl;
-        d.read_dgraph(graphfname);
-        cerr << "node count: " << d.m_nodes.size() << endl;
-
         d.m_la = new NoLookahead(d);
 
         print_config(d, config, cout);
         cout << endl;
 
-        string lnalistfname = config.arguments[5];
+        string lnalistfname = config.arguments[4];
         ifstream lnalistf(lnalistfname);
         string line;
 
-        string reslistfname = config.arguments[6];
+        string reslistfname = config.arguments[5];
         ifstream reslistf(reslistfname);
         string resline;
 
@@ -141,67 +156,42 @@ int main(int argc, char* argv[])
         double total_lp = 0.0;
         int file_count = 0;
 
+        DecoderGraph dg;
+        dg.read_phone_model(phfname);
+        dg.read_noway_lexicon(lexfname);
+
         while (getline(lnalistf, line)) {
             getline(reslistf, resline);
             if (!line.length()) continue;
             cerr << "scoring: " << line << endl;
 
             vector<string> reswordstrs;
-            vector<int> reswords;
             stringstream ress(resline);
             string tempstr;
-            while (ress >> tempstr) {
+            while (ress >> tempstr)
                 reswordstrs.push_back(tempstr);
-                reswords.push_back(d.m_subword_map[tempstr]);
-            }
 
-            std::vector<std::vector<int> > paths;
-            d.find_paths(paths, reswords, 2);
-            double best_lp = -1e20, best_am_lp = -1e20, best_lm_lp = -1e20;
-            double worst_lp = 1e20, worst_am_lp = 1e20, worst_lm_lp = 1e20;
+            vector<DecoderGraph::Node> nodes;
+            subwordgraphbuilder::create_forced_path(dg, nodes, reswordstrs);
+            gutils::add_hmm_self_transitions(nodes);
+
+            convert_nodes_for_decoder(nodes, d.m_nodes);
+            d.set_hmm_transition_probs();
+            d.m_decode_start_node = 1;
+
             int curr_frames;
-            for (auto pit = paths.begin(); pit != paths.end(); ++pit) {
-                vector<Decoder::Node> nodes;
-                d.path_to_graph(*pit, nodes);
+            double curr_time, curr_lp, curr_am_lp, curr_lm_lp;
+            d.recognize_lna_file(line, cout, &curr_frames, &curr_time,
+                                 &curr_lp, &curr_am_lp, &curr_lm_lp);
 
-                d.m_nodes.swap(nodes);
-                d.set_hmm_transition_probs();
-                int original_decode_start_node = d.m_decode_start_node;
-                d.m_decode_start_node = 0;
-
-                double curr_time, curr_lp, curr_am_lp, curr_lm_lp;
-                if (pit == paths.begin())
-                    d.recognize_lna_file(line, cout, &curr_frames, &curr_time,
-                                         &curr_lp, &curr_am_lp, &curr_lm_lp);
-                else {
-                    stringstream tmp;
-                    d.recognize_lna_file(line, tmp, &curr_frames, &curr_time,
-                                         &curr_lp, &curr_am_lp, &curr_lm_lp);
-                }
-
-                d.m_decode_start_node = original_decode_start_node;
-                nodes.swap(d.m_nodes);
-
-                if (curr_lp > best_lp) {
-                    best_lp = curr_lp;
-                    best_am_lp = curr_am_lp;
-                    best_lm_lp = curr_lm_lp;
-                }
-                if (curr_lp < worst_lp) {
-                    worst_lp = curr_lp;
-                    worst_am_lp = curr_am_lp;
-                    worst_lm_lp = curr_lm_lp;
-                }
-            }
-
-            cerr << "\tnumber of alternative paths: " << paths.size() << endl;
             cerr << "\tframes: " << curr_frames << endl;
-            cerr << "\tBest log prob: " << best_lp << "\tAM: " << best_am_lp << "\tLM: " << best_lm_lp << endl;
-            cerr << "\tWorst log prob: " << worst_lp << "\tAM: " << worst_am_lp << "\tLM: " << worst_lm_lp << endl;
+            cerr << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl;
 
             total_frames += curr_frames;
-            total_lp += best_lp;
+            total_lp += curr_lp;
             file_count++;
+
+            break;
         }
         lnalistf.close();
 

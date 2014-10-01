@@ -17,6 +17,8 @@ public:
     class TriphoneNode {
     public:
         TriphoneNode() : subword_id(-1), hmm_id(-1), connect_to_end_node(false) { }
+        TriphoneNode(int subword_id, int hmm_id)
+            : subword_id(subword_id), hmm_id(hmm_id), connect_to_end_node(false) { }
         int subword_id; // -1 for nodes without word identity.
         int hmm_id; // -1 for nodes without acoustics.
         bool connect_to_end_node;

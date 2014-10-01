@@ -19,5 +19,5 @@ p.wait()
 os.remove(epsname)
 
 pdfname = basename + ".pdf"
-subprocess.Popen("okular %s" % pdfname, shell=True)
+subprocess.Popen("evince %s" % pdfname, shell=True)
 
