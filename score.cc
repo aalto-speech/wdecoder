@@ -140,8 +140,8 @@ int main(int argc, char* argv[])
 
         d.m_la = new NoLookahead(d);
 
-        print_config(d, config, cout);
-        cout << endl;
+        cerr << endl;
+        print_config(d, config, cerr);
 
         string lnalistfname = config.arguments[4];
         ifstream lnalistf(lnalistfname);
@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
         while (getline(lnalistf, line)) {
             getline(reslistf, resline);
             if (!line.length()) continue;
-            cerr << "scoring: " << line << endl;
+            cerr << endl << "scoring: " << line << endl;
 
             vector<string> reswordstrs;
             stringstream ress(resline);
@@ -177,21 +177,19 @@ int main(int argc, char* argv[])
 
             convert_nodes_for_decoder(nodes, d.m_nodes);
             d.set_hmm_transition_probs();
-            d.m_decode_start_node = 1;
+            d.m_decode_start_node = 0;
 
             int curr_frames;
             double curr_time, curr_lp, curr_am_lp, curr_lm_lp;
             d.recognize_lna_file(line, cout, &curr_frames, &curr_time,
                                  &curr_lp, &curr_am_lp, &curr_lm_lp);
 
-            cerr << "\tframes: " << curr_frames << endl;
-            cerr << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl;
+            cerr << "\tframes: " << curr_frames << endl << endl;
+            cerr << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl << endl;
 
             total_frames += curr_frames;
             total_lp += curr_lp;
             file_count++;
-
-            break;
         }
         lnalistf.close();
 
