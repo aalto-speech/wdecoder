@@ -247,7 +247,9 @@ create_forced_path(DecoderGraph &dg,
     vector<DecoderGraph::TriphoneNode> tnodes;
     tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
     for (int i=2; i<(int)sentence.size()-1; i++) {
-        if (sentence[i] == "<w>") {
+        if (sentence[i] == "<w>" && sentence[i-1] == "</s>")
+            continue;
+        else if (sentence[i] == "<w>") {
             vector<DecoderGraph::TriphoneNode> word_tnodes;
             triphonize(dg, word, word_tnodes);
             tnodes.insert(tnodes.end(), word_tnodes.begin(), word_tnodes.end());
@@ -260,12 +262,14 @@ create_forced_path(DecoderGraph &dg,
         }
     }
 
+    /*
     for (int t=0; t<(int)tnodes.size(); t++)
         if (tnodes[t].hmm_id != -1)
             cerr << dg.m_hmms[tnodes[t].hmm_id].label << " ";
         else
             cerr << "(" << dg.m_subwords[tnodes[t].subword_id] << ") ";
     cerr << endl;
+    */
 
     nodes.clear();
     nodes.resize(1);
@@ -291,8 +295,8 @@ create_forced_path(DecoderGraph &dg,
                 crossword_right = dg.m_hmms[tnodes[t].hmm_id].label;
                 crossword_left[4] = crossword_right[2];
                 crossword_right[0] = crossword_left[2];
-                cerr << "left: " << crossword_left << endl;
-                cerr << "right: " << crossword_right << endl;
+                //cerr << "left: " << crossword_left << endl;
+                //cerr << "right: " << crossword_right << endl;
                 int tmp = connect_triphone(dg, nodes, crossword_left, crossword_start);
                 tmp = connect_triphone(dg, nodes, "_", tmp);
                 tmp = connect_triphone(dg, nodes, crossword_right, tmp);
@@ -302,9 +306,6 @@ create_forced_path(DecoderGraph &dg,
         }
         else
             idx = connect_word(nodes, tnodes[t].subword_id, idx);
-
-    nodes[3].arcs.insert(1);
-    nodes[nodes.size()-1].arcs.insert(nodes.size()-3);
 }
 
 
