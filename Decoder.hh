@@ -77,6 +77,7 @@ public:
         int lm_node;
         int last_word_id;
         WordHistory *history;
+        StateHistory *state_history;
         unsigned short int dur;
         bool word_end;
         int histogram_bin;
@@ -90,6 +91,7 @@ public:
             lm_node(0),
             last_word_id(-1),
             history(nullptr),
+            state_history(nullptr),
             dur(0),
             word_end(false),
             histogram_bin(0)
@@ -150,7 +152,8 @@ public:
                             float transition_score,
                             bool update_lookahead=true);
     inline float get_token_log_prob(const Token &token);
-    inline void advance_in_history(Token& token, int word_id);
+    inline void advance_in_word_history(Token& token, int word_id);
+    inline void advance_in_state_history(Token& token, int hmm_state);
     inline void apply_duration_model(Token &token, int node_idx);
     inline void update_lookahead_prob(Token &token, float lookahead_prob);
     Token* get_best_token();
@@ -206,6 +209,9 @@ public:
     std::set<WordHistory*> m_word_history_leafs;
     std::set<WordHistory*> m_active_histories;
 
+    std::set<StateHistory*> m_state_history_leafs;
+    std::set<StateHistory*> m_active_state_histories;
+
     std::vector<Token> m_raw_tokens;
     std::set<int> m_active_nodes;
     std::vector<std::map<int, Token> > m_recombined_tokens;
@@ -253,6 +259,7 @@ public:
 
     int m_history_clean_frame_interval;
     WordHistory* m_history_root;
+    StateHistory* m_state_history_root;
 
     int m_decode_start_node;
     int m_long_silence_loop_start_node;

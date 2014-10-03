@@ -63,6 +63,7 @@ Decoder::Decoder()
     m_active_node_limit = 50000;
 
     m_history_root = nullptr;
+    m_state_history_root = nullptr;
     m_history_clean_frame_interval = 10;
 
     m_word_boundary_penalty = 0.0;
@@ -330,7 +331,7 @@ Decoder::initialize()
     m_active_nodes.insert(m_decode_start_node);
     m_word_history_leafs.insert(tok.history);
     if (m_use_word_boundary_symbol) {
-        advance_in_history(tok, m_word_boundary_symbol_idx);
+        advance_in_word_history(tok, m_word_boundary_symbol_idx);
         float dummy;
         tok.lm_node = m_lm.score(tok.lm_node, m_subword_id_to_ngram_symbol[m_word_boundary_symbol_idx], dummy);
         m_ngram_state_sentence_begin = tok.lm_node;
@@ -555,13 +556,13 @@ Decoder::move_token_to_node(Token token,
             return;
         }
 
-        advance_in_history(token, node.word_id);
+        advance_in_word_history(token, node.word_id);
         token.word_end = true;
 
         if (node.word_id == m_sentence_end_symbol_idx) {
             token.lm_node = m_ngram_state_sentence_begin;
             if (m_use_word_boundary_symbol) {
-                advance_in_history(token, m_word_boundary_symbol_idx);
+                advance_in_word_history(token, m_word_boundary_symbol_idx);
                 token.last_word_id = m_word_boundary_symbol_idx;
             }
 
@@ -619,7 +620,7 @@ Decoder::get_token_log_prob(const Token &token)
 
 
 void
-Decoder::advance_in_history(Token &token, int word_id)
+Decoder::advance_in_word_history(Token &token, int word_id)
 {
     auto next_history = token.history->next.find(word_id);
     if (next_history != token.history->next.end())
@@ -629,6 +630,21 @@ Decoder::advance_in_history(Token &token, int word_id)
         token.history->previous->next[word_id] = token.history;
         m_word_history_leafs.erase(token.history->previous);
         m_word_history_leafs.insert(token.history);
+    }
+}
+
+
+void
+Decoder::advance_in_state_history(Token &token, int hmm_state)
+{
+    auto next_history = token.state_history->next.find(hmm_state);
+    if (next_history != token.state_history->next.end())
+        token.state_history = next_history->second;
+    else {
+        token.state_history = new StateHistory(hmm_state, token.state_history);
+        token.state_history->previous->next[hmm_state] = token.state_history;
+        m_state_history_leafs.erase(token.state_history->previous);
+        m_state_history_leafs.insert(token.state_history);
     }
 }
 
@@ -661,11 +677,11 @@ Decoder::add_sentence_ends(vector<Token> &tokens)
             token.lm_node = m_lm.score(token.lm_node,
                                        m_subword_id_to_ngram_symbol[m_subword_map[m_word_boundary_symbol]], token.lm_log_prob);
             token.total_log_prob = get_token_log_prob(token);
-            advance_in_history(token, m_subword_map[m_word_boundary_symbol]);
+            advance_in_word_history(token, m_subword_map[m_word_boundary_symbol]);
         }
         token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[m_sentence_end_symbol_idx], token.lm_log_prob);
         token.total_log_prob = get_token_log_prob(token);
-        advance_in_history(token, m_sentence_end_symbol_idx);
+        advance_in_word_history(token, m_sentence_end_symbol_idx);
         m_active_histories.insert(token.history);
     }
 }
