@@ -5,7 +5,7 @@ cxxflags = -O3 -march=native -DNDEBUG -std=gnu++0x -Wall
 
 ##################################################
 
-progs = wgraph swwgraph swgraph swgraph2 swgraph3 decode score lastates
+progs = wgraph swwgraph swgraph swgraph2 decode score lastates
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
 srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc gutils.cc GraphBuilder1.cc GraphBuilder2.cc SubwordGraphBuilder.cc WordGraphBuilder.cc LnaReaderCircular.cc Decoder.cc Lookahead.cc 

@@ -53,6 +53,25 @@ int main(int argc, char* argv[])
         prune_unreachable_nodes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
+        set<node_idx_t> third_nodes;
+        set_reverse_arcs(nodes);
+        find_nodes_in_depth_reverse(nodes, third_nodes, 4);
+        clear_reverse_arcs(nodes);
+        for (auto nii=third_nodes.begin(); nii != third_nodes.end(); ++nii)
+            nodes[*nii].flags |= NODE_LM_RIGHT_LIMIT;
+
+        third_nodes.clear();
+        find_nodes_in_depth(nodes, third_nodes, 4);
+        for (auto nii=third_nodes.begin(); nii !=third_nodes.end(); ++nii)
+            nodes[*nii].flags |= NODE_LM_LEFT_LIMIT;
+
+        push_word_ids_right(nodes);
+        cerr << "Tying state prefixes.." << endl;
+        tie_state_prefixes(nodes);
+        push_word_ids_left(nodes);
+        tie_state_suffixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
         cerr << "Creating crossword network.." << endl;
@@ -83,6 +102,12 @@ int main(int argc, char* argv[])
         connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
         connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
         prune_unreachable_nodes(nodes);
+
+        cerr << "Removing cw dummies.." << endl;
+        remove_cw_dummies(nodes);
+        tie_state_suffixes(nodes);
+        tie_state_prefixes(nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);
