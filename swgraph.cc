@@ -102,5 +102,5 @@ int main(int argc, char* argv[])
         cerr << e << endl;
     }
 
-    exit(1);
+    exit(0);
 }
