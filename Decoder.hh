@@ -41,13 +41,12 @@ public:
     class WordHistory {
     public:
         WordHistory()
-            : word_id(-1), previous(nullptr), best_am_log_prob(-1e20) { }
+            : word_id(-1), previous(nullptr) { }
         WordHistory(int word_id, WordHistory *previous)
-            : word_id(word_id), previous(previous), best_am_log_prob(-1e20) { }
+            : word_id(word_id), previous(previous) { }
         int word_id;
         WordHistory *previous;
         std::map<int, WordHistory*> next;
-        float best_am_log_prob;
     };
 
     class StateHistory {
