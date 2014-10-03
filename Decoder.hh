@@ -50,6 +50,24 @@ public:
         float best_am_log_prob;
     };
 
+    class StateHistory {
+    public:
+        StateHistory()
+            : hmm_state(-1), previous(nullptr),
+              start_frame(-1), end_frame(-1),
+              best_am_log_prob(-1e20) { }
+        StateHistory(int hmm_state, StateHistory *previous)
+            : hmm_state(hmm_state), previous(previous),
+              start_frame(-1), end_frame(-1),
+              best_am_log_prob(-1e20) { }
+        int hmm_state;
+        StateHistory *previous;
+        std::map<int, StateHistory*> next;
+        int start_frame;
+        int end_frame;
+        float best_am_log_prob;
+    };
+
     class Token {
     public:
         int node_idx;
