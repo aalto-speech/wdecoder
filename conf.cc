@@ -1,11 +1,7 @@
-#include <deque>
-#include <assert.h>
-#include <stdio.h>
 #include <iostream>
 
 #include "conf.hh"
 #include "str.hh"
-#include "io.hh"
 
 
 namespace conf {

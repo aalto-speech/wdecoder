@@ -2,7 +2,6 @@
 #define DECODER_HH
 
 #include <map>
-#include <unordered_map>
 #include <fstream>
 #include <vector>
 #include <set>

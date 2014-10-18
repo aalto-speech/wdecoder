@@ -1,13 +1,11 @@
 #include <iostream>
 #include <string>
 #include <ctime>
-#include <climits>
 #include <sstream>
 
 #include "Decoder.hh"
 #include "Lookahead.hh"
 #include "conf.hh"
-#include "str.hh"
 
 using namespace std;
 
