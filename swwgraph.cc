@@ -18,7 +18,7 @@ using namespace graphbuilder2;
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: dgraph [OPTION...] PH LEXICON WSEGS GRAPH\n")
+    config("usage: swwgraph [OPTION...] PH LEXICON WSEGS GRAPH\n")
     ('b', "word-boundary", "", "", "Use word boundary symbol (<w>)")
     ('n', "no-push", "", "", "Don't move subword identifiers in the graph")
     ('h', "help", "", "", "display help");
@@ -49,11 +49,17 @@ int main(int argc, char* argv[])
         time_t rawtime;
 
         vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
+        int triphonize_error = 0;
         for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
             vector<DecoderGraph::TriphoneNode> word_triphones;
-            triphonize(dg, wit->second, word_triphones);
+            bool ok = triphonize(dg, wit->second, word_triphones);
+            if (!ok) {
+                triphonize_error++;
+                continue;
+            }
             add_triphones(triphone_nodes, word_triphones);
         }
+        if (triphonize_error > 0) cerr << triphonize_error << " words could not be triphonized." << endl;
 
         vector<DecoderGraph::Node> nodes(2);
         triphones_to_states(dg, triphone_nodes, nodes);

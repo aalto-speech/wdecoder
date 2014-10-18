@@ -14,39 +14,6 @@ namespace gutils {
 void
 read_word_segmentations(DecoderGraph &dg,
                         string segfname,
-                        vector<pair<string, vector<string> > > &word_segs)
-{
-    ifstream segf(segfname);
-    if (!segf) throw string("Problem opening word segmentations.");
-
-    string line;
-    int linei = 1;
-    while (getline(segf, line)) {
-        string word;
-        string subword;
-
-        stringstream ss(line);
-        ss >> word;
-        string concatenated;
-        vector<string> tmp;
-        while (ss >> subword) {
-            if (dg.m_subword_map.find(subword) == dg.m_subword_map.end())
-                throw "Subword " + subword + " not found in lexicon";
-            tmp.push_back(subword);
-            concatenated += subword;
-        }
-        if (concatenated != word) throw "Erroneous segmentation: " + concatenated;
-
-        if (tmp.size() > 0) word_segs.push_back(make_pair(word, tmp));
-
-        linei++;
-    }
-}
-
-
-void
-read_word_segmentations(DecoderGraph &dg,
-                        string segfname,
                         map<string, vector<string> > &word_segs)
 {
     ifstream segf(segfname);
@@ -54,6 +21,7 @@ read_word_segmentations(DecoderGraph &dg,
 
     string line;
     int linei = 1;
+    int faulty_words = 0;
     while (getline(segf, line)) {
         string word;
         string subword;
@@ -62,18 +30,25 @@ read_word_segmentations(DecoderGraph &dg,
         ss >> word;
         string concatenated;
         vector<string> tmp;
+
+        bool ok = true;
         while (ss >> subword) {
-            if (dg.m_subword_map.find(subword) == dg.m_subword_map.end())
-                throw "Subword " + subword + " not found in lexicon";
+            if (dg.m_subword_map.find(subword) == dg.m_subword_map.end()) {
+                ok = false;
+                faulty_words++;
+            }
             tmp.push_back(subword);
             concatenated += subword;
         }
         if (concatenated != word) throw "Erroneous segmentation: " + concatenated;
 
-        if (tmp.size() > 0) word_segs[word] = tmp;
+        if (ok && tmp.size() > 0) word_segs[word] = tmp;
 
         linei++;
     }
+
+    if (faulty_words > 0)
+        cerr << faulty_words << " words were without a valid segmentation." << endl;
 }
 
 
@@ -114,7 +89,7 @@ void triphonize(DecoderGraph &dg,
         triphonize(word, triphones);
 }
 
-void triphonize(DecoderGraph &dg,
+bool triphonize(DecoderGraph &dg,
                 vector<string> &word_seg,
                 vector<DecoderGraph::TriphoneNode> &nodes)
 {
@@ -125,12 +100,16 @@ void triphonize(DecoderGraph &dg,
     vector<string> triphones;
 
     for (auto swit = word_seg.begin(); swit != word_seg.end(); ++swit) {
+        if (dg.m_lexicon.find(*swit) == dg.m_lexicon.end())
+             return false;
+
         vector<string> &triphones = dg.m_lexicon[*swit];
         for (auto tit = triphones.begin(); tit != triphones.end(); ++tit)
             tripstring += (*tit)[2];
         int word_id_pos = max(1, (int) (tripstring.size() - 1));
         word_id_positions.push_back(make_pair(dg.m_subword_map[*swit], word_id_pos));
     }
+
     triphonize(tripstring, triphones);
 
     for (auto triit = triphones.begin(); triit != triphones.end(); ++triit)
@@ -140,20 +119,23 @@ void triphonize(DecoderGraph &dg,
         nodes.push_back(trin);
     }
 
+    if (nodes.size() == 0) return false;
+
     for (auto wit = word_id_positions.rbegin(); wit != word_id_positions.rend(); ++wit)
     {
         DecoderGraph::TriphoneNode trin;
         trin.subword_id = wit->first;
         nodes.insert(nodes.begin() + wit->second, trin);
     }
+
+    return true;
 }
 
 void triphonize_all_words(DecoderGraph &dg,
                           map<string, vector<string> > &word_segs,
                           map<string, vector<string> > &triphonized_words)
 {
-    for (auto wit = word_segs.begin(); wit != word_segs.end();
-            ++wit) {
+    for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
         vector<string> triphones;
         triphonize(dg, word_segs, wit->first, triphones);
         triphonized_words[wit->first] = triphones;

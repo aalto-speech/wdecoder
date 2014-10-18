@@ -19,6 +19,7 @@ create_crossword_network(DecoderGraph &dg,
                          map<string, int> &fanin,
                          bool wb_symbol_in_middle)
 {
+    int error_count = 0;
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
         vector<string> triphones;
         for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit) {
@@ -27,14 +28,15 @@ create_crossword_network(DecoderGraph &dg,
             }
         }
         if (triphones.size() < 2) {
-            cerr << wit->first << endl;
-            throw string("Warning, word " + wit->first + " with less than two phones");
+            error_count++;
+            continue;
         }
         string fanint = string("_-") + triphones[0][2] + string(1,'+') + triphones[1][2];
         string fanoutt = triphones[triphones.size()-2][2] + string(1,'-') + triphones[triphones.size()-1][2] + string("+_");
         fanout[fanoutt] = -1;
         fanin[fanint] = -1;
     }
+    if (error_count > 0) cerr << error_count << " words with less than two phones." << endl;
 
     map<string, int> connected_fanin_nodes;
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {

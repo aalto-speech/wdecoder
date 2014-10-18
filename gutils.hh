@@ -15,10 +15,6 @@ namespace gutils {
 
 void read_word_segmentations(DecoderGraph &dg,
                              std::string segfname,
-                             std::vector<std::pair<std::string, std::vector<std::string> > > &word_segs);
-
-void read_word_segmentations(DecoderGraph &dg,
-                             std::string segfname,
                              std::map<std::string, std::vector<std::string> > &word_segs);
 
 void triphonize(std::string word,
@@ -27,7 +23,7 @@ void triphonize(DecoderGraph &dg,
                 std::map<std::string, std::vector<std::string> > &word_segs,
                 std::string word,
                 std::vector<std::string> &triphones);
-void triphonize(DecoderGraph &dg,
+bool triphonize(DecoderGraph &dg,
                 std::vector<std::string> &word_seg,
                 std::vector<DecoderGraph::TriphoneNode> &nodes);
 void triphonize_all_words(DecoderGraph &dg,
