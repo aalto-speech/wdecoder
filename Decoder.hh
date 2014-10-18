@@ -20,7 +20,7 @@ public:
 
     class Arc {
     public:
-        Arc() : log_prob(0.0), target_node(-1), update_lookahead(true) { }
+        Arc() : log_prob(0.0), target_node(-1), update_lookahead(false) { }
         float log_prob;
         int target_node;
         bool update_lookahead;
@@ -130,7 +130,7 @@ public:
     void move_token_to_node(Token token,
                             int node_idx,
                             float transition_score,
-                            bool update_lookahead=true);
+                            bool update_lookahead);
     inline float get_token_log_prob(const Token &token);
     inline void advance_in_history(Token& token, int word_id);
     inline void apply_duration_model(Token &token, int node_idx);

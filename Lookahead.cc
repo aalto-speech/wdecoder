@@ -1,7 +1,6 @@
 #include <cassert>
 #include <ctime>
 #include <algorithm>
-#include <string>
 #include <sstream>
 
 #include "Lookahead.hh"
@@ -160,17 +159,6 @@ Decoder::Lookahead::mark_tail_nodes(int max_depth,
     for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
         if (ait->target_node == node_idx) continue;
         mark_tail_nodes(max_depth, reverse_arcs, curr_depth+1, ait->target_node);
-    }
-}
-
-
-void
-NoLookahead::set_arc_la_updates()
-{
-    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
-        Decoder::Node &node = decoder->m_nodes[i];
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-            ait->update_lookahead = false;
     }
 }
 

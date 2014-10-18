@@ -137,8 +137,6 @@ int main(int argc, char* argv[])
         cerr << "Reading configuration: " << cfgfname << endl;
         read_config(d, cfgfname);
 
-        d.m_la = new NoLookahead(d);
-
         cerr << endl;
         print_config(d, config, cerr);
 
