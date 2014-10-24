@@ -1,10 +1,11 @@
 dep
 *.o
 decode
-dgraph
-dgraph2
-dgraph3
 wgraph
+swgraph
+swgraph2
+swwgraph
+lastates
 runtests
 .project
 .cproject
@@ -12,9 +13,6 @@ runtests
 .settings/*
 speechdat*.txt
 lm-*
-swgraph
-swgraph2
-swgraph3
 score
 *.cfg
 speechdat

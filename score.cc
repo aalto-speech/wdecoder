@@ -1,13 +1,8 @@
-#include <iostream>
-#include <string>
-#include <ctime>
-#include <climits>
 #include <sstream>
 
 #include "SubwordGraphBuilder.hh"
-#include "gutils.hh"
 #include "Decoder.hh"
-#include "Lookahead.hh"
+#include "gutils.hh"
 #include "conf.hh"
 
 using namespace std;
@@ -137,8 +132,6 @@ int main(int argc, char* argv[])
         string cfgfname = config.arguments[3];
         cerr << "Reading configuration: " << cfgfname << endl;
         read_config(d, cfgfname);
-
-        d.m_la = new NoLookahead(d);
 
         cerr << endl;
         print_config(d, config, cerr);

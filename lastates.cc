@@ -1,12 +1,6 @@
-#include <iostream>
-#include <string>
-#include <ctime>
-#include <climits>
 
-#include "Decoder.hh"
 #include "Lookahead.hh"
 #include "conf.hh"
-#include "io.hh"
 
 using namespace std;
 

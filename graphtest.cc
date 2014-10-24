@@ -1,14 +1,9 @@
-#include <string>
-#include <iostream>
-#include <fstream>
 
 #include "graphtest.hh"
 #include "gutils.hh"
 #include "GraphBuilder1.hh"
 #include "GraphBuilder2.hh"
 
-#include <cppunit/TestFixture.h>
-#include <cppunit/extensions/HelperMacros.h>
 
 using namespace std;
 using namespace gutils;

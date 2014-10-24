@@ -1,5 +1,4 @@
 #include <cassert>
-#include <sstream>
 
 #include "GraphBuilder1.hh"
 #include "gutils.hh"

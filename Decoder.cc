@@ -1,19 +1,8 @@
 #include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <ctime>
-#include <cstdlib>
-#include <climits>
-#include <iostream>
-#include <memory>
-#include <fstream>
 #include <sstream>
-#include <vector>
-#include <unordered_map>
 
 #include "NowayHmmReader.hh"
 #include "Decoder.hh"
-#include "io.hh"
 
 using namespace std;
 

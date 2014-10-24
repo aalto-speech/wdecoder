@@ -2,18 +2,9 @@
 #define LOOKAHEAD_HH
 
 #include <vector>
+#include <string>
 
-#include "SimpleHashCache.hh"
 #include "Decoder.hh"
-
-
-class NoLookahead : public Decoder::Lookahead {
-public:
-    NoLookahead(Decoder &decoder) { set_arc_la_updates(); };
-    ~NoLookahead() {};
-    float get_lookahead_score(int node_idx, int word_id) { return 0.0; }
-    void set_arc_la_updates();
-};
 
 
 class UnigramLookahead : public Decoder::Lookahead {

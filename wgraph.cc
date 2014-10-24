@@ -1,12 +1,6 @@
-#include <iostream>
-#include <string>
-#include <ctime>
 #include <sstream>
-#include <cstdlib>
-#include <iterator>
 
 #include "conf.hh"
-#include "DecoderGraph.hh"
 #include "gutils.hh"
 #include "WordGraphBuilder.hh"
 #include "GraphBuilder2.hh"

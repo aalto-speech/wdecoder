@@ -1,7 +1,5 @@
 #include <cassert>
-#include <ctime>
 #include <algorithm>
-#include <string>
 #include <sstream>
 
 #include "Lookahead.hh"
@@ -164,17 +162,6 @@ Decoder::Lookahead::mark_tail_nodes(int max_depth,
 }
 
 
-void
-NoLookahead::set_arc_la_updates()
-{
-    for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
-        Decoder::Node &node = decoder->m_nodes[i];
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-            ait->update_lookahead = false;
-    }
-}
-
-
 UnigramLookahead::UnigramLookahead(Decoder &decoder,
                                    string lafname)
 {
@@ -275,16 +262,15 @@ UnigramLookahead::set_arc_la_updates()
         if (node.flags & NODE_DECODE_START) continue;
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
             int j = ait->target_node;
-            if (m_la_scores[i] == m_la_scores[j]) {
-                ait->update_lookahead = false;
-                no_update_count += 1.0;
+            if (m_la_scores[i] != m_la_scores[j]) {
+                ait->update_lookahead = true;
+                update_count += 1.0;
             }
-            else update_count += 1.0;
+            else no_update_count += 1.0;
         }
     }
     return update_count / (update_count + no_update_count);
 }
-
 
 
 DummyBigramLookahead::DummyBigramLookahead(Decoder &decoder,
@@ -462,14 +448,20 @@ FullTableBigramLookahead::set_arc_la_updates()
     float no_update_count = 0.0;
     for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
         Decoder::Node &node = decoder->m_nodes[i];
+
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+            ait->update_lookahead = true;
+
         if (node.flags & NODE_DECODE_START) continue;
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
             int j = ait->target_node;
+
             if (m_node_la_states[i] == m_node_la_states[j]) {
                 ait->update_lookahead = false;
                 no_update_count += 1.0;
             }
-            else update_count += 1.0;
+            else
+                update_count += 1.0;
         }
     }
     return update_count / (update_count + no_update_count);
@@ -852,18 +844,15 @@ HybridBigramLookahead::set_arc_la_updates()
             if (m_bigram_la_maps[i].size() > 0 &&
                 m_bigram_la_maps[j].size() > 0 &&
                 m_bigram_la_maps[i] == m_bigram_la_maps[j])
-            {
-                ait->update_lookahead = false;
                 no_update_count += 1.0;
-            }
             else if (m_node_la_states[i] != -1 &&
                      m_node_la_states[j] != -1 &&
                      m_node_la_states[i] == m_node_la_states[j])
-            {
-                ait->update_lookahead = false;
                 no_update_count += 1.0;
+            else {
+                update_count += 1.0;
+                ait->update_lookahead = true;
             }
-            else update_count += 1.0;
         }
     }
     return update_count / (update_count + no_update_count);
@@ -1244,9 +1233,9 @@ LargeBigramLookahead::set_arc_la_updates()
 {
     float update_count = 0.0;
     float no_update_count = 0.0;
+
     for (int i=0; i<(int)(decoder->m_nodes.size()); i++) {
         Decoder::Node &node = decoder->m_nodes[i];
-        if (node.flags & NODE_DECODE_START) continue;
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
             int j = ait->target_node;
 
@@ -1254,12 +1243,15 @@ LargeBigramLookahead::set_arc_la_updates()
                 m_node_la_states[j] != -1 &&
                 m_node_la_states[i] == m_node_la_states[j])
             {
-                ait->update_lookahead = false;
                 no_update_count += 1.0;
             }
-            else update_count += 1.0;
+            else {
+                update_count += 1.0;
+                ait->update_lookahead = true;
+            }
         }
     }
+
     return update_count / (update_count + no_update_count);
 }
 

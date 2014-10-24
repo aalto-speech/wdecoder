@@ -1,13 +1,7 @@
-#include <iostream>
-#include <string>
-#include <ctime>
-#include <climits>
 #include <sstream>
 
-#include "Decoder.hh"
 #include "Lookahead.hh"
 #include "conf.hh"
-#include "str.hh"
 
 using namespace std;
 
@@ -210,10 +204,9 @@ int main(int argc, char* argv[])
                 d.m_la = new LargeBigramLookahead(d, lalmfname);
             else {
                 cerr << "unknown lookahead type: " << la_type << endl;
-                exit(0);
+                exit(1);
             }
         }
-        else d.m_la = new NoLookahead(d);
 
         if (config["write-la-states"].specified) {
             string lasfname = config["write-la-states"].get_str();
