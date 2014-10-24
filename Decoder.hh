@@ -168,8 +168,13 @@ public:
                            std::string sfname,
                            bool duration_model=true);
     void set_subword_id_ngram_symbol_mapping();
-    void clear_word_history();
+
     void prune_word_history();
+    void clear_word_history();
+
+    void prune_state_history();
+    void clear_state_history();
+
     void set_hmm_transition_probs();
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
     void find_paths(std::vector<std::vector<int> > &paths,
@@ -205,6 +210,7 @@ public:
     Acoustics *m_acoustics;
 
     std::vector<Node> m_nodes;
+
     std::set<WordHistory*> m_word_history_leafs;
     std::set<WordHistory*> m_active_histories;
 
@@ -261,6 +267,8 @@ public:
     StateHistory* m_state_history_root;
 
     int m_decode_start_node;
+    int m_frame_idx;
+
     int m_long_silence_loop_start_node;
     int m_long_silence_loop_end_node;
 };

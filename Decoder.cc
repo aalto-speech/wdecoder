@@ -60,6 +60,8 @@ Decoder::Decoder()
 
     m_ngram_state_sentence_begin = -1;
     m_decode_start_node = -1;
+    m_frame_idx = -1;
+
     m_long_silence_loop_start_node = -1;
     m_long_silence_loop_end_node = -1;
 }
@@ -234,21 +236,22 @@ Decoder::recognize_lna_file(string lnafname,
 
     time_t start_time, end_time;
     time(&start_time);
-    int frame_idx = 0;
-    while (m_lna_reader.go_to(frame_idx)) {
+    m_frame_idx = 0;
+    while (m_lna_reader.go_to(m_frame_idx)) {
 
         reset_frame_variables();
         propagate_tokens();
 
-        if (frame_idx % m_history_clean_frame_interval == 0) {
+        if (m_frame_idx % m_history_clean_frame_interval == 0) {
             prune_tokens(true);
             prune_word_history();
+            prune_state_history();
             //print_certain_word_history();
         }
         else prune_tokens(false);
 
         if (m_stats) {
-            cerr << endl << "recognized frame: " << frame_idx << endl;
+            cerr << endl << "recognized frame: " << m_frame_idx << endl;
             cerr << "current global beam: " << m_global_beam << endl;
             cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
@@ -262,7 +265,7 @@ Decoder::recognize_lna_file(string lnafname,
         }
 
         m_total_token_count += double(m_token_count);
-        frame_idx++;
+        m_frame_idx++;
     }
     time(&end_time);
 
@@ -286,9 +289,10 @@ Decoder::recognize_lna_file(string lnafname,
     print_word_history(best_token.history, outf, false);
 
     clear_word_history();
+    clear_state_history();
     m_lna_reader.close();
 
-    if (frame_count != nullptr) *frame_count = frame_idx;
+    if (frame_count != nullptr) *frame_count = m_frame_idx;
     if (seconds != nullptr) *seconds = difftime(end_time, start_time);
     if (log_prob != nullptr) *log_prob = best_token.total_log_prob;
     if (am_prob != nullptr) *am_prob = best_token.am_log_prob;
@@ -309,11 +313,13 @@ Decoder::initialize()
     m_best_node_scores.resize(m_nodes.size(), -1e20);
     m_active_nodes.clear();
     m_active_histories.clear();
+    m_active_state_histories.clear();
     Token tok;
     tok.lm_node = m_lm.sentence_start_node;
     tok.last_word_id = m_sentence_begin_symbol_idx;
     m_ngram_state_sentence_begin = tok.lm_node;
     tok.history = new WordHistory();
+    tok.state_history = new StateHistory();
     tok.history->word_id = m_sentence_begin_symbol_idx;
     m_history_root = tok.history;
     tok.node_idx = m_decode_start_node;
@@ -327,6 +333,7 @@ Decoder::initialize()
         tok.last_word_id = m_word_boundary_symbol_idx;
     }
     m_active_histories.insert(tok.history);
+    m_active_state_histories.insert(tok.state_history);
     m_recombined_tokens[m_decode_start_node][tok.lm_node] = tok;
 
     m_total_token_count = 0;
@@ -347,6 +354,7 @@ Decoder::reset_frame_variables()
     m_dropped_count = 0;
     m_token_count_after_pruning = 0;
     m_active_histories.clear();
+    m_active_state_histories.clear();
     fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
 }
 
@@ -461,8 +469,10 @@ Decoder::prune_tokens(bool collect_active_histories)
             m_token_count_after_pruning++;
         }
 
-        if (collect_active_histories)
+        if (collect_active_histories) {
             m_active_histories.insert(tit->history);
+            m_active_state_histories.insert(tit->state_history);
+        }
     }
 
     m_histogram_bin_limit = 0;
@@ -501,6 +511,14 @@ Decoder::move_token_to_node(Token token,
         // Apply duration model for previous state if moved out from a hmm state
         if (m_duration_model_in_use && m_nodes[token.node_idx].hmm_state != -1)
             apply_duration_model(token, token.node_idx);
+
+        advance_in_state_history(token, m_nodes[token.node_idx].hmm_state);
+        if (token.am_log_prob > token.state_history->best_am_log_prob) {
+            token.state_history->best_am_log_prob = token.am_log_prob;
+            token.state_history->end_frame = m_frame_idx-1;
+            token.state_history->start_frame = m_frame_idx-token.dur-1;
+        }
+
         token.node_idx = node_idx;
         token.dur = 1;
     }
@@ -677,24 +695,6 @@ Decoder::add_sentence_ends(vector<Token> &tokens)
 
 
 void
-Decoder::clear_word_history()
-{
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ++whlnit) {
-        WordHistory *wh = *whlnit;
-        while (wh != nullptr) {
-            if (wh->next.size() > 0) break;
-            WordHistory *tmp = wh;
-            wh = wh->previous;
-            if (wh != nullptr) wh->next.erase(tmp->word_id);
-            delete tmp;
-        }
-    }
-    m_word_history_leafs.clear();
-    m_active_histories.clear();
-}
-
-
-void
 Decoder::prune_word_history()
 {
     for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ) {
@@ -715,6 +715,66 @@ Decoder::prune_word_history()
         }
         else ++whlnit;
     }
+}
+
+
+void
+Decoder::clear_word_history()
+{
+    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ++whlnit) {
+        WordHistory *wh = *whlnit;
+        while (wh != nullptr) {
+            if (wh->next.size() > 0) break;
+            WordHistory *tmp = wh;
+            wh = wh->previous;
+            if (wh != nullptr) wh->next.erase(tmp->word_id);
+            delete tmp;
+        }
+    }
+    m_word_history_leafs.clear();
+    m_active_histories.clear();
+}
+
+
+void
+Decoder::prune_state_history()
+{
+    for (auto shlnit = m_state_history_leafs.begin(); shlnit != m_state_history_leafs.end(); ) {
+        StateHistory *sh = *shlnit;
+        if (m_active_state_histories.find(sh) == m_active_state_histories.end()) {
+            m_state_history_leafs.erase(shlnit++);
+            while (true) {
+                StateHistory *tmp = sh;
+                sh = sh->previous;
+                sh->next.erase(tmp->hmm_state);
+                delete tmp;
+                if (sh == nullptr || sh->next.size() > 0) break;
+                if (m_active_state_histories.find(sh) != m_active_state_histories.end()) {
+                    m_state_history_leafs.insert(sh);
+                    break;
+                }
+            }
+        }
+        else ++shlnit;
+    }
+}
+
+
+void
+Decoder::clear_state_history()
+{
+    for (auto shlnit = m_state_history_leafs.begin(); shlnit != m_state_history_leafs.end(); ++shlnit) {
+        StateHistory *sh = *shlnit;
+        while (sh != nullptr) {
+            if (sh->next.size() > 0) break;
+            StateHistory *tmp = sh;
+            sh = sh->previous;
+            if (sh != nullptr) sh->next.erase(tmp->hmm_state);
+            delete tmp;
+        }
+    }
+    m_state_history_leafs.clear();
+    m_active_state_histories.clear();
 }
 
 
@@ -828,14 +888,14 @@ Decoder::score_state_path(string lnafname,
 
     int start=-1, end=-1, state_idx=-1;
     string line;
-    int frame_idx = 0;
+    m_frame_idx = 0;
 
     float gmm_score = 0.0;
     float trans_score = 0.0;
     float dur_score = 0.0;
     float total_score = 0.0;
     while (getline(sinf, line)) {
-        cerr << "frame: " << frame_idx << endl;
+        cerr << "frame: " << m_frame_idx << endl;
         stringstream ncl(line);
         ncl >> start >> end >> state_idx;
         int dur = end-start;
@@ -843,12 +903,12 @@ Decoder::score_state_path(string lnafname,
         if (state_idx != -1)
             trans_score += m_hmm_states[state_idx].transitions[1].log_prob;
         HmmState &state = m_hmm_states[state_idx];
-        while (frame_idx < end) {
-            m_lna_reader.go_to(frame_idx);
+        while (m_frame_idx < end) {
+            m_lna_reader.go_to(m_frame_idx);
             gmm_score += m_acoustics->log_prob(state_idx);
-            if (frame_idx != start)
+            if (m_frame_idx != start)
                 trans_score += state.transitions[0].log_prob;
-            frame_idx++;
+            m_frame_idx++;
             total_score = gmm_score + trans_score + dur_score;
         }
         if (duration_model && m_duration_model_in_use)
@@ -856,7 +916,7 @@ Decoder::score_state_path(string lnafname,
 
         total_score = gmm_score + trans_score + dur_score;
 
-        cerr << frame_idx << "\t" << gmm_score << "\t" << trans_score << "\t" << total_score << endl;
+        cerr << m_frame_idx << "\t" << gmm_score << "\t" << trans_score << "\t" << total_score << endl;
     }
 
     total_score = gmm_score + trans_score + dur_score;
