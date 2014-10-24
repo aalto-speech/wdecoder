@@ -279,6 +279,7 @@ Decoder::recognize_lna_file(string lnafname,
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         Token &tok = *tit;
         if (m_duration_model_in_use && tok.dur > 1) apply_duration_model(tok, tok.node_idx);
+        advance_in_state_history(tok, m_nodes[tok.node_idx].hmm_state);
         update_lookahead_prob(tok, 0.0);
         tok.total_log_prob = get_token_log_prob(tok);
     }
@@ -511,14 +512,7 @@ Decoder::move_token_to_node(Token token,
         // Apply duration model for previous state if moved out from a hmm state
         if (m_duration_model_in_use && m_nodes[token.node_idx].hmm_state != -1)
             apply_duration_model(token, token.node_idx);
-
         advance_in_state_history(token, m_nodes[token.node_idx].hmm_state);
-        if (token.am_log_prob > token.state_history->best_am_log_prob) {
-            token.state_history->best_am_log_prob = token.am_log_prob;
-            token.state_history->end_frame = m_frame_idx-1;
-            token.state_history->start_frame = m_frame_idx-token.dur-1;
-        }
-
         token.node_idx = node_idx;
         token.dur = 1;
     }
@@ -652,6 +646,12 @@ Decoder::advance_in_state_history(Token &token, int hmm_state)
         token.state_history->previous->next[hmm_state] = token.state_history;
         m_state_history_leafs.erase(token.state_history->previous);
         m_state_history_leafs.insert(token.state_history);
+    }
+
+    if (token.am_log_prob > token.state_history->best_am_log_prob) {
+        token.state_history->best_am_log_prob = token.am_log_prob;
+        token.state_history->end_frame = m_frame_idx-1;
+        token.state_history->start_frame = m_frame_idx-token.dur-1;
     }
 }
 
