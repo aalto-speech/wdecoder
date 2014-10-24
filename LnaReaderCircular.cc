@@ -1,6 +1,4 @@
-#include <cstddef>  // NULL
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
 #include <cassert>
 

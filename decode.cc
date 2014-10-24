@@ -1,9 +1,5 @@
-#include <iostream>
-#include <string>
-#include <ctime>
 #include <sstream>
 
-#include "Decoder.hh"
 #include "Lookahead.hh"
 #include "conf.hh"
 

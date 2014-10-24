@@ -1,11 +1,6 @@
-#include <algorithm>
-#include <cstdlib>
-#include <iostream>
 #include <sstream>
-#include <string>
 
 #include "NowayHmmReader.hh"
-#include "DecoderGraph.hh"
 #include "gutils.hh"
 
 using namespace std;

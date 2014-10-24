@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <fstream>
-#include <sstream>
 #include <iostream>
 
 #include "Ngram.hh"

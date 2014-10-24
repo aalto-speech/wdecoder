@@ -1,7 +1,5 @@
 #include <cassert>
-#include <sstream>
 
-#include "GraphBuilder2.hh"
 #include "gutils.hh"
 
 using namespace std;

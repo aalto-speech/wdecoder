@@ -1,13 +1,6 @@
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <ctime>
 
 #include "decodertest.hh"
 
-#include <cppunit/TestFixture.h>
-#include <cppunit/extensions/HelperMacros.h>
 
 using namespace std;
 

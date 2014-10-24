@@ -1,13 +1,8 @@
-#include <string>
-#include <iostream>
-#include <fstream>
 
 #include "swgraphtest.hh"
 #include "gutils.hh"
 #include "SubwordGraphBuilder.hh"
 
-#include <cppunit/TestFixture.h>
-#include <cppunit/extensions/HelperMacros.h>
 
 using namespace std;
 using namespace gutils;

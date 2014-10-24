@@ -1,12 +1,8 @@
-#include <iostream>
-#include <string>
-#include <ctime>
 #include <sstream>
 
 #include "SubwordGraphBuilder.hh"
-#include "gutils.hh"
 #include "Decoder.hh"
-#include "Lookahead.hh"
+#include "gutils.hh"
 #include "conf.hh"
 
 using namespace std;

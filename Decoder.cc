@@ -1,9 +1,4 @@
 #include <algorithm>
-#include <cmath>
-#include <ctime>
-#include <cstdlib>
-#include <iostream>
-#include <memory>
 #include <sstream>
 
 #include "NowayHmmReader.hh"

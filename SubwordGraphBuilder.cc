@@ -1,13 +1,5 @@
-#include <algorithm>
 #include <cassert>
-#include <cstdlib>
-#include <iostream>
-#include <sstream>
-#include <string>
 
-#include "NowayHmmReader.hh"
-#include "DecoderGraph.hh"
-#include "SubwordGraphBuilder.hh"
 #include "gutils.hh"
 
 using namespace std;

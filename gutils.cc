@@ -1,8 +1,6 @@
 #include <cassert>
-#include <cstdlib>
 #include <sstream>
 
-#include "defs.hh"
 #include "gutils.hh"
 
 using namespace std;
