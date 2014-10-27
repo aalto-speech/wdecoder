@@ -52,34 +52,6 @@ read_config(Decoder &d, string cfgfname)
 }
 
 
-void
-print_config(Decoder &d,
-             conf::Config &config,
-             ostream &outf)
-{
-    outf << "PH: " << config.arguments[0] << endl;
-    outf << "LEXICON: " << config.arguments[1] << endl;
-    outf << "LM: " << config.arguments[2] << endl;
-    outf << "GRAPH: " << config.arguments[4] << endl;
-
-    outf << std::boolalpha;
-    outf << "lm scale: " << d.m_lm_scale << endl;
-    outf << "active node limit: " << d.m_active_node_limit << endl;
-    outf << "token limit: " << d.m_token_limit << endl;
-    outf << "duration scale: " << d.m_duration_scale << endl;
-    outf << "transition scale: " << d.m_transition_scale << endl;
-    outf << "force sentence end: " << d.m_force_sentence_end << endl;
-    outf << "use word boundary symbol: " << d.m_use_word_boundary_symbol << endl;
-    if (d.m_use_word_boundary_symbol)
-        outf << "word boundary symbol: " << d.m_word_boundary_symbol << endl;
-    outf << "global beam: " << d.m_global_beam << endl;
-    outf << "word end beam: " << d.m_word_end_beam << endl;
-    outf << "node beam: " << d.m_node_beam << endl;
-    outf << "word boundary penalty: " << d.m_word_boundary_penalty << endl;
-    outf << "history clean frame interval: " << d.m_history_clean_frame_interval << endl;
-}
-
-
 void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
                                vector<Decoder::Node> &dnodes)
 {
@@ -134,7 +106,6 @@ int main(int argc, char* argv[])
         read_config(d, cfgfname);
 
         cerr << endl;
-        print_config(d, config, cerr);
 
         string lnalistfname = config.arguments[4];
         ifstream lnalistf(lnalistfname);
@@ -144,12 +115,17 @@ int main(int argc, char* argv[])
         ifstream reslistf(reslistfname);
         string resline;
 
+        string phnlistfname = config.arguments[6];
+        ifstream phnlistf(phnlistfname);
+        string phnfname;
+
         DecoderGraph dg;
         dg.read_phone_model(phfname);
         dg.read_noway_lexicon(lexfname);
 
         while (getline(lnalistf, line)) {
             getline(reslistf, resline);
+            getline(phnlistf, phnfname);
             if (!line.length()) continue;
             cerr << endl << "scoring: " << line << endl;
 
@@ -168,7 +144,9 @@ int main(int argc, char* argv[])
             d.set_hmm_transition_probs();
             d.m_decode_start_node = 0;
 
-            d.segment_lna_file(line, node_labels, cout);
+            ofstream phnf(phnfname);
+            d.segment_lna_file(line, node_labels, phnf);
+            phnf.close();
         }
         lnalistf.close();
 

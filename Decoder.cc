@@ -344,7 +344,7 @@ Decoder::segment_lna_file(string lnafname,
 
     Token best_token = get_best_token(tokens);
 
-    print_phn_segmentation(best_token.state_history, cout);
+    print_phn_segmentation(best_token.state_history, outf);
 
     clear_word_history();
     clear_state_history();
