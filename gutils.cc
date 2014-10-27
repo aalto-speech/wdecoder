@@ -1336,6 +1336,39 @@ int connect_triphone(DecoderGraph &dg,
     return node_idx;
 }
 
+int connect_triphone(DecoderGraph &dg,
+                     vector<DecoderGraph::Node> &nodes,
+                     string triphone,
+                     node_idx_t node_idx,
+                     map<int, string> &node_labels,
+                     int flag_mask)
+{
+    int hmm_index = dg.m_hmm_map[triphone];
+    return connect_triphone(dg, nodes, hmm_index, node_idx, node_labels, flag_mask);
+}
+
+int connect_triphone(DecoderGraph &dg,
+                     vector<DecoderGraph::Node> &nodes,
+                     int hmm_index,
+                     node_idx_t node_idx,
+                     map<int, string> &node_labels,
+                     int flag_mask)
+{
+    Hmm &hmm = dg.m_hmms[hmm_index];
+
+    for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+        nodes.resize(nodes.size() + 1);
+        nodes.back().hmm_state = hmm.states[sidx].model;
+        nodes.back().flags |= flag_mask;
+        nodes[node_idx].arcs.insert(nodes.size() - 1);
+        node_idx = nodes.size() - 1;
+        string label = hmm.label + "." + to_string(sidx-2);
+        node_labels[node_idx] = label;
+    }
+
+    return node_idx;
+}
+
 int connect_word(DecoderGraph &dg,
                  vector<DecoderGraph::Node> &nodes,
                  string word,

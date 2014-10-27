@@ -211,6 +211,18 @@ int connect_triphone(DecoderGraph &dg,
                      int triphone_idx,
                      node_idx_t node_idx,
                      int flag_mask=0);
+int connect_triphone(DecoderGraph &dg,
+                     std::vector<DecoderGraph::Node> &nodes,
+                     std::string triphone,
+                     node_idx_t node_idx,
+                     std::map<int, std::string> &node_labels,
+                     int flag_mask=0);
+int connect_triphone(DecoderGraph &dg,
+                     std::vector<DecoderGraph::Node> &nodes,
+                     int triphone_idx,
+                     node_idx_t node_idx,
+                     std::map<int, std::string> &node_labels,
+                     int flag_mask=0);
 int connect_word(DecoderGraph &dg,
                  std::vector<DecoderGraph::Node> &nodes,
                  std::string word,
