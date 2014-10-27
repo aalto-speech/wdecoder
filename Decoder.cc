@@ -325,10 +325,12 @@ Decoder::segment_lna_file(string lnafname,
     }
 
     vector<Token> tokens;
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
-        map<int, Token> &node_tokens = m_recombined_tokens[*nit];
-        for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit)
-            tokens.push_back(tit->second);
+    map<int, Token> &node_tokens = m_recombined_tokens.back();
+    for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit)
+        tokens.push_back(tit->second);
+    if (tokens.size() == 0) {
+        cerr << "warning, no segmentation found" << endl;
+        return;
     }
 
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
@@ -336,9 +338,9 @@ Decoder::segment_lna_file(string lnafname,
         if (m_duration_model_in_use && tok.dur > 1) apply_duration_model(tok, tok.node_idx);
         advance_in_state_history(tok);
         update_lookahead_prob(tok, 0.0);
+        tok.lm_log_prob = 0.0;
         tok.total_log_prob = get_token_log_prob(tok);
     }
-    if (m_force_sentence_end) add_sentence_ends(tokens);
 
     Token best_token = get_best_token(tokens);
 
@@ -701,8 +703,8 @@ Decoder::advance_in_state_history(Token &token)
 
     if (token.am_log_prob > token.state_history->best_am_log_prob) {
         token.state_history->best_am_log_prob = token.am_log_prob;
-        token.state_history->end_frame = m_frame_idx-1;
-        token.state_history->start_frame = m_frame_idx-token.dur-1;
+        token.state_history->end_frame = m_frame_idx;
+        token.state_history->start_frame = m_frame_idx-token.dur;
         if (m_state_history_labels_in_use &&
             m_state_history_labels.find(node_idx) != m_state_history_labels.end())
                 token.state_history->label = m_state_history_labels[node_idx];

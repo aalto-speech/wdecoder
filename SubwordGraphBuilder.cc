@@ -256,7 +256,7 @@ create_forced_path(DecoderGraph &dg,
 
     // Convert to HMM states, also with crossword context
     nodes.clear(); nodes.resize(1);
-    int prev_idx = 0, idx = 0, crossword_start = -1;
+    int idx = 0, crossword_start = -1;
     string crossword_left, crossword_right, label;
     node_labels.clear();
 
