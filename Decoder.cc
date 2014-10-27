@@ -53,6 +53,8 @@ Decoder::Decoder()
 
     m_history_root = nullptr;
     m_state_history_root = nullptr;
+    m_state_history_labels_in_use = false;
+
     m_history_clean_frame_interval = 10;
 
     m_word_boundary_penalty = 0.0;
@@ -279,7 +281,7 @@ Decoder::recognize_lna_file(string lnafname,
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         Token &tok = *tit;
         if (m_duration_model_in_use && tok.dur > 1) apply_duration_model(tok, tok.node_idx);
-        advance_in_state_history(tok, m_nodes[tok.node_idx].hmm_state);
+        advance_in_state_history(tok);
         update_lookahead_prob(tok, 0.0);
         tok.total_log_prob = get_token_log_prob(tok);
     }
@@ -299,6 +301,52 @@ Decoder::recognize_lna_file(string lnafname,
     if (am_prob != nullptr) *am_prob = best_token.am_log_prob;
     if (lm_prob != nullptr) *lm_prob = best_token.lm_log_prob;
     if (total_token_count != nullptr) *total_token_count = m_total_token_count;
+}
+
+
+void
+Decoder::segment_lna_file(string lnafname,
+                          map<int, string> &node_labels,
+                          ostream &outf)
+{
+    m_state_history_labels = node_labels;
+    m_state_history_labels_in_use = true;
+
+    m_lna_reader.open_file(lnafname, 1024);
+    m_acoustics = &m_lna_reader;
+    initialize();
+
+    m_frame_idx = 0;
+    while (m_lna_reader.go_to(m_frame_idx)) {
+        reset_frame_variables();
+        propagate_tokens();
+        prune_tokens(false);
+        m_frame_idx++;
+    }
+
+    vector<Token> tokens;
+    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
+        map<int, Token> &node_tokens = m_recombined_tokens[*nit];
+        for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit)
+            tokens.push_back(tit->second);
+    }
+
+    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
+        Token &tok = *tit;
+        if (m_duration_model_in_use && tok.dur > 1) apply_duration_model(tok, tok.node_idx);
+        advance_in_state_history(tok);
+        update_lookahead_prob(tok, 0.0);
+        tok.total_log_prob = get_token_log_prob(tok);
+    }
+    if (m_force_sentence_end) add_sentence_ends(tokens);
+
+    Token best_token = get_best_token(tokens);
+
+    print_phn_segmentation(best_token.state_history, cout);
+
+    clear_word_history();
+    clear_state_history();
+    m_lna_reader.close();
 }
 
 
@@ -512,7 +560,7 @@ Decoder::move_token_to_node(Token token,
         // Apply duration model for previous state if moved out from a hmm state
         if (m_duration_model_in_use && m_nodes[token.node_idx].hmm_state != -1)
             apply_duration_model(token, token.node_idx);
-        advance_in_state_history(token, m_nodes[token.node_idx].hmm_state);
+        advance_in_state_history(token);
         token.node_idx = node_idx;
         token.dur = 1;
     }
@@ -636,8 +684,11 @@ Decoder::advance_in_word_history(Token &token, int word_id)
 
 
 void
-Decoder::advance_in_state_history(Token &token, int hmm_state)
+Decoder::advance_in_state_history(Token &token)
 {
+    int node_idx = token.node_idx;
+    int hmm_state = m_nodes[node_idx].hmm_state;
+
     auto next_history = token.state_history->next.find(hmm_state);
     if (next_history != token.state_history->next.end())
         token.state_history = next_history->second;
@@ -652,6 +703,9 @@ Decoder::advance_in_state_history(Token &token, int hmm_state)
         token.state_history->best_am_log_prob = token.am_log_prob;
         token.state_history->end_frame = m_frame_idx-1;
         token.state_history->start_frame = m_frame_idx-token.dur-1;
+        if (m_state_history_labels_in_use &&
+            m_state_history_labels.find(node_idx) != m_state_history_labels.end())
+                token.state_history->label = m_state_history_labels[node_idx];
     }
 }
 
@@ -833,6 +887,38 @@ Decoder::print_word_history(WordHistory *history,
 
     if (print_lm_probs) outf << endl << "total lm log: " << total_lp;
     outf << endl;
+}
+
+
+void
+Decoder::print_phn_segmentation(StateHistory *history,
+                                ostream &outf)
+{
+    if (!m_state_history_labels_in_use) {
+        cerr << "print_phn_segmentation: error, state history labels not in use" << endl;
+        return;
+    }
+
+    vector<string> segmentation;
+    while (true) {
+
+        if (history->label.length() > 0) {
+            int start_sample = round(float(history->start_frame) * 16000.0 / 125.0);
+            int end_sample = round(float(history->end_frame) * 16000.0 / 125.0);
+            string segline = to_string(start_sample)
+                             + " "
+                             + to_string(end_sample)
+                             + " "
+                             + history->label;
+            segmentation.push_back(segline);
+        }
+
+        if (history->previous == nullptr) break;
+        history = history->previous;
+    }
+
+    for (auto sit = segmentation.rbegin(); sit != segmentation.rend(); ++sit)
+        outf << *sit << endl;
 }
 
 

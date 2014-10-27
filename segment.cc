@@ -144,11 +144,6 @@ int main(int argc, char* argv[])
         ifstream reslistf(reslistfname);
         string resline;
 
-        int total_frames = 0;
-        double total_time = 0.0;
-        double total_lp = 0.0;
-        int file_count = 0;
-
         DecoderGraph dg;
         dg.read_phone_model(phfname);
         dg.read_noway_lexicon(lexfname);
@@ -165,31 +160,17 @@ int main(int argc, char* argv[])
                 reswordstrs.push_back(tempstr);
 
             vector<DecoderGraph::Node> nodes;
-            subwordgraphbuilder::create_forced_path(dg, nodes, reswordstrs);
+            map<int, string> node_labels;
+            subwordgraphbuilder::create_forced_path(dg, nodes, reswordstrs, node_labels);
             gutils::add_hmm_self_transitions(nodes);
 
             convert_nodes_for_decoder(nodes, d.m_nodes);
             d.set_hmm_transition_probs();
             d.m_decode_start_node = 0;
 
-            int curr_frames;
-            double curr_time, curr_lp, curr_am_lp, curr_lm_lp;
-            d.recognize_lna_file(line, cout, &curr_frames, &curr_time,
-                                 &curr_lp, &curr_am_lp, &curr_lm_lp);
-
-            cerr << "\tframes: " << curr_frames << endl << endl;
-            cerr << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl << endl;
-
-            total_frames += curr_frames;
-            total_lp += curr_lp;
-            file_count++;
+            d.segment_lna_file(line, node_labels, cout);
         }
         lnalistf.close();
-
-        cerr << endl;
-        cerr << file_count << " files segmented" << endl;
-        cerr << "total frame count: " << total_frames << endl;
-        cerr << "total log prob: " << total_lp << endl;
 
     } catch (string &e) {
         cerr << e << endl;

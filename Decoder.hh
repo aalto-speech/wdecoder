@@ -64,6 +64,7 @@ public:
         int start_frame;
         int end_frame;
         float best_am_log_prob;
+        std::string label;
     };
 
     class Token {
@@ -141,6 +142,9 @@ public:
                             double *am_prob=nullptr,
                             double *lm_prob=nullptr,
                             double *total_token_count=nullptr);
+    void segment_lna_file(std::string lnafname,
+                          std::map<int, std::string> &node_labels,
+                          std::ostream &outf=std::cout);
 
     void initialize();
     void reset_frame_variables();
@@ -152,7 +156,7 @@ public:
                             bool update_lookahead);
     inline float get_token_log_prob(const Token &token);
     inline void advance_in_word_history(Token& token, int word_id);
-    inline void advance_in_state_history(Token& token, int hmm_state);
+    inline void advance_in_state_history(Token& token);
     inline void apply_duration_model(Token &token, int node_idx);
     inline void update_lookahead_prob(Token &token, float lookahead_prob);
     Token* get_best_token();
@@ -163,6 +167,8 @@ public:
     void print_word_history(WordHistory *history,
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
+    void print_phn_segmentation(StateHistory *history,
+                                std::ostream &outf=std::cout);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
     float score_state_path(std::string lnafname,
                            std::string sfname,
@@ -211,11 +217,15 @@ public:
 
     std::vector<Node> m_nodes;
 
+    WordHistory* m_history_root;
     std::set<WordHistory*> m_word_history_leafs;
     std::set<WordHistory*> m_active_histories;
 
+    StateHistory* m_state_history_root;
     std::set<StateHistory*> m_state_history_leafs;
     std::set<StateHistory*> m_active_state_histories;
+    std::map<int, std::string> m_state_history_labels;
+    bool m_state_history_labels_in_use;
 
     std::vector<Token> m_raw_tokens;
     std::set<int> m_active_nodes;
@@ -263,8 +273,6 @@ public:
     int m_dropped_count;
 
     int m_history_clean_frame_interval;
-    WordHistory* m_history_root;
-    StateHistory* m_state_history_root;
 
     int m_decode_start_node;
     int m_frame_idx;

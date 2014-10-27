@@ -165,7 +165,8 @@ int main(int argc, char* argv[])
                 reswordstrs.push_back(tempstr);
 
             vector<DecoderGraph::Node> nodes;
-            subwordgraphbuilder::create_forced_path(dg, nodes, reswordstrs);
+            map<int, string> node_labels;
+            subwordgraphbuilder::create_forced_path(dg, nodes, reswordstrs, node_labels);
             gutils::add_hmm_self_transitions(nodes);
 
             convert_nodes_for_decoder(nodes, d.m_nodes);
