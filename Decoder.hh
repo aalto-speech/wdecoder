@@ -144,9 +144,6 @@ public:
                             bool print_lm_probs=false);
 
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
-    float score_state_path(std::string lnafname,
-                           std::string sfname,
-                           bool duration_model=true);
     void set_subword_id_ngram_symbol_mapping();
 
     void prune_word_history();
@@ -154,13 +151,6 @@ public:
 
     void set_hmm_transition_probs();
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
-    void find_paths(std::vector<std::vector<int> > &paths,
-                    std::vector<int> &words,
-                    int curr_word_pos = 0,
-                    std::vector<int> curr_path = std::vector<int>(),
-                    int curr_node_idx = -1);
-    void path_to_graph(std::vector<int> &path,
-                       std::vector<Node> &nodes);
 
     // Subwords
     std::vector<std::string> m_subwords;
