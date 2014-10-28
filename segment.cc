@@ -1,7 +1,7 @@
 #include <sstream>
 
 #include "SubwordGraphBuilder.hh"
-#include "Decoder.hh"
+#include "Segmenter.hh"
 #include "gutils.hh"
 #include "conf.hh"
 
@@ -9,7 +9,7 @@ using namespace std;
 
 
 void
-read_config(Decoder &d, string cfgfname)
+read_config(Segmenter &s, string cfgfname)
 {
     ifstream cfgf(cfgfname);
     if (!cfgf) throw string("Problem opening configuration file: ") + cfgfname;
@@ -20,31 +20,31 @@ read_config(Decoder &d, string cfgfname)
         stringstream ss(line);
         string parameter, val;
         ss >> parameter;
-        if (parameter == "lm_scale") ss >> d.m_lm_scale;
-        else if (parameter == "token_limit") ss >> d.m_token_limit;
-        else if (parameter == "node_limit") ss >> d.m_active_node_limit;
-        else if (parameter == "duration_scale") ss >> d.m_duration_scale;
-        else if (parameter == "transition_scale") ss >> d.m_transition_scale;
-        else if (parameter == "global_beam") ss >> d.m_global_beam;
+        if (parameter == "lm_scale") ss >> s.m_lm_scale;
+        else if (parameter == "token_limit") ss >> s.m_token_limit;
+        else if (parameter == "node_limit") ss >> s.m_active_node_limit;
+        else if (parameter == "duration_scale") ss >> s.m_duration_scale;
+        else if (parameter == "transition_scale") ss >> s.m_transition_scale;
+        else if (parameter == "global_beam") ss >> s.m_global_beam;
         else if (parameter == "acoustic_beam") continue;
         else if (parameter == "history_beam") continue;
-        else if (parameter == "word_end_beam") ss >> d.m_word_end_beam;
-        else if (parameter == "node_beam") ss >> d.m_node_beam;
-        else if (parameter == "word_boundary_penalty") ss >> d.m_word_boundary_penalty;
-        else if (parameter == "history_clean_frame_interval") ss >> d.m_history_clean_frame_interval;
+        else if (parameter == "word_end_beam") ss >> s.m_word_end_beam;
+        else if (parameter == "node_beam") ss >> s.m_node_beam;
+        else if (parameter == "word_boundary_penalty") ss >> s.m_word_boundary_penalty;
+        else if (parameter == "history_clean_frame_interval") ss >> s.m_history_clean_frame_interval;
         else if (parameter == "force_sentence_end") {
             string force_str;
             ss >> force_str;
-            d.m_force_sentence_end = true ? force_str == "true": false;
+            s.m_force_sentence_end = true ? force_str == "true": false;
         }
         else if (parameter == "word_boundary_symbol") {
-            d.m_use_word_boundary_symbol = true;
-            ss >> d.m_word_boundary_symbol;
-            d.m_word_boundary_symbol_idx = d.m_subword_map[d.m_word_boundary_symbol];
+            s.m_use_word_boundary_symbol = true;
+            ss >> s.m_word_boundary_symbol;
+            s.m_word_boundary_symbol_idx = s.m_subword_map[s.m_word_boundary_symbol];
         }
-        else if (parameter == "debug") ss >> d.m_debug;
-        else if (parameter == "stats") ss >> d.m_stats;
-        else if (parameter == "token_stats") ss >> d.m_token_stats;
+        else if (parameter == "debug") ss >> s.m_debug;
+        else if (parameter == "stats") ss >> s.m_stats;
+        else if (parameter == "token_stats") ss >> s.m_token_stats;
         else throw string("Unknown parameter: ") + parameter;
     }
 
@@ -81,29 +81,29 @@ int main(int argc, char* argv[])
 
     try {
 
-        Decoder d;
+        Segmenter s;
 
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
-        d.read_phone_model(phfname);
+        s.read_phone_model(phfname);
 
         if (config["duration-model"].specified) {
             string durfname = config["duration-model"].get_str();
             cerr << "Reading duration model: " << durfname << endl;
-            d.read_duration_model(durfname);
+            s.read_duration_model(durfname);
         }
 
         string lexfname = config.arguments[1];
         cerr << "Reading lexicon: " << lexfname << endl;
-        d.read_noway_lexicon(lexfname);
+        s.read_noway_lexicon(lexfname);
 
         string lmfname = config.arguments[2];
         cerr << "Reading language model: " << lmfname << endl;
-        d.read_lm(lmfname);
+        s.read_lm(lmfname);
 
         string cfgfname = config.arguments[3];
         cerr << "Reading configuration: " << cfgfname << endl;
-        read_config(d, cfgfname);
+        read_config(s, cfgfname);
 
         cerr << endl;
 
@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
             getline(reslistf, resline);
             getline(phnlistf, phnfname);
             if (!line.length()) continue;
-            cerr << endl << "scoring: " << line << endl;
+            cerr << endl << "segmenting: " << line << endl;
 
             vector<string> reswordstrs;
             stringstream ress(resline);
@@ -140,12 +140,12 @@ int main(int argc, char* argv[])
             subwordgraphbuilder::create_forced_path(dg, nodes, reswordstrs, node_labels);
             gutils::add_hmm_self_transitions(nodes);
 
-            convert_nodes_for_decoder(nodes, d.m_nodes);
-            d.set_hmm_transition_probs();
-            d.m_decode_start_node = 0;
+            convert_nodes_for_decoder(nodes, s.m_nodes);
+            s.set_hmm_transition_probs();
+            s.m_decode_start_node = 0;
 
             ofstream phnf(phnfname);
-            d.segment_lna_file(line, node_labels, phnf);
+            s.segment_lna_file(line, node_labels, phnf);
             phnf.close();
         }
         lnalistf.close();

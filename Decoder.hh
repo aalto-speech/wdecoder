@@ -48,25 +48,6 @@ public:
         std::map<int, WordHistory*> next;
     };
 
-    class StateHistory {
-    public:
-        StateHistory()
-            : hmm_state(-1), previous(nullptr),
-              start_frame(-1), end_frame(-1),
-              best_am_log_prob(-1e20) { }
-        StateHistory(int hmm_state, StateHistory *previous)
-            : hmm_state(hmm_state), previous(previous),
-              start_frame(-1), end_frame(-1),
-              best_am_log_prob(-1e20) { }
-        int hmm_state;
-        StateHistory *previous;
-        std::map<int, StateHistory*> next;
-        int start_frame;
-        int end_frame;
-        float best_am_log_prob;
-        std::string label;
-    };
-
     class Token {
     public:
         int node_idx;
@@ -77,7 +58,6 @@ public:
         int lm_node;
         int last_word_id;
         WordHistory *history;
-        StateHistory *state_history;
         unsigned short int dur;
         bool word_end;
         int histogram_bin;
@@ -91,7 +71,6 @@ public:
             lm_node(0),
             last_word_id(-1),
             history(nullptr),
-            state_history(nullptr),
             dur(0),
             word_end(false),
             histogram_bin(0)
@@ -142,9 +121,6 @@ public:
                             double *am_prob=nullptr,
                             double *lm_prob=nullptr,
                             double *total_token_count=nullptr);
-    void segment_lna_file(std::string lnafname,
-                          std::map<int, std::string> &node_labels,
-                          std::ostream &outf=std::cout);
 
     void initialize();
     void reset_frame_variables();
@@ -154,11 +130,10 @@ public:
                             int node_idx,
                             float transition_score,
                             bool update_lookahead);
-    inline float get_token_log_prob(const Token &token);
-    inline void advance_in_word_history(Token& token, int word_id);
-    inline void advance_in_state_history(Token& token);
-    inline void apply_duration_model(Token &token, int node_idx);
-    inline void update_lookahead_prob(Token &token, float lookahead_prob);
+    float get_token_log_prob(const Token &token);
+    void advance_in_word_history(Token& token, int word_id);
+    void apply_duration_model(Token &token, int node_idx);
+    void update_lookahead_prob(Token &token, float lookahead_prob);
     Token* get_best_token();
     Token get_best_token(std::vector<Token> &tokens);
     void add_sentence_ends(std::vector<Token> &tokens);
@@ -167,8 +142,7 @@ public:
     void print_word_history(WordHistory *history,
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
-    void print_phn_segmentation(StateHistory *history,
-                                std::ostream &outf=std::cout);
+
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
     float score_state_path(std::string lnafname,
                            std::string sfname,
@@ -177,9 +151,6 @@ public:
 
     void prune_word_history();
     void clear_word_history();
-
-    void prune_state_history();
-    void clear_state_history();
 
     void set_hmm_transition_probs();
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
@@ -220,12 +191,6 @@ public:
     WordHistory* m_history_root;
     std::set<WordHistory*> m_word_history_leafs;
     std::set<WordHistory*> m_active_histories;
-
-    StateHistory* m_state_history_root;
-    std::set<StateHistory*> m_state_history_leafs;
-    std::set<StateHistory*> m_active_state_histories;
-    std::map<int, std::string> m_state_history_labels;
-    bool m_state_history_labels_in_use;
 
     std::vector<Token> m_raw_tokens;
     std::set<int> m_active_nodes;
