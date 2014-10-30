@@ -134,6 +134,13 @@ int main(int argc, char* argv[])
             s.set_hmm_transition_probs();
             s.m_decode_start_node = 0;
 
+            /*
+            ofstream dotf("graph.dot");
+            s.print_dot_digraph(s.m_nodes, dotf);
+            dotf.close();
+            exit(0);
+            */
+
             ofstream phnf(phnfname);
             s.segment_lna_file(line, node_labels, phnf);
             phnf.close();
