@@ -92,13 +92,15 @@ int main(int argc, char* argv[])
     conf::Config config;
     config("usage: segment [OPTION...] PH LNALIST RESLIST PHNLIST\n")
     ('h', "help", "", "", "display help")
-    ('d', "duration-model=STRING", "arg", "", "Duration model");
+    ('d', "duration-model=STRING", "arg", "", "Duration model")
+    ('b', "global-beam=FLOAT", "arg", "100", "Global search beam, DEFAULT: 100");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
 
     try {
 
         Segmenter s;
+        s.m_global_beam = config["global-beam"].get_float();
 
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
@@ -130,12 +132,6 @@ int main(int argc, char* argv[])
             getline(phnlistf, phnfname);
             if (!line.length()) continue;
             cerr << endl << "segmenting: " << line << endl;
-
-            vector<string> reswordstrs;
-            stringstream ress(resline);
-            string tempstr;
-            while (ress >> tempstr)
-                reswordstrs.push_back(tempstr);
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;

@@ -25,7 +25,6 @@ Segmenter::initialize()
     tok.node_idx = m_decode_start_node;
     m_active_nodes.insert(m_decode_start_node);
     m_recombined_tokens[m_decode_start_node] = tok;
-    m_global_beam = 100.0;
 }
 
 
