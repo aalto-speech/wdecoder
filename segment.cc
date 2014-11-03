@@ -8,50 +8,6 @@
 using namespace std;
 
 
-void
-read_config(Segmenter &s, string cfgfname)
-{
-    ifstream cfgf(cfgfname);
-    if (!cfgf) throw string("Problem opening configuration file: ") + cfgfname;
-
-    string line;
-    while (getline(cfgf, line)) {
-        if (!line.length()) continue;
-        stringstream ss(line);
-        string parameter, val;
-        ss >> parameter;
-        if (parameter == "lm_scale") ss >> s.m_lm_scale;
-        else if (parameter == "token_limit") ss >> s.m_token_limit;
-        else if (parameter == "node_limit") ss >> s.m_active_node_limit;
-        else if (parameter == "duration_scale") ss >> s.m_duration_scale;
-        else if (parameter == "transition_scale") ss >> s.m_transition_scale;
-        else if (parameter == "global_beam") ss >> s.m_global_beam;
-        else if (parameter == "acoustic_beam") continue;
-        else if (parameter == "history_beam") continue;
-        else if (parameter == "word_end_beam") ss >> s.m_word_end_beam;
-        else if (parameter == "node_beam") ss >> s.m_node_beam;
-        else if (parameter == "word_boundary_penalty") ss >> s.m_word_boundary_penalty;
-        else if (parameter == "history_clean_frame_interval") ss >> s.m_history_clean_frame_interval;
-        else if (parameter == "force_sentence_end") {
-            string force_str;
-            ss >> force_str;
-            s.m_force_sentence_end = true ? force_str == "true": false;
-        }
-        else if (parameter == "word_boundary_symbol") {
-            s.m_use_word_boundary_symbol = true;
-            ss >> s.m_word_boundary_symbol;
-            s.m_word_boundary_symbol_idx = s.m_subword_map[s.m_word_boundary_symbol];
-        }
-        else if (parameter == "debug") ss >> s.m_debug;
-        else if (parameter == "stats") ss >> s.m_stats;
-        else if (parameter == "token_stats") ss >> s.m_token_stats;
-        else throw string("Unknown parameter: ") + parameter;
-    }
-
-    cfgf.close();
-}
-
-
 void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
                                vector<Decoder::Node> &dnodes)
 {
@@ -127,7 +83,8 @@ int main(int argc, char* argv[])
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
-            subwordgraphbuilder::create_forced_path(dg, nodes, reswordstrs, node_labels);
+            //subwordgraphbuilder::create_forced_path(dg, nodes, reswordstrs, node_labels);
+            subwordgraphbuilder::create_forced_path_2(dg, nodes, resline, node_labels);
             gutils::add_hmm_self_transitions(nodes);
 
             convert_nodes_for_decoder(nodes, s.m_nodes);
