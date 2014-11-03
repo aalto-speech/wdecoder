@@ -1,11 +1,72 @@
 #include <sstream>
 
-#include "SubwordGraphBuilder.hh"
 #include "Segmenter.hh"
 #include "gutils.hh"
 #include "conf.hh"
+#include "str.hh"
 
 using namespace std;
+using namespace gutils;
+
+
+void
+create_forced_path(DecoderGraph &dg,
+                   vector<DecoderGraph::Node> &nodes,
+                   string &sentstr,
+                   map<int, string> &node_labels)
+{
+    vector<DecoderGraph::TriphoneNode> tnodes;
+    vector<string> sentence = str::split(sentstr, " ", true);
+
+    // Create initial triphone graph
+    tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
+    for (int i=0; i<(int)sentence.size(); i++) {
+        vector<string> triphones;
+        triphonize(sentence[i], triphones);
+        for (auto tit=triphones.begin(); tit != triphones.end(); ++tit)
+            tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map[*tit]));
+        tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
+    }
+
+    // Convert to HMM states, also with optional crossword context
+    nodes.clear(); nodes.resize(1);
+    int idx = 0, crossword_start = -1;
+    string crossword_left, crossword_right, label;
+    node_labels.clear();
+
+    for (int t=0; t<(int)tnodes.size(); t++)
+        if (tnodes[t].hmm_id != -1) {
+
+            if (dg.m_hmms[tnodes[t].hmm_id].label.length() == 5 &&
+                dg.m_hmms[tnodes[t].hmm_id].label[4] == '_')
+            {
+                crossword_start = idx;
+                crossword_left = dg.m_hmms[tnodes[t].hmm_id].label;
+            }
+
+            idx = connect_triphone(dg, nodes, tnodes[t].hmm_id, idx, node_labels);
+
+            if (crossword_start != -1 &&
+                dg.m_hmms[tnodes[t].hmm_id].label.length() == 5 &&
+                dg.m_hmms[tnodes[t].hmm_id].label[0] == '_')
+            {
+                idx = connect_dummy(nodes, idx);
+
+                crossword_right = dg.m_hmms[tnodes[t].hmm_id].label;
+                crossword_left[4] = crossword_right[2];
+                crossword_right[0] = crossword_left[2];
+
+                int tmp = connect_triphone(dg, nodes, crossword_left, crossword_start, node_labels);
+                tmp = connect_triphone(dg, nodes, "_", tmp, node_labels);
+                tmp = connect_triphone(dg, nodes, crossword_right, tmp, node_labels);
+
+                nodes[tmp].arcs.insert(idx);
+            }
+
+        }
+        else
+            idx = connect_word(nodes, tnodes[t].subword_id, idx);
+}
 
 
 void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
@@ -78,7 +139,7 @@ int main(int argc, char* argv[])
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
-            subwordgraphbuilder::create_forced_path_2(dg, nodes, resline, node_labels);
+            create_forced_path(dg, nodes, resline, node_labels);
             gutils::add_hmm_self_transitions(nodes);
 
             convert_nodes_for_decoder(nodes, s.m_nodes);
