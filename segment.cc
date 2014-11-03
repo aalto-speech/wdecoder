@@ -29,11 +29,11 @@ void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: segment [OPTION...] PH LEXICON LNALIST RESLIST PHNLIST\n")
+    config("usage: segment [OPTION...] PH LNALIST RESLIST PHNLIST\n")
     ('h', "help", "", "", "display help")
     ('d', "duration-model=STRING", "arg", "", "Duration model");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 5) config.print_help(stderr, 1);
+    if (config.arguments.size() != 4) config.print_help(stderr, 1);
 
     try {
 
@@ -49,25 +49,20 @@ int main(int argc, char* argv[])
             s.read_duration_model(durfname);
         }
 
-        string lexfname = config.arguments[1];
-        cerr << "Reading lexicon: " << lexfname << endl;
-        s.read_noway_lexicon(lexfname);
-
-        string lnalistfname = config.arguments[2];
+        string lnalistfname = config.arguments[1];
         ifstream lnalistf(lnalistfname);
         string line;
 
-        string reslistfname = config.arguments[3];
+        string reslistfname = config.arguments[2];
         ifstream reslistf(reslistfname);
         string resline;
 
-        string phnlistfname = config.arguments[4];
+        string phnlistfname = config.arguments[3];
         ifstream phnlistf(phnlistfname);
         string phnfname;
 
         DecoderGraph dg;
         dg.read_phone_model(phfname);
-        dg.read_noway_lexicon(lexfname);
 
         while (getline(lnalistf, line)) {
             getline(reslistf, resline);
