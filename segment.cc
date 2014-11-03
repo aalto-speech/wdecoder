@@ -87,15 +87,27 @@ void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
 }
 
 
+void parse_recipe_line(string recipe_line,
+                       map<string, string> &recipe_vals)
+{
+    recipe_line = str::cleaned(recipe_line);
+    vector<string> recipe_fields = str::split(recipe_line, " \t", true);
+    for (auto rfit = recipe_fields.begin(); rfit != recipe_fields.end(); ++rfit) {
+        vector<string> line_vals = str::split(*rfit, "=", true);
+        recipe_vals[line_vals[0]] = line_vals[1];
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: segment [OPTION...] PH LNALIST RESLIST PHNLIST\n")
+    config("usage: segment [OPTION...] PH RECIPE\n")
     ('h', "help", "", "", "display help")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('b', "global-beam=FLOAT", "arg", "100", "Global search beam, DEFAULT: 100");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 4) config.print_help(stderr, 1);
+    if (config.arguments.size() != 2) config.print_help(stderr, 1);
 
     try {
 
@@ -112,26 +124,28 @@ int main(int argc, char* argv[])
             s.read_duration_model(durfname);
         }
 
-        string lnalistfname = config.arguments[1];
-        ifstream lnalistf(lnalistfname);
-        string line;
-
-        string reslistfname = config.arguments[2];
-        ifstream reslistf(reslistfname);
-        string resline;
-
-        string phnlistfname = config.arguments[3];
-        ifstream phnlistf(phnlistfname);
-        string phnfname;
+        string recipefname = config.arguments[1];
+        ifstream recipef(recipefname);
 
         DecoderGraph dg;
         dg.read_phone_model(phfname);
 
-        while (getline(lnalistf, line)) {
-            getline(reslistf, resline);
-            getline(phnlistf, phnfname);
-            if (!line.length()) continue;
-            cerr << endl << "segmenting: " << line << endl;
+        string recipe_line;
+        while (getline(recipef, recipe_line)) {
+            if (!recipe_line.length()) continue;
+            map<string, string> recipe_fields;
+            parse_recipe_line(recipe_line, recipe_fields);
+
+            if (recipe_fields.find("lna") == recipe_fields.end() ||
+                recipe_fields.find("text") == recipe_fields.end() ||
+                recipe_fields.find("alignment") == recipe_fields.end())
+                    throw string("Error in recipe line " + recipe_line);
+
+            cerr << endl << "segmenting: " << recipe_fields["lna"] << endl;
+
+            ifstream textf(recipe_fields["text"]);
+            string resline;
+            getline(textf, resline);
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
@@ -149,11 +163,11 @@ int main(int argc, char* argv[])
             exit(0);
             */
 
-            ofstream phnf(phnfname);
-            s.segment_lna_file(line, node_labels, phnf);
+            ofstream phnf(recipe_fields["alignment"]);
+            s.segment_lna_file(recipe_fields["lna"], node_labels, phnf);
             phnf.close();
         }
-        lnalistf.close();
+        recipef.close();
 
     } catch (string &e) {
         cerr << e << endl;
