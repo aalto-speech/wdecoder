@@ -83,7 +83,6 @@ int main(int argc, char* argv[])
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
-            //subwordgraphbuilder::create_forced_path(dg, nodes, reswordstrs, node_labels);
             subwordgraphbuilder::create_forced_path_2(dg, nodes, resline, node_labels);
             gutils::add_hmm_self_transitions(nodes);
 
