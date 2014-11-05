@@ -164,7 +164,24 @@ int main(int argc, char* argv[])
             */
 
             ofstream phnf(recipe_fields["alignment"]);
-            s.segment_lna_file(recipe_fields["lna"], node_labels, phnf);
+            float curr_beam = config["global-beam"].get_float();
+            int attempts = 0;
+            while (true) {
+                bool seg_found = s.segment_lna_file(recipe_fields["lna"], node_labels, phnf);
+                attempts++;
+                if (seg_found) {
+                    s.m_global_beam = config["global-beam"].get_float();
+                    break;
+                }
+                else if (attempts == 5) {
+                    s.m_global_beam = config["global-beam"].get_float();
+                    cerr << "giving up" << endl;
+                    break;
+                }
+                curr_beam *= 2;
+                cerr << "doubling beam to " << curr_beam << endl;
+                s.m_global_beam = curr_beam;
+            }
             phnf.close();
         }
         recipef.close();

@@ -28,7 +28,7 @@ public:
 
     void initialize();
 
-    void segment_lna_file(std::string lnafname,
+    bool segment_lna_file(std::string lnafname,
                           std::map<int, std::string> &node_labels,
                           std::ostream &outf=std::cout);
 

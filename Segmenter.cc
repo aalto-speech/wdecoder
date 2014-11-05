@@ -69,7 +69,7 @@ Segmenter::print_phn_segmentation(SToken &token,
 }
 
 
-void
+bool
 Segmenter::segment_lna_file(string lnafname,
                             map<int, string> &node_labels,
                             ostream &outf)
@@ -85,20 +85,19 @@ Segmenter::segment_lna_file(string lnafname,
         propagate_tokens();
         recombine_tokens();
         m_frame_idx++;
-//        cerr << "frame: " << m_frame_idx << ", tokens " << m_active_nodes.size() << endl;
     }
 
     SToken &best_token = m_recombined_tokens.back();
     if (best_token.node_idx == -1) {
         cerr << "warning, no segmentation found" << endl;
-        return;
+        return false;
     }
 
     advance_in_state_history(best_token);
     print_phn_segmentation(best_token, outf);
-
-    clear_word_history();
     m_lna_reader.close();
+
+    return true;
 }
 
 
