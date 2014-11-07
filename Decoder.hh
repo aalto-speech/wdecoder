@@ -231,9 +231,6 @@ public:
 
     int m_decode_start_node;
     int m_frame_idx;
-
-    int m_long_silence_loop_start_node;
-    int m_long_silence_loop_end_node;
 };
 
 #endif /* DECODER_HH */

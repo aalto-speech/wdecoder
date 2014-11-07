@@ -61,9 +61,6 @@ Decoder::Decoder()
     m_ngram_state_sentence_begin = -1;
     m_decode_start_node = -1;
     m_frame_idx = -1;
-
-    m_long_silence_loop_start_node = -1;
-    m_long_silence_loop_end_node = -1;
 }
 
 
@@ -184,11 +181,6 @@ Decoder::read_dgraph(string fname)
     }
 
     set_hmm_transition_probs();
-
-    m_long_silence_loop_start_node = m_nodes.size()-1;
-    for (auto ait = m_nodes.back().arcs.begin(); ait != m_nodes.back().arcs.end(); ++ait)
-        if (ait->target_node != START_NODE)
-            m_long_silence_loop_end_node = ait->target_node;
 }
 
 

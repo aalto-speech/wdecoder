@@ -46,9 +46,6 @@ Decoder::Lookahead::find_successor_words(int node_idx,
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         int target_node = ait->target_node;
         if (target_node == node_idx) continue;
-        if (node_idx == decoder->m_long_silence_loop_start_node
-                && target_node == decoder->m_long_silence_loop_end_node)
-            continue;
         find_successor_words(target_node, word_ids, false);
     }
 }
@@ -86,9 +83,6 @@ Decoder::Lookahead::find_predecessor_words(int node_idx,
     for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
         int target_node = ait->target_node;
         if (target_node == node_idx) continue;
-        if (node_idx == decoder->m_long_silence_loop_end_node
-            && target_node == decoder->m_long_silence_loop_start_node)
-            continue;
         find_predecessor_words(target_node, word_ids, reverse_arcs);
     }
 }
@@ -109,9 +103,6 @@ Decoder::Lookahead::detect_one_predecessor_node(int node_idx,
     for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
         int target_node = ait->target_node;
         if (target_node == node_idx) continue;
-        if (node_idx == decoder->m_long_silence_loop_end_node
-            && target_node == decoder->m_long_silence_loop_start_node)
-            continue;
         detect_one_predecessor_node(target_node, predecessor_count, reverse_arcs);
         if (predecessor_count > 1) return false;
     }
@@ -238,7 +229,6 @@ UnigramLookahead::propagate_unigram_la_score(int node_idx,
     for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
     {
         if (rait->target_node == node_idx) continue;
-        if (rait->target_node == decoder->m_long_silence_loop_start_node && node_idx == decoder->m_long_silence_loop_end_node) continue;
         if (rait->target_node == START_NODE) continue;
         propagate_unigram_la_score(rait->target_node, score, reverse_arcs, la_score_set, false);
     }
@@ -389,7 +379,6 @@ FullTableBigramLookahead::propagate_la_state_idx(int node_idx,
     {
         if (ait->target_node == node_idx) continue;
         if (ait->target_node == END_NODE) continue;
-        if (node_idx == decoder->m_long_silence_loop_start_node && ait->target_node == decoder->m_long_silence_loop_end_node) continue;
 
         if (la_state_change) {
             max_state_idx++;
@@ -550,9 +539,6 @@ PrecomputedFullTableBigramLookahead::find_preceeding_la_states(int node_idx,
     for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
         int target_node = ait->target_node;
         if (target_node == node_idx) continue;
-        if (node_idx == decoder->m_long_silence_loop_end_node
-            && target_node == decoder->m_long_silence_loop_start_node)
-            continue;
         find_preceeding_la_states(target_node, la_states, reverse_arcs, false, ait->update_lookahead);
     }
 }
@@ -578,7 +564,6 @@ PrecomputedFullTableBigramLookahead::propagate_unigram_la_score(int node_idx,
     for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
     {
         if (rait->target_node == node_idx) continue;
-        if (rait->target_node == decoder->m_long_silence_loop_start_node && node_idx == decoder->m_long_silence_loop_end_node) continue;
         propagate_unigram_la_score(rait->target_node, score, word_id,
                                    reverse_arcs, unigram_la_scores, false);
     }
@@ -954,9 +939,6 @@ PrecomputedHybridBigramLookahead::find_preceeding_la_states(int node_idx,
     for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
         int target_node = ait->target_node;
         if (target_node == node_idx) continue;
-        if (node_idx == decoder->m_long_silence_loop_end_node
-            && target_node == decoder->m_long_silence_loop_start_node)
-            continue;
         find_preceeding_la_states(target_node, la_states, reverse_arcs, false, ait->update_lookahead);
     }
 }
@@ -1026,7 +1008,6 @@ PrecomputedHybridBigramLookahead::propagate_unigram_la_score(int node_idx,
     for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
     {
         if (rait->target_node == node_idx) continue;
-        if (rait->target_node == decoder->m_long_silence_loop_start_node && node_idx == decoder->m_long_silence_loop_end_node) continue;
         propagate_unigram_la_score(rait->target_node, score, word_id,
                                    reverse_arcs, unigram_la_scores, false);
     }
@@ -1281,7 +1262,6 @@ LargeBigramLookahead::propagate_la_state_idx(int node_idx,
     {
         if (ait->target_node == node_idx) continue;
         if (ait->target_node == END_NODE) continue;
-        if (node_idx == decoder->m_long_silence_loop_start_node && ait->target_node == decoder->m_long_silence_loop_end_node) continue;
 
         if (la_state_change) {
             max_state_idx++;
@@ -1312,9 +1292,6 @@ LargeBigramLookahead::find_preceeding_la_states(int node_idx,
     for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
         int target_node = ait->target_node;
         if (target_node == node_idx) continue;
-        if (node_idx == decoder->m_long_silence_loop_end_node
-            && target_node == decoder->m_long_silence_loop_start_node)
-            continue;
         find_preceeding_la_states(target_node, la_states, reverse_arcs, false, ait->update_lookahead);
     }
 }
@@ -1372,7 +1349,6 @@ LargeBigramLookahead::propagate_unigram_la_score(int node_idx,
     for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
     {
         if (rait->target_node == node_idx) continue;
-        if (rait->target_node == decoder->m_long_silence_loop_start_node && node_idx == decoder->m_long_silence_loop_end_node) continue;
         propagate_unigram_la_score(rait->target_node, score, word_id, reverse_arcs, false);
     }
 }
@@ -1501,7 +1477,6 @@ LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
     for (auto rait = reverse_arcs[node_idx].begin(); rait != reverse_arcs[node_idx].end(); ++rait)
     {
         if (rait->target_node == node_idx) continue;
-        if (rait->target_node == decoder->m_long_silence_loop_start_node && node_idx == decoder->m_long_silence_loop_end_node) continue;
         propagate_bigram_la_scores(rait->target_node, word_id, predecessor_words,
                                    reverse_arcs, processed_la_states, false, rait->update_lookahead);
     }

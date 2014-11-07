@@ -1719,26 +1719,18 @@ void
 add_long_silence(DecoderGraph &dg,
                  std::vector<DecoderGraph::Node> &nodes)
 {
-    DecoderGraph::Node &end_node = nodes[END_NODE];
-    end_node.arcs.clear();
-
-    string long_silence("__");
-    int hmm_index = dg.m_hmm_map[long_silence];
-    //Hmm &hmm = dg.m_hmms[hmm_index];
+    nodes[END_NODE].arcs.clear();
 
     node_idx_t node_idx = END_NODE;
-    node_idx = connect_triphone(dg, nodes, hmm_index, node_idx, NODE_SILENCE);
-
-    nodes[node_idx].arcs.insert(START_NODE);
     node_idx = connect_word(dg, nodes, "</s>", node_idx);
+    node_idx = connect_triphone(dg, nodes, "__", node_idx, NODE_SILENCE);
     nodes[node_idx].arcs.insert(START_NODE);
+    nodes[node_idx-2].flags |= NODE_DECODE_START;
+    nodes[END_NODE].arcs.insert(node_idx-2);
 
-    node_idx = connect_triphone(dg, nodes, hmm_index, node_idx, NODE_SILENCE);
-    nodes[node_idx-3].flags |= NODE_DECODE_START;
+    node_idx = END_NODE;
+    node_idx = connect_triphone(dg, nodes, "_", node_idx, NODE_SILENCE);
     nodes[node_idx].arcs.insert(START_NODE);
-
-    // Long silence loop
-    nodes[node_idx].arcs.insert(node_idx-3);
 }
 
 
