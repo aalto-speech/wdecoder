@@ -1726,7 +1726,6 @@ add_long_silence(DecoderGraph &dg,
     node_idx = connect_triphone(dg, nodes, "__", node_idx, NODE_SILENCE);
     nodes[node_idx].arcs.insert(START_NODE);
     nodes[node_idx-2].flags |= NODE_DECODE_START;
-    nodes[END_NODE].arcs.insert(node_idx-2);
 
     node_idx = END_NODE;
     node_idx = connect_triphone(dg, nodes, "_", node_idx, NODE_SILENCE);
