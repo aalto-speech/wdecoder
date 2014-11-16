@@ -44,10 +44,18 @@ create_forced_path(DecoderGraph &dg,
             string right_triphone = node_labels[i+1].substr(0, 5);
             right_triphone[0] = '_';
 
-            int idx = connect_triphone(dg, nodes, left_triphone, i-4, node_labels);
-            idx = connect_triphone(dg, nodes, "_", idx, node_labels);
-            idx = connect_triphone(dg, nodes, right_triphone, idx, node_labels);
-            nodes[idx].arcs.insert(i+4);
+            int left_idx = connect_triphone(dg, nodes, left_triphone, i-4, node_labels);
+
+            if (breaking_short_silence) {
+                int idx = connect_triphone(dg, nodes, "_", left_idx, node_labels);
+                idx = connect_triphone(dg, nodes, right_triphone, idx, node_labels);
+                nodes[idx].arcs.insert(i+4);
+            }
+            if (breaking_long_silence) {
+                int idx = connect_triphone(dg, nodes, "__", left_idx, node_labels);
+                idx = connect_triphone(dg, nodes, right_triphone, idx, node_labels);
+                nodes[idx].arcs.insert(i+4);
+            }
         }
     }
 
