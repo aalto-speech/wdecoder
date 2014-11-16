@@ -47,4 +47,6 @@ public:
     std::map<int, std::string> m_state_history_labels;
     std::vector<SToken> m_raw_tokens;
     std::vector<SToken> m_recombined_tokens;
+
+    int m_decode_end_node;
 };

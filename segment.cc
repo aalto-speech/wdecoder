@@ -10,7 +10,7 @@ using namespace std;
 using namespace gutils;
 
 
-void
+int
 create_forced_path(DecoderGraph &dg,
                    vector<DecoderGraph::Node> &nodes,
                    string &sentstr,
@@ -33,6 +33,7 @@ create_forced_path(DecoderGraph &dg,
     int idx = 0;
     for (int t=0; t<(int)tnodes.size(); t++)
         idx = connect_triphone(dg, nodes, tnodes[t].hmm_id, idx, node_labels);
+    int end_idx = idx;
 
     if (breaking_short_silence || breaking_long_silence) {
         int nc = nodes.size();
@@ -59,6 +60,7 @@ create_forced_path(DecoderGraph &dg,
         }
     }
 
+    return end_idx;
 }
 
 
@@ -180,19 +182,22 @@ int main(int argc, char* argv[])
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
-            create_forced_path(dg, nodes, resline, node_labels,
-                               config["short-silence"].specified,
-                               config["long-silence"].specified);
+            int end_node_idx = create_forced_path(dg, nodes, resline, node_labels,
+                                             config["short-silence"].specified,
+                                             config["long-silence"].specified);
             gutils::add_hmm_self_transitions(nodes);
 
             convert_nodes_for_decoder(nodes, s.m_nodes);
             s.set_hmm_transition_probs();
             s.m_decode_start_node = 0;
+            s.m_decode_end_node = end_node_idx;
 
+            /*
             ofstream dotf("graph.dot");
             print_dot_digraph(s.m_nodes, dotf, node_labels);
             dotf.close();
             exit(0);
+            */
 
             ofstream phnf(recipe_fields["alignment"]);
             float curr_beam = config["global-beam"].get_float();

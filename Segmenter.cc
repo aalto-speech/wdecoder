@@ -11,6 +11,7 @@ Segmenter::Segmenter()
     m_best_word_end_prob = -1e20;
     m_transition_scale = 1.0;
     m_duration_scale = 3.0;
+    m_decode_end_node = -1;
 }
 
 
@@ -87,7 +88,7 @@ Segmenter::segment_lna_file(string lnafname,
         m_frame_idx++;
     }
 
-    SToken &best_token = m_recombined_tokens.back();
+    SToken &best_token = m_recombined_tokens[m_decode_end_node];
     if (best_token.node_idx == -1) {
         cerr << "warning, no segmentation found" << endl;
         return false;
@@ -126,7 +127,6 @@ Segmenter::move_token_to_node(SToken token,
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
         token.total_log_prob = get_token_log_prob(token);
-//        cerr << token.total_log_prob << endl;
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
