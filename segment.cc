@@ -178,7 +178,11 @@ int main(int argc, char* argv[])
 
             ifstream textf(recipe_fields["text"]);
             string resline;
-            getline(textf, resline);
+            string fileline;
+            while (getline(textf, fileline)) {
+                resline += fileline;
+                resline += "\n";
+            }
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;

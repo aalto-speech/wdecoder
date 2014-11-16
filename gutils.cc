@@ -55,7 +55,17 @@ void triphonize(string word,
                 vector<string> &triphones)
 {
     string tword = "_" + word + "_";
-    std::replace( tword.begin(), tword.end(), ' ', '_');
+    std::replace( tword.begin(), tword.end(), ' ', '_' );
+    std::replace( tword.begin(), tword.end(), '\t', '_' );
+    std::replace( tword.begin(), tword.end(), '\r', '_' );
+    std::replace( tword.begin(), tword.end(), '\n', '_' );
+
+    string::size_type pos;
+    while ( tword.find("__") != string::npos ) {
+        pos = tword.find("__");
+        tword.replace( pos, 2, "_" );
+    }
+
     triphones.clear();
     for (unsigned int i = 1; i < tword.length() - 1; i++) {
         stringstream tstring;
