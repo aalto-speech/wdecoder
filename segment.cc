@@ -1,4 +1,5 @@
 #include <sstream>
+#include <string>
 
 #include "Segmenter.hh"
 #include "gutils.hh"
@@ -13,59 +14,43 @@ void
 create_forced_path(DecoderGraph &dg,
                    vector<DecoderGraph::Node> &nodes,
                    string &sentstr,
-                   map<int, string> &node_labels)
+                   map<int, string> &node_labels,
+                   bool breaking_short_silence,
+                   bool breaking_long_silence)
 {
     vector<DecoderGraph::TriphoneNode> tnodes;
-    vector<string> sentence = str::split(sentstr, " ", true);
 
-    // Create initial triphone graph
+    // Create initial triphone graph only with crossword context
     tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
-    for (int i=0; i<(int)sentence.size(); i++) {
-        vector<string> triphones;
-        triphonize(sentence[i], triphones);
-        for (auto tit=triphones.begin(); tit != triphones.end(); ++tit)
-            tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map[*tit]));
-        tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
+    vector<string> triphones;
+    triphonize(sentstr, triphones);
+    for (auto tit=triphones.begin(); tit != triphones.end(); ++tit)
+        tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map[*tit]));
+    tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
+
+    nodes.clear(); nodes.resize(1);
+    node_labels.clear();
+    int idx = 0;
+    for (int t=0; t<(int)tnodes.size(); t++)
+        idx = connect_triphone(dg, nodes, tnodes[t].hmm_id, idx, node_labels);
+
+    if (breaking_short_silence || breaking_long_silence) {
+        int nc = nodes.size();
+        for (int i=0; i<nc; i++) {
+            if (node_labels.find(i) == node_labels.end() || node_labels[i] != "_.0") continue;
+
+            string left_triphone = node_labels[i-1].substr(0, 5);
+            left_triphone[4] = '_';
+            string right_triphone = node_labels[i+1].substr(0, 5);
+            right_triphone[0] = '_';
+
+            int idx = connect_triphone(dg, nodes, left_triphone, i-4, node_labels);
+            idx = connect_triphone(dg, nodes, "_", idx, node_labels);
+            idx = connect_triphone(dg, nodes, right_triphone, idx, node_labels);
+            nodes[idx].arcs.insert(i+4);
+        }
     }
 
-    // Convert to HMM states, also with optional crossword context
-    nodes.clear(); nodes.resize(1);
-    int idx = 0, crossword_start = -1;
-    string crossword_left, crossword_right, label;
-    node_labels.clear();
-
-    for (int t=0; t<(int)tnodes.size(); t++)
-        if (tnodes[t].hmm_id != -1) {
-
-            if (dg.m_hmms[tnodes[t].hmm_id].label.length() == 5 &&
-                dg.m_hmms[tnodes[t].hmm_id].label[4] == '_')
-            {
-                crossword_start = idx;
-                crossword_left = dg.m_hmms[tnodes[t].hmm_id].label;
-            }
-
-            idx = connect_triphone(dg, nodes, tnodes[t].hmm_id, idx, node_labels);
-
-            if (crossword_start != -1 &&
-                dg.m_hmms[tnodes[t].hmm_id].label.length() == 5 &&
-                dg.m_hmms[tnodes[t].hmm_id].label[0] == '_')
-            {
-                idx = connect_dummy(nodes, idx);
-
-                crossword_right = dg.m_hmms[tnodes[t].hmm_id].label;
-                crossword_left[4] = crossword_right[2];
-                crossword_right[0] = crossword_left[2];
-
-                int tmp = connect_triphone(dg, nodes, crossword_left, crossword_start, node_labels);
-                tmp = connect_triphone(dg, nodes, "_", tmp, node_labels);
-                tmp = connect_triphone(dg, nodes, crossword_right, tmp, node_labels);
-
-                nodes[tmp].arcs.insert(idx);
-            }
-
-        }
-        else
-            idx = connect_word(nodes, tnodes[t].subword_id, idx);
 }
 
 
@@ -99,11 +84,49 @@ void parse_recipe_line(string recipe_line,
 }
 
 
+void
+print_dot_digraph(vector<Decoder::Node> &nodes,
+                  ostream &fstr,
+                  map<int, string> node_labels)
+{
+    fstr << "digraph {" << endl << endl;
+    fstr << "\tnode [shape=ellipse,fontsize=30,fixedsize=false,width=0.95];" << endl;
+    fstr << "\tedge [fontsize=12];" << endl;
+    fstr << "\trankdir=LR;" << endl << endl;
+
+    for (unsigned int nidx = 0; nidx < nodes.size(); ++nidx) {
+        Decoder::Node &nd = nodes[nidx];
+        fstr << "\t" << nidx;
+        if (nd.hmm_state != -1) {
+            fstr << " [label=\"" << nidx << ":" << nd.hmm_state;
+            if (node_labels.find(nidx) != node_labels.end())
+                fstr << ", " << node_labels[nidx] << "\"]" << endl;
+            else
+                fstr << "\"]" << endl;
+        }
+        else
+            fstr << " [label=\"" << nidx << ":dummy\"]" << endl;
+    }
+
+    fstr << endl;
+    for (unsigned int nidx = 0; nidx < nodes.size(); ++nidx) {
+        Decoder::Node &node = nodes[nidx];
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+            fstr << "\t" << nidx << " -> " << ait->target_node
+                 << "[label=\"" << ait->log_prob << "\"];" << endl;
+    }
+    fstr << "}" << endl;
+}
+
+
+
 int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: segment [OPTION...] PH RECIPE\n")
     ('h', "help", "", "", "display help")
+    ('l', "long-silence", "", "", "Enable breaking long silence path between words")
+    ('s', "short-silence", "", "", "Enable breaking short silence path between words")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('b', "global-beam=FLOAT", "arg", "100", "Global search beam, DEFAULT: 100");
     config.default_parse(argc, argv);
@@ -149,19 +172,19 @@ int main(int argc, char* argv[])
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
-            create_forced_path(dg, nodes, resline, node_labels);
+            create_forced_path(dg, nodes, resline, node_labels,
+                               config["short-silence"].specified,
+                               config["long-silence"].specified);
             gutils::add_hmm_self_transitions(nodes);
 
             convert_nodes_for_decoder(nodes, s.m_nodes);
             s.set_hmm_transition_probs();
             s.m_decode_start_node = 0;
 
-            /*
             ofstream dotf("graph.dot");
-            s.print_dot_digraph(s.m_nodes, dotf);
+            print_dot_digraph(s.m_nodes, dotf, node_labels);
             dotf.close();
             exit(0);
-            */
 
             ofstream phnf(recipe_fields["alignment"]);
             float curr_beam = config["global-beam"].get_float();

@@ -1,5 +1,6 @@
 #include <cassert>
 #include <sstream>
+#include <algorithm>
 
 #include "gutils.hh"
 
@@ -51,8 +52,10 @@ read_word_segmentations(DecoderGraph &dg,
 
 
 void triphonize(string word,
-                vector<string> &triphones) {
+                vector<string> &triphones)
+{
     string tword = "_" + word + "_";
+    std::replace( tword.begin(), tword.end(), ' ', '_');
     triphones.clear();
     for (unsigned int i = 1; i < tword.length() - 1; i++) {
         stringstream tstring;
