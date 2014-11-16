@@ -39,8 +39,7 @@ public:
 
     void move_token_to_node(SToken token,
                             int node_idx,
-                            float transition_score,
-                            bool update_lookahead);
+                            float transition_score);
     void propagate_tokens();
     void recombine_tokens();
 
