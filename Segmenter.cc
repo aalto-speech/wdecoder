@@ -34,15 +34,9 @@ Segmenter::initialize()
 void
 Segmenter::advance_in_state_history(SToken &token)
 {
-    int node_idx = token.node_idx;
-    int hmm_state = m_nodes[node_idx].hmm_state;
-
-    StateHistory sh(hmm_state);
+    StateHistory sh(token.node_idx);
     sh.end_frame = m_frame_idx;
     sh.start_frame = m_frame_idx-token.dur;
-    if (m_state_history_labels.find(node_idx) != m_state_history_labels.end())
-        sh.label = m_state_history_labels[node_idx];
-
     token.state_history.push_back(sh);
 }
 
@@ -55,15 +49,16 @@ Segmenter::print_phn_segmentation(SToken &token,
     for (auto sit = token.state_history.begin(); sit != token.state_history.end(); ++sit)
     {
         StateHistory &sh = *sit;
+        string label = m_state_history_labels[sh.node_idx];
 
-        if (sh.label.length() > 0) {
+        if (label.length() > 0) {
             int start_sample = round(float(sh.start_frame) * 16000.0 / 125.0);
             int end_sample = round(float(sh.end_frame) * 16000.0 / 125.0);
             string segline = to_string(start_sample)
                              + " "
                              + to_string(end_sample)
                              + " "
-                             + sh.label;
+                             + label;
             outf << segline << endl;
         }
     }

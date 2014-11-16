@@ -9,15 +9,14 @@ public:
     class StateHistory {
     public:
         StateHistory()
-            : hmm_state(-1),
+            : node_idx(-1),
               start_frame(-1), end_frame(-1) { }
-        StateHistory(int hmm_state)
-            : hmm_state(hmm_state),
+        StateHistory(int node_idx)
+            : node_idx(node_idx),
               start_frame(-1), end_frame(-1) { }
-        int hmm_state;
+        int node_idx;
         int start_frame;
         int end_frame;
-        std::string label;
     };
 
     class SToken : public Token {
