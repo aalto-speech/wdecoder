@@ -48,7 +48,7 @@ fix_noway_lexicon(DecoderGraph &dg,
             continue;
         }
         else
-            outlexf << line;
+            outlexf << line << endl;
     }
 }
 
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     config("usage: cleanlex PH LEXIN LEXOUT\n")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 4) config.print_help(stderr, 1);
+    if (config.arguments.size() != 3) config.print_help(stderr, 1);
 
     DecoderGraph dg;
     string phfname = config.arguments[0];
