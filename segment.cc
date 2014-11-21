@@ -139,6 +139,7 @@ int main(int argc, char* argv[])
     ('s', "short-silence", "", "", "Enable breaking short silence path between words")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('b', "global-beam=FLOAT", "arg", "100", "Global search beam, DEFAULT: 100")
+    ('t', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
     ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 2) config.print_help(stderr, 1);
@@ -147,6 +148,7 @@ int main(int argc, char* argv[])
 
         Segmenter s;
         s.m_global_beam = config["global-beam"].get_float();
+        s.m_token_limit = config["max-tokens"].get_int();
         s.m_debug = config["info"].get_int();
 
         string phfname = config.arguments[0];

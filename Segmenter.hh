@@ -39,6 +39,7 @@ public:
     void move_token_to_node(SToken token,
                             int node_idx,
                             float transition_score);
+    void active_nodes_sorted_by_lp(std::vector<int> &nodes);
     void propagate_tokens();
     void recombine_tokens();
 

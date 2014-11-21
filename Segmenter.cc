@@ -1,4 +1,5 @@
 #include <cmath>
+#include <algorithm>
 
 #include "Segmenter.hh"
 
@@ -137,12 +138,34 @@ Segmenter::move_token_to_node(SToken token,
 }
 
 
+bool descending_node_sort_5(const pair<int, float> &i, const pair<int, float> &j)
+{
+    return (i.second > j.second);
+}
+
+void
+Segmenter::active_nodes_sorted_by_lp(vector<int> &nodes)
+{
+    nodes.clear();
+    vector<pair<int, float> > sorted_nodes;
+    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit)
+        sorted_nodes.push_back(make_pair(*nit, m_recombined_tokens[*nit].total_log_prob));
+    sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_sort_5);
+    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
+        nodes.push_back(snit->first);
+}
+
+
 void
 Segmenter::propagate_tokens()
 {
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
-        Node &node = m_nodes[*nit];
-        SToken &tok = m_recombined_tokens[*nit];
+    vector<int> sorted_nodes;
+    active_nodes_sorted_by_lp(sorted_nodes);
+
+    for (int i=0; i<m_token_limit && i<sorted_nodes.size(); i++) {
+        int node_idx = sorted_nodes[i];
+        Node &node = m_nodes[node_idx];
+        SToken &tok = m_recombined_tokens[node_idx];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             move_token_to_node(tok, ait->target_node, ait->log_prob);
     }
