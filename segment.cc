@@ -64,6 +64,32 @@ create_forced_path(DecoderGraph &dg,
 }
 
 
+int
+parse_transcript_phn(DecoderGraph &dg,
+                     vector<DecoderGraph::Node> &nodes,
+                     string phnfname,
+                     map<int, string> &node_labels)
+{
+    ifstream phnf(phnfname);
+
+    nodes.clear(); nodes.resize(1);
+    node_labels.clear();
+    int idx = 0;
+
+    string phn_line;
+    while (getline(phnf, phn_line)) {
+        phn_line = str::cleaned(phn_line);
+        vector<string> parts = str::split(phn_line, " \t", true);
+        if (parts.size() != 3) throw string("Invalid phn line: ") + phn_line;
+        if (parts[2].find(".0") == string::npos) continue;
+        string phone = parts[2].substr(0, parts[2].size()-2);
+        idx = connect_triphone(dg, nodes, phone, idx, node_labels);
+    }
+
+    return idx;
+}
+
+
 void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
                                vector<Decoder::Node> &dnodes)
 {
@@ -135,11 +161,12 @@ int main(int argc, char* argv[])
     conf::Config config;
     config("usage: segment [OPTION...] PH RECIPE\n")
     ('h', "help", "", "", "display help")
+    ('t', "text-field", "", "", "Create alignment from text field containing phonetic text")
     ('l', "long-silence", "", "", "Enable breaking long silence path between words")
     ('s', "short-silence", "", "", "Enable breaking short silence path between words")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('b', "global-beam=FLOAT", "arg", "100", "Global search beam, DEFAULT: 100")
-    ('t', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
+    ('m', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
     ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 2) config.print_help(stderr, 1);
@@ -150,6 +177,10 @@ int main(int argc, char* argv[])
         s.m_global_beam = config["global-beam"].get_float();
         s.m_token_limit = config["max-tokens"].get_int();
         s.m_debug = config["info"].get_int();
+
+        if (!config["text-field"].specified &&
+            (config["long-silence"].specified || config["short-silence"].specified))
+               throw string("Silence options are only usable with text-field switch");
 
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
@@ -174,27 +205,43 @@ int main(int argc, char* argv[])
             parse_recipe_line(recipe_line, recipe_fields);
 
             if (recipe_fields.find("lna") == recipe_fields.end() ||
-                recipe_fields.find("text") == recipe_fields.end() ||
                 recipe_fields.find("alignment") == recipe_fields.end())
                     throw string("Error in recipe line " + recipe_line);
 
-            cerr << endl << "segmenting: " << recipe_fields["lna"] << endl;
-
-            ifstream textf(recipe_fields["text"]);
-            string resline;
-            string fileline;
-            while (getline(textf, fileline)) {
-                resline += fileline;
-                resline += "\n";
+            if (config["text-field"].specified) {
+                if (recipe_fields.find("text") == recipe_fields.end())
+                    throw string("Error in recipe line " + recipe_line);
             }
+            else {
+                if (recipe_fields.find("transcript") == recipe_fields.end())
+                    throw string("Error in recipe line " + recipe_line);
+            }
+
+            cerr << endl << "segmenting: " << recipe_fields["lna"] << endl;
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
-            int end_node_idx = create_forced_path(dg, nodes, resline, node_labels,
-                                             config["short-silence"].specified,
-                                             config["long-silence"].specified);
-            gutils::add_hmm_self_transitions(nodes);
+            int end_node_idx;
 
+            if (config["text-field"].specified) {
+                ifstream textf(recipe_fields["text"]);
+                string resline;
+                string fileline;
+                while (getline(textf, fileline)) {
+                    resline += fileline;
+                    resline += "\n";
+                }
+                end_node_idx = create_forced_path(dg, nodes, resline, node_labels,
+                                                  config["short-silence"].specified,
+                                                  config["long-silence"].specified);
+            }
+            else {
+                end_node_idx = parse_transcript_phn(dg, nodes,
+                                                    recipe_fields["transcript"],
+                                                    node_labels);
+            }
+
+            gutils::add_hmm_self_transitions(nodes);
             convert_nodes_for_decoder(nodes, s.m_nodes);
             s.set_hmm_transition_probs();
             s.m_decode_start_node = 0;
