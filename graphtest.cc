@@ -49,7 +49,7 @@ void graphtest::make_graph(DecoderGraph &dg,
 
 
 // Test tying state chain prefixes
-void graphtest::GraphTest4(void)
+void graphtest::GraphTest1(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
@@ -66,7 +66,7 @@ void graphtest::GraphTest4(void)
 
 
 // Verify adding self transitions and transition probabilities to states
-void graphtest::GraphTest5(void)
+void graphtest::GraphTest2(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
@@ -88,7 +88,7 @@ void graphtest::GraphTest5(void)
 
 
 // Test pruning non-reachable nodes and reindexing nodes
-void graphtest::GraphTest6(void)
+void graphtest::GraphTest3(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
@@ -111,7 +111,7 @@ void graphtest::GraphTest6(void)
 
 
 // Test pushing subword ids to the leftmost possible position
-void graphtest::GraphTest7(void)
+void graphtest::GraphTest4(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
@@ -141,7 +141,7 @@ void graphtest::GraphTest7(void)
 
 
 // Test some subword id push problem
-void graphtest::GraphTest8(void)
+void graphtest::GraphTest5(void)
 {
     DecoderGraph dg;
     segname = "data/push_problem.segs";
@@ -178,7 +178,7 @@ void graphtest::GraphTest8(void)
 
 
 // Test some pathological cases
-void graphtest::GraphTest9(void)
+void graphtest::GraphTest6(void)
 {
     DecoderGraph dg;
     segname = "data/segs2.txt";
@@ -209,7 +209,7 @@ void graphtest::GraphTest9(void)
 
 
 // Test triphonization with lexicon
-void graphtest::GraphTest10(void)
+void graphtest::GraphTest7(void)
 {
     DecoderGraph dg;
     segname = "data/segs3.txt";
@@ -229,7 +229,7 @@ void graphtest::GraphTest10(void)
 
 
 // Test some state suffix tying problem
-void graphtest::GraphTest11(void)
+void graphtest::GraphTest8(void)
 {
     DecoderGraph dg;
     segname = "data/suffix_problem.segs";
@@ -253,7 +253,7 @@ void graphtest::GraphTest11(void)
 
 
 // Test cross-word network creation and connecting, very simple case
-void graphtest::GraphTest12(void)
+void graphtest::GraphTest9(void)
 {
     DecoderGraph dg;
     segname = "data/cw_simpler.segs";
@@ -281,7 +281,7 @@ void graphtest::GraphTest12(void)
 
 
 // Test cross-word network creation and connecting, another simple case
-void graphtest::GraphTest13(void)
+void graphtest::GraphTest10(void)
 {
     DecoderGraph dg;
     segname = "data/cw_simple.segs";
@@ -309,7 +309,7 @@ void graphtest::GraphTest13(void)
 
 
 // Test cross-word network creation and connecting, easy case
-void graphtest::GraphTest14(void)
+void graphtest::GraphTest11(void)
 {
     DecoderGraph dg;
     segname = "data/segs.txt";
@@ -338,7 +338,7 @@ void graphtest::GraphTest14(void)
 
 // Test cross-word network creation and connecting
 // 2 phone words and other special cases
-void graphtest::GraphTest15(void)
+void graphtest::GraphTest12(void)
 {
     DecoderGraph dg;
     segname = "data/segs2.txt";
@@ -368,7 +368,7 @@ void graphtest::GraphTest15(void)
 // Test cross-word network creation and connecting
 // Normal cases
 // Tie prefixes and suffixes after connecting cw network
-void graphtest::GraphTest16(void)
+void graphtest::GraphTest13(void)
 {
     DecoderGraph dg;
     segname = "data/cw_simple.segs";
@@ -414,7 +414,7 @@ void graphtest::GraphTest16(void)
 // Test cross-word network creation and connecting
 // Tie prefixes and suffixes after connecting cw network
 // Some problem cases, 4 phone words segmented to 2 phones + 2 phones
-void graphtest::GraphTest17(void)
+void graphtest::GraphTest14(void)
 {
     DecoderGraph dg;
     segname = "data/cw_problem.segs";
@@ -443,7 +443,7 @@ void graphtest::GraphTest17(void)
 
 // Test cross-word network creation and connecting
 // Problem in tying prefixes
-void graphtest::GraphTest18(void)
+void graphtest::GraphTest15(void)
 {
     DecoderGraph dg;
     segname = "data/prefix_tie_problem.segs";
@@ -476,7 +476,7 @@ void graphtest::GraphTest18(void)
 
 
 // Verify that only true suffixes are tied | NOTE: for subword-triphone-phone builder
-void graphtest::GraphTest19(void)
+void graphtest::GraphTest16(void)
 {
     DecoderGraph dg;
     segname = "data/subword_tie_only_real_suffix.segs";
@@ -494,7 +494,7 @@ void graphtest::GraphTest19(void)
 
 
 // Problem in expanding subwords to states | NOTE: for subword-triphone-phone builder
-void graphtest::GraphTest20(void)
+void graphtest::GraphTest17(void)
 {
     DecoderGraph dg;
     segname = "data/subword_tie_expand_problem.segs";
@@ -512,7 +512,7 @@ void graphtest::GraphTest20(void)
 
 
 // Some issue tie + expand | NOTE: for subword-triphone-phone builder
-void graphtest::GraphTest21(void)
+void graphtest::GraphTest18(void)
 {
     DecoderGraph dg;
     segname = "data/subword_tie_expand_problem_2.segs";
@@ -530,7 +530,7 @@ void graphtest::GraphTest21(void)
 
 
 // Extra check for some prefix tying special case
-void graphtest::GraphTest22(void)
+void graphtest::GraphTest19(void)
 {
     DecoderGraph dg;
     segname = "data/prefix_tie_problem_2.segs";
@@ -565,7 +565,7 @@ void graphtest::GraphTest22(void)
 
 
 // Some problem with duplicate word ids
-void graphtest::GraphTest23(void)
+void graphtest::GraphTest20(void)
 {
     DecoderGraph dg;
     segname = "data/duplicate2.segs";
@@ -609,7 +609,7 @@ void graphtest::GraphTest23(void)
 
 
 // Some problem with duplicate word ids
-void graphtest::GraphTest24(void)
+void graphtest::GraphTest21(void)
 {
     DecoderGraph dg;
     segname = "data/au.segs";
@@ -649,7 +649,7 @@ void graphtest::GraphTest24(void)
 
 // Test cross-word network creation and connecting
 // More like a real scenario with 500 words with all tying etc.
-void graphtest::GraphTest26(void)
+void graphtest::GraphTest22(void)
 {
     DecoderGraph dg;
     segname = "data/500.segs";
@@ -703,8 +703,8 @@ void graphtest::GraphTest26(void)
 }
 
 
-// Test the tying problem with the alternative graph construction
-void graphtest::GraphTest27(void)
+// Test a tying problem
+void graphtest::GraphTest23(void)
 {
     DecoderGraph dg;
     segname = "data/auto.segs";
@@ -750,7 +750,7 @@ void graphtest::GraphTest27(void)
 // Test cross-word network creation and connecting
 // More like a real scenario with 500 words with all tying etc.
 // Print out some numbers
-void graphtest::GraphTest28(void)
+void graphtest::GraphTest24(void)
 {
     DecoderGraph dg;
     segname = "data/bg.segs";
@@ -797,5 +797,5 @@ void graphtest::GraphTest28(void)
 
 
 // ofstream origoutf("cw_simple.dot");
-// dg.print_dot_digraph(nodes, origoutf);
+// print_dot_digraph(dg, nodes, origoutf);
 // origoutf.close();

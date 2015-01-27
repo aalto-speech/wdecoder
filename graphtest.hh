@@ -13,6 +13,9 @@
 class graphtest : public CPPUNIT_NS :: TestFixture
 {
     CPPUNIT_TEST_SUITE (graphtest);
+    CPPUNIT_TEST (GraphTest1);
+    CPPUNIT_TEST (GraphTest2);
+    CPPUNIT_TEST (GraphTest3);
     CPPUNIT_TEST (GraphTest4);
     CPPUNIT_TEST (GraphTest5);
     CPPUNIT_TEST (GraphTest6);
@@ -34,9 +37,6 @@ class graphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (GraphTest22);
     CPPUNIT_TEST (GraphTest23);
     CPPUNIT_TEST (GraphTest24);
-    CPPUNIT_TEST (GraphTest26);
-    CPPUNIT_TEST (GraphTest27);
-    CPPUNIT_TEST (GraphTest28);
     CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -44,6 +44,9 @@ public:
     void tearDown(void);
 
 protected:
+    void GraphTest1(void);
+    void GraphTest2(void);
+    void GraphTest3(void);
     void GraphTest4(void);
     void GraphTest5(void);
     void GraphTest6(void);
@@ -65,9 +68,6 @@ protected:
     void GraphTest22(void);
     void GraphTest23(void);
     void GraphTest24(void);
-    void GraphTest26(void);
-    void GraphTest27(void);
-    void GraphTest28(void);
 
 private:
 
