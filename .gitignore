@@ -7,6 +7,8 @@ swgraph2
 swwgraph
 lastates
 runtests
+cleanlex
+segment
 .project
 .cproject
 .settings
@@ -19,3 +21,4 @@ speechdat
 swsw
 words
 aaltoasr
+cmd.txt
