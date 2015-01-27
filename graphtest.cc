@@ -338,63 +338,56 @@ void graphtest::GraphTest14(void)
 
 // Test cross-word network creation and connecting
 // 2 phone words and other special cases
-/*
 void graphtest::GraphTest15(void)
 {
     DecoderGraph dg;
     segname = "data/segs2.txt";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 67, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 62, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder1::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder1::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
-    CPPUNIT_ASSERT_EQUAL( 201, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 196, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
-*/
 
 
 // Test cross-word network creation and connecting
 // Normal cases
 // Tie prefixes and suffixes after connecting cw network
-/*
 void graphtest::GraphTest16(void)
 {
     DecoderGraph dg;
     segname = "data/cw_simple.segs";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 80, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 65, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder1::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder1::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
-    CPPUNIT_ASSERT_EQUAL( 127, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 112, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
 
@@ -402,8 +395,7 @@ void graphtest::GraphTest16(void)
     CPPUNIT_ASSERT( assert_subword_ids_right(dg, nodes));
 
     tie_state_prefixes(nodes, false);
-    CPPUNIT_ASSERT_EQUAL( 110, (int)reachable_graph_nodes(nodes) );
-    //CPPUNIT_ASSERT( assert_prefix_state_tying(dg, nodes) );
+    CPPUNIT_ASSERT_EQUAL( 108, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
 
     push_word_ids_left(nodes);
@@ -411,13 +403,12 @@ void graphtest::GraphTest16(void)
     tie_state_suffixes(nodes);
 
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 98, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 96, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
-*/
 
 
 // Test cross-word network creation and connecting
