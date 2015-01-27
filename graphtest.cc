@@ -281,67 +281,59 @@ void graphtest::GraphTest12(void)
 
 
 // Test cross-word network creation and connecting, another simple case
-/*
 void graphtest::GraphTest13(void)
 {
     DecoderGraph dg;
     segname = "data/cw_simple.segs";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 80, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 65, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder1::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder1::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
-    CPPUNIT_ASSERT_EQUAL( 127, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 112, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
-*/
 
 
 // Test cross-word network creation and connecting, easy case
-/*
 void graphtest::GraphTest14(void)
 {
     DecoderGraph dg;
     segname = "data/segs.txt";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 182, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 149, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder1::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder1::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
-    CPPUNIT_ASSERT_EQUAL( 365, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 332, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
-*/
 
 
 // Test cross-word network creation and connecting
