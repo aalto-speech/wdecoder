@@ -111,52 +111,45 @@ void graphtest::GraphTest6(void)
 
 
 // Test pushing subword ids to the leftmost possible position
-/*
 void graphtest::GraphTest7(void)
 {
     DecoderGraph dg;
-    //segname = "data/iter111_35000.train.segs2";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
-    CPPUNIT_ASSERT_EQUAL( 182, (int)reachable_graph_nodes(nodes) );
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
+    CPPUNIT_ASSERT_EQUAL( 149, (int)reachable_graph_nodes(nodes) );
 
     tie_state_prefixes(nodes, false);
     prune_unreachable_nodes(nodes);
     tie_state_suffixes(nodes);
     prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 136, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 137, (int)reachable_graph_nodes(nodes) );
 
     push_word_ids_left(nodes);
     prune_unreachable_nodes(nodes);
 
-    CPPUNIT_ASSERT_EQUAL( 136, (int)reachable_graph_nodes(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 136, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 137, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 137, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes, false) );
 }
-*/
+
 
 // Test some subword id push problem
-/*
 void graphtest::GraphTest8(void)
 {
     DecoderGraph dg;
     segname = "data/push_problem.segs";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
 
@@ -173,30 +166,27 @@ void graphtest::GraphTest8(void)
     prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT_EQUAL( 4, num_subword_states(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 5, num_subword_states(nodes) );
 
     push_word_ids_left(nodes);
-    CPPUNIT_ASSERT_EQUAL( 4, num_subword_states(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 5, num_subword_states(nodes) );
     CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes, true) );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
 }
-*/
+
 
 // Test some pathological cases
-/*
 void graphtest::GraphTest9(void)
 {
     DecoderGraph dg;
     segname = "data/segs2.txt";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
 
@@ -216,7 +206,7 @@ void graphtest::GraphTest9(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
 }
-*/
+
 
 // Test triphonization with lexicon
 /*

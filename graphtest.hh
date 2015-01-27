@@ -16,9 +16,9 @@ class graphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (GraphTest4);
     CPPUNIT_TEST (GraphTest5);
     CPPUNIT_TEST (GraphTest6);
-//    CPPUNIT_TEST (GraphTest7);
-//    CPPUNIT_TEST (GraphTest8);
-//    CPPUNIT_TEST (GraphTest9);
+    CPPUNIT_TEST (GraphTest7);
+    CPPUNIT_TEST (GraphTest8);
+    CPPUNIT_TEST (GraphTest9);
 //    CPPUNIT_TEST (GraphTest10);
 //    CPPUNIT_TEST (GraphTest11);
 //    CPPUNIT_TEST (GraphTest12);
@@ -48,9 +48,9 @@ protected:
     void GraphTest4(void);
     void GraphTest5(void);
     void GraphTest6(void);
-//    void GraphTest7(void);
-//    void GraphTest8(void);
-//    void GraphTest9(void);
+    void GraphTest7(void);
+    void GraphTest8(void);
+    void GraphTest9(void);
 //    void GraphTest10(void);
 //    void GraphTest11(void);
 //    void GraphTest12(void);
