@@ -8,7 +8,7 @@ cxxflags = -O3 -march=native -DNDEBUG -std=gnu++0x -Wall
 progs = wgraph swwgraph swgraph decode score segment lastates cleanlex
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
-srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc gutils.cc GraphBuilder2.cc SubwordGraphBuilder.cc WordGraphBuilder.cc LnaReaderCircular.cc Decoder.cc Segmenter.cc Lookahead.cc 
+srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc gutils.cc GraphBuilder.cc SubwordGraphBuilder.cc WordGraphBuilder.cc LnaReaderCircular.cc Decoder.cc Segmenter.cc Lookahead.cc 
 objs = $(srcs:.cc=.o)
 
 test_progs = runtests

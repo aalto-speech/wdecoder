@@ -3,7 +3,7 @@
 #include "conf.hh"
 #include "gutils.hh"
 #include "WordGraphBuilder.hh"
-#include "GraphBuilder2.hh"
+#include "GraphBuilder.hh"
 
 using namespace std;
 using namespace gutils;
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
         cerr << "tied crossword network size: " << cw_nodes.size() << endl;
 
         cerr << "Connecting crossword network.." << endl;
-        graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+        graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
         connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 

@@ -9,7 +9,7 @@
 #include "DecoderGraph.hh"
 
 
-namespace graphbuilder2 {
+namespace graphbuilder {
 
 void create_crossword_network(DecoderGraph &dg,
                               std::map<std::string, std::vector<std::string> > &word_segs,

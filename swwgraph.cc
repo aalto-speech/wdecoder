@@ -1,11 +1,11 @@
 
 #include "conf.hh"
 #include "gutils.hh"
-#include "GraphBuilder2.hh"
+#include "GraphBuilder.hh"
 
 using namespace std;
 using namespace gutils;
-using namespace graphbuilder2;
+using namespace graphbuilder;
 
 
 int main(int argc, char* argv[])

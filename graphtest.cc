@@ -1,7 +1,7 @@
 
 #include "graphtest.hh"
 #include "gutils.hh"
-#include "GraphBuilder2.hh"
+#include "GraphBuilder.hh"
 
 
 using namespace std;
@@ -268,8 +268,8 @@ void graphtest::GraphTest12(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 66, (int)reachable_graph_nodes(nodes) );
@@ -296,8 +296,8 @@ void graphtest::GraphTest13(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 112, (int)reachable_graph_nodes(nodes) );
@@ -324,8 +324,8 @@ void graphtest::GraphTest14(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 332, (int)reachable_graph_nodes(nodes) );
@@ -353,8 +353,8 @@ void graphtest::GraphTest15(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 196, (int)reachable_graph_nodes(nodes) );
@@ -383,8 +383,8 @@ void graphtest::GraphTest16(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 112, (int)reachable_graph_nodes(nodes) );
@@ -429,8 +429,8 @@ void graphtest::GraphTest17(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 47, (int)reachable_graph_nodes(nodes) );
@@ -456,8 +456,8 @@ void graphtest::GraphTest18(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     push_word_ids_right(nodes);
@@ -543,8 +543,8 @@ void graphtest::GraphTest22(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
@@ -578,8 +578,8 @@ void graphtest::GraphTest23(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
@@ -622,8 +622,8 @@ void graphtest::GraphTest24(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     push_word_ids_left(nodes);
@@ -670,8 +670,8 @@ void graphtest::GraphTest26(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
     connect_end_to_start_node(nodes);
     cerr << "crossword network added, number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
@@ -723,8 +723,8 @@ void graphtest::GraphTest27(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
     connect_end_to_start_node(nodes);
 
     tie_state_prefixes(nodes);
@@ -764,8 +764,8 @@ void graphtest::GraphTest28(void)
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
     cerr << "crossword network added, number of nodes: " << reachable_graph_nodes(nodes) << endl;
 

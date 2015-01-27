@@ -6,7 +6,7 @@ using namespace std;
 using namespace gutils;
 
 
-namespace graphbuilder2 {
+namespace graphbuilder {
 
 
 void
