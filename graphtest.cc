@@ -414,26 +414,23 @@ void graphtest::GraphTest16(void)
 // Test cross-word network creation and connecting
 // Tie prefixes and suffixes after connecting cw network
 // Some problem cases, 4 phone words segmented to 2 phones + 2 phones
-/*
 void graphtest::GraphTest17(void)
 {
     DecoderGraph dg;
     segname = "data/cw_problem.segs";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 30, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder1::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder1::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     CPPUNIT_ASSERT_EQUAL( 47, (int)reachable_graph_nodes(nodes) );
@@ -442,29 +439,25 @@ void graphtest::GraphTest17(void)
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
-*/
 
 
 // Test cross-word network creation and connecting
 // Problem in tying prefixes
-/*
 void graphtest::GraphTest18(void)
 {
     DecoderGraph dg;
     segname = "data/prefix_tie_problem.segs";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     prune_unreachable_nodes(nodes);
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    graphbuilder1::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
-    graphbuilder1::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    graphbuilder2::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    graphbuilder2::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
 
     push_word_ids_right(nodes);
@@ -480,73 +473,60 @@ void graphtest::GraphTest18(void)
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 }
-*/
 
 
-// Verify that only true suffixes are tied
-/*
+// Verify that only true suffixes are tied | NOTE: for subword-triphone-phone builder
 void graphtest::GraphTest19(void)
 {
     DecoderGraph dg;
     segname = "data/subword_tie_only_real_suffix.segs";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     prune_unreachable_nodes(nodes);
 
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
 }
-*/
 
 
-// Problem in expanding subwords to states
-/*
+// Problem in expanding subwords to states | NOTE: for subword-triphone-phone builder
 void graphtest::GraphTest20(void)
 {
     DecoderGraph dg;
     segname = "data/subword_tie_expand_problem.segs";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     prune_unreachable_nodes(nodes);
 
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
 }
-*/
 
 
-// Some issue tie + expand
-/*
+// Some issue tie + expand | NOTE: for subword-triphone-phone builder
 void graphtest::GraphTest21(void)
 {
     DecoderGraph dg;
     segname = "data/subword_tie_expand_problem_2.segs";
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     prune_unreachable_nodes(nodes);
 
     CPPUNIT_ASSERT( assert_no_double_arcs(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, true) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
 }
-*/
 
 
 // Extra check for some prefix tying special case
