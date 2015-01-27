@@ -58,9 +58,7 @@ void graphtest::GraphTest4(void)
     make_graph(dg, nodes);
 
     CPPUNIT_ASSERT_EQUAL( 149, (int)reachable_graph_nodes(nodes) );
-    gutils::print_graph(dg, nodes);
     tie_state_prefixes(nodes, false);
-    gutils::print_graph(dg, nodes);
     CPPUNIT_ASSERT_EQUAL( 145, (int)reachable_graph_nodes(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
@@ -68,17 +66,14 @@ void graphtest::GraphTest4(void)
 
 
 // Verify adding self transitions and transition probabilities to states
-/*
 void graphtest::GraphTest5(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
     tie_state_prefixes(nodes, false);
     tie_state_suffixes(nodes);
     prune_unreachable_nodes(nodes);
@@ -90,34 +85,29 @@ void graphtest::GraphTest5(void)
     //dg.set_hmm_transition_probs(nodes);
     //CPPUNIT_ASSERT( assert_transitions(dg, nodes, true) );
 }
-*/
 
 
 // Test pruning non-reachable nodes and reindexing nodes
-/*
 void graphtest::GraphTest6(void)
 {
     DecoderGraph dg;
     read_fixtures(dg);
 
-    vector<graphbuilder1::SubwordNode> swnodes;
-    graphbuilder1::create_word_graph(dg, swnodes, word_segs);
-    tie_subword_suffixes(swnodes);
-    vector<DecoderGraph::Node> nodes;
-    expand_subword_nodes(dg, swnodes, nodes);
-    CPPUNIT_ASSERT_EQUAL( 182, (int)reachable_graph_nodes(nodes) );
+    vector<DecoderGraph::Node> nodes(2);
+    make_graph(dg, nodes);
+
+    CPPUNIT_ASSERT_EQUAL( 149, (int)reachable_graph_nodes(nodes) );
     tie_state_prefixes(nodes, false);
     tie_state_suffixes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 136, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 137, (int)reachable_graph_nodes(nodes) );
 
     prune_unreachable_nodes(nodes);
-    CPPUNIT_ASSERT_EQUAL( 136, (int)reachable_graph_nodes(nodes) );
-    CPPUNIT_ASSERT_EQUAL( 136, (int)nodes.size() );
+    CPPUNIT_ASSERT_EQUAL( 137, (int)reachable_graph_nodes(nodes) );
+    CPPUNIT_ASSERT_EQUAL( 137, (int)nodes.size() );
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
 }
-*/
 
 
 // Test pushing subword ids to the leftmost possible position
