@@ -16,7 +16,6 @@ Decoder::Decoder()
     m_total_token_count = 0;
 
     m_duration_model_in_use = false;
-    m_use_word_boundary_symbol = false;
     m_force_sentence_end = true;
 
     m_lm_scale = 0.0;
@@ -24,7 +23,6 @@ Decoder::Decoder()
     m_transition_scale = 0.0;
     m_token_count = 0;
     m_token_count_after_pruning = 0;
-    m_word_boundary_symbol_idx = -1;
     m_sentence_begin_symbol_idx = -1;
     m_sentence_end_symbol_idx = -1;
 
@@ -55,7 +53,6 @@ Decoder::Decoder()
 
     m_history_clean_frame_interval = 10;
 
-    m_word_boundary_penalty = 0.0;
     m_max_state_duration = 80;
 
     m_ngram_state_sentence_begin = -1;
@@ -318,13 +315,6 @@ Decoder::initialize()
     tok.node_idx = m_decode_start_node;
     m_active_nodes.insert(m_decode_start_node);
     m_word_history_leafs.insert(tok.history);
-    if (m_use_word_boundary_symbol) {
-        advance_in_word_history(tok, m_word_boundary_symbol_idx);
-        float dummy;
-        tok.lm_node = m_lm.score(tok.lm_node, m_subword_id_to_ngram_symbol[m_word_boundary_symbol_idx], dummy);
-        m_ngram_state_sentence_begin = tok.lm_node;
-        tok.last_word_id = m_word_boundary_symbol_idx;
-    }
     m_active_histories.insert(tok.history);
     m_recombined_tokens[m_decode_start_node][tok.lm_node] = tok;
     m_total_token_count = 0;
@@ -548,11 +538,6 @@ Decoder::move_token_to_node(Token token,
 
         if (node.word_id == m_sentence_end_symbol_idx) {
             token.lm_node = m_ngram_state_sentence_begin;
-            if (m_use_word_boundary_symbol) {
-                advance_in_word_history(token, m_word_boundary_symbol_idx);
-                token.last_word_id = m_word_boundary_symbol_idx;
-            }
-
             if (update_lookahead)
                 update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
             token.total_log_prob = get_token_log_prob(token);
@@ -666,12 +651,6 @@ Decoder::add_sentence_ends(vector<Token> &tokens)
         Token &token = *tit;
         if (token.lm_node == m_lm.sentence_start_node) continue;
         m_active_histories.erase(token.history);
-        if (m_use_word_boundary_symbol && token.history->word_id != m_subword_map[m_word_boundary_symbol]) {
-            token.lm_node = m_lm.score(token.lm_node,
-                                       m_subword_id_to_ngram_symbol[m_subword_map[m_word_boundary_symbol]], token.lm_log_prob);
-            token.total_log_prob = get_token_log_prob(token);
-            advance_in_word_history(token, m_subword_map[m_word_boundary_symbol]);
-        }
         token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[m_sentence_end_symbol_idx], token.lm_log_prob);
         token.total_log_prob = get_token_log_prob(token);
         advance_in_word_history(token, m_sentence_end_symbol_idx);
@@ -757,8 +736,8 @@ Decoder::print_word_history(WordHistory *history,
 
     int lm_node = m_lm.root_node;
     float total_lp = 0.0;
-    if (m_use_word_boundary_symbol) {
-        for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
+    for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
+        if (*swit >= 0)
             outf << " " << m_subwords[*swit];
             if (print_lm_probs) {
                 float lp = 0.0;
@@ -766,13 +745,6 @@ Decoder::print_word_history(WordHistory *history,
                 outf << "(" << lp << ")";
                 total_lp += lp;
             }
-        }
-    }
-    else {
-        for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
-            if (*swit >= 0)
-                outf << " " << m_subwords[*swit];
-        }
     }
 
     if (print_lm_probs) outf << endl << "total lm log: " << total_lp;

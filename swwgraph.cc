@@ -154,8 +154,7 @@ int main(int argc, char* argv[])
             cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
         }
 
-        if (wb_symbol) nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
-        add_long_silence(dg, nodes);
+        add_long_silence(dg, nodes, true);
         add_hmm_self_transitions(nodes);
 
         write_graph(nodes, graphfname);

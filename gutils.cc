@@ -1730,7 +1730,8 @@ collect_cw_fanin_nodes(DecoderGraph &dg,
 
 void
 add_long_silence(DecoderGraph &dg,
-                 std::vector<DecoderGraph::Node> &nodes)
+                 std::vector<DecoderGraph::Node> &nodes,
+                 bool use_word_boundary_symbol)
 {
     nodes[END_NODE].arcs.clear();
 
@@ -1744,9 +1745,32 @@ add_long_silence(DecoderGraph &dg,
 
     node_idx = END_NODE;
     node_idx = connect_triphone(dg, nodes, "_", node_idx, NODE_SILENCE);
-    node_idx = connect_word(dg, nodes, "<w>", node_idx);
+    if (use_word_boundary_symbol)
+        node_idx = connect_word(dg, nodes, "<w>", node_idx);
     nodes[node_idx].arcs.insert(START_NODE);
 }
+
+
+/*
+NOTE: old implementation, which used word boundary after <s> and before </s>
+      <w> in the end node
+void
+add_long_silence_old(DecoderGraph &dg,
+                     std::vector<DecoderGraph::Node> &nodes)
+{
+    nodes[END_NODE].arcs.clear();
+
+    node_idx_t node_idx = END_NODE;
+    node_idx = connect_word(dg, nodes, "</s>", node_idx);
+    node_idx = connect_triphone(dg, nodes, "__", node_idx, NODE_SILENCE);
+    nodes[node_idx].arcs.insert(START_NODE);
+    nodes[node_idx-2].flags |= NODE_DECODE_START;
+
+    node_idx = END_NODE;
+    node_idx = connect_triphone(dg, nodes, "_", node_idx, NODE_SILENCE);
+    nodes[node_idx].arcs.insert(START_NODE);
+}
+*/
 
 
 void

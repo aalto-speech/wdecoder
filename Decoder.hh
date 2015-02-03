@@ -202,10 +202,7 @@ public:
     int m_token_count;
     int m_token_count_after_pruning;
     bool m_force_sentence_end;
-    bool m_use_word_boundary_symbol;
     bool m_duration_model_in_use;
-    std::string m_word_boundary_symbol;
-    int m_word_boundary_symbol_idx;
     int m_sentence_begin_symbol_idx;
     int m_sentence_end_symbol_idx;
     int m_max_state_duration;
@@ -215,7 +212,6 @@ public:
     float m_node_beam;
     float m_word_end_beam;
     float m_current_word_end_beam;
-    float m_word_boundary_penalty;
 
     float m_best_log_prob;
     float m_best_word_end_prob;
