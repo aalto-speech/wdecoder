@@ -143,6 +143,10 @@ get_recipe_lines(string recipe_fname,
         start_idx = (batch_index-1) * (line_count / num_batches);
         end_idx = (batch_index) * (line_count / num_batches);
         if (num_batches == batch_index) end_idx = line_count;
+
+        int remainder = line_count % num_batches;
+        start_idx += min(batch_index, remainder);
+        end_idx += min(batch_index, remainder);
     }
 
     ifstream recipef2(recipe_fname);
@@ -203,6 +207,7 @@ int main(int argc, char* argv[])
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('b', "global-beam=FLOAT", "arg", "100", "Global search beam, DEFAULT: 100")
     ('m', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
+    ('n', "lna-dir=STRING", "arg", "", "LNA directory")
     ('B', "batch=INT", "arg", "0", "number of batch processes with the same recipe")
     ('I', "bindex=INT", "arg", "0", "batch process index")
     ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
@@ -239,9 +244,6 @@ int main(int argc, char* argv[])
         DecoderGraph dg;
         dg.read_phone_model(phfname);
 
-//        string recipe_line;
-//        while (getline(recipef, recipe_line)) {
-//            if (!recipe_line.length()) continue;
         for (auto rlit = recipe_lines.begin(); rlit != recipe_lines.end(); ++rlit) {
 
             map<string, string> recipe_fields;
@@ -260,7 +262,10 @@ int main(int argc, char* argv[])
                     throw string("Error in recipe line " + *rlit);
             }
 
-            cerr << endl << "segmenting: " << recipe_fields["lna"] << endl;
+            string lna_file = recipe_fields["lna"];
+            if (config["lna-dir"].specified) lna_file = config["lna-dir"].get_str() + "/" + lna_file;
+
+            cerr << "segmenting to: " << recipe_fields["alignment"] << endl;
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
@@ -301,7 +306,7 @@ int main(int argc, char* argv[])
             float curr_beam = config["global-beam"].get_float();
             int attempts = 0;
             while (true) {
-                bool seg_found = s.segment_lna_file(recipe_fields["lna"], node_labels, phnf);
+                bool seg_found = s.segment_lna_file(lna_file, node_labels, phnf);
                 attempts++;
                 if (seg_found) {
                     s.m_global_beam = config["global-beam"].get_float();
