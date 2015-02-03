@@ -54,6 +54,7 @@ def create_ptxts(lines, ptxtdir):
         ptxtf.close()
 
         line['text'] = ptxtfname
+        line['lna'] = os.path.split(line['lna'])[1]
         new_line = list()
         for key,val in line.items():
             new_line.append("%s=%s" % (key,val))
