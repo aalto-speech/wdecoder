@@ -1735,13 +1735,16 @@ add_long_silence(DecoderGraph &dg,
     nodes[END_NODE].arcs.clear();
 
     node_idx_t node_idx = END_NODE;
+    node_idx = connect_triphone(dg, nodes, "__", node_idx, NODE_SILENCE);
     node_idx = connect_word(dg, nodes, "</s>", node_idx);
     node_idx = connect_triphone(dg, nodes, "__", node_idx, NODE_SILENCE);
     nodes[node_idx].arcs.insert(START_NODE);
+    nodes[node_idx-3].arcs.insert(START_NODE);
     nodes[node_idx-2].flags |= NODE_DECODE_START;
 
     node_idx = END_NODE;
     node_idx = connect_triphone(dg, nodes, "_", node_idx, NODE_SILENCE);
+    node_idx = connect_word(dg, nodes, "<w>", node_idx);
     nodes[node_idx].arcs.insert(START_NODE);
 }
 

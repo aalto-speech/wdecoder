@@ -121,6 +121,42 @@ void parse_recipe_line(string recipe_line,
 
 
 void
+get_recipe_lines(string recipe_fname,
+                 int num_batches,
+                 int batch_index,
+                 vector<string> &recipe_lines)
+{
+    ifstream recipef(recipe_fname);
+    string recipe_line;
+
+    int line_count = 0;
+    while (getline(recipef, recipe_line)) {
+        recipe_line = str::cleaned(recipe_line);
+        if (!recipe_line.length()) continue;
+        line_count++;
+    }
+
+    int line_idx = 0;
+    int start_idx = 0;
+    int end_idx = line_count;
+    if (num_batches > 0 && batch_index > 0) {
+        start_idx = (batch_index-1) * (line_count / num_batches);
+        end_idx = (batch_index) * (line_count / num_batches);
+        if (num_batches == batch_index) end_idx = line_count;
+    }
+
+    ifstream recipef2(recipe_fname);
+    while (getline(recipef2, recipe_line)) {
+        recipe_line = str::cleaned(recipe_line);
+        if (!recipe_line.length()) continue;
+        if (line_idx >= start_idx && line_idx < end_idx)
+            recipe_lines.push_back(recipe_line);
+        line_idx++;
+    }
+}
+
+
+void
 print_dot_digraph(vector<Decoder::Node> &nodes,
                   ostream &fstr,
                   map<int, string> node_labels)
@@ -167,6 +203,8 @@ int main(int argc, char* argv[])
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('b', "global-beam=FLOAT", "arg", "100", "Global search beam, DEFAULT: 100")
     ('m', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
+    ('B', "batch=INT", "arg", "0", "number of batch processes with the same recipe")
+    ('I', "bindex=INT", "arg", "0", "batch process index")
     ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 2) config.print_help(stderr, 1);
@@ -193,28 +231,33 @@ int main(int argc, char* argv[])
         }
 
         string recipefname = config.arguments[1];
+        vector<string> recipe_lines;
+        get_recipe_lines(recipefname, config["batch"].get_int(), config["bindex"].get_int(), recipe_lines);
+
         ifstream recipef(recipefname);
 
         DecoderGraph dg;
         dg.read_phone_model(phfname);
 
-        string recipe_line;
-        while (getline(recipef, recipe_line)) {
-            if (!recipe_line.length()) continue;
+//        string recipe_line;
+//        while (getline(recipef, recipe_line)) {
+//            if (!recipe_line.length()) continue;
+        for (auto rlit = recipe_lines.begin(); rlit != recipe_lines.end(); ++rlit) {
+
             map<string, string> recipe_fields;
-            parse_recipe_line(recipe_line, recipe_fields);
+            parse_recipe_line(*rlit, recipe_fields);
 
             if (recipe_fields.find("lna") == recipe_fields.end() ||
                 recipe_fields.find("alignment") == recipe_fields.end())
-                    throw string("Error in recipe line " + recipe_line);
+                    throw string("Error in recipe line " + *rlit);
 
             if (config["text-field"].specified) {
                 if (recipe_fields.find("text") == recipe_fields.end())
-                    throw string("Error in recipe line " + recipe_line);
+                    throw string("Error in recipe line " + *rlit);
             }
             else {
                 if (recipe_fields.find("transcript") == recipe_fields.end())
-                    throw string("Error in recipe line " + recipe_line);
+                    throw string("Error in recipe line " + *rlit);
             }
 
             cerr << endl << "segmenting: " << recipe_fields["lna"] << endl;

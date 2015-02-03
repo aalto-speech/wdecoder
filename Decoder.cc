@@ -273,20 +273,25 @@ Decoder::recognize_lna_file(string lnafname,
         update_lookahead_prob(tok, 0.0);
         tok.total_log_prob = get_token_log_prob(tok);
     }
-    if (m_force_sentence_end) add_sentence_ends(tokens);
 
-    Token best_token = get_best_token(tokens);
+    Token *best_token = nullptr;
+    add_sentence_ends(tokens);
+    best_token = get_best_end_token(tokens);
+    //if (best_token == nullptr) {
+    //    if (m_force_sentence_end) add_sentence_ends(tokens);
+    //    best_token = get_best_token(tokens);
+    //}
     outf << lnafname << ":";
-    print_word_history(best_token.history, outf, false);
+    print_word_history(best_token->history, outf, false);
 
     clear_word_history();
     m_lna_reader.close();
 
     if (frame_count != nullptr) *frame_count = m_frame_idx;
     if (seconds != nullptr) *seconds = difftime(end_time, start_time);
-    if (log_prob != nullptr) *log_prob = best_token.total_log_prob;
-    if (am_prob != nullptr) *am_prob = best_token.am_log_prob;
-    if (lm_prob != nullptr) *lm_prob = best_token.lm_log_prob;
+    if (log_prob != nullptr) *log_prob = best_token->total_log_prob;
+    if (am_prob != nullptr) *am_prob = best_token->am_log_prob;
+    if (lm_prob != nullptr) *lm_prob = best_token->lm_log_prob;
     if (total_token_count != nullptr) *total_token_count = m_total_token_count;
 }
 
@@ -578,7 +583,7 @@ Decoder::get_best_token()
 }
 
 
-Decoder::Token
+Decoder::Token*
 Decoder::get_best_token(vector<Token> &tokens)
 {
     Token *best_token = nullptr;
@@ -590,7 +595,28 @@ Decoder::get_best_token(vector<Token> &tokens)
             best_token = &(*tit);
     }
 
-    return *best_token;
+    return best_token;
+}
+
+
+Decoder::Token*
+Decoder::get_best_end_token(vector<Token> &tokens)
+{
+    Token *best_token = nullptr;
+
+    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
+        //if (tit->lm_node != m_ngram_state_sentence_begin) continue;
+
+        Decoder::Node &node = m_nodes[tit->node_idx];
+        if (node.flags & NODE_SILENCE) {
+            if (best_token == nullptr)
+                best_token = &(*tit);
+            else if (tit->total_log_prob > best_token->total_log_prob)
+                best_token = &(*tit);
+        }
+    }
+
+    return best_token;
 }
 
 

@@ -135,7 +135,8 @@ public:
     void apply_duration_model(Token &token, int node_idx);
     void update_lookahead_prob(Token &token, float lookahead_prob);
     Token* get_best_token();
-    Token get_best_token(std::vector<Token> &tokens);
+    Token* get_best_token(std::vector<Token> &tokens);
+    Token* get_best_end_token(std::vector<Token> &tokens);
     void add_sentence_ends(std::vector<Token> &tokens);
     void print_certain_word_history(std::ostream &outf=std::cout);
     void print_best_word_history(std::ostream &outf=std::cout);
