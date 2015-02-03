@@ -47,7 +47,8 @@ def create_ptxts(lines, ptxtdir):
                 m = re.search("\-(.)\+", trip)
                 word += m.group(1)
 
-        ptxtfname = os.path.join(ptxtdir, "%s.ptxt" % os.path.splitext(os.path.split(trfname)[1])[0])
+        ptxtfname = "%s.ptxt" % os.path.splitext(os.path.split(trfname)[1])[0]
+        ptxtfname = os.path.join(ptxtdir, ptxtfname)
         ptxtf = open(ptxtfname, 'w')
         print >>ptxtf, " ".join(words)
         ptxtf.close()
