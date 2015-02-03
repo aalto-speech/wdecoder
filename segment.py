@@ -67,6 +67,7 @@ def main(argv=None):
     while len(batch_idxs):
         threads = []
         for t in range(threadc):
+            if not len(batch_idxs): break
             bidx = batch_idxs.pop(0)
             t = threading.Thread(target=segment, args=[model, recipe, lnadir, batchc, bidx])
             t.start()
