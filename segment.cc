@@ -145,7 +145,7 @@ get_recipe_lines(string recipe_fname,
         if (num_batches == batch_index) end_idx = line_count;
 
         int remainder = line_count % num_batches;
-        start_idx += min(batch_index, remainder);
+        start_idx += min(batch_index-1, remainder);
         end_idx += min(batch_index, remainder);
     }
 
