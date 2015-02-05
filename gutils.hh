@@ -282,8 +282,7 @@ void collect_cw_fanin_nodes(DecoderGraph &dg,
                             node_idx_t node_idx=START_NODE);
 
 void add_long_silence(DecoderGraph &dg,
-                      std::vector<DecoderGraph::Node> &nodes,
-                      bool use_word_boundary_symbol=false);
+                      std::vector<DecoderGraph::Node> &nodes);
 
 void remove_cw_dummies(std::vector<DecoderGraph::Node> &nodes);
 

@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
         tie_state_prefixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        add_long_silence(dg, nodes, false);
+        add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);
 
         write_graph(nodes, graphfname);

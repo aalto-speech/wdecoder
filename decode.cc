@@ -28,13 +28,18 @@ read_config(Decoder &d, string cfgfname)
         else if (parameter == "history_beam") continue;
         else if (parameter == "word_end_beam") ss >> d.m_word_end_beam;
         else if (parameter == "node_beam") ss >> d.m_node_beam;
+        else if (parameter == "word_boundary_penalty") ss >> d.m_word_boundary_penalty;
         else if (parameter == "history_clean_frame_interval") ss >> d.m_history_clean_frame_interval;
         else if (parameter == "force_sentence_end") {
             string force_str;
             ss >> force_str;
             d.m_force_sentence_end = true ? force_str == "true": false;
         }
-        else if (parameter == "word_boundary_symbol") continue;
+        else if (parameter == "word_boundary_symbol") {
+            d.m_use_word_boundary_symbol = true;
+            ss >> d.m_word_boundary_symbol;
+            d.m_word_boundary_symbol_idx = d.m_subword_map[d.m_word_boundary_symbol];
+        }
         else if (parameter == "debug") ss >> d.m_debug;
         else if (parameter == "stats") ss >> d.m_stats;
         else if (parameter == "token_stats") ss >> d.m_token_stats;
@@ -66,9 +71,13 @@ print_config(Decoder &d,
     outf << "duration scale: " << d.m_duration_scale << endl;
     outf << "transition scale: " << d.m_transition_scale << endl;
     outf << "force sentence end: " << d.m_force_sentence_end << endl;
+    outf << "use word boundary symbol: " << d.m_use_word_boundary_symbol << endl;
+    if (d.m_use_word_boundary_symbol)
+        outf << "word boundary symbol: " << d.m_word_boundary_symbol << endl;
     outf << "global beam: " << d.m_global_beam << endl;
     outf << "word end beam: " << d.m_word_end_beam << endl;
     outf << "node beam: " << d.m_node_beam << endl;
+    outf << "word boundary penalty: " << d.m_word_boundary_penalty << endl;
     outf << "history clean frame interval: " << d.m_history_clean_frame_interval << endl;
 }
 
