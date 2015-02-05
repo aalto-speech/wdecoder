@@ -130,7 +130,7 @@ public:
                             int node_idx,
                             float transition_score,
                             bool update_lookahead);
-    float get_token_log_prob(const Token &token);
+    void update_total_log_prob(Token &token);
     void advance_in_word_history(Token& token, int word_id);
     void apply_duration_model(Token &token, int node_idx);
     void update_lookahead_prob(Token &token, float lookahead_prob);

@@ -123,7 +123,7 @@ Segmenter::move_token_to_node(SToken token,
         }
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
-        token.total_log_prob = get_token_log_prob(token);
+        update_total_log_prob(token);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
