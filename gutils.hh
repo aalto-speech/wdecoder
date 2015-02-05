@@ -180,6 +180,10 @@ void tie_word_id_suffixes(std::vector<DecoderGraph::Node> &nodes,
                           bool stop_propagation=false,
                           node_idx_t node_idx=END_NODE);
 
+void minimize_crossword_network(std::vector<DecoderGraph::Node> &cw_nodes,
+                                std::map<std::string, int> &fanout,
+                                std::map<std::string, int> &fanin);
+
 void print_graph(DecoderGraph &dg,
                  std::vector<DecoderGraph::Node> &nodes,
                  std::vector<int> path,

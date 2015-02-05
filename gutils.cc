@@ -1154,6 +1154,26 @@ void tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
         tie_word_id_suffixes(nodes, processed_nodes, stop_propagation, *arcit);
 }
 
+void minimize_crossword_network(vector<DecoderGraph::Node> &cw_nodes,
+                                map<string, int> &fanout,
+                                map<string, int> &fanin)
+{
+    tie_state_prefixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
+    tie_state_prefixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
+    tie_state_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_state_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_state_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_state_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+    tie_state_prefixes_cw(cw_nodes, fanout, fanin);
+    tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
+}
+
 void print_graph(DecoderGraph &dg,
                  vector<DecoderGraph::Node> &nodes,
                  vector<int> path,
@@ -1731,7 +1751,7 @@ collect_cw_fanin_nodes(DecoderGraph &dg,
 // All graph styles
 void
 add_long_silence(DecoderGraph &dg,
-                 std::vector<DecoderGraph::Node> &nodes)
+                 vector<DecoderGraph::Node> &nodes)
 {
     nodes[END_NODE].arcs.clear();
 
@@ -1751,7 +1771,7 @@ add_long_silence(DecoderGraph &dg,
 // <s> sw sw <w> sw sw <w> sw sw sw </s>
 void
 add_long_silence_no_start_end_wb(DecoderGraph &dg,
-                                 std::vector<DecoderGraph::Node> &nodes)
+                                 vector<DecoderGraph::Node> &nodes)
 {
     nodes[END_NODE].arcs.clear();
 
@@ -1771,7 +1791,7 @@ add_long_silence_no_start_end_wb(DecoderGraph &dg,
 
 
 void
-remove_cw_dummies(std::vector<DecoderGraph::Node> &nodes)
+remove_cw_dummies(vector<DecoderGraph::Node> &nodes)
 {
     set_reverse_arcs_also_from_unreachable(nodes);
 

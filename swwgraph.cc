@@ -1,4 +1,3 @@
-
 #include "conf.hh"
 #include "gutils.hh"
 #include "GraphBuilder.hh"
@@ -39,8 +38,6 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        time_t rawtime;
-
         vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
         int triphonize_error = 0;
         for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
@@ -60,31 +57,12 @@ int main(int argc, char* argv[])
         prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        time ( &rawtime );
-        cerr << "time: " << ctime (&rawtime) << endl;
         cerr << "Creating crossword network.." << endl;
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
-        if (wb_symbol)
-            create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, true);
-        else
-            create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, false);
-
+        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, wb_symbol);
         cerr << "crossword network size: " << cw_nodes.size() << endl;
-        tie_state_prefixes_cw(cw_nodes, fanout, fanin);
-        tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
-        tie_state_prefixes_cw(cw_nodes, fanout, fanin);
-        tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
-        tie_state_suffixes_cw(cw_nodes, fanout, fanin);
-        tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
-        tie_state_suffixes_cw(cw_nodes, fanout, fanin);
-        tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
-        tie_state_suffixes_cw(cw_nodes, fanout, fanin);
-        tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
-        tie_state_suffixes_cw(cw_nodes, fanout, fanin);
-        tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
-        tie_state_prefixes_cw(cw_nodes, fanout, fanin);
-        tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
+        minimize_crossword_network(cw_nodes, fanout, fanin);
         cerr << "tied crossword network size: " << cw_nodes.size() << endl;
 
         connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
