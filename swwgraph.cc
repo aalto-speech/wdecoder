@@ -38,8 +38,8 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
         int triphonize_error = 0;
+        vector<DecoderGraph::Node> nodes(2);
         for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
             vector<DecoderGraph::TriphoneNode> word_triphones;
             bool ok = triphonize(dg, wit->second, word_triphones);
@@ -47,13 +47,13 @@ int main(int argc, char* argv[])
                 triphonize_error++;
                 continue;
             }
-            add_triphones(triphone_nodes, word_triphones);
+            vector<DecoderGraph::Node> word_nodes;
+            triphones_to_state_chain(dg, word_triphones, word_nodes);
+            add_nodes_to_tree(dg, nodes, word_nodes);
         }
+        lookahead_to_arcs(nodes);
         if (triphonize_error > 0) cerr << triphonize_error << " words could not be triphonized." << endl;
 
-        vector<DecoderGraph::Node> nodes(2);
-        triphones_to_states(dg, triphone_nodes, nodes);
-        triphone_nodes.clear();
         prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 

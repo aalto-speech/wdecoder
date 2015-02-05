@@ -29,19 +29,19 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[2];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
         set<string> subwords;
+        vector<DecoderGraph::Node> nodes(2);
         for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
             subwords.insert(swit->first);
             if (swit->second.size() < 2) continue;
             vector<DecoderGraph::TriphoneNode> sw_triphones;
             triphonize_subword(dg, swit->first, sw_triphones);
-            add_triphones(triphone_nodes, sw_triphones);
+            vector<DecoderGraph::Node> sw_nodes;
+            triphones_to_state_chain(dg, sw_triphones, sw_nodes);
+            add_nodes_to_tree(dg, nodes, sw_nodes);
         }
+        lookahead_to_arcs(nodes);
 
-        vector<DecoderGraph::Node> nodes(2);
-        triphones_to_states(dg, triphone_nodes, nodes);
-        triphone_nodes.clear();
         prune_unreachable_nodes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
