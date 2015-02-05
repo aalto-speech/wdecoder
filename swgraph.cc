@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 
         add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);
-        //nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
+        nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
 
         write_graph(nodes, graphfname);
 

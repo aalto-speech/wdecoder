@@ -1728,9 +1728,30 @@ collect_cw_fanin_nodes(DecoderGraph &dg,
 }
 
 
+// All graph styles
 void
 add_long_silence(DecoderGraph &dg,
                  std::vector<DecoderGraph::Node> &nodes)
+{
+    nodes[END_NODE].arcs.clear();
+
+    node_idx_t node_idx = END_NODE;
+    node_idx = connect_word(dg, nodes, "</s>", node_idx);
+    node_idx = connect_triphone(dg, nodes, "__", node_idx, NODE_SILENCE);
+    nodes[node_idx].arcs.insert(START_NODE);
+    nodes[node_idx-2].flags |= NODE_DECODE_START;
+
+    node_idx = END_NODE;
+    node_idx = connect_triphone(dg, nodes, "_", node_idx, NODE_SILENCE);
+    nodes[node_idx].arcs.insert(START_NODE);
+}
+
+
+// Subword graph with word boundaries as below
+// <s> sw sw <w> sw sw <w> sw sw sw </s>
+void
+add_long_silence_no_start_end_wb(DecoderGraph &dg,
+                                 std::vector<DecoderGraph::Node> &nodes)
 {
     nodes[END_NODE].arcs.clear();
 
