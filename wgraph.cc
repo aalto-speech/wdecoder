@@ -58,18 +58,17 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
+        vector<DecoderGraph::Node> nodes(2);
         for (auto wit = words.begin(); wit != words.end(); ++wit) {
             vector<DecoderGraph::TriphoneNode> word_triphones;
             triphonize_subword(dg, *wit, word_triphones);
             if (word_triphones.size() == 2)
                 cerr << "skipping one phone word: " << *wit << endl;
-            add_triphones(triphone_nodes, word_triphones);
+            vector<DecoderGraph::Node> word_nodes;
+            triphones_to_state_chain(dg, word_triphones, word_nodes);
+            add_nodes_to_tree(dg, nodes, word_nodes);
         }
-
-        vector<DecoderGraph::Node> nodes(2);
-        triphones_to_states(dg, triphone_nodes, nodes);
-        triphone_nodes.clear();
+        lookahead_to_arcs(nodes);
         prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
@@ -100,17 +99,19 @@ int main(int argc, char* argv[])
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        cerr << endl;
+        //cerr << endl;
         //cerr << "Removing cw dummies.." << endl;
         //remove_cw_dummies(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        //cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        cerr << endl;
         cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        cerr << "Tying state prefixes.." << endl;
-        tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        //cerr << "Tying state prefixes.." << endl;
+        //tie_state_prefixes(nodes);
+        //cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
         add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);

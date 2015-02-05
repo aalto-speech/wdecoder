@@ -237,6 +237,68 @@ triphones_to_states(DecoderGraph &dg,
     }
 }
 
+void
+triphones_to_state_chain(DecoderGraph &dg,
+                         vector<DecoderGraph::TriphoneNode> &triphone_nodes,
+                         vector<DecoderGraph::Node> &nodes)
+{
+    for (auto triit = triphone_nodes.begin(); triit != triphone_nodes.end(); ++triit)
+    {
+        if (triit->subword_id != -1) {
+            nodes.resize(nodes.size()+1);
+            nodes.back().word_id = triit->subword_id;
+        }
+        else {
+            Hmm &hmm = dg.m_hmms[triit->hmm_id];
+            for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
+                nodes.resize(nodes.size() + 1);
+                nodes.back().hmm_state = hmm.states[sidx].model;
+            }
+        }
+    }
+}
+
+void
+add_nodes_to_tree(DecoderGraph &dg,
+                  vector<DecoderGraph::Node> &nodes,
+                  vector<DecoderGraph::Node> &new_nodes)
+{
+    int curr_node_idx = START_NODE;
+    for (auto nnit=new_nodes.begin(); nnit != new_nodes.end(); ++nnit)
+    {
+        int word_id = nnit->word_id;
+        int hmm_state = nnit->hmm_state;
+
+        DecoderGraph::Node &curr_node = nodes[curr_node_idx];
+        if (curr_node.lookahead == nullptr) curr_node.lookahead = new map<pair<int, int>, int>;
+        int next_node = nodes[curr_node_idx].find_next(word_id, hmm_state);
+        if (next_node == -1) {
+            nodes.resize(nodes.size()+1);
+            nodes.back().word_id = word_id;
+            nodes.back().hmm_state = hmm_state;
+            (*(nodes[curr_node_idx].lookahead))[make_pair(word_id, hmm_state)] = nodes.size()-1;
+            curr_node_idx = nodes.size()-1;
+        }
+        else curr_node_idx = next_node;
+    }
+
+    DecoderGraph::Node &curr_node = nodes[curr_node_idx];
+    curr_node.arcs.insert(END_NODE);
+}
+
+void
+lookahead_to_arcs(vector<DecoderGraph::Node> &nodes)
+{
+    for (auto nit=nodes.begin(); nit != nodes.end(); ++nit) {
+        if (nit->lookahead == nullptr) continue;
+        DecoderGraph::Node &node = *nit;
+        for (auto lait=(*(node.lookahead)).begin(); lait != (*(node.lookahead)).end(); ++lait)
+            node.arcs.insert(lait->second);
+        delete nit->lookahead;
+    }
+}
+
+
 void get_hmm_states(DecoderGraph &dg,
                     const vector<string> &triphones,
                     vector<int> &states)
@@ -473,9 +535,9 @@ bool assert_word_pair_crossword(DecoderGraph &dg,
                                 bool wb_symbol,
                                 bool debug)
 {
-    if (dg.m_lexicon.find(word1) == word_segs.end())
+    if (word_segs.find(word1) == word_segs.end())
         return false;
-    if (dg.m_lexicon.find(word2) == word_segs.end())
+    if (word_segs.find(word2) == word_segs.end())
         return false;
 
     string phonestring;

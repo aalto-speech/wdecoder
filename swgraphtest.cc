@@ -36,6 +36,8 @@ void swgraphtest::create_graph(DecoderGraph &dg,
 {
     vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
     set<string> subwords;
+    nodes.clear();
+    nodes.resize(2);
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
     {
         for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
@@ -44,12 +46,13 @@ void swgraphtest::create_graph(DecoderGraph &dg,
             if (swit->length() < 2) continue;
             vector<DecoderGraph::TriphoneNode> word_triphones;
             triphonize_subword(dg, *swit, word_triphones);
-            add_triphones(triphone_nodes, word_triphones);
+            vector<DecoderGraph::Node> word_nodes;
+            triphones_to_state_chain(dg, word_triphones, word_nodes);
+            add_nodes_to_tree(dg, nodes, word_nodes);
         }
     }
+    lookahead_to_arcs(nodes);
 
-    triphones_to_states(dg, triphone_nodes, nodes);
-    triphone_nodes.clear();
     prune_unreachable_nodes(nodes);
 
     vector<DecoderGraph::Node> cw_nodes;
@@ -61,7 +64,6 @@ void swgraphtest::create_graph(DecoderGraph &dg,
     subwordgraphbuilder::connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
     prune_unreachable_nodes(nodes);
 }
-
 
 
 // Normal case

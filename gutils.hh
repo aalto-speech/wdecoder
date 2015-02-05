@@ -39,6 +39,14 @@ void triphones_to_states(DecoderGraph &dg,
                          std::vector<DecoderGraph::Node> &nodes,
                          int curr_triphone_idx=START_NODE,
                          int curr_state_idx=START_NODE);
+void triphones_to_state_chain(DecoderGraph &dg,
+                              std::vector<DecoderGraph::TriphoneNode> &triphone_nodes,
+                              std::vector<DecoderGraph::Node> &nodes);
+void add_nodes_to_tree(DecoderGraph &dg,
+                       std::vector<DecoderGraph::Node> &nodes,
+                       std::vector<DecoderGraph::Node> &new_nodes);
+void lookahead_to_arcs(std::vector<DecoderGraph::Node> &nodes);
+
 void get_hmm_states(DecoderGraph &dg,
                     const std::vector<std::string> &triphones,
                     std::vector<int> &states);

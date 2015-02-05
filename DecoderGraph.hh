@@ -28,13 +28,24 @@ public:
 
     class Node {
     public:
-        Node() : word_id(-1), hmm_state(-1), flags(0) { }
+        Node() : word_id(-1), hmm_state(-1), flags(0), lookahead(nullptr) { }
         int word_id; // -1 for nodes without word identity.
         int hmm_state; // -1 for nodes without acoustics.
         int flags;
         std::set<unsigned int> arcs;
         std::set<unsigned int> reverse_arcs;
-        //std::string label;
+
+        // word_id, hmm_state pairs
+        // used in construction
+        std::map<std::pair<int, int>, int> *lookahead;
+
+        int find_next(int word_id, int hmm_state) {
+            if (lookahead == nullptr) throw std::string("Lookahead not set.");
+            std::pair<int,int> id = std::make_pair(word_id, hmm_state);
+            if (lookahead->find(id) != lookahead->end())
+                return (*lookahead)[id];
+            else return -1;
+        }
     };
 
     int debug;
