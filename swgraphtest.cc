@@ -243,14 +243,7 @@ void swgraphtest::SubwordGraphTest9(void)
     subwordgraphbuilder::create_crossword_network(dg, subwords, cw_nodes, fanout, fanin);
 
     cerr << endl << "cw size: " << cw_nodes.size() << endl;
-    tie_state_prefixes_cw(cw_nodes, fanout, fanin);
-    tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
-    tie_state_prefixes_cw(cw_nodes, fanout, fanin);
-    tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
-    tie_state_suffixes_cw(cw_nodes, fanout, fanin);
-    tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
-    tie_state_suffixes_cw(cw_nodes, fanout, fanin);
-    tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+    minimize_crossword_network(cw_nodes, fanout, fanin);
     cerr << "tied cw size: " << cw_nodes.size() << endl;
 
     subwordgraphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
@@ -314,16 +307,8 @@ void swgraphtest::SubwordGraphTest10(void)
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
     subwordgraphbuilder::create_crossword_network(dg, subwords, cw_nodes, fanout, fanin);
-
     cerr << endl << "cw size: " << cw_nodes.size() << endl;
-    tie_state_prefixes_cw(cw_nodes, fanout, fanin);
-    tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
-    tie_state_prefixes_cw(cw_nodes, fanout, fanin);
-    tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
-    tie_state_suffixes_cw(cw_nodes, fanout, fanin);
-    tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
-    tie_state_suffixes_cw(cw_nodes, fanout, fanin);
-    tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
+    minimize_crossword_network(cw_nodes, fanout, fanin);
     cerr << "tied cw size: " << cw_nodes.size() << endl;
 
     subwordgraphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);

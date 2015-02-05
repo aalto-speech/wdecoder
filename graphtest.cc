@@ -671,6 +671,7 @@ void graphtest::GraphTest22(void)
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
     graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    minimize_crossword_network(cw_nodes, fanout, fanin);
     graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
     connect_end_to_start_node(nodes);
     cerr << "crossword network added, number of nodes: " << reachable_graph_nodes(nodes) << endl;
@@ -765,6 +766,7 @@ void graphtest::GraphTest24(void)
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
     graphbuilder::create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin);
+    minimize_crossword_network(cw_nodes, fanout, fanin);
     graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
     cerr << "crossword network added, number of nodes: " << reachable_graph_nodes(nodes) << endl;
