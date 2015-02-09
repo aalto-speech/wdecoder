@@ -71,8 +71,7 @@ bool assert_path(DecoderGraph &dg,
 bool assert_path(DecoderGraph &dg,
                  std::vector<DecoderGraph::Node> &nodes,
                  std::vector<std::string> &triphones,
-                 std::vector<std::string> &subwords,
-                 bool debug);
+                 std::vector<std::string> &subwords);
 bool assert_transitions(DecoderGraph &dg,
                         std::vector<DecoderGraph::Node> &nodes,
                         bool debug);

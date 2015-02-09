@@ -374,8 +374,7 @@ bool assert_path(DecoderGraph &dg,
 bool assert_path(DecoderGraph &dg,
                  vector<DecoderGraph::Node> &nodes,
                  vector<string> &triphones,
-                 vector<string> &subwords,
-                 bool debug)
+                 vector<string> &subwords)
 {
     deque<int> dstates;
     deque<string> dwords;
@@ -390,22 +389,6 @@ bool assert_path(DecoderGraph &dg,
     for (auto wit = subwords.begin(); wit != subwords.end(); ++wit)
         dwords.push_front(*wit);
 
-    if (debug) {
-        cerr << "expecting hmm states: " << endl;
-        for (auto it = dstates.rbegin(); it != dstates.rend(); ++it)
-            cerr << " " << *it;
-        cerr << endl;
-        cerr << "expecting subwords: " << endl;
-        for (auto it = subwords.begin(); it != subwords.end(); ++it)
-            cerr << " " << *it;
-        cerr << endl;
-
-        cerr << "expecting states: " << endl;
-        for (auto dit = dstates.rbegin(); dit != dstates.rend(); ++dit)
-            cerr << " " << *dit;
-        cerr << endl;
-    }
-
     return assert_path(dg, nodes, dstates, dwords, START_NODE);
 }
 
@@ -417,7 +400,7 @@ bool assert_words(DecoderGraph &dg,
     for (auto sit = word_segs.begin(); sit != word_segs.end(); ++sit) {
         vector<string> triphones;
         triphonize(dg, word_segs, sit->first, triphones);
-        bool result = assert_path(dg, nodes, triphones, sit->second, false);
+        bool result = assert_path(dg, nodes, triphones, sit->second);
         if (!result) {
             if (debug)
             {
@@ -440,8 +423,7 @@ bool assert_words(DecoderGraph &dg,
 {
     for (auto sit = word_segs.begin(); sit != word_segs.end();
             ++sit) {
-        bool result = assert_path(dg, nodes, triphonized_words[sit->first],
-                                  sit->second, false);
+        bool result = assert_path(dg, nodes, triphonized_words[sit->first], sit->second);
         if (!result) {
             cerr << "error, word: " << sit->first << " not found" << endl;
             return false;
@@ -499,7 +481,7 @@ bool assert_word_pair_crossword(DecoderGraph &dg,
         cerr << endl;
     }
 
-    return assert_path(dg, nodes, triphones, subwords, debug);
+    return assert_path(dg, nodes, triphones, subwords);
 }
 
 bool assert_word_pairs(DecoderGraph &dg,
