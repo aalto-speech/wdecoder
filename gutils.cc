@@ -430,8 +430,7 @@ bool assert_word_pair_crossword(DecoderGraph &dg,
                                 string word1,
                                 string word2,
                                 bool short_silence,
-                                bool wb_symbol,
-                                bool debug)
+                                bool wb_symbol)
 {
     if (word_segs.find(word1) == word_segs.end())
         return false;
@@ -463,16 +462,6 @@ bool assert_word_pair_crossword(DecoderGraph &dg,
 
     triphonize(phonestring, triphones);
 
-    if (debug) {
-        cerr << endl;
-        for (auto trit = triphones.begin(); trit != triphones.end(); ++trit)
-            cerr << " " << *trit;
-        cerr << endl;
-        for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
-            cerr << " " << *swit;
-        cerr << endl;
-    }
-
     return assert_path(dg, nodes, triphones, subwords);
 }
 
@@ -480,25 +469,20 @@ bool assert_word_pairs(DecoderGraph &dg,
                        vector<DecoderGraph::Node> &nodes,
                        map<string, vector<string> > &word_segs,
                        bool short_silence,
-                       bool wb_symbol,
-                       bool debug)
+                       bool wb_symbol)
 {
     for (auto fit = word_segs.begin(); fit != word_segs.end(); ++fit)
-    {
         for (auto sit = word_segs.begin(); sit != word_segs.end(); ++sit)
         {
-            if (debug)
-                cerr << endl << "checking word pair: " << fit->first << " - "
-                     << sit->first << endl;
             bool result = assert_word_pair_crossword(dg, nodes, word_segs,
-                          fit->first, sit->first, short_silence, wb_symbol, debug);
+                          fit->first, sit->first, short_silence, wb_symbol);
             if (!result) {
                 cerr << endl << "word pair: " << fit->first << " - "
                      << sit->first << " not found" << endl;
                 return false;
             }
         }
-    }
+
     return true;
 }
 
@@ -507,8 +491,7 @@ bool assert_word_pairs(DecoderGraph &dg,
                        map<string, vector<string> > &word_segs,
                        int num_pairs,
                        bool short_silence,
-                       bool wb_symbol,
-                       bool debug)
+                       bool wb_symbol)
 {
     int wp_count = 0;
     while (wp_count < num_pairs) {
@@ -523,7 +506,7 @@ bool assert_word_pairs(DecoderGraph &dg,
         string second_word = wit2->first;
 
         bool result = assert_word_pair_crossword(dg, nodes, word_segs,
-                      first_word, second_word, short_silence, wb_symbol, debug);
+                      first_word, second_word, short_silence, wb_symbol);
         if (!result) {
             cerr << endl << "word pair: " << first_word << " - " << second_word
                  << " not found" << endl;
@@ -537,25 +520,21 @@ bool assert_word_pairs(DecoderGraph &dg,
 }
 
 bool assert_transitions(DecoderGraph &dg,
-                        vector<DecoderGraph::Node> &nodes,
-                        bool debug)
+                        vector<DecoderGraph::Node> &nodes)
 {
     for (unsigned int node_idx = 0; node_idx < nodes.size(); ++node_idx) {
         if (node_idx == END_NODE)
             continue;
         DecoderGraph::Node &node = nodes[node_idx];
         if (!node.arcs.size()) {
-            if (debug)
-                cerr << "Node " << node_idx << " has no transitions" << endl;
+            cerr << "Node " << node_idx << " has no transitions" << endl;
             return false;
         }
 
         if (node.hmm_state == -1) {
             for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
                 if (*ait == node_idx) {
-                    if (debug)
-                        cerr << "Node " << node_idx
-                             << " self-transition in non-hmm-node " << endl;
+                    cerr << "Node " << node_idx << " self-transition in non-hmm-node " << endl;
                     return false;
                 }
             }
@@ -572,14 +551,11 @@ bool assert_transitions(DecoderGraph &dg,
                 out_transition = true;
         }
         if (!self_transition) {
-            if (debug)
-                cerr << "Node " << node_idx << " has no self-transition"
-                     << endl;
+            cerr << "Node " << node_idx << " has no self-transition" << endl;
             return false;
         }
         if (!out_transition) {
-            if (debug)
-                cerr << "Node " << node_idx << " has no out-transition" << endl;
+            cerr << "Node " << node_idx << " has no out-transition" << endl;
             return false;
         }
     }
@@ -649,21 +625,11 @@ bool assert_no_duplicate_word_ids(DecoderGraph &dg,
 bool assert_only_segmented_words(DecoderGraph &dg,
                                  vector<DecoderGraph::Node> &nodes,
                                  map<string, vector<string> > &word_segs,
-                                 bool debug,
                                  deque<int> states,
                                  deque<int> subwords,
                                  int node_idx)
 {
     if (node_idx == END_NODE) {
-
-        if (debug) {
-            cerr << "found subwords: " << endl;
-            for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
-                cerr << dg.m_subwords[*swit] << " ";
-            cerr << "found states: " << endl;
-            for (auto stit = states.begin(); stit != states.end(); ++stit)
-                cerr << *stit << " ";
-        }
 
         string wrd;
         for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
@@ -704,7 +670,7 @@ bool assert_only_segmented_words(DecoderGraph &dg,
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
         if (nodes[*ait].flags)
             continue;
-        bool rv = assert_only_segmented_words(dg, nodes, word_segs, debug,
+        bool rv = assert_only_segmented_words(dg, nodes, word_segs,
                                               states, subwords, *ait);
         if (!rv)
             return false;

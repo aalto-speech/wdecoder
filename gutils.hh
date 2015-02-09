@@ -73,8 +73,7 @@ bool assert_path(DecoderGraph &dg,
                  std::vector<std::string> &triphones,
                  std::vector<std::string> &subwords);
 bool assert_transitions(DecoderGraph &dg,
-                        std::vector<DecoderGraph::Node> &nodes,
-                        bool debug);
+                        std::vector<DecoderGraph::Node> &nodes);
 bool assert_words(DecoderGraph &dg,
                   std::vector<DecoderGraph::Node> &nodes,
                   std::map<std::string, std::vector<std::string> > &word_segs);
@@ -88,21 +87,18 @@ bool assert_word_pair_crossword(DecoderGraph &dg,
                                 std::string word1,
                                 std::string word2,
                                 bool short_silence=true,
-                                bool wb_symbol=false,
-                                bool debug=false);
+                                bool wb_symbol=false);
 bool assert_word_pairs(DecoderGraph &dg,
                        std::vector<DecoderGraph::Node> &nodes,
                        std::map<std::string, std::vector<std::string> > &word_segs,
                        bool short_silence=true,
-                       bool wb_symbol=false,
-                       bool debug=false);
+                       bool wb_symbol=false);
 bool assert_word_pairs(DecoderGraph &dg,
                        std::vector<DecoderGraph::Node> &nodes,
                        std::map<std::string, std::vector<std::string> > &word_segs,
                        int num_pairs,
                        bool short_silence=true,
-                       bool wb_symbol=false,
-                       bool debug=false);
+                       bool wb_symbol=false);
 bool assert_subword_ids_left(DecoderGraph &dg,
                              std::vector<DecoderGraph::Node> &nodes);
 bool assert_subword_ids_right(DecoderGraph &dg,
@@ -112,7 +108,6 @@ bool assert_no_duplicate_word_ids(DecoderGraph &dg,
 bool assert_only_segmented_words(DecoderGraph &dg,
                                  std::vector<DecoderGraph::Node> &nodes,
                                  std::map<std::string, std::vector<std::string> > &word_segs,
-                                 bool debug=false,
                                  std::deque<int> states = std::deque<int>(),
                                  std::deque<int> subwords = std::deque<int>(),
                                  int node_idx=START_NODE);
