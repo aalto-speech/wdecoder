@@ -173,43 +173,6 @@ void triphonize_subword(DecoderGraph &dg,
     nodes.insert(nodes.begin() + word_id_pos, trin);
 }
 
-
-void
-add_triphones(vector<DecoderGraph::TriphoneNode> &nodes,
-              vector<DecoderGraph::TriphoneNode> &nodes_to_add)
-{
-    int curr_node_idx = START_NODE;
-
-    for (auto ntait = nodes_to_add.begin(); ntait != nodes_to_add.end(); ++ntait) {
-        if (ntait->hmm_id != -1) {
-            int hmm_id = ntait->hmm_id;
-            if (nodes[curr_node_idx].hmm_id_lookahead.find(hmm_id) != nodes[curr_node_idx].hmm_id_lookahead.end()) {
-                curr_node_idx = nodes[curr_node_idx].hmm_id_lookahead[hmm_id];
-            }
-            else {
-                nodes.resize(nodes.size()+1);
-                nodes.back().hmm_id = hmm_id;
-                nodes[curr_node_idx].hmm_id_lookahead[hmm_id] = nodes.size()-1;
-                curr_node_idx = nodes.size()-1;
-            }
-        }
-        else if (ntait->subword_id != -1) {
-            int subword_id = ntait->subword_id;
-            if (nodes[curr_node_idx].subword_id_lookahead.find(subword_id) != nodes[curr_node_idx].subword_id_lookahead.end()) {
-                curr_node_idx = nodes[curr_node_idx].subword_id_lookahead[subword_id];
-            }
-            else {
-                nodes.resize(nodes.size()+1);
-                nodes.back().subword_id = subword_id;
-                nodes[curr_node_idx].subword_id_lookahead[subword_id] = nodes.size()-1;
-                curr_node_idx = nodes.size()-1;
-            }
-        }
-    }
-
-    nodes[curr_node_idx].connect_to_end_node = true;
-}
-
 void
 triphones_to_state_chain(DecoderGraph &dg,
                          vector<DecoderGraph::TriphoneNode> &triphone_nodes,
