@@ -107,11 +107,9 @@ bool assert_word_pairs(DecoderGraph &dg,
                        bool wb_symbol=false,
                        bool debug=false);
 bool assert_subword_ids_left(DecoderGraph &dg,
-                             std::vector<DecoderGraph::Node> &nodes,
-                             bool debug=false);
+                             std::vector<DecoderGraph::Node> &nodes);
 bool assert_subword_ids_right(DecoderGraph &dg,
-                              std::vector<DecoderGraph::Node> &nodes,
-                              bool debug=false);
+                              std::vector<DecoderGraph::Node> &nodes);
 bool assert_no_duplicate_word_ids(DecoderGraph &dg,
                                   std::vector<DecoderGraph::Node> &nodes);
 bool assert_only_segmented_words(DecoderGraph &dg,

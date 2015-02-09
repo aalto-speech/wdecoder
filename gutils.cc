@@ -613,7 +613,7 @@ bool assert_transitions(DecoderGraph &dg,
 }
 
 bool assert_subword_ids_left(DecoderGraph &dg,
-                             vector<DecoderGraph::Node> &nodes, bool debug)
+                             vector<DecoderGraph::Node> &nodes)
 {
     set_reverse_arcs_also_from_unreachable(nodes);
 
@@ -635,7 +635,7 @@ bool assert_subword_ids_left(DecoderGraph &dg,
 }
 
 bool assert_subword_ids_right(DecoderGraph &dg,
-                              vector<DecoderGraph::Node> &nodes, bool debug)
+                              vector<DecoderGraph::Node> &nodes)
 {
     set_reverse_arcs_also_from_unreachable(nodes);
 
