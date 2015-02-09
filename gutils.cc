@@ -237,7 +237,8 @@ void get_hmm_states(DecoderGraph &dg,
 
 void get_hmm_states(DecoderGraph &dg,
                     map<string, vector<string> > &word_segs,
-                    string word, vector<int> &states)
+                    string word,
+                    vector<int> &states)
 {
     vector<string> triphones;
     triphonize(dg, word_segs, word, triphones);
@@ -246,7 +247,8 @@ void get_hmm_states(DecoderGraph &dg,
 
 void get_hmm_states_cw(DecoderGraph &dg,
                        map<string, vector<string> > &word_segs,
-                       string wrd1, string wrd2,
+                       string wrd1,
+                       string wrd2,
                        vector<int> &states)
 {
     string phonestring;
@@ -359,13 +361,10 @@ bool assert_path(DecoderGraph &dg,
             return true;
     }
 
-    for (auto ait = curr_node.arcs.begin(); ait != curr_node.arcs.end();
-            ++ait) {
-        if (*ait == node_idx)
-            continue;
+    for (auto ait = curr_node.arcs.begin(); ait != curr_node.arcs.end(); ++ait) {
+        if (*ait == node_idx) continue;
         bool retval = assert_path(dg, nodes, states, subwords, *ait);
-        if (retval)
-            return true;
+        if (retval) return true;
     }
 
     return false;
@@ -442,11 +441,11 @@ bool assert_word_pair_crossword(DecoderGraph &dg,
     vector<string> subwords;
 
     for (auto swit = word_segs[word1].begin();
-            swit != word_segs[word1].end(); ++swit) {
+         swit != word_segs[word1].end(); ++swit) {
         subwords.push_back(*swit);
         for (auto trit = dg.m_lexicon[*swit].begin();
-                trit != dg.m_lexicon[*swit].end(); ++trit)
-            phonestring += string(1, (*trit)[2]);
+            trit != dg.m_lexicon[*swit].end(); ++trit)
+                phonestring += string(1, (*trit)[2]);
     }
 
     if (short_silence) phonestring += "_";
@@ -541,7 +540,6 @@ bool assert_transitions(DecoderGraph &dg,
             continue;
         }
 
-        //HmmState &state = dg.m_hmm_states[node.hmm_state];
         bool self_transition = false;
         bool out_transition = false;
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
@@ -1091,13 +1089,9 @@ void print_graph(DecoderGraph &dg,
     if (node_idx == END_NODE) {
         for (unsigned int i = 0; i < path.size(); i++) {
             if (nodes[path[i]].hmm_state != -1)
-                //cout << " " << nodes[path[i]].hmm_state;
-                cout << " " << path[i] << "(" << nodes[path[i]].hmm_state
-                     << ")";
+                cout << " " << path[i] << "(" << nodes[path[i]].hmm_state << ")";
             if (nodes[path[i]].word_id != -1)
-                //cout << " " << "(" << m_units[nodes[path[i]].word_id] << ")";
-                cout << " " << path[i] << "("
-                     << dg.m_subwords[nodes[path[i]].word_id] << ")";
+                cout << " " << path[i] << "(" << dg.m_subwords[nodes[path[i]].word_id] << ")";
         }
         cout << endl << endl;
         return;
@@ -1120,7 +1114,6 @@ void print_dot_digraph(DecoderGraph &dg,
                        bool mark_start_end)
 {
     set<node_idx_t> node_idxs;
-    //reachable_graph_nodes(nodes, node_idxs);
     for (unsigned int i = 0; i < nodes.size(); i++)
         node_idxs.insert(i);
 

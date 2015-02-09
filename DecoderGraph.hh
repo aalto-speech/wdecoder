@@ -45,8 +45,6 @@ public:
         }
     };
 
-    int debug;
-
     // Text units
     std::vector<std::string> m_subwords;
     // Mapping from text units to indices
@@ -60,12 +58,7 @@ public:
     // Hmm states
     std::vector<HmmState> m_hmm_states;
 
-    // Word segmentations
-    //std::map<std::string, std::vector<std::string> > m_word_segs;
-
-    DecoderGraph() {
-        debug = 0;
-    };
+    DecoderGraph() { }
 
     void read_phone_model(std::string phnfname);
     void read_noway_lexicon(std::string lexfname);

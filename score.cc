@@ -145,7 +145,6 @@ int main(int argc, char* argv[])
         string resline;
 
         int total_frames = 0;
-        double total_time = 0.0;
         double total_lp = 0.0;
         int file_count = 0;
 
