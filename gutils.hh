@@ -34,11 +34,6 @@ void triphonize_subword(DecoderGraph &dg,
                         std::vector<DecoderGraph::TriphoneNode> &nodes);
 void add_triphones(std::vector<DecoderGraph::TriphoneNode> &nodes,
                    std::vector<DecoderGraph::TriphoneNode> &nodes_to_add);
-void triphones_to_states(DecoderGraph &dg,
-                         std::vector<DecoderGraph::TriphoneNode> &triphone_nodes,
-                         std::vector<DecoderGraph::Node> &nodes,
-                         int curr_triphone_idx=START_NODE,
-                         int curr_state_idx=START_NODE);
 void triphones_to_state_chain(DecoderGraph &dg,
                               std::vector<DecoderGraph::TriphoneNode> &triphone_nodes,
                               std::vector<DecoderGraph::Node> &nodes);

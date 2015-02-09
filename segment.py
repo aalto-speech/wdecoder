@@ -25,7 +25,8 @@ def segment(model, recipe, lnadir, batches, bidx):
     model_ph = "%s.ph" % model
     model_dur = "%s.dur" % model
     batch_options = "-B %i -I %i" % (batches, bidx)
-    seg_cmd = "%s -t -l -s -d %s -n %s %s %s %s" % (segment_exe, model_dur, work_dir, batch_options, model_ph, recipe)
+#    seg_cmd = "%s -t -l -s -d %s -n %s %s %s %s" % (segment_exe, model_dur, work_dir, batch_options, model_ph, recipe)
+    seg_cmd = "%s -t -l -s -n %s %s %s %s" % (segment_exe, work_dir, batch_options, model_ph, recipe)
     p = subprocess.Popen(seg_cmd, shell=True)
     p.wait()
 

@@ -34,10 +34,8 @@ void swgraphtest::create_graph(DecoderGraph &dg,
                                vector<DecoderGraph::Node> &nodes,
                                map<string, vector<string> > &word_segs)
 {
-    vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
     set<string> subwords;
-    nodes.clear();
-    nodes.resize(2);
+    nodes.clear(); nodes.resize(2);
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
     {
         for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
@@ -63,6 +61,11 @@ void swgraphtest::create_graph(DecoderGraph &dg,
     subwordgraphbuilder::connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
     subwordgraphbuilder::connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
     prune_unreachable_nodes(nodes);
+
+    push_word_ids_right(nodes);
+    tie_state_prefixes(nodes);
+    push_word_ids_left(nodes);
+    tie_state_suffixes(nodes);
 }
 
 
@@ -204,120 +207,6 @@ void swgraphtest::SubwordGraphTest8(void)
 
     vector<DecoderGraph::Node> nodes(2);
     create_graph(dg, nodes, word_segs);
-
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
-}
-
-
-void swgraphtest::SubwordGraphTest9(void)
-{
-    DecoderGraph dg;
-    read_fixtures(dg);
-
-    string segname = "data/500.segs";
-    map<string, vector<string> > word_segs;
-    read_word_segmentations(dg, segname, word_segs);
-
-    vector<DecoderGraph::Node> nodes(2);
-
-    vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
-    set<string> subwords;
-    for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
-    {
-        for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
-        {
-            subwords.insert(*swit);
-            if (swit->length() < 2) continue;
-            vector<DecoderGraph::TriphoneNode> word_triphones;
-            triphonize_subword(dg, *swit, word_triphones);
-            add_triphones(triphone_nodes, word_triphones);
-        }
-    }
-
-    triphones_to_states(dg, triphone_nodes, nodes);
-    triphone_nodes.clear();
-    prune_unreachable_nodes(nodes);
-
-    vector<DecoderGraph::Node> cw_nodes;
-    map<string, int> fanout, fanin;
-    subwordgraphbuilder::create_crossword_network(dg, subwords, cw_nodes, fanout, fanin);
-
-    cerr << endl << "cw size: " << cw_nodes.size() << endl;
-    minimize_crossword_network(cw_nodes, fanout, fanin);
-    cerr << "tied cw size: " << cw_nodes.size() << endl;
-
-    subwordgraphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
-    connect_end_to_start_node(nodes);
-    subwordgraphbuilder::connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
-    subwordgraphbuilder::connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
-    prune_unreachable_nodes(nodes);
-
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
-}
-
-
-void swgraphtest::SubwordGraphTest10(void)
-{
-    DecoderGraph dg;
-    read_fixtures(dg);
-
-    string segname = "data/segs.txt";
-    map<string, vector<string> > word_segs;
-    read_word_segmentations(dg, segname, word_segs);
-
-    vector<DecoderGraph::Node> nodes(2);
-
-    vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
-    set<string> subwords;
-    for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
-    {
-        for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
-        {
-            subwords.insert(*swit);
-            if (swit->length() < 2) continue;
-            vector<DecoderGraph::TriphoneNode> word_triphones;
-            triphonize_subword(dg, *swit, word_triphones);
-            add_triphones(triphone_nodes, word_triphones);
-        }
-    }
-
-    triphones_to_states(dg, triphone_nodes, nodes);
-    triphone_nodes.clear();
-    prune_unreachable_nodes(nodes);
-
-    set<node_idx_t> third_nodes;
-    set_reverse_arcs(nodes);
-    find_nodes_in_depth_reverse(nodes, third_nodes, 4);
-    clear_reverse_arcs(nodes);
-    for (auto nii=third_nodes.begin(); nii != third_nodes.end(); ++nii)
-        nodes[*nii].flags |= NODE_LM_RIGHT_LIMIT;
-
-    third_nodes.clear();
-    find_nodes_in_depth(nodes, third_nodes, 4);
-    for (auto nii=third_nodes.begin(); nii !=third_nodes.end(); ++nii)
-        nodes[*nii].flags |= NODE_LM_LEFT_LIMIT;
-
-    push_word_ids_right(nodes);
-    tie_state_prefixes(nodes);
-    push_word_ids_left(nodes);
-    tie_state_suffixes(nodes);
-
-    vector<DecoderGraph::Node> cw_nodes;
-    map<string, int> fanout, fanin;
-    subwordgraphbuilder::create_crossword_network(dg, subwords, cw_nodes, fanout, fanin);
-    cerr << endl << "cw size: " << cw_nodes.size() << endl;
-    minimize_crossword_network(cw_nodes, fanout, fanin);
-    cerr << "tied cw size: " << cw_nodes.size() << endl;
-
-    subwordgraphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
-    connect_end_to_start_node(nodes);
-    subwordgraphbuilder::connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
-    subwordgraphbuilder::connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
-    prune_unreachable_nodes(nodes);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );

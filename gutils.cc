@@ -211,33 +211,6 @@ add_triphones(vector<DecoderGraph::TriphoneNode> &nodes,
 }
 
 void
-triphones_to_states(DecoderGraph &dg,
-                    vector<DecoderGraph::TriphoneNode> &triphone_nodes,
-                    vector<DecoderGraph::Node> &nodes,
-                    int curr_tri_idx,
-                    int curr_state_idx)
-{
-    if (triphone_nodes[curr_tri_idx].connect_to_end_node)
-        nodes[curr_state_idx].arcs.insert(END_NODE);
-
-    for (auto triit = triphone_nodes[curr_tri_idx].hmm_id_lookahead.begin();
-            triit != triphone_nodes[curr_tri_idx].hmm_id_lookahead.end();
-            ++triit)
-    {
-        int new_state_idx = connect_triphone(dg, nodes, triit->first, curr_state_idx);
-        triphones_to_states(dg, triphone_nodes, nodes, triit->second, new_state_idx);
-    }
-
-    for (auto swit = triphone_nodes[curr_tri_idx].subword_id_lookahead.begin();
-            swit != triphone_nodes[curr_tri_idx].subword_id_lookahead.end();
-            ++swit)
-    {
-        int new_state_idx = connect_word(nodes, swit->first, curr_state_idx);
-        triphones_to_states(dg, triphone_nodes, nodes, swit->second, new_state_idx);
-    }
-}
-
-void
 triphones_to_state_chain(DecoderGraph &dg,
                          vector<DecoderGraph::TriphoneNode> &triphone_nodes,
                          vector<DecoderGraph::Node> &nodes)
