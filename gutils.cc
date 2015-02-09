@@ -656,20 +656,6 @@ bool assert_subword_ids_right(DecoderGraph &dg,
     return true;
 }
 
-bool assert_no_double_arcs(vector<DecoderGraph::Node> &nodes)
-{
-    for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
-        set<int> targets;
-        for (auto ait = nit->arcs.begin(); ait != nit->arcs.end(); ++ait) {
-            if (targets.find(*ait) != targets.end())
-                return false;
-            targets.insert(*ait);
-        }
-    }
-
-    return true;
-}
-
 bool assert_no_duplicate_word_ids(DecoderGraph &dg,
                                   vector<DecoderGraph::Node> &nodes)
 {
