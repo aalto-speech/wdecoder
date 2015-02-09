@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
         for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
             subwords.insert(swit->first);
             if (swit->second.size() < 2) continue;
-            vector<DecoderGraph::TriphoneNode> sw_triphones;
+            vector<TriphoneNode> sw_triphones;
             triphonize_subword(dg, swit->first, sw_triphones);
             vector<DecoderGraph::Node> sw_nodes;
             triphones_to_state_chain(dg, sw_triphones, sw_nodes);

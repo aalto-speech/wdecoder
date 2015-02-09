@@ -42,7 +42,7 @@ void swgraphtest::create_graph(DecoderGraph &dg,
         {
             subwords.insert(*swit);
             if (swit->length() < 2) continue;
-            vector<DecoderGraph::TriphoneNode> word_triphones;
+            vector<TriphoneNode> word_triphones;
             triphonize_subword(dg, *swit, word_triphones);
             vector<DecoderGraph::Node> word_nodes;
             triphones_to_state_chain(dg, word_triphones, word_nodes);

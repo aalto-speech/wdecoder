@@ -235,19 +235,19 @@ create_forced_path(DecoderGraph &dg,
                    map<int, string> &node_labels)
 {
     vector<string> word;
-    vector<DecoderGraph::TriphoneNode> tnodes;
+    vector<TriphoneNode> tnodes;
 
     // Create initial triphone graph
-    tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
+    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
     for (int i=2; i<(int)sentence.size()-1; i++) {
         if (sentence[i] == "<w>" && sentence[i-1] == "</s>")
             continue;
         else if (sentence[i] == "<w>") {
-            vector<DecoderGraph::TriphoneNode> word_tnodes;
+            vector<TriphoneNode> word_tnodes;
             triphonize(dg, word, word_tnodes);
             tnodes.insert(tnodes.end(), word_tnodes.begin(), word_tnodes.end());
-            tnodes.insert(tnodes.begin()+(tnodes.size()-1), DecoderGraph::TriphoneNode(dg.m_subword_map["<w>"], -1));
-            tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
+            tnodes.insert(tnodes.begin()+(tnodes.size()-1), TriphoneNode(dg.m_subword_map["<w>"], -1));
+            tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
             word.clear();
         }
         else

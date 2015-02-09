@@ -37,11 +37,11 @@ void graphtest::read_fixtures(DecoderGraph &dg)
 void graphtest::make_graph(DecoderGraph &dg,
                            vector<DecoderGraph::Node> &nodes)
 {
-    vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
+    vector<TriphoneNode> triphone_nodes(2);
     nodes.clear();
     nodes.resize(2);
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
-        vector<DecoderGraph::TriphoneNode> word_triphones;
+        vector<TriphoneNode> word_triphones;
         triphonize(dg, wit->second, word_triphones);
         vector<DecoderGraph::Node> word_nodes;
         triphones_to_state_chain(dg, word_triphones, word_nodes);

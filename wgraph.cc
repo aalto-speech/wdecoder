@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
 
         vector<DecoderGraph::Node> nodes(2);
         for (auto wit = words.begin(); wit != words.end(); ++wit) {
-            vector<DecoderGraph::TriphoneNode> word_triphones;
+            vector<TriphoneNode> word_triphones;
             triphonize_subword(dg, *wit, word_triphones);
             if (word_triphones.size() == 2)
                 cerr << "skipping one phone word: " << *wit << endl;

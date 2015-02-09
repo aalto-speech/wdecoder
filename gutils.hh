@@ -25,12 +25,12 @@ void triphonize(DecoderGraph &dg,
                 std::vector<std::string> &triphones);
 bool triphonize(DecoderGraph &dg,
                 std::vector<std::string> &word_seg,
-                std::vector<DecoderGraph::TriphoneNode> &nodes);
+                std::vector<TriphoneNode> &nodes);
 void triphonize_subword(DecoderGraph &dg,
                         const std::string &subword,
-                        std::vector<DecoderGraph::TriphoneNode> &nodes);
+                        std::vector<TriphoneNode> &nodes);
 void triphones_to_state_chain(DecoderGraph &dg,
-                              std::vector<DecoderGraph::TriphoneNode> &triphone_nodes,
+                              std::vector<TriphoneNode> &triphone_nodes,
                               std::vector<DecoderGraph::Node> &nodes);
 void add_nodes_to_tree(DecoderGraph &dg,
                        std::vector<DecoderGraph::Node> &nodes,

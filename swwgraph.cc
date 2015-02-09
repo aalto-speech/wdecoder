@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
         int triphonize_error = 0;
         vector<DecoderGraph::Node> nodes(2);
         for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
-            vector<DecoderGraph::TriphoneNode> word_triphones;
+            vector<TriphoneNode> word_triphones;
             bool ok = triphonize(dg, wit->second, word_triphones);
             if (!ok) {
                 triphonize_error++;

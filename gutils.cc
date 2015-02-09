@@ -102,7 +102,7 @@ void triphonize(DecoderGraph &dg,
 
 bool triphonize(DecoderGraph &dg,
                 vector<string> &word_seg,
-                vector<DecoderGraph::TriphoneNode> &nodes)
+                vector<TriphoneNode> &nodes)
 {
     nodes.clear();
 
@@ -125,7 +125,7 @@ bool triphonize(DecoderGraph &dg,
 
     for (auto triit = triphones.begin(); triit != triphones.end(); ++triit)
     {
-        DecoderGraph::TriphoneNode trin;
+        TriphoneNode trin;
         trin.hmm_id = dg.m_hmm_map[*triit];
         nodes.push_back(trin);
     }
@@ -134,7 +134,7 @@ bool triphonize(DecoderGraph &dg,
 
     for (auto wit = word_id_positions.rbegin(); wit != word_id_positions.rend(); ++wit)
     {
-        DecoderGraph::TriphoneNode trin;
+        TriphoneNode trin;
         trin.subword_id = wit->first;
         nodes.insert(nodes.begin() + wit->second, trin);
     }
@@ -144,26 +144,26 @@ bool triphonize(DecoderGraph &dg,
 
 void triphonize_subword(DecoderGraph &dg,
                         const string &subword,
-                        vector<DecoderGraph::TriphoneNode> &nodes)
+                        vector<TriphoneNode> &nodes)
 {
     nodes.clear();
 
     vector<string> &triphones = dg.m_lexicon[subword];
     int word_id_pos = max(1, (int) (triphones.size() - 1));
     for (auto triit = triphones.begin(); triit != triphones.end(); ++triit) {
-        DecoderGraph::TriphoneNode trin;
+        TriphoneNode trin;
         trin.hmm_id = dg.m_hmm_map[*triit];
         nodes.push_back(trin);
     }
 
-    DecoderGraph::TriphoneNode trin;
+    TriphoneNode trin;
     trin.subword_id = dg.m_subword_map[subword];
     nodes.insert(nodes.begin() + word_id_pos, trin);
 }
 
 void
 triphones_to_state_chain(DecoderGraph &dg,
-                         vector<DecoderGraph::TriphoneNode> &triphone_nodes,
+                         vector<TriphoneNode> &triphone_nodes,
                          vector<DecoderGraph::Node> &nodes)
 {
     for (auto triit = triphone_nodes.begin(); triit != triphone_nodes.end(); ++triit)

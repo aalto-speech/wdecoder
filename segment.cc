@@ -18,15 +18,15 @@ create_forced_path(DecoderGraph &dg,
                    bool breaking_short_silence,
                    bool breaking_long_silence)
 {
-    vector<DecoderGraph::TriphoneNode> tnodes;
+    vector<TriphoneNode> tnodes;
 
     // Create initial triphone graph only with crossword context
-    tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
+    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
     vector<string> triphones;
     triphonize(sentstr, triphones);
     for (auto tit=triphones.begin(); tit != triphones.end(); ++tit)
-        tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map[*tit]));
-    tnodes.push_back(DecoderGraph::TriphoneNode(-1, dg.m_hmm_map["__"]));
+        tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[*tit]));
+    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
 
     nodes.clear(); nodes.resize(1);
     node_labels.clear();
