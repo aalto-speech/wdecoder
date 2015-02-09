@@ -26,9 +26,6 @@ void triphonize(DecoderGraph &dg,
 bool triphonize(DecoderGraph &dg,
                 std::vector<std::string> &word_seg,
                 std::vector<DecoderGraph::TriphoneNode> &nodes);
-void triphonize_all_words(DecoderGraph &dg,
-                          std::map<std::string, std::vector<std::string> > &word_segs,
-                          std::map<std::string, std::vector<std::string> > &triphonized_words);
 void triphonize_subword(DecoderGraph &dg,
                         const std::string &subword,
                         std::vector<DecoderGraph::TriphoneNode> &nodes);

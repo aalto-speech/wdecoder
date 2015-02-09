@@ -659,12 +659,6 @@ void graphtest::GraphTest22(void)
     segname = "data/500.segs";
     read_fixtures(dg);
 
-    //vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
-    //map<string, vector<string> > triphonized_words;
-    //triphonize_all_words(dg, triphonized_words);
-    //for (auto wit = triphonized_words.begin(); wit != triphonized_words.end(); ++wit)
-    //    dg.add_word(triphone_nodes, wit->first, wit->second);
-
     vector<DecoderGraph::Node> nodes(2);
     make_graph(dg, nodes);
 
@@ -714,12 +708,6 @@ void graphtest::GraphTest23(void)
     DecoderGraph dg;
     segname = "data/auto.segs";
     read_fixtures(dg);
-
-    //vector<DecoderGraph::TriphoneNode> triphone_nodes(2);
-    //map<string, vector<string> > triphonized_words;
-    //triphonize_all_words(dg, triphonized_words);
-    //for (auto wit = triphonized_words.begin(); wit != triphonized_words.end(); ++wit)
-    //    dg.add_word(triphone_nodes, wit->first, wit->second);
 
     vector<DecoderGraph::Node> nodes(2);
     make_graph(dg, nodes);

@@ -142,18 +142,6 @@ bool triphonize(DecoderGraph &dg,
     return true;
 }
 
-void triphonize_all_words(DecoderGraph &dg,
-                          map<string, vector<string> > &word_segs,
-                          map<string, vector<string> > &triphonized_words)
-{
-    for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
-        vector<string> triphones;
-        triphonize(dg, word_segs, wit->first, triphones);
-        triphonized_words[wit->first] = triphones;
-    }
-}
-
-
 void triphonize_subword(DecoderGraph &dg,
                         const string &subword,
                         vector<DecoderGraph::TriphoneNode> &nodes)
