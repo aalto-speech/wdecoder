@@ -394,21 +394,14 @@ bool assert_path(DecoderGraph &dg,
 
 bool assert_words(DecoderGraph &dg,
                   vector<DecoderGraph::Node> &nodes,
-                  map<string, vector<string> > &word_segs,
-                  bool debug)
+                  map<string, vector<string> > &word_segs)
 {
     for (auto sit = word_segs.begin(); sit != word_segs.end(); ++sit) {
         vector<string> triphones;
         triphonize(dg, word_segs, sit->first, triphones);
         bool result = assert_path(dg, nodes, triphones, sit->second);
         if (!result) {
-            if (debug)
-            {
-                cerr << endl << "no path for word: " << sit->first << ",";
-                for (auto swit = sit->second.begin(); swit != sit->second.end(); ++swit)
-                    cerr << " " << *swit;
-                cerr << endl;
-            }
+            cerr << "error, word: " << sit->first << " not found" << endl;
             return false;
         }
     }
@@ -418,11 +411,10 @@ bool assert_words(DecoderGraph &dg,
 bool assert_words(DecoderGraph &dg,
                   vector<DecoderGraph::Node> &nodes,
                   map<string, vector<string> > &word_segs,
-                  map<string, vector<string> > &triphonized_words,
-                  bool debug)
+                  map<string, vector<string> > &triphonized_words)
 {
-    for (auto sit = word_segs.begin(); sit != word_segs.end();
-            ++sit) {
+    for (auto sit = word_segs.begin(); sit != word_segs.end(); ++sit)
+    {
         bool result = assert_path(dg, nodes, triphonized_words[sit->first], sit->second);
         if (!result) {
             cerr << "error, word: " << sit->first << " not found" << endl;

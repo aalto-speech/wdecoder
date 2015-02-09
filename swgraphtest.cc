@@ -82,7 +82,7 @@ void swgraphtest::SubwordGraphTest1(void)
     vector<DecoderGraph::Node> nodes(2);
     create_graph(dg, nodes, word_segs);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
 }
@@ -100,7 +100,7 @@ void swgraphtest::SubwordGraphTest2(void)
     vector<DecoderGraph::Node> nodes(2);
     create_graph(dg, nodes, word_segs);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
 }
@@ -118,7 +118,7 @@ void swgraphtest::SubwordGraphTest3(void)
     vector<DecoderGraph::Node> nodes(2);
     create_graph(dg, nodes, word_segs);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
 }
@@ -136,7 +136,7 @@ void swgraphtest::SubwordGraphTest4(void)
     vector<DecoderGraph::Node> nodes(2);
     create_graph(dg, nodes, word_segs);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
 }
@@ -154,7 +154,7 @@ void swgraphtest::SubwordGraphTest5(void)
     vector<DecoderGraph::Node> nodes(2);
     create_graph(dg, nodes, word_segs);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
 }
@@ -172,7 +172,7 @@ void swgraphtest::SubwordGraphTest6(void)
     vector<DecoderGraph::Node> nodes(2);
     create_graph(dg, nodes, word_segs);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
 }
@@ -190,7 +190,7 @@ void swgraphtest::SubwordGraphTest7(void)
     vector<DecoderGraph::Node> nodes(2);
     create_graph(dg, nodes, word_segs);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
 }
@@ -208,7 +208,7 @@ void swgraphtest::SubwordGraphTest8(void)
     vector<DecoderGraph::Node> nodes(2);
     create_graph(dg, nodes, word_segs);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs, false) );
+    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true, false) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false, false) );
 }
