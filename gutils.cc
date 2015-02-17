@@ -1572,6 +1572,7 @@ collect_cw_fanout_nodes(DecoderGraph &dg,
 {
     if (node_idx == START_NODE) return;
     DecoderGraph::Node &node = nodes[node_idx];
+    int spp = dg.m_states_per_phone;
 
     if (node.hmm_state != -1) hmm_state_count++;
     if (node.word_id != -1) {
@@ -1585,13 +1586,12 @@ collect_cw_fanout_nodes(DecoderGraph &dg,
     }
 
     if (node_to_connect == -1 &&
-            (hmm_state_count == 4 || (hmm_state_count == 3 && node.hmm_state == -1))) node_to_connect = node_idx;
+        (hmm_state_count == (spp+1) || (hmm_state_count == spp && node.hmm_state == -1))) node_to_connect = node_idx;
 
     if (phones.size() == 2 && hmm_state_count > 2) {
         string triphone = string(1,phones[1]) + string(1,'-') + string(1,phones[0]) + string("+_");
-        if (nodes_to_fanout.find(node_to_connect) == nodes_to_fanout.end()) {
+        if (nodes_to_fanout.find(node_to_connect) == nodes_to_fanout.end())
             nodes_to_fanout[node_to_connect] = triphone;
-        }
         else
             assert(nodes_to_fanout[node_to_connect] == triphone);
         return;
@@ -1614,6 +1614,7 @@ collect_cw_fanin_nodes(DecoderGraph &dg,
 {
     if (node_idx == END_NODE) return;
     DecoderGraph::Node &node = nodes[node_idx];
+    int spp = dg.m_states_per_phone;
 
     if (node.hmm_state != -1) hmm_state_count++;
     if (node.word_id != -1) {
@@ -1627,23 +1628,20 @@ collect_cw_fanin_nodes(DecoderGraph &dg,
     }
 
     if (node_to_connect == START_NODE &&
-            (hmm_state_count == 4 || (hmm_state_count == 3 && node.hmm_state == -1))) node_to_connect = node_idx;
+        (hmm_state_count == (spp+1) || (hmm_state_count == spp && node.hmm_state == -1))) node_to_connect = node_idx;
 
     if (phones.size() == 2 && hmm_state_count > 2) {
         string triphone = string("_-") + string(1,phones[0]) + string(1,'+') + string(1,phones[1]);
-        if (nodes_from_fanin.find(node_to_connect) == nodes_from_fanin.end()) {
+        if (nodes_from_fanin.find(node_to_connect) == nodes_from_fanin.end())
             nodes_from_fanin[node_to_connect] = triphone;
-        }
-        else {
+        else
             assert(nodes_from_fanin[node_to_connect] == triphone);
-        }
         return;
     }
 
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
         collect_cw_fanin_nodes(dg, nodes, nodes_from_fanin, hmm_state_count,
                                phones, node_to_connect, *ait);
-    }
 }
 
 

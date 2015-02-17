@@ -15,6 +15,19 @@ DecoderGraph::read_phone_model(string phnfname)
 
     int modelcount;
     NowayHmmReader::read(phnf, m_hmms, m_hmm_map, m_hmm_states, modelcount);
+
+    set<string> sil_labels = { "_", "__", "_f", "_s" };
+    m_states_per_phone = -1;
+    for (int i=0; i<m_hmms.size(); i++) {
+        Hmm &hmm = m_hmms[i];
+        if (sil_labels.find(hmm.label) != sil_labels.end()) continue;
+        if (m_states_per_phone == -1) m_states_per_phone = hmm.states.size();
+        if (m_states_per_phone != hmm.states.size()) {
+            cerr << "Varying amount of states for normal phones." << endl;
+            exit(1);
+        }
+    }
+    m_states_per_phone -= 2;
 }
 
 

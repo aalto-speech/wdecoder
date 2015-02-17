@@ -58,7 +58,9 @@ public:
     // Hmm states
     std::vector<HmmState> m_hmm_states;
 
-    DecoderGraph() { }
+    int m_states_per_phone;
+
+    DecoderGraph() { m_states_per_phone = -1; }
 
     void read_phone_model(std::string phnfname);
     void read_noway_lexicon(std::string lexfname);
