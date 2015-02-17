@@ -275,7 +275,6 @@ Decoder::recognize_lna_file(string lnafname,
     }
 
     Token *best_token = nullptr;
-    add_sentence_ends(tokens);
     best_token = get_best_end_token(tokens);
     if (best_token == nullptr) {
         if (m_force_sentence_end) add_sentence_ends(tokens);
