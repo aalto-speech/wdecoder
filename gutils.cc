@@ -288,8 +288,7 @@ void find_successor_word(vector<DecoderGraph::Node> &nodes,
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (*ait == node_idx)
-            continue;
+        if (*ait == node_idx) continue;
         find_successor_word(nodes, matches, word_id, *ait, depth + 1);
     }
 }
@@ -1190,7 +1189,8 @@ void clear_reverse_arcs(vector<DecoderGraph::Node> &nodes)
         nit->reverse_arcs.clear();
 }
 
-int merge_nodes(vector<DecoderGraph::Node> &nodes, int node_idx_1,
+int merge_nodes(vector<DecoderGraph::Node> &nodes,
+                int node_idx_1,
                 int node_idx_2)
 {
     if (node_idx_1 == node_idx_2)
@@ -1201,8 +1201,7 @@ int merge_nodes(vector<DecoderGraph::Node> &nodes, int node_idx_1,
     removed_node.hmm_state = -1;
     removed_node.word_id = -1;
 
-    for (auto ait = removed_node.arcs.begin(); ait != removed_node.arcs.end();
-            ++ait) {
+    for (auto ait = removed_node.arcs.begin(); ait != removed_node.arcs.end(); ++ait) {
         merged_node.arcs.insert(*ait);
         nodes[*ait].reverse_arcs.erase(node_idx_2);
         nodes[*ait].reverse_arcs.insert(node_idx_1);
@@ -1655,11 +1654,13 @@ add_long_silence(DecoderGraph &dg,
 {
     nodes[END_NODE].arcs.clear();
 
+    int ls_len = dg.m_hmms[dg.m_hmm_map["__"]].states.size() - 2;
+
     node_idx_t node_idx = END_NODE;
     node_idx = connect_word(dg, nodes, "</s>", node_idx);
     node_idx = connect_triphone(dg, nodes, "__", node_idx, NODE_SILENCE);
     nodes[node_idx].arcs.insert(START_NODE);
-    nodes[node_idx-2].flags |= NODE_DECODE_START;
+    nodes[node_idx-(ls_len-1)].flags |= NODE_DECODE_START;
 
     node_idx = END_NODE;
     node_idx = connect_triphone(dg, nodes, "_", node_idx, NODE_SILENCE);
@@ -1675,13 +1676,15 @@ add_long_silence_no_start_end_wb(DecoderGraph &dg,
 {
     nodes[END_NODE].arcs.clear();
 
+    int ls_len = dg.m_hmms[dg.m_hmm_map["__"]].states.size() - 2;
+
     node_idx_t node_idx = END_NODE;
     node_idx = connect_triphone(dg, nodes, "__", node_idx, NODE_SILENCE);
     node_idx = connect_word(dg, nodes, "</s>", node_idx);
     node_idx = connect_triphone(dg, nodes, "__", node_idx, NODE_SILENCE);
     nodes[node_idx].arcs.insert(START_NODE);
-    nodes[node_idx-3].arcs.insert(START_NODE);
-    nodes[node_idx-2].flags |= NODE_DECODE_START;
+    nodes[node_idx-ls_len].arcs.insert(START_NODE);
+    nodes[node_idx-(ls_len-1)].flags |= NODE_DECODE_START;
 
     node_idx = END_NODE;
     node_idx = connect_triphone(dg, nodes, "_", node_idx, NODE_SILENCE);
