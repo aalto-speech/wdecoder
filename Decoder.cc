@@ -61,6 +61,8 @@ Decoder::Decoder()
     m_ngram_state_sentence_begin = -1;
     m_decode_start_node = -1;
     m_frame_idx = -1;
+
+    m_last_sil_idx = -1;
 }
 
 
@@ -77,6 +79,14 @@ Decoder::read_phone_model(string phnfname)
 
     int modelcount;
     NowayHmmReader::read(phnf, m_hmms, m_hmm_map, m_hmm_states, modelcount);
+
+    vector<string> sil_labels = { "_", "__", "_f", "_s" };
+    for (auto lit=sil_labels.begin(); lit !=sil_labels.end(); ++lit) {
+        if (m_hmm_map.find(*lit) == m_hmm_map.end()) continue;
+        int hmm_idx = m_hmm_map[*lit];
+        for (auto sit=m_hmms[hmm_idx].states.begin(); sit != m_hmms[hmm_idx].states.end(); ++sit)
+            m_last_sil_idx = max(m_last_sil_idx, sit->model);
+    }
 }
 
 
@@ -489,7 +499,7 @@ Decoder::move_token_to_node(Token token,
 
     if (token.node_idx == node_idx) {
         token.dur++;
-        if (token.dur > m_max_state_duration && node.hmm_state > 3) {
+        if (token.dur > m_max_state_duration && node.hmm_state > m_last_sil_idx) {
             m_max_state_duration_pruned_count++;
             return;
         }

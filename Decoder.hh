@@ -232,6 +232,8 @@ public:
 
     int m_decode_start_node;
     int m_frame_idx;
+
+    int m_last_sil_idx;
 };
 
 #endif /* DECODER_HH */
