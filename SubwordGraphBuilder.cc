@@ -16,6 +16,8 @@ create_crossword_network(DecoderGraph &dg,
                          map<string, int> &fanout,
                          map<string, int> &fanin)
 {
+    int spp = dg.m_states_per_phone;
+
     set<string> one_phone_subwords;
     set<char> phones;
     for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
@@ -71,8 +73,8 @@ create_crossword_network(DecoderGraph &dg,
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end())
             {
                 idx = connect_triphone(dg, nodes, triphone2, idx);
-                nodes[tri1_idx].arcs.insert(idx-2);
-                connected_fanin_nodes[triphone2] = idx-2;
+                nodes[tri1_idx].arcs.insert(idx - (spp-1));
+                connected_fanin_nodes[triphone2] = idx - (spp-1);
                 if (fiit->second == -1) {
                     nodes.resize(nodes.size()+1);
                     nodes.back().flags |= NODE_FAN_IN_DUMMY;
