@@ -126,10 +126,14 @@ Decoder::read_noway_lexicon(string lexfname)
             unit = unit.substr(0, leftp);
         }
 
+        bool problem_phone = false;
         for (auto pit = phones.begin(); pit != phones.end(); ++pit) {
-            if (m_hmm_map.find(*pit) == m_hmm_map.end())
-                throw "Unknown phone " + *pit;
+            if (m_hmm_map.find(*pit) == m_hmm_map.end()) {
+                cerr << "Unknown phone " + *pit << endl;
+                problem_phone = true;
+            }
         }
+        if (problem_phone) continue;
 
         if (m_subword_map.find(unit) == m_subword_map.end()) {
             m_subwords.push_back(unit);

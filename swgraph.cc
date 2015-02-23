@@ -47,13 +47,13 @@ int main(int argc, char* argv[])
 
         set<node_idx_t> third_nodes;
         set_reverse_arcs(nodes);
-        find_nodes_in_depth_reverse(nodes, third_nodes, 4);
+        find_nodes_in_depth_reverse(nodes, third_nodes, dg.m_states_per_phone+1);
         clear_reverse_arcs(nodes);
         for (auto nii=third_nodes.begin(); nii != third_nodes.end(); ++nii)
             nodes[*nii].flags |= NODE_LM_RIGHT_LIMIT;
 
         third_nodes.clear();
-        find_nodes_in_depth(nodes, third_nodes, 4);
+        find_nodes_in_depth(nodes, third_nodes, dg.m_states_per_phone+1);
         for (auto nii=third_nodes.begin(); nii !=third_nodes.end(); ++nii)
             nodes[*nii].flags |= NODE_LM_LEFT_LIMIT;
 

@@ -23,8 +23,10 @@ read_words(DecoderGraph &dg,
         string word;
         stringstream ss(line);
         ss >> word;
-        if (dg.m_subword_map.find(word) == dg.m_subword_map.end())
-            throw "Word " + word + " not found in lexicon";
+        if (dg.m_subword_map.find(word) == dg.m_subword_map.end()) {
+            cerr << "Word " + word + " not found in lexicon" << endl;
+            continue;
+        }
         words.insert(word);
         linei++;
     }
