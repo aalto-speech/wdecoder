@@ -322,71 +322,59 @@ FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
 int
 FullTableBigramLookahead::set_la_state_indices_to_nodes()
 {
-    // Propagate initial la state indices
-    int max_state_idx = 0;
-    propagate_la_state_idx(END_NODE, 0, max_state_idx, true);
+    vector<vector<Decoder::Arc> > reverse_arcs;
+    get_reverse_arcs(reverse_arcs);
 
-    // Find one node for each initial la state
-    map<int, int> example_la_state_nodes;
-    for (unsigned int i=0; i<decoder->m_nodes.size(); i++)
-        example_la_state_nodes[m_node_la_states[i]] = i;
-
-    // Find real la states
-    map<set<int>, set<int> > real_la_state_succs;
-    for (auto nit = example_la_state_nodes.begin(); nit != example_la_state_nodes.end(); ++nit) {
-        set<int> curr_succs;
-        find_successor_words(nit->second, curr_succs, true);
-        real_la_state_succs[curr_succs].insert(nit->first);
+    map<int, vector<int> > words;
+    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
+        Decoder::Node &nd = decoder->m_nodes[i];
+        if (nd.word_id != -1) words[nd.word_id].push_back(i);
     }
 
-    // Remap the indices
+    long long int max_state_idx = 0;
+    for (auto wit = words.begin(); wit != words.end(); ++wit) {
+        map<int, int> la_state_changes;
+        for (auto nit = wit->second.begin(); nit != wit->second.end(); ++nit)
+            propagate_la_state_idx(*nit, la_state_changes, max_state_idx, reverse_arcs, true);
+    }
+
     map<int, int> la_state_remapping;
-    int reidx = 0;
-    for (auto ssit = real_la_state_succs.begin(); ssit != real_la_state_succs.end(); ++ssit) {
-        for (auto idxit = ssit->second.begin(); idxit != ssit->second.end(); ++idxit)
-            la_state_remapping[*idxit] = reidx;
-        reidx++;
+    int remapped_la_idx = 0;
+    for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
+        int curr_la_idx = m_node_la_states[i];
+        if (la_state_remapping.find(curr_la_idx) == la_state_remapping.end())
+            la_state_remapping[curr_la_idx] = remapped_la_idx++;
     }
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++)
         m_node_la_states[i] = la_state_remapping[m_node_la_states[i]];
 
-    return real_la_state_succs.size();
+    return la_state_remapping.size();
 }
 
 
 void
 FullTableBigramLookahead::propagate_la_state_idx(int node_idx,
-                                                 int la_state_idx,
-                                                 int &max_state_idx,
+                                                 map<int, int> &la_state_changes,
+                                                 long long int &max_state_idx,
+                                                 vector<vector<Decoder::Arc> > &reverse_arcs,
                                                  bool first_node)
 {
     Decoder::Node &nd = decoder->m_nodes[node_idx];
-    if (m_node_la_states[node_idx] != -1) return;
 
-    if (!first_node && nd.word_id != -1) {
-        m_node_la_states[node_idx] = ++max_state_idx;
-        la_state_idx = m_node_la_states[node_idx];
-    }
-    else
-        m_node_la_states[node_idx] = la_state_idx;
-
-    int num_non_self_arcs = 0;
-    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-        if (ait->target_node != node_idx) num_non_self_arcs++;
-    bool la_state_change = num_non_self_arcs > 1;
-
-    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait)
-    {
-        if (ait->target_node == node_idx) continue;
-        if (ait->target_node == END_NODE) continue;
-
-        if (la_state_change) {
-            max_state_idx++;
-            propagate_la_state_idx(ait->target_node, max_state_idx, max_state_idx, false);
+    if (!first_node) {
+        int curr_la_state = m_node_la_states[node_idx];
+        if (la_state_changes.find(curr_la_state) != la_state_changes.end()) {
+            m_node_la_states[node_idx] = la_state_changes[curr_la_state];
         }
-        else
-            propagate_la_state_idx(ait->target_node, la_state_idx, max_state_idx, false);
+        else {
+            la_state_changes[curr_la_state] = ++max_state_idx;
+            m_node_la_states[node_idx] = max_state_idx;
+        }
+        if (nd.word_id != -1) return;
     }
+
+    for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait)
+        propagate_la_state_idx(rait->target_node, la_state_changes, max_state_idx, reverse_arcs, false);
 }
 
 
