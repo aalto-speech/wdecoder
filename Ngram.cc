@@ -85,9 +85,10 @@ Ngram::find_node(int node_idx, int word)
 }
 
 
-void _getline(ifstream &fstr, string &line, int &linei) {
+void _getline(SimpleFileInput &sfi, string &line, int &linei) {
     const string read_error("Problem reading ARPA file");
-    if (!getline(fstr, line)) throw read_error;
+    if (!sfi.getline(line)) throw read_error;
+    str::clean(line);
     linei++;
 }
 
@@ -95,9 +96,8 @@ void _getline(ifstream &fstr, string &line, int &linei) {
 void
 Ngram::read_arpa(string arpafname) {
 
-    ifstream arpafile(arpafname);
+    SimpleFileInput arpafile(arpafname);
     string header_error("Invalid ARPA header");
-    if (!arpafile) throw string("Problem opening ARPA file: " + arpafname);
 
     int linei = 0;
     string line;
@@ -164,7 +164,7 @@ Ngram::read_arpa(string arpafname) {
 
 
 int
-Ngram::read_arpa_read_order(ifstream &arpafile,
+Ngram::read_arpa_read_order(SimpleFileInput &arpafile,
                             vector<NgramInfo> &order_ngrams,
                             string &line,
                             int curr_ngram_order,
@@ -185,7 +185,6 @@ Ngram::read_arpa_read_order(ifstream &arpafile,
         for (int i=0; i<curr_ngram_order; i++) {
             if (vals.eof()) throw string("Invalid ARPA line");
             vals >> tmp;
-            str::clean(tmp);
             curr_ngram_str.push_back(tmp);
         }
         if (curr_ngram_order == 1) {

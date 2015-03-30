@@ -1,4 +1,4 @@
-cxxflags = -O3 -march=native -DNDEBUG -std=gnu++0x -Wall
+cxxflags = -O4 -march=native -DNDEBUG -std=gnu++0x -Wall
 #cxxflags = -O0 -gddb -std=gnu++0x -Wall
 #cxxflags = -O0 -g -std=gnu++0x -Wall
 #cxxflags = -O0 -pg -std=gnu++0x -Wall
@@ -30,13 +30,13 @@ all: $(progs) $(test_progs)
 	$(CXX) -c $(cxxflags) $< -o $@
 
 $(progs): %: %.o $(objs)
-	$(CXX) $(cxxflags) $< -o $@ $(objs)
+	$(CXX) $(cxxflags) $< -o $@ $(objs) -lz
 
 %: %.o $(objs)
-	$(CXX) $(cxxflags) $< -o $@ $(objs)
+	$(CXX) $(cxxflags) $< -o $@ $(objs) -lz
 
 $(test_progs): %: %.o $(objs) $(test_objs)
-	$(CXX) $(cxxflags) $< -o $@ $(objs) $(test_objs) -lcppunit
+	$(CXX) $(cxxflags) $< -o $@ $(objs) $(test_objs) -lcppunit -lz
 
 test_objs: $(test_srcs)
 

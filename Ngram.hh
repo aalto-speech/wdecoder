@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "io.hh"
 
 class Ngram {
 public:
@@ -61,7 +62,7 @@ public:
     };
 
     int find_node(int node_idx, int word);
-    int read_arpa_read_order(std::ifstream &arpafile,
+    int read_arpa_read_order(SimpleFileInput &arpafile,
                              std::vector<NgramInfo> &order_ngrams,
                              std::string &line,
                              int curr_ngram_order,
