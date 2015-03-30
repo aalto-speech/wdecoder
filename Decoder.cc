@@ -159,13 +159,12 @@ Decoder::read_lm(string lmfname)
 void
 Decoder::read_dgraph(string fname)
 {
-    ifstream ginf(fname);
-    if (!ginf) throw string("Problem opening decoder graph.");
+    SimpleFileInput ginf(fname);
 
     int node_idx, node_count, arc_count;
     string line;
 
-    getline(ginf, line);
+    ginf.getline(line);
     stringstream ncl(line);
     ncl >> node_count;
     m_nodes.clear();
@@ -173,7 +172,7 @@ Decoder::read_dgraph(string fname)
 
     string ltype;
     for (unsigned int i=0; i<m_nodes.size(); i++) {
-        getline(ginf, line);
+        ginf.getline(line);
         stringstream nss(line);
         nss >> ltype;
         if (ltype != "n") throw string("Problem reading graph.");
@@ -185,7 +184,7 @@ Decoder::read_dgraph(string fname)
 
     vector<int> node_arc_counts;
     node_arc_counts.resize(node_count, 0);
-    while (getline(ginf, line)) {
+    while (ginf.getline(line)) {
         stringstream ass(line);
         int src_node, tgt_node;
         ass >> ltype >> src_node >> tgt_node;
