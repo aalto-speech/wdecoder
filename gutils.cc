@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "gutils.hh"
+#include "io.hh"
 
 using namespace std;
 
@@ -1226,16 +1227,16 @@ void connect_end_to_start_node(vector<DecoderGraph::Node> &nodes) {
 void write_graph(vector<DecoderGraph::Node> &nodes,
                  string fname)
 {
-    ofstream outf(fname);
-    outf << nodes.size() << endl;
+    SimpleFileOutput outf(fname);
+    outf << nodes.size() << "\n";
     for (unsigned int i = 0; i < nodes.size(); i++)
         outf << "n " << i << " " << nodes[i].hmm_state << " "
              << nodes[i].word_id << " " << nodes[i].arcs.size() << " "
-             << nodes[i].flags << endl;
+             << nodes[i].flags << "\n";
     for (unsigned int i = 0; i < nodes.size(); i++) {
         DecoderGraph::Node &node = nodes[i];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-            outf << "a " << i << " " << *ait << endl;
+            outf << "a " << i << " " << *ait << "\n";
     }
 }
 
