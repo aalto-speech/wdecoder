@@ -5,6 +5,7 @@
 #include "DecoderGraph.hh"
 #undef private
 
+#include <set>
 #include <string>
 
 #include <cppunit/TestFixture.h>
@@ -30,7 +31,9 @@ private:
     std::string segname;
 
     void read_fixtures(DecoderGraph &dg);
-    void make_graph(DecoderGraph &dg, std::vector<DecoderGraph::Node> &nodes);
+    void make_graph(DecoderGraph &dg,
+                    std::set<std::string> &words,
+                    std::vector<DecoderGraph::Node> &nodes);
 
 };
 

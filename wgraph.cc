@@ -9,30 +9,6 @@ using namespace std;
 using namespace gutils;
 
 
-void
-read_words(DecoderGraph &dg,
-           string wordfname,
-           set<string> &words)
-{
-    ifstream wordf(wordfname);
-    if (!wordf) throw string("Problem opening word list.");
-
-    string line;
-    int linei = 1;
-    while (getline(wordf, line)) {
-        string word;
-        stringstream ss(line);
-        ss >> word;
-        if (dg.m_subword_map.find(word) == dg.m_subword_map.end()) {
-            cerr << "Word " + word + " not found in lexicon" << endl;
-            continue;
-        }
-        words.insert(word);
-        linei++;
-    }
-}
-
-
 int main(int argc, char* argv[])
 {
     conf::Config config;

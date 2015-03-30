@@ -12,6 +12,30 @@ namespace gutils {
 
 
 void
+read_words(DecoderGraph &dg,
+           string wordfname,
+           set<string> &words)
+{
+    ifstream wordf(wordfname);
+    if (!wordf) throw string("Problem opening word list.");
+
+    string line;
+    int linei = 1;
+    while (getline(wordf, line)) {
+        string word;
+        stringstream ss(line);
+        ss >> word;
+        if (dg.m_subword_map.find(word) == dg.m_subword_map.end()) {
+            cerr << "Word " + word + " not found in lexicon" << endl;
+            continue;
+        }
+        words.insert(word);
+        linei++;
+    }
+}
+
+
+void
 read_word_segmentations(DecoderGraph &dg,
                         string segfname,
                         map<string, vector<string> > &word_segs)

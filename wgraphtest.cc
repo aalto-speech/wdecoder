@@ -2,6 +2,7 @@
 #include "wgraphtest.hh"
 #include "gutils.hh"
 #include "WordGraphBuilder.hh"
+#include "GraphBuilder.hh"
 
 
 using namespace std;
@@ -14,7 +15,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION (wgraphtest);
 void wgraphtest::setUp (void)
 {
     amname = string("data/speecon_ml_gain3500_occ300_21.7.2011_22");
-    lexname = string("data/lex");
+    lexname = string("data/1k.words.lex");
 }
 
 
@@ -32,19 +33,47 @@ void wgraphtest::read_fixtures(DecoderGraph &dg)
 
 
 void wgraphtest::make_graph(DecoderGraph &dg,
-                           vector<DecoderGraph::Node> &nodes)
+                            set<string> &words,
+                            vector<DecoderGraph::Node> &nodes)
 {
+    for (auto wit = words.begin(); wit != words.end(); ++wit) {
+        vector<TriphoneNode> word_triphones;
+        triphonize_subword(dg, *wit, word_triphones);
+        if (word_triphones.size() == 2)
+            cerr << "skipping one phone word: " << *wit << endl;
+        vector<DecoderGraph::Node> word_nodes;
+        triphones_to_state_chain(dg, word_triphones, word_nodes);
+        add_nodes_to_tree(dg, nodes, word_nodes);
+    }
+    lookahead_to_arcs(nodes);
+    prune_unreachable_nodes(nodes);
 
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    wordgraphbuilder::create_crossword_network(dg, words, cw_nodes, fanout, fanin);
+    cerr << "crossword network size: " << cw_nodes.size() << endl;
+    minimize_crossword_network(cw_nodes, fanout, fanin);
+    cerr << "tied crossword network size: " << cw_nodes.size() << endl;
+
+    cerr << "Connecting crossword network.." << endl;
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    connect_end_to_start_node(nodes);
+    cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 }
 
 
 // Test tying state chain prefixes
 void wgraphtest::WordGraphTest1(void)
 {
+
     DecoderGraph dg;
     read_fixtures(dg);
 
+    set<string> words;
+    read_words(dg, "data/1k.words.txt", words);
+
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    cerr << endl;
+    make_graph(dg, words, nodes);
 }
 

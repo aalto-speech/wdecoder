@@ -13,6 +13,10 @@
 
 namespace gutils {
 
+void read_words(DecoderGraph &dg,
+                std::string wordfname,
+                std::set<std::string> &words);
+
 void read_word_segmentations(DecoderGraph &dg,
                              std::string segfname,
                              std::map<std::string, std::vector<std::string> > &word_segs);
