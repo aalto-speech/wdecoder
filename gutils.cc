@@ -116,13 +116,24 @@ void triphonize(DecoderGraph &dg,
         string tripstring;
         for (auto swit = word_segs[word].begin();
                 swit != word_segs[word].end(); ++swit) {
-            vector<string> &triphones = dg.m_lexicon[*swit];
-            for (auto tit = triphones.begin(); tit != triphones.end(); ++tit)
+            vector<string> &temp_triphones = dg.m_lexicon[*swit];
+            for (auto tit = temp_triphones.begin(); tit != temp_triphones.end(); ++tit)
                 tripstring += (*tit)[2];
         }
         triphonize(tripstring, triphones);
     } else
         triphonize(word, triphones);
+}
+
+void triphonize(DecoderGraph &dg,
+                string word,
+                vector<string> &triphones)
+{
+    string tripstring;
+    vector<string> &word_triphones = dg.m_lexicon[word];
+    for (auto tit = word_triphones.begin(); tit != word_triphones.end(); ++tit)
+        tripstring += (*tit)[2];
+    triphonize(tripstring, triphones);
 }
 
 bool triphonize(DecoderGraph &dg,
@@ -425,6 +436,23 @@ bool assert_words(DecoderGraph &dg,
         bool result = assert_path(dg, nodes, triphones, sit->second);
         if (!result) {
             cerr << "error, word: " << sit->first << " not found" << endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+bool assert_words(DecoderGraph &dg,
+                  vector<DecoderGraph::Node> &nodes,
+                  set<string> &words)
+{
+    for (auto sit = words.begin(); sit != words.end(); ++sit) {
+        vector<string> triphones;
+        triphonize(dg, *sit, triphones);
+        vector<string> lm_ids; lm_ids.push_back(*sit);
+        bool result = assert_path(dg, nodes, triphones, lm_ids);
+        if (!result) {
+            cerr << "error, word: " << *sit << " not found" << endl;
             return false;
         }
     }

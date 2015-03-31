@@ -27,6 +27,9 @@ void triphonize(DecoderGraph &dg,
                 std::map<std::string, std::vector<std::string> > &word_segs,
                 std::string word,
                 std::vector<std::string> &triphones);
+void triphonize(DecoderGraph &dg,
+                std::string word,
+                std::vector<std::string> &triphones);
 bool triphonize(DecoderGraph &dg,
                 std::vector<std::string> &word_seg,
                 std::vector<TriphoneNode> &nodes);
@@ -81,6 +84,9 @@ bool assert_transitions(DecoderGraph &dg,
 bool assert_words(DecoderGraph &dg,
                   std::vector<DecoderGraph::Node> &nodes,
                   std::map<std::string, std::vector<std::string> > &word_segs);
+bool assert_words(DecoderGraph &dg,
+                  std::vector<DecoderGraph::Node> &nodes,
+                  std::set<std::string> &words);
 bool assert_word_pair_crossword(DecoderGraph &dg,
                                 std::vector<DecoderGraph::Node> &nodes,
                                 std::map<std::string, std::vector<std::string> > &word_segs,

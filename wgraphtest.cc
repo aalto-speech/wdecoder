@@ -75,5 +75,7 @@ void wgraphtest::WordGraphTest1(void)
     vector<DecoderGraph::Node> nodes(2);
     cerr << endl;
     make_graph(dg, words, nodes);
+
+    CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
 }
 
