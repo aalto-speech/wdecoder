@@ -15,6 +15,7 @@ class wgraphtest : public CPPUNIT_NS :: TestFixture
 {
     CPPUNIT_TEST_SUITE (wgraphtest);
     CPPUNIT_TEST (WordGraphTest1);
+    CPPUNIT_TEST (WordGraphTest2);
     CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -23,6 +24,7 @@ public:
 
 protected:
     void WordGraphTest1(void);
+    void WordGraphTest2(void);
 
 private:
 

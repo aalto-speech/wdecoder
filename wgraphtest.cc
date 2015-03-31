@@ -62,7 +62,8 @@ void wgraphtest::make_graph(DecoderGraph &dg,
 }
 
 
-// Test tying state chain prefixes
+// Test word graph construction with 1000 words
+// No one phone words
 void wgraphtest::WordGraphTest1(void)
 {
 
@@ -80,3 +81,22 @@ void wgraphtest::WordGraphTest1(void)
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, words, 20000) );
 }
 
+
+// Test word graph construction with 1000+ words
+// Includes one phone words
+void wgraphtest::WordGraphTest2(void)
+{
+    DecoderGraph dg;
+    lexname = "data/500.words.1pwords.lex";
+    read_fixtures(dg);
+
+    set<string> words;
+    read_words(dg, "data/500.words.1pwords.txt", words);
+
+    vector<DecoderGraph::Node> nodes(2);
+    cerr << endl;
+    make_graph(dg, words, nodes);
+
+    CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, words) );
+}
