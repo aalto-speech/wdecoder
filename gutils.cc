@@ -554,6 +554,33 @@ bool assert_word_pairs(DecoderGraph &dg,
     return true;
 }
 
+bool assert_word_pairs(DecoderGraph &dg,
+                       vector<DecoderGraph::Node> &nodes,
+                       set<string> &words,
+                       bool short_silence,
+                       bool wb_symbol)
+{
+    map<string, vector<string> > word_segs;
+    for (auto wit=words.begin(); wit != words.end(); ++wit)
+        word_segs[*wit].push_back(*wit);
+
+    return assert_word_pairs(dg, nodes, word_segs, short_silence, wb_symbol);
+}
+
+bool assert_word_pairs(DecoderGraph &dg,
+                       vector<DecoderGraph::Node> &nodes,
+                       set<string> &words,
+                       int num_pairs,
+                       bool short_silence,
+                       bool wb_symbol)
+{
+    map<string, vector<string> > word_segs;
+    for (auto wit=words.begin(); wit != words.end(); ++wit)
+        word_segs[*wit].push_back(*wit);
+
+    return assert_word_pairs(dg, nodes, word_segs, num_pairs, short_silence, wb_symbol);
+}
+
 bool assert_transitions(DecoderGraph &dg,
                         vector<DecoderGraph::Node> &nodes)
 {

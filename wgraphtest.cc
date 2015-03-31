@@ -77,5 +77,6 @@ void wgraphtest::WordGraphTest1(void)
     make_graph(dg, words, nodes);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, words, 20000) );
 }
 

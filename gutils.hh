@@ -101,7 +101,18 @@ bool assert_word_pairs(DecoderGraph &dg,
                        bool wb_symbol=false);
 bool assert_word_pairs(DecoderGraph &dg,
                        std::vector<DecoderGraph::Node> &nodes,
+                       std::set<std::string> &words,
+                       bool short_silence=true,
+                       bool wb_symbol=false);
+bool assert_word_pairs(DecoderGraph &dg,
+                       std::vector<DecoderGraph::Node> &nodes,
                        std::map<std::string, std::vector<std::string> > &word_segs,
+                       int num_pairs,
+                       bool short_silence=true,
+                       bool wb_symbol=false);
+bool assert_word_pairs(DecoderGraph &dg,
+                       std::vector<DecoderGraph::Node> &nodes,
+                       std::set<std::string> &words,
                        int num_pairs,
                        bool short_silence=true,
                        bool wb_symbol=false);
