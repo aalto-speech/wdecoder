@@ -81,10 +81,6 @@ bool assert_transitions(DecoderGraph &dg,
 bool assert_words(DecoderGraph &dg,
                   std::vector<DecoderGraph::Node> &nodes,
                   std::map<std::string, std::vector<std::string> > &word_segs);
-bool assert_words(DecoderGraph &dg,
-                  std::vector<DecoderGraph::Node> &nodes,
-                  std::map<std::string, std::vector<std::string> > &word_segs,
-                  std::map<std::string, std::vector<std::string> > &triphonized_words);
 bool assert_word_pair_crossword(DecoderGraph &dg,
                                 std::vector<DecoderGraph::Node> &nodes,
                                 std::map<std::string, std::vector<std::string> > &word_segs,

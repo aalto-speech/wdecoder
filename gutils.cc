@@ -431,22 +431,6 @@ bool assert_words(DecoderGraph &dg,
     return true;
 }
 
-bool assert_words(DecoderGraph &dg,
-                  vector<DecoderGraph::Node> &nodes,
-                  map<string, vector<string> > &word_segs,
-                  map<string, vector<string> > &triphonized_words)
-{
-    for (auto sit = word_segs.begin(); sit != word_segs.end(); ++sit)
-    {
-        bool result = assert_path(dg, nodes, triphonized_words[sit->first], sit->second);
-        if (!result) {
-            cerr << "error, word: " << sit->first << " not found" << endl;
-            return false;
-        }
-    }
-    return true;
-}
-
 bool assert_word_pair_crossword(DecoderGraph &dg,
                                 vector<DecoderGraph::Node> &nodes,
                                 map<string, vector<string> > &word_segs,
