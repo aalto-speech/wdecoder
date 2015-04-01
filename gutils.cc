@@ -450,6 +450,7 @@ bool assert_words(DecoderGraph &dg,
         vector<string> triphones;
         triphonize(dg, *sit, triphones);
         vector<string> lm_ids; lm_ids.push_back(*sit);
+        if (sit->length() == 1) cerr << "1 phone word: " << *sit << endl;
         bool result = assert_path(dg, nodes, triphones, lm_ids);
         if (!result) {
             cerr << "error, word: " << *sit << " not found" << endl;
@@ -729,12 +730,10 @@ bool assert_only_segmented_words(DecoderGraph &dg,
     if (node.word_id != -1)
         subwords.push_back(node.word_id);
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (nodes[*ait].flags)
-            continue;
+        if (nodes[*ait].flags) continue;
         bool rv = assert_only_segmented_words(dg, nodes, word_segs,
                                               states, subwords, *ait);
-        if (!rv)
-            return false;
+        if (!rv) return false;
     }
 
     return true;

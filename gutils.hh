@@ -128,6 +128,9 @@ bool assert_only_segmented_words(DecoderGraph &dg,
                                  std::deque<int> states = std::deque<int>(),
                                  std::deque<int> subwords = std::deque<int>(),
                                  int node_idx=START_NODE);
+bool assert_only_words(DecoderGraph &dg,
+                       std::vector<DecoderGraph::Node> &nodes,
+                       std::set<std::string> &words);
 bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
         std::vector<DecoderGraph::Node> &nodes,
         std::map<std::string, std::vector<std::string> > &word_segs,
