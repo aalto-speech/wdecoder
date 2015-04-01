@@ -1,4 +1,4 @@
-cxxflags = -O4 -march=native -DNDEBUG -std=gnu++0x -Wall
+cxxflags = -O4 -march=native -DNDEBUG -std=gnu++0x -Wall -Wno-write-strings
 #cxxflags = -O0 -gddb -std=gnu++0x -Wall
 #cxxflags = -O0 -g -std=gnu++0x -Wall
 #cxxflags = -O0 -pg -std=gnu++0x -Wall

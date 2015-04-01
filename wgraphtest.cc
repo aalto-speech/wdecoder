@@ -39,8 +39,6 @@ void wgraphtest::make_graph(DecoderGraph &dg,
     for (auto wit = words.begin(); wit != words.end(); ++wit) {
         vector<TriphoneNode> word_triphones;
         triphonize_subword(dg, *wit, word_triphones);
-        if (word_triphones.size() == 2)
-            cerr << "skipping one phone word: " << *wit << endl;
         vector<DecoderGraph::Node> word_nodes;
         triphones_to_state_chain(dg, word_triphones, word_nodes);
         add_nodes_to_tree(dg, nodes, word_nodes);
@@ -59,6 +57,9 @@ void wgraphtest::make_graph(DecoderGraph &dg,
     graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
     cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    wordgraphbuilder::connect_one_phone_words_from_start_to_cw(dg, words, nodes, fanout);
+    wordgraphbuilder::connect_one_phone_words_from_cw_to_end(dg, words, nodes, fanin);
 }
 
 
@@ -79,6 +80,7 @@ void wgraphtest::WordGraphTest1(void)
     cerr << "Number of lm id nodes: " << num_subword_states(nodes) << endl;
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
+    CPPUNIT_ASSERT( assert_only_words(dg, nodes, words) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, words, 20000) );
 }
 
@@ -97,8 +99,10 @@ void wgraphtest::WordGraphTest2(void)
     vector<DecoderGraph::Node> nodes(2);
     cerr << endl;
     make_graph(dg, words, nodes);
-    cerr << "Number of lm id nodes: " << num_subword_states(nodes) << endl;
 
+    CPPUNIT_ASSERT_EQUAL( 524, num_subword_states(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
-    //CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, words) );
+    CPPUNIT_ASSERT( assert_only_words(dg, nodes, words) );
+    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, words) );
 }
+
