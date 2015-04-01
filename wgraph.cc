@@ -40,8 +40,10 @@ int main(int argc, char* argv[])
         for (auto wit = words.begin(); wit != words.end(); ++wit) {
             vector<TriphoneNode> word_triphones;
             triphonize_subword(dg, *wit, word_triphones);
-            if (word_triphones.size() == 2)
+            if (word_triphones.size() == 2) {
                 cerr << "skipping one phone word: " << *wit << endl;
+                continue;
+            }
             vector<DecoderGraph::Node> word_nodes;
             triphones_to_state_chain(dg, word_triphones, word_nodes);
             add_nodes_to_tree(dg, nodes, word_nodes);
