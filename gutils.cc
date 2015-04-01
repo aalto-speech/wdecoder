@@ -760,11 +760,14 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
 {
     if (node_idx == END_NODE) {
 
+        // One phone word or subword, ok
+        if (states.size() == 3 && subwords.size() == 1)
+            return true;
+
         string wrd1, wrd2;
         auto swit = subwords.begin();
         while (true) {
-            if (*swit == -1)
-                break;
+            if (*swit == -1) break;
             wrd1 += dg.m_subwords[*swit];
             swit++;
         }
@@ -842,12 +845,22 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
             continue;
         bool rv = assert_only_segmented_cw_word_pairs(dg, nodes, word_segs,
                   states, subwords, *ait, cw_visited);
-        if (!rv)
-            return false;
+        if (!rv) return false;
     }
 
     return true;
 }
+
+bool assert_only_cw_word_pairs(DecoderGraph &dg,
+        std::vector<DecoderGraph::Node> &nodes,
+        std::set<std::string> &words)
+{
+    map<string, vector<string> > seg_words;
+    for (auto wit = words.begin(); wit != words.end(); ++wit)
+        seg_words[*wit].push_back(*wit);
+    return assert_only_segmented_cw_word_pairs(dg, nodes, seg_words);
+}
+
 
 void tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
                         bool stop_propagation,

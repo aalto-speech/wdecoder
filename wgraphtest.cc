@@ -82,6 +82,7 @@ void wgraphtest::WordGraphTest1(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
     CPPUNIT_ASSERT( assert_only_words(dg, nodes, words) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, words, 20000) );
+    CPPUNIT_ASSERT( assert_only_cw_word_pairs(dg, nodes, words) );
 }
 
 
@@ -104,5 +105,6 @@ void wgraphtest::WordGraphTest2(void)
     CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
     CPPUNIT_ASSERT( assert_only_words(dg, nodes, words) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, words) );
+    CPPUNIT_ASSERT( assert_only_cw_word_pairs(dg, nodes, words) );
 }
 

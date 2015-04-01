@@ -138,6 +138,9 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
         std::deque<int> subwords = std::deque<int>(),
         int node_idx = START_NODE,
         bool cw_visited = false);
+bool assert_only_cw_word_pairs(DecoderGraph &dg,
+        std::vector<DecoderGraph::Node> &nodes,
+        std::set<std::string> &words);
 
 void tie_state_prefixes(std::vector<DecoderGraph::Node> &nodes,
                         bool stop_propagation=false,

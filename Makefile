@@ -1,6 +1,5 @@
 cxxflags = -O4 -march=native -DNDEBUG -std=gnu++0x -Wall -Wno-write-strings
-#cxxflags = -O0 -gddb -std=gnu++0x -Wall
-#cxxflags = -O0 -g -std=gnu++0x -Wall
+#cxxflags = -O0 -g -std=gnu++0x -Wall -Wno-write-strings
 #cxxflags = -O0 -pg -std=gnu++0x -Wall
 
 ##################################################
@@ -14,8 +13,8 @@ objs = $(srcs:.cc=.o)
 test_progs = runtests
 test_progs_srcs = $(test_progs:=.cc)
 test_progs_objs = $(test_progs:=.o)
-#test_srcs = graphtest.cc swgraphtest.cc wgraphtest.cc
-test_srcs = wgraphtest.cc
+test_srcs = graphtest.cc swgraphtest.cc wgraphtest.cc
+#test_srcs = wgraphtest.cc
 #test_srcs = graphtest.cc swgraphtest.cc decodertest.cc
 #test_srcs = decodertest.cc
 test_objs = $(test_srcs:.cc=.o)
