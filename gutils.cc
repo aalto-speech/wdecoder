@@ -754,7 +754,7 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
                                          vector<DecoderGraph::Node> &nodes,
                                          map<string, vector<string> > &word_segs,
                                          vector<int> states,
-                                         vector<int> subwords,
+                                         pair<vector<int>, vector<int>> subwords,
                                          int node_idx,
                                          bool cw_visited)
 {
@@ -764,42 +764,20 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
         if (!cw_visited) return true;
 
         string wrd1, wrd2;
-        auto swit = subwords.begin();
-        while (true) {
-            if (*swit == -1) break;
+        vector<string> wrd1_seg, wrd2_seg;
+        for (auto swit = subwords.first.begin(); swit != subwords.first.end(); ++swit) {
             wrd1 += dg.m_subwords[*swit];
-            swit++;
+            wrd1_seg.push_back(dg.m_subwords[*swit]);
         }
-        if (word_segs.find(wrd1) == word_segs.end())
-            return false;
-        swit++;
-        while (swit != subwords.end()) {
-            wrd2 += dg.m_subwords[*swit];
-            swit++;
-        }
-        if (word_segs.find(wrd2) == word_segs.end())
-            return false;
+        if (word_segs.find(wrd1) == word_segs.end()) return false;
+        if (word_segs.at(wrd1) != wrd1_seg) return false;
 
-        swit = subwords.begin();
-        unsigned int eswi = 0;
-        while (*swit != -1) {
-            if (word_segs[wrd1][eswi] != dg.m_subwords[*swit])
-                return false;
-            swit++;
-            eswi++;
+        for (auto swit = subwords.second.begin(); swit != subwords.second.end(); ++swit) {
+            wrd2 += dg.m_subwords[*swit];
+            wrd2_seg.push_back(dg.m_subwords[*swit]);
         }
-        if (eswi != word_segs[wrd1].size())
-            return false;
-        swit++;
-        eswi = 0;
-        while (swit != subwords.end()) {
-            if (word_segs[wrd2][eswi] != dg.m_subwords[*swit])
-                return false;
-            swit++;
-            eswi++;
-        }
-        if (eswi != word_segs[wrd2].size())
-            return false;
+        if (word_segs.find(wrd2) == word_segs.end()) return false;
+        if (word_segs.at(wrd2) != wrd2_seg) return false;
 
         vector<int> expected_states;
         get_hmm_states_cw(dg, word_segs, wrd1, wrd2, expected_states);
@@ -809,22 +787,21 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
     }
 
     DecoderGraph::Node &node = nodes[node_idx];
+    if ((node.flags & NODE_CW) && !cw_visited) cw_visited = true;
     if (node.hmm_state != -1)
         states.push_back(node.hmm_state);
-    if (node.word_id != -1)
-        subwords.push_back(node.word_id);
-    if ((node.flags & NODE_CW) && !cw_visited) {
-        subwords.push_back(-1);
-        cw_visited = true;
+    if (node.word_id != -1) {
+        if (cw_visited)
+            subwords.second.push_back(node.word_id);
+        else
+            subwords.first.push_back(node.word_id);
     }
 
     bool cw_entry_found = false;
     bool non_cw_entry_found = false;
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if ((nodes[*ait].flags) & NODE_CW)
-            cw_entry_found = true;
-        else
-            non_cw_entry_found = true;
+        if ((nodes[*ait].flags) & NODE_CW) cw_entry_found = true;
+        else non_cw_entry_found = true;
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {

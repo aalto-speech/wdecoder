@@ -135,7 +135,7 @@ bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
         std::vector<DecoderGraph::Node> &nodes,
         std::map<std::string, std::vector<std::string> > &word_segs,
         std::vector<int> states = std::vector<int>(),
-        std::vector<int> subwords = std::vector<int>(),
+        std::pair<std::vector<int>, std::vector<int>> subwords = std::pair<std::vector<int>, std::vector<int>>(),
         int node_idx = START_NODE,
         bool cw_visited = false);
 bool assert_only_cw_word_pairs(DecoderGraph &dg,
