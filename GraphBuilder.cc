@@ -69,7 +69,7 @@ create_crossword_network(DecoderGraph &dg,
     }
 
     for (auto cwnit = nodes.begin(); cwnit != nodes.end(); ++cwnit)
-        if (cwnit->flags == 0) cwnit->flags |= NODE_CW;
+        cwnit->flags |= NODE_CW;
 }
 
 
