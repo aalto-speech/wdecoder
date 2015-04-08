@@ -31,8 +31,7 @@ int main(int argc, char* argv[])
         d.read_dgraph(graphfname);
         cerr << "node count: " << d.m_nodes.size() << endl;
 
-        LookaheadStateCount lasc(d);
-        cerr << "Number of lookahead states: " << lasc.la_state_count() << endl;
+        LookaheadStateCount lasc(d, true, true);
 
     } catch (string &e) {
         cerr << e << endl;

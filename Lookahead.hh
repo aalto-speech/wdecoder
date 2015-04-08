@@ -39,7 +39,8 @@ public:
 class LookaheadStateCount : public Decoder::Lookahead {
 public:
     LookaheadStateCount(Decoder &decoder,
-                        bool successor_lists=false);
+                        bool successor_lists=false,
+                        bool true_count=false);
     ~LookaheadStateCount() {};
     float get_lookahead_score(int node_idx, int word_id) { throw std::string("Not a real lookahead."); }
     int la_state_count() { return m_la_state_count; }

@@ -294,7 +294,8 @@ DummyBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 
 
 LookaheadStateCount::LookaheadStateCount(Decoder &decoder,
-                                         bool successor_lists)
+                                         bool successor_lists,
+                                         bool true_count)
 {
     this->decoder = &decoder;
 
@@ -306,6 +307,17 @@ LookaheadStateCount::LookaheadStateCount(Decoder &decoder,
     if (successor_lists) {
         cerr << "Setting successor lists" << endl;
         set_la_state_successor_lists();
+    }
+
+    if (true_count) {
+        set<set<int> > true_las;
+        for (auto slit=m_la_state_successor_words.begin(); slit != m_la_state_successor_words.end(); ++slit) {
+            set<int> curr_successors;
+            for (auto csit=slit->begin(); csit!=slit->end(); ++csit)
+                curr_successors.insert(*csit);
+            true_las.insert(curr_successors);
+        }
+        cerr << "True lookahead state count " << true_las.size() << endl;
     }
 }
 
