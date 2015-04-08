@@ -11,9 +11,11 @@ int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: swgraph [OPTION...] PH LEXICON GRAPH\n")
+    ('n', "no-start-end-wb", "", "", "No word boundary symbol in the beginning and end of sentences")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 3) config.print_help(stderr, 1);
+    bool no_start_end_wb = config["no-start-end-wb"].specified;
 
     DecoderGraph dg;
 
@@ -87,9 +89,14 @@ int main(int argc, char* argv[])
         tie_state_prefixes(nodes);
         cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        add_long_silence(dg, nodes);
+        if (no_start_end_wb)
+            add_long_silence_no_start_end_wb(dg, nodes);
+        else {
+            add_long_silence(dg, nodes);
+            nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
+        }
+
         add_hmm_self_transitions(nodes);
-        nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
 
         write_graph(nodes, graphfname);
 
