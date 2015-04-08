@@ -293,34 +293,25 @@ DummyBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 }
 
 
-FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
-                                                   string lafname,
-                                                   bool successor_lists)
+LookaheadStateCount::LookaheadStateCount(Decoder &decoder,
+                                         bool successor_lists)
 {
-    m_la_lm.read_arpa(lafname);
     this->decoder = &decoder;
-    set_subword_id_la_ngram_symbol_mapping();
 
     cerr << "Setting lookahead state indices" << endl;
     m_node_la_states.resize(decoder.m_nodes.size(), -1);
-    int la_state_count = set_la_state_indices_to_nodes();
-    cerr << "Number of lookahead states: " << la_state_count << endl;
+    m_la_state_count = set_la_state_indices_to_nodes();
+    cerr << "Number of lookahead states: " << m_la_state_count << endl;
 
     if (successor_lists) {
         cerr << "Setting successor lists" << endl;
         set_la_state_successor_lists();
     }
-
-    m_bigram_la_scores.resize(la_state_count);
-    for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
-        (*blsit).resize(decoder.m_subwords.size(), -1e20);
-
-    set_arc_la_updates();
 }
 
 
 int
-FullTableBigramLookahead::set_la_state_indices_to_nodes()
+LookaheadStateCount::set_la_state_indices_to_nodes()
 {
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
@@ -353,11 +344,11 @@ FullTableBigramLookahead::set_la_state_indices_to_nodes()
 
 
 void
-FullTableBigramLookahead::propagate_la_state_idx(int node_idx,
-                                                 map<int, int> &la_state_changes,
-                                                 long long int &max_state_idx,
-                                                 vector<vector<Decoder::Arc> > &reverse_arcs,
-                                                 bool first_node)
+LookaheadStateCount::propagate_la_state_idx(int node_idx,
+                                            map<int, int> &la_state_changes,
+                                            long long int &max_state_idx,
+                                            vector<vector<Decoder::Arc> > &reverse_arcs,
+                                            bool first_node)
 {
     Decoder::Node &nd = decoder->m_nodes[node_idx];
 
@@ -379,7 +370,7 @@ FullTableBigramLookahead::propagate_la_state_idx(int node_idx,
 
 
 int
-FullTableBigramLookahead::set_la_state_successor_lists()
+LookaheadStateCount::set_la_state_successor_lists()
 {
     int max_la_state_idx = 0;
 
@@ -399,27 +390,7 @@ FullTableBigramLookahead::set_la_state_successor_lists()
 
 
 float
-FullTableBigramLookahead::get_lookahead_score(int node_idx, int word_id)
-{
-    int la_state_idx = m_node_la_states[node_idx];
-
-    if (m_bigram_la_scores[la_state_idx][word_id] < -1e10) {
-        float dummy;
-        int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
-        vector<int> &word_ids = m_la_state_successor_words[la_state_idx];
-        for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
-            float la_lm_prob = 0.0;
-            m_la_lm.score(la_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
-            m_bigram_la_scores[la_state_idx][word_id] = max(m_bigram_la_scores[la_state_idx][word_id], la_lm_prob);
-        }
-    }
-
-    return m_bigram_la_scores[la_state_idx][word_id];
-}
-
-
-float
-FullTableBigramLookahead::set_arc_la_updates()
+LookaheadStateCount::set_arc_la_updates()
 {
     float update_count = 0.0;
     float no_update_count = 0.0;
@@ -442,6 +413,43 @@ FullTableBigramLookahead::set_arc_la_updates()
         }
     }
     return update_count / (update_count + no_update_count);
+}
+
+
+FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
+                                                   string lafname,
+                                                   bool successor_lists)
+    : LookaheadStateCount(decoder,
+                          successor_lists)
+{
+    m_la_lm.read_arpa(lafname);
+    set_subword_id_la_ngram_symbol_mapping();
+
+    m_bigram_la_scores.resize(m_la_state_count);
+    for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
+        (*blsit).resize(decoder.m_subwords.size(), -1e20);
+
+    set_arc_la_updates();
+}
+
+
+float
+FullTableBigramLookahead::get_lookahead_score(int node_idx, int word_id)
+{
+    int la_state_idx = m_node_la_states[node_idx];
+
+    if (m_bigram_la_scores[la_state_idx][word_id] < -1e10) {
+        float dummy;
+        int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
+        vector<int> &word_ids = m_la_state_successor_words[la_state_idx];
+        for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
+            float la_lm_prob = 0.0;
+            m_la_lm.score(la_node, m_subword_id_to_la_ngram_symbol[*wit], la_lm_prob);
+            m_bigram_la_scores[la_state_idx][word_id] = max(m_bigram_la_scores[la_state_idx][word_id], la_lm_prob);
+        }
+    }
+
+    return m_bigram_la_scores[la_state_idx][word_id];
 }
 
 

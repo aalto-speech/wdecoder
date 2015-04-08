@@ -36,16 +36,14 @@ public:
 };
 
 
-class FullTableBigramLookahead : public Decoder::Lookahead {
+class LookaheadStateCount : public Decoder::Lookahead {
 public:
-    FullTableBigramLookahead(Decoder &decoder,
-                             std::string lafname,
-                             bool successor_lists=true);
-    ~FullTableBigramLookahead() {};
-    float get_lookahead_score(int node_idx, int word_id);
-
+    LookaheadStateCount(Decoder &decoder,
+                        bool successor_lists=false);
+    ~LookaheadStateCount() {};
+    float get_lookahead_score(int node_idx, int word_id) { throw std::string("Not a real lookahead."); }
+    int la_state_count() { return m_la_state_count; }
 protected:
-
     int set_la_state_indices_to_nodes();
     void propagate_la_state_idx(int node_idx,
                                 std::map<int, int> &la_state_changes,
@@ -55,8 +53,21 @@ protected:
     int set_la_state_successor_lists();
     float set_arc_la_updates();
 
+    int m_la_state_count;
     std::vector<int> m_node_la_states;
     std::vector<std::vector<int> > m_la_state_successor_words;
+};
+
+
+class FullTableBigramLookahead : public LookaheadStateCount {
+public:
+    FullTableBigramLookahead(Decoder &decoder,
+                             std::string lafname,
+                             bool successor_lists=true);
+    ~FullTableBigramLookahead() {};
+    float get_lookahead_score(int node_idx, int word_id);
+
+protected:
     std::vector<std::vector<float> > m_bigram_la_scores;
 };
 
