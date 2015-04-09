@@ -35,6 +35,9 @@ public:
         // word_id, hmm_state pairs
         // used in construction
         std::map<std::pair<int, int>, int> *lookahead;
+        // Cross-word book-keeping used in construction
+        std::set<std::string> from_fanin;
+        std::set<std::string> to_fanout;
 
         int find_next(int word_id, int hmm_state) {
             if (lookahead == nullptr) throw std::string("Lookahead not set.");

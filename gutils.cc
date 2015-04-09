@@ -240,6 +240,9 @@ add_nodes_to_tree(DecoderGraph &dg,
             curr_node_idx = nodes.size()-1;
         }
         else curr_node_idx = next_node;
+
+        nodes[curr_node_idx].to_fanout.insert(nnit->to_fanout.begin(), nnit->to_fanout.end());
+        nodes[curr_node_idx].from_fanin.insert(nnit->from_fanin.begin(), nnit->from_fanin.end());
     }
 
     DecoderGraph::Node &curr_node = nodes[curr_node_idx];
@@ -1267,6 +1270,12 @@ int merge_nodes(vector<DecoderGraph::Node> &nodes,
         nodes[*ait].arcs.erase(node_idx_2);
         nodes[*ait].arcs.insert(node_idx_1);
     }
+
+    merged_node.to_fanout.insert(removed_node.to_fanout.begin(), removed_node.to_fanout.end());
+    merged_node.from_fanin.insert(removed_node.from_fanin.begin(), removed_node.from_fanin.end());
+    removed_node.to_fanout.clear();
+    removed_node.from_fanin.clear();
+
     removed_node.arcs.clear();
     removed_node.reverse_arcs.clear();
 

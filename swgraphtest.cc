@@ -35,20 +35,22 @@ void swgraphtest::create_graph(DecoderGraph &dg,
                                map<string, vector<string> > &word_segs)
 {
     set<string> subwords;
-    nodes.clear(); nodes.resize(2);
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
-    {
         for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
-        {
             subwords.insert(*swit);
-            if (swit->length() < 2) continue;
-            vector<TriphoneNode> word_triphones;
-            triphonize_subword(dg, *swit, word_triphones);
-            vector<DecoderGraph::Node> word_nodes;
-            triphones_to_state_chain(dg, word_triphones, word_nodes);
-            add_nodes_to_tree(dg, nodes, word_nodes);
-        }
+
+    nodes.clear(); nodes.resize(2);
+    for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
+        if (swit->length() < 2) continue;
+        vector<TriphoneNode> subword_triphones;
+        triphonize_subword(dg, *swit, subword_triphones);
+        vector<DecoderGraph::Node> subword_nodes;
+        triphones_to_state_chain(dg, subword_triphones, subword_nodes);
+        subword_nodes[3].from_fanin.insert(dg.m_lexicon[*swit][0]);
+        subword_nodes[subword_nodes.size()-4].to_fanout.insert(dg.m_lexicon[*swit].back());
+        add_nodes_to_tree(dg, nodes, subword_nodes);
     }
+
     lookahead_to_arcs(nodes);
 
     prune_unreachable_nodes(nodes);

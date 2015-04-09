@@ -1,10 +1,9 @@
-cxxflags = -O4 -march=native -DNDEBUG -std=gnu++0x -Wall -Wno-write-strings
+cxxflags = -O2 -march=native -DNDEBUG -std=gnu++0x -Wall -Wno-write-strings
 #cxxflags = -O0 -g -std=gnu++0x -Wall -Wno-write-strings
-#cxxflags = -O0 -pg -std=gnu++0x -Wall
 
 ##################################################
 
-progs = wgraph swwgraph swgraph decode score segment lastates cleanlex
+progs = wgraph swwgraph swgraph decode score segment lastates cleanlex lasc
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
 srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc gutils.cc GraphBuilder.cc SubwordGraphBuilder.cc WordGraphBuilder.cc LnaReaderCircular.cc Decoder.cc Segmenter.cc Lookahead.cc 
@@ -13,9 +12,9 @@ objs = $(srcs:.cc=.o)
 test_progs = runtests
 test_progs_srcs = $(test_progs:=.cc)
 test_progs_objs = $(test_progs:=.o)
-test_srcs = graphtest.cc swgraphtest.cc wgraphtest.cc
-#test_srcs = wgraphtest.cc
-#test_srcs = graphtest.cc swgraphtest.cc decodertest.cc
+#test_srcs = graphtest.cc swgraphtest.cc wgraphtest.cc decodertest.cc
+test_srcs = swgraphtest.cc
+#test_srcs = graphtest.cc swgraphtest.cc wgraphtest.cc
 #test_srcs = decodertest.cc
 test_objs = $(test_srcs:.cc=.o)
 

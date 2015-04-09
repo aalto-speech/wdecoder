@@ -40,6 +40,8 @@ int main(int argc, char* argv[])
             triphonize_subword(dg, swit->first, sw_triphones);
             vector<DecoderGraph::Node> sw_nodes;
             triphones_to_state_chain(dg, sw_triphones, sw_nodes);
+            sw_nodes[3].from_fanin.insert(swit->second[0]);
+            sw_nodes[sw_nodes.size()-4].to_fanout.insert(swit->second.back());
             add_nodes_to_tree(dg, nodes, sw_nodes);
         }
         lookahead_to_arcs(nodes);
