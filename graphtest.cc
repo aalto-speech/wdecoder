@@ -45,6 +45,27 @@ void graphtest::make_graph(DecoderGraph &dg,
         triphonize(dg, wit->second, word_triphones);
         vector<DecoderGraph::Node> word_nodes;
         triphones_to_state_chain(dg, word_triphones, word_nodes);
+
+        if (word_nodes.size() < 3) {
+            cerr << "One phone words not supported at the moment" << endl;
+            exit(1);
+        }
+
+        bool first_assigned = false;
+        string first_triphone;
+        string last_triphone;
+        for (unsigned int i=0; i< word_triphones.size(); i++) {
+            if (word_triphones[i].hmm_id == -1) continue;
+            string triphone_label = dg.m_hmms[word_triphones[i].hmm_id].label;
+            if (!first_assigned) {
+                first_triphone.assign(triphone_label);
+                first_assigned = true;
+            }
+            last_triphone.assign(triphone_label);
+        }
+        word_nodes[3].from_fanin.insert(first_triphone);
+        word_nodes[word_nodes.size()-4].to_fanout.insert(last_triphone);
+
         add_nodes_to_tree(dg, nodes, word_nodes);
     }
 

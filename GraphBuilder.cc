@@ -95,18 +95,11 @@ connect_crossword_network(DecoderGraph &dg,
     for (auto finit = fanin.begin(); finit != fanin.end(); ++finit)
         finit->second += offset;
 
-    map<node_idx_t, string> nodes_to_fanin;
-    collect_cw_fanin_nodes(dg, nodes, nodes_to_fanin);
-
-    for (auto finit = nodes_to_fanin.begin(); finit != nodes_to_fanin.end(); ++finit) {
-        if (fanin.find(finit->second) == fanin.end()) {
-            cerr << "Problem, triphone: " << finit->second << " not found in fanin" << endl;
-            assert(false);
-        }
-        int fanin_idx = fanin[finit->second];
-        DecoderGraph::Node &fanin_node = nodes[fanin_idx];
-        int node_idx = finit->first;
-        fanin_node.arcs.insert(node_idx);
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        DecoderGraph::Node &nd = nodes[i];
+        for (auto ffi=nd.from_fanin.begin(); ffi!=nd.from_fanin.end(); ++ffi)
+            nodes[fanin[*ffi]].arcs.insert(i);
+        nd.from_fanin.clear();
     }
 
     if (push_left_after_fanin)
@@ -114,17 +107,11 @@ connect_crossword_network(DecoderGraph &dg,
     else
         set_reverse_arcs_also_from_unreachable(nodes);
 
-    map<int, string> nodes_to_fanout;
-    collect_cw_fanout_nodes(dg, nodes, nodes_to_fanout);
-
-    for (auto fonit = nodes_to_fanout.begin(); fonit != nodes_to_fanout.end(); ++fonit) {
-        if (fanout.find(fonit->second) == fanout.end()) {
-            cerr << "Problem, triphone: " << fonit->second << " not found in fanout" << endl;
-            assert(false);
-        }
-        int fanout_idx = fanout[fonit->second];
-        DecoderGraph::Node &node = nodes[fonit->first];
-        node.arcs.insert(fanout_idx);
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        DecoderGraph::Node &nd = nodes[i];
+        for (auto tfo=nd.to_fanout.begin(); tfo!=nd.to_fanout.end(); ++tfo)
+            nd.arcs.insert(fanout[*tfo]);
+        nd.to_fanout.clear();
     }
 }
 
