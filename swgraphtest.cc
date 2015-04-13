@@ -41,6 +41,7 @@ void swgraphtest::create_graph(DecoderGraph &dg,
 
     nodes.clear(); nodes.resize(2);
     for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
+        // FIXME: should check number of phones
         if (swit->length() < 2) continue;
         vector<TriphoneNode> subword_triphones;
         triphonize_subword(dg, *swit, subword_triphones);

@@ -280,21 +280,6 @@ void push_word_ids_right(std::vector<DecoderGraph::Node> &nodes,
 int num_hmm_states(std::vector<DecoderGraph::Node> &nodes);
 int num_subword_states(std::vector<DecoderGraph::Node> &nodes);
 
-void collect_cw_fanout_nodes(DecoderGraph &dg,
-                             std::vector<DecoderGraph::Node> &nodes,
-                             std::map<int, std::string> &nodes_to_fanout,
-                             int hmm_state_count=0,
-                             std::vector<char> phones = std::vector<char>(),
-                             int node_to_connect=-1,
-                             int node_idx=END_NODE);
-void collect_cw_fanin_nodes(DecoderGraph &dg,
-                            std::vector<DecoderGraph::Node> &nodes,
-                            std::map<node_idx_t, std::string> &nodes_from_fanin,
-                            int hmm_state_count=0,
-                            std::vector<char> phones = std::vector<char>(),
-                            node_idx_t node_to_connect=START_NODE,
-                            node_idx_t node_idx=START_NODE);
-
 void add_long_silence(DecoderGraph &dg,
                       std::vector<DecoderGraph::Node> &nodes);
 void add_long_silence_no_start_end_wb(DecoderGraph &dg,

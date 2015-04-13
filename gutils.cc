@@ -1599,7 +1599,6 @@ push_word_ids_right(vector<DecoderGraph::Node> &nodes)
 }
 
 
-
 int
 num_hmm_states(vector<DecoderGraph::Node> &nodes)
 {
@@ -1621,90 +1620,6 @@ num_subword_states(vector<DecoderGraph::Node> &nodes)
     for (auto iit = node_idxs.begin(); iit != node_idxs.end(); ++iit)
         if (nodes[*iit].word_id != -1) subword_state_count++;
     return subword_state_count;
-}
-
-
-void
-collect_cw_fanout_nodes(DecoderGraph &dg,
-                        vector<DecoderGraph::Node> &nodes,
-                        map<int, string> &nodes_to_fanout,
-                        int hmm_state_count,
-                        vector<char> phones,
-                        int node_to_connect,
-                        int node_idx)
-{
-    if (node_idx == START_NODE) return;
-    DecoderGraph::Node &node = nodes[node_idx];
-    int spp = dg.m_states_per_phone;
-
-    if (node.hmm_state != -1) hmm_state_count++;
-    if (node.word_id != -1) {
-        string &subword = dg.m_subwords[node.word_id];
-        vector<string> &triphones = dg.m_lexicon[subword];
-        int tri_idx = triphones.size()-1;
-        while (phones.size() < 2 && tri_idx >= 0) {
-            phones.push_back(triphones[tri_idx][2]);
-            tri_idx--;
-        }
-    }
-
-    if (node_to_connect == -1 &&
-        (hmm_state_count == (spp+1) || (hmm_state_count == spp && node.hmm_state == -1))) node_to_connect = node_idx;
-
-    if (phones.size() == 2 && hmm_state_count > 2) {
-        string triphone = string(1,phones[1]) + string(1,'-') + string(1,phones[0]) + string("+_");
-        if (nodes_to_fanout.find(node_to_connect) == nodes_to_fanout.end())
-            nodes_to_fanout[node_to_connect] = triphone;
-        else
-            assert(nodes_to_fanout[node_to_connect] == triphone);
-        return;
-    }
-
-    for (auto ait = node.reverse_arcs.begin(); ait != node.reverse_arcs.end(); ++ait)
-        collect_cw_fanout_nodes(dg, nodes, nodes_to_fanout, hmm_state_count,
-                                phones, node_to_connect, *ait);
-}
-
-
-void
-collect_cw_fanin_nodes(DecoderGraph &dg,
-                       vector<DecoderGraph::Node> &nodes,
-                       map<node_idx_t, string> &nodes_from_fanin,
-                       int hmm_state_count,
-                       vector<char> phones,
-                       node_idx_t node_to_connect,
-                       node_idx_t node_idx)
-{
-    if (node_idx == END_NODE) return;
-    DecoderGraph::Node &node = nodes[node_idx];
-    int spp = dg.m_states_per_phone;
-
-    if (node.hmm_state != -1) hmm_state_count++;
-    if (node.word_id != -1) {
-        string &subword = dg.m_subwords[node.word_id];
-        vector<string> &triphones = dg.m_lexicon[subword];
-        unsigned int tri_idx = 0;
-        while (phones.size() < 2 && tri_idx < triphones.size()) {
-            phones.push_back(triphones[tri_idx][2]);
-            tri_idx++;
-        }
-    }
-
-    if (node_to_connect == START_NODE &&
-        (hmm_state_count == (spp+1) || (hmm_state_count == spp && node.hmm_state == -1))) node_to_connect = node_idx;
-
-    if (phones.size() == 2 && hmm_state_count > 2) {
-        string triphone = string("_-") + string(1,phones[0]) + string(1,'+') + string(1,phones[1]);
-        if (nodes_from_fanin.find(node_to_connect) == nodes_from_fanin.end())
-            nodes_from_fanin[node_to_connect] = triphone;
-        else
-            assert(nodes_from_fanin[node_to_connect] == triphone);
-        return;
-    }
-
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-        collect_cw_fanin_nodes(dg, nodes, nodes_from_fanin, hmm_state_count,
-                               phones, node_to_connect, *ait);
 }
 
 

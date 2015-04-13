@@ -41,6 +41,11 @@ void wgraphtest::make_graph(DecoderGraph &dg,
         triphonize_subword(dg, *wit, word_triphones);
         vector<DecoderGraph::Node> word_nodes;
         triphones_to_state_chain(dg, word_triphones, word_nodes);
+        // FIXME: check the number of phones
+        if (wit->length() > 1) {
+            word_nodes[3].from_fanin.insert(dg.m_lexicon[*wit][0]);
+            word_nodes[word_nodes.size()-4].to_fanout.insert(dg.m_lexicon[*wit].back());
+        }
         add_nodes_to_tree(dg, nodes, word_nodes);
     }
     lookahead_to_arcs(nodes);
