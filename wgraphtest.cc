@@ -33,7 +33,7 @@ void wgraphtest::read_fixtures(DecoderGraph &dg)
 
 
 void wgraphtest::make_graph(DecoderGraph &dg,
-                            set<string> &words,
+                            const set<string> &words,
                             vector<DecoderGraph::Node> &nodes)
 {
     for (auto wit = words.begin(); wit != words.end(); ++wit) {

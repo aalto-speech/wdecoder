@@ -32,7 +32,7 @@ void swgraphtest::read_fixtures(DecoderGraph &dg)
 
 void swgraphtest::create_graph(DecoderGraph &dg,
                                vector<DecoderGraph::Node> &nodes,
-                               map<string, vector<string> > &word_segs)
+                               const map<string, vector<string> > &word_segs)
 {
     set<string> subwords;
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)

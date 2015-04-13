@@ -11,7 +11,7 @@ namespace wordgraphbuilder {
 
 void
 create_crossword_network(DecoderGraph &dg,
-                         set<string> &words,
+                         const set<string> &words,
                          vector<DecoderGraph::Node> &nodes,
                          map<string, int> &fanout,
                          map<string, int> &fanin)
@@ -93,7 +93,7 @@ create_crossword_network(DecoderGraph &dg,
 
 void
 connect_one_phone_words_from_start_to_cw(DecoderGraph &dg,
-                                         set<string> &words,
+                                         const set<string> &words,
                                          vector<DecoderGraph::Node> &nodes,
                                          map<string, int> &fanout)
 {
@@ -113,7 +113,7 @@ connect_one_phone_words_from_start_to_cw(DecoderGraph &dg,
 
 void
 connect_one_phone_words_from_cw_to_end(DecoderGraph &dg,
-                                       set<string> &words,
+                                       const set<string> &words,
                                        vector<DecoderGraph::Node> &nodes,
                                        map<string, int> &fanin)
 {

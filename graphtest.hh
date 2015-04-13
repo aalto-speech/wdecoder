@@ -74,11 +74,12 @@ private:
     std::string amname;
     std::string lexname;
     std::string segname;
-    //std::vector<std::pair<std::string, std::vector<std::string> > > word_segs;
     std::map<std::string, std::vector<std::string> > word_segs;
 
     void read_fixtures(DecoderGraph &dg);
-    void make_graph(DecoderGraph &dg, std::vector<DecoderGraph::Node> &nodes);
+    void make_graph(DecoderGraph &dg,
+                    std::vector<DecoderGraph::Node> &nodes,
+                    const std::map<std::string, std::vector<std::string> > word_segs);
 
 };
 

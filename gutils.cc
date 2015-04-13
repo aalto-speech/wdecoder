@@ -137,7 +137,7 @@ void triphonize(DecoderGraph &dg,
 }
 
 bool triphonize(DecoderGraph &dg,
-                vector<string> &word_seg,
+                const vector<string> &word_seg,
                 vector<TriphoneNode> &nodes)
 {
     nodes.clear();

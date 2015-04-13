@@ -35,7 +35,8 @@ void graphtest::read_fixtures(DecoderGraph &dg)
 
 
 void graphtest::make_graph(DecoderGraph &dg,
-                           vector<DecoderGraph::Node> &nodes)
+                           vector<DecoderGraph::Node> &nodes,
+                           const map<string, vector<string> > word_segs)
 {
     vector<TriphoneNode> triphone_nodes(2);
     nodes.clear();
@@ -80,7 +81,7 @@ void graphtest::GraphTest1(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT_EQUAL( 145, (int)reachable_graph_nodes(nodes) );
     tie_state_prefixes(nodes, false);
@@ -97,7 +98,7 @@ void graphtest::GraphTest2(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     tie_state_prefixes(nodes, false);
     tie_state_suffixes(nodes);
@@ -119,7 +120,7 @@ void graphtest::GraphTest3(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT_EQUAL( 145, (int)reachable_graph_nodes(nodes) );
     tie_state_prefixes(nodes, false);
@@ -142,7 +143,7 @@ void graphtest::GraphTest4(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT_EQUAL( 145, (int)reachable_graph_nodes(nodes) );
 
@@ -172,7 +173,7 @@ void graphtest::GraphTest5(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
@@ -209,7 +210,7 @@ void graphtest::GraphTest6(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
@@ -240,7 +241,7 @@ void graphtest::GraphTest7(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
@@ -260,7 +261,7 @@ void graphtest::GraphTest8(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
@@ -284,7 +285,7 @@ void graphtest::GraphTest9(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 34, (int)reachable_graph_nodes(nodes) );
@@ -312,7 +313,7 @@ void graphtest::GraphTest10(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 65, (int)reachable_graph_nodes(nodes) );
@@ -340,7 +341,7 @@ void graphtest::GraphTest11(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 145, (int)reachable_graph_nodes(nodes) );
@@ -369,7 +370,7 @@ void graphtest::GraphTest12(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 61, (int)reachable_graph_nodes(nodes) );
@@ -399,7 +400,7 @@ void graphtest::GraphTest13(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 65, (int)reachable_graph_nodes(nodes) );
@@ -443,7 +444,7 @@ void graphtest::GraphTest14(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
     CPPUNIT_ASSERT_EQUAL( 30, (int)reachable_graph_nodes(nodes) );
@@ -472,7 +473,7 @@ void graphtest::GraphTest15(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
 
@@ -504,7 +505,7 @@ void graphtest::GraphTest16(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
 
@@ -521,7 +522,7 @@ void graphtest::GraphTest17(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
 
@@ -538,7 +539,7 @@ void graphtest::GraphTest18(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
 
@@ -555,7 +556,7 @@ void graphtest::GraphTest19(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
 
@@ -588,7 +589,7 @@ void graphtest::GraphTest20(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
 
@@ -630,7 +631,7 @@ void graphtest::GraphTest21(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
 
@@ -669,7 +670,7 @@ void graphtest::GraphTest22(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
     cerr << endl << "real-like scenario with 500 words:" << endl;
@@ -717,7 +718,7 @@ void graphtest::GraphTest23(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
 
@@ -756,7 +757,7 @@ void graphtest::GraphTest24(void)
     read_fixtures(dg);
 
     vector<DecoderGraph::Node> nodes(2);
-    make_graph(dg, nodes);
+    make_graph(dg, nodes, word_segs);
 
     prune_unreachable_nodes(nodes);
     cerr << endl << "initial expansion, number of nodes: " << reachable_graph_nodes(nodes) << endl;
