@@ -30,48 +30,6 @@ void swgraphtest::read_fixtures(DecoderGraph &dg)
 }
 
 
-void swgraphtest::create_graph(DecoderGraph &dg,
-                               vector<DecoderGraph::Node> &nodes,
-                               const map<string, vector<string> > &word_segs)
-{
-    set<string> subwords;
-    for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
-        for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
-            subwords.insert(*swit);
-
-    nodes.clear(); nodes.resize(2);
-    for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
-        // FIXME: should check number of phones
-        if (swit->length() < 2) continue;
-        vector<TriphoneNode> subword_triphones;
-        triphonize_subword(dg, *swit, subword_triphones);
-        vector<DecoderGraph::Node> subword_nodes;
-        triphones_to_state_chain(dg, subword_triphones, subword_nodes);
-        subword_nodes[3].from_fanin.insert(dg.m_lexicon[*swit][0]);
-        subword_nodes[subword_nodes.size()-4].to_fanout.insert(dg.m_lexicon[*swit].back());
-        add_nodes_to_tree(dg, nodes, subword_nodes);
-    }
-
-    lookahead_to_arcs(nodes);
-
-    prune_unreachable_nodes(nodes);
-
-    vector<DecoderGraph::Node> cw_nodes;
-    map<string, int> fanout, fanin;
-    subwordgraphbuilder::create_crossword_network(dg, subwords, cw_nodes, fanout, fanin);
-    subwordgraphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
-    connect_end_to_start_node(nodes);
-    subwordgraphbuilder::connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
-    subwordgraphbuilder::connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
-    prune_unreachable_nodes(nodes);
-
-    push_word_ids_right(nodes);
-    tie_state_prefixes(nodes);
-    push_word_ids_left(nodes);
-    tie_state_suffixes(nodes);
-}
-
-
 // Normal case
 void swgraphtest::SubwordGraphTest1(void)
 {
@@ -83,7 +41,7 @@ void swgraphtest::SubwordGraphTest1(void)
     read_word_segmentations(dg, segname, word_segs);
 
     vector<DecoderGraph::Node> nodes(2);
-    create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -101,7 +59,7 @@ void swgraphtest::SubwordGraphTest2(void)
     read_word_segmentations(dg, segname, word_segs);
 
     vector<DecoderGraph::Node> nodes(2);
-    create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -119,7 +77,7 @@ void swgraphtest::SubwordGraphTest3(void)
     read_word_segmentations(dg, segname, word_segs);
 
     vector<DecoderGraph::Node> nodes(2);
-    create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -137,7 +95,7 @@ void swgraphtest::SubwordGraphTest4(void)
     read_word_segmentations(dg, segname, word_segs);
 
     vector<DecoderGraph::Node> nodes(2);
-    create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -155,7 +113,7 @@ void swgraphtest::SubwordGraphTest5(void)
     read_word_segmentations(dg, segname, word_segs);
 
     vector<DecoderGraph::Node> nodes(2);
-    create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -173,7 +131,7 @@ void swgraphtest::SubwordGraphTest6(void)
     read_word_segmentations(dg, segname, word_segs);
 
     vector<DecoderGraph::Node> nodes(2);
-    create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -191,7 +149,7 @@ void swgraphtest::SubwordGraphTest7(void)
     read_word_segmentations(dg, segname, word_segs);
 
     vector<DecoderGraph::Node> nodes(2);
-    create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -209,7 +167,7 @@ void swgraphtest::SubwordGraphTest8(void)
     read_word_segmentations(dg, segname, word_segs);
 
     vector<DecoderGraph::Node> nodes(2);
-    create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );

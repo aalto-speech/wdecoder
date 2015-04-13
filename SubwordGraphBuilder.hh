@@ -41,6 +41,10 @@ void create_forced_path(DecoderGraph &dg,
                         std::vector<std::string> &sentence,
                         std::map<int, std::string> &node_labels);
 
+void create_graph(DecoderGraph &dg,
+                  std::vector<DecoderGraph::Node> &nodes,
+                  const std::map<std::string, std::vector<std::string> > &word_segs);
+
 }
 
 #endif /* SUBWORD_GRAPH_BUILDER_HH */
