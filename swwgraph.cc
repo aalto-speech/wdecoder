@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
         cerr << "Result graph file name: " << graphfname << endl;
 
         vector<DecoderGraph::Node> nodes(2);
-        graphbuilder::create_graph(dg, nodes, word_segs, wb_symbol, true);
+        graphbuilder::create_graph(dg, nodes, word_segs, wb_symbol, true, true);
 
         cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);
