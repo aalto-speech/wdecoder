@@ -279,6 +279,7 @@ void push_word_ids_right(std::vector<DecoderGraph::Node> &nodes,
                          int subword_id=-1);
 int num_hmm_states(std::vector<DecoderGraph::Node> &nodes);
 int num_subword_states(std::vector<DecoderGraph::Node> &nodes);
+int num_triphones(std::vector<TriphoneNode> &nodes);
 
 void add_long_silence(DecoderGraph &dg,
                       std::vector<DecoderGraph::Node> &nodes);

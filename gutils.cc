@@ -1623,6 +1623,16 @@ num_subword_states(vector<DecoderGraph::Node> &nodes)
 }
 
 
+int
+num_triphones(vector<TriphoneNode> &nodes)
+{
+    int hmm_state_count = 0;
+    for (auto nit = nodes.begin(); nit != nodes.end(); ++nit)
+        if (nit->hmm_id != -1) hmm_state_count++;
+    return hmm_state_count;
+}
+
+
 // All graph styles
 void
 add_long_silence(DecoderGraph &dg,

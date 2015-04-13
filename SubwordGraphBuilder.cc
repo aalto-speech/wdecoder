@@ -296,10 +296,10 @@ create_graph(DecoderGraph &dg,
 
     nodes.clear(); nodes.resize(2);
     for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
-        // FIXME: should check number of phones
-        if (swit->length() < 2) continue;
         vector<TriphoneNode> subword_triphones;
         triphonize_subword(dg, *swit, subword_triphones);
+        // One phone subwords not connected yet to the main tree
+        if (num_triphones(subword_triphones) < 2) continue;
         vector<DecoderGraph::Node> subword_nodes;
         triphones_to_state_chain(dg, subword_triphones, subword_nodes);
         subword_nodes[3].from_fanin.insert(dg.m_lexicon[*swit][0]);

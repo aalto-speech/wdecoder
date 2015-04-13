@@ -131,14 +131,14 @@ void create_graph(DecoderGraph &dg,
             triphonize_error++;
             continue;
         }
-        vector<DecoderGraph::Node> word_nodes;
-        triphones_to_state_chain(dg, word_triphones, word_nodes);
 
-        // FIXME: check from real phone count
-        if (word_nodes.size() < 3) {
+        if (num_triphones(word_triphones) < 2) {
             cerr << "One phone words not supported at the moment" << endl;
             exit(1);
         }
+
+        vector<DecoderGraph::Node> word_nodes;
+        triphones_to_state_chain(dg, word_triphones, word_nodes);
 
         bool first_assigned = false;
         string first_triphone;
