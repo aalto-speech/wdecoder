@@ -29,9 +29,9 @@ void connect_one_phone_words_from_cw_to_end(DecoderGraph &dg,
                                             std::vector<DecoderGraph::Node> &nodes,
                                             std::map<std::string, int> &fanin);
 
-void make_graph(DecoderGraph &dg,
-                const std::set<std::string> &words,
-                std::vector<DecoderGraph::Node> &nodes);
+void create_graph(DecoderGraph &dg,
+                  const std::set<std::string> &words,
+                  std::vector<DecoderGraph::Node> &nodes);
 
 }
 

@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
         cerr << "Result graph file name: " << graphfname << endl;
 
         vector<DecoderGraph::Node> nodes(2);
-        wordgraphbuilder::make_graph(dg, words, nodes);
+        wordgraphbuilder::create_graph(dg, words, nodes);
 
         connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;

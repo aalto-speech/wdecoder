@@ -133,9 +133,9 @@ connect_one_phone_words_from_cw_to_end(DecoderGraph &dg,
 
 
 void
-make_graph(DecoderGraph &dg,
-           const set<string> &words,
-           vector<DecoderGraph::Node> &nodes)
+create_graph(DecoderGraph &dg,
+             const set<string> &words,
+             vector<DecoderGraph::Node> &nodes)
 {
     nodes.clear();
     nodes.resize(2);

@@ -43,7 +43,7 @@ void wgraphtest::WordGraphTest1(void)
 
     vector<DecoderGraph::Node> nodes(2);
     cerr << endl;
-    wordgraphbuilder::make_graph(dg, words, nodes);
+    wordgraphbuilder::create_graph(dg, words, nodes);
     cerr << "Number of lm id nodes: " << num_subword_states(nodes) << endl;
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
@@ -66,7 +66,7 @@ void wgraphtest::WordGraphTest2(void)
 
     vector<DecoderGraph::Node> nodes(2);
     cerr << endl;
-    wordgraphbuilder::make_graph(dg, words, nodes);
+    wordgraphbuilder::create_graph(dg, words, nodes);
 
     CPPUNIT_ASSERT_EQUAL( 524, num_subword_states(nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
