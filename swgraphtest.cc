@@ -23,10 +23,17 @@ void swgraphtest::tearDown (void)
 }
 
 
-void swgraphtest::read_fixtures(DecoderGraph &dg)
+void swgraphtest::read_fixtures(DecoderGraph &dg,
+                                string segfname)
 {
     dg.read_phone_model(amname + ".ph");
     dg.read_noway_lexicon(lexname);
+    word_segs.clear();
+    subwords.clear();
+    read_word_segmentations(dg, segfname, word_segs);
+    for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
+        for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
+            subwords.insert(*swit);
 }
 
 
@@ -34,14 +41,10 @@ void swgraphtest::read_fixtures(DecoderGraph &dg)
 void swgraphtest::SubwordGraphTest1(void)
 {
     DecoderGraph dg;
-    read_fixtures(dg);
-
-    string segname = "data/segs.txt";
-    map<string, vector<string> > word_segs;
-    read_word_segmentations(dg, segname, word_segs);
+    read_fixtures(dg, "data/segs.txt");
 
     vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, subwords);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -52,14 +55,10 @@ void swgraphtest::SubwordGraphTest1(void)
 void swgraphtest::SubwordGraphTest2(void)
 {
     DecoderGraph dg;
-    read_fixtures(dg);
-
-    string segname = "data/segs2.txt";
-    map<string, vector<string> > word_segs;
-    read_word_segmentations(dg, segname, word_segs);
+    read_fixtures(dg, "data/segs2.txt");
 
     vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, subwords);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -70,14 +69,10 @@ void swgraphtest::SubwordGraphTest2(void)
 void swgraphtest::SubwordGraphTest3(void)
 {
     DecoderGraph dg;
-    read_fixtures(dg);
-
-    string segname = "data/segs3.txt";
-    map<string, vector<string> > word_segs;
-    read_word_segmentations(dg, segname, word_segs);
+    read_fixtures(dg, "data/segs3.txt");
 
     vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, subwords);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -88,14 +83,10 @@ void swgraphtest::SubwordGraphTest3(void)
 void swgraphtest::SubwordGraphTest4(void)
 {
     DecoderGraph dg;
-    read_fixtures(dg);
-
-    string segname = "data/segs4.txt";
-    map<string, vector<string> > word_segs;
-    read_word_segmentations(dg, segname, word_segs);
+    read_fixtures(dg, "data/segs4.txt");
 
     vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, subwords);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -106,14 +97,10 @@ void swgraphtest::SubwordGraphTest4(void)
 void swgraphtest::SubwordGraphTest5(void)
 {
     DecoderGraph dg;
-    read_fixtures(dg);
-
-    string segname = "data/segs5.txt";
-    map<string, vector<string> > word_segs;
-    read_word_segmentations(dg, segname, word_segs);
+    read_fixtures(dg, "data/segs5.txt");
 
     vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, subwords);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -124,14 +111,10 @@ void swgraphtest::SubwordGraphTest5(void)
 void swgraphtest::SubwordGraphTest6(void)
 {
     DecoderGraph dg;
-    read_fixtures(dg);
-
-    string segname = "data/segs6.txt";
-    map<string, vector<string> > word_segs;
-    read_word_segmentations(dg, segname, word_segs);
+    read_fixtures(dg, "data/segs6.txt");
 
     vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, subwords);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -142,14 +125,10 @@ void swgraphtest::SubwordGraphTest6(void)
 void swgraphtest::SubwordGraphTest7(void)
 {
     DecoderGraph dg;
-    read_fixtures(dg);
-
-    string segname = "data/subword_tie_expand_problem.segs";
-    map<string, vector<string> > word_segs;
-    read_word_segmentations(dg, segname, word_segs);
+    read_fixtures(dg, "data/subword_tie_expand_problem.segs");
 
     vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, subwords);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
@@ -160,14 +139,10 @@ void swgraphtest::SubwordGraphTest7(void)
 void swgraphtest::SubwordGraphTest8(void)
 {
     DecoderGraph dg;
-    read_fixtures(dg);
-
-    string segname = "data/500.segs";
-    map<string, vector<string> > word_segs;
-    read_word_segmentations(dg, segname, word_segs);
+    read_fixtures(dg, "data/500.segs");
 
     vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, word_segs);
+    subwordgraphbuilder::create_graph(dg, nodes, subwords);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );

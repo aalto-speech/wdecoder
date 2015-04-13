@@ -41,8 +41,11 @@ private:
 
     std::string amname;
     std::string lexname;
+    std::map<std::string, std::vector<std::string> > word_segs;
+    std::set<std::string> subwords;
 
-    void read_fixtures(DecoderGraph &dg);
+    void read_fixtures(DecoderGraph &dg,
+                       std::string segfname);
 
 };
 
