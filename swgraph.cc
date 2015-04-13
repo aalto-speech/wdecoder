@@ -38,12 +38,6 @@ int main(int argc, char* argv[])
         vector<DecoderGraph::Node> nodes(2);
         subwordgraphbuilder::create_graph(dg, nodes, subwords, true);
 
-        cerr << "Removing cw dummies.." << endl;
-        remove_cw_dummies(nodes);
-        tie_state_suffixes(nodes);
-        tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
         if (no_start_end_wb)
             add_long_silence_no_start_end_wb(dg, nodes);
         else {

@@ -342,6 +342,12 @@ create_graph(DecoderGraph &dg,
     connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
     connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
     prune_unreachable_nodes(nodes);
+
+    if (verbose) cerr << "Removing cw dummies.." << endl;
+    remove_cw_dummies(nodes);
+    tie_state_suffixes(nodes);
+    tie_state_prefixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 }
 
 
