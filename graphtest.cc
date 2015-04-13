@@ -391,8 +391,6 @@ void graphtest::GraphTest16(void)
     vector<DecoderGraph::Node> nodes(2);
     graphbuilder::create_graph(dg, nodes, word_segs, true, false);
 
-    prune_unreachable_nodes(nodes);
-
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
 }
@@ -408,8 +406,6 @@ void graphtest::GraphTest17(void)
     vector<DecoderGraph::Node> nodes(2);
     graphbuilder::create_graph(dg, nodes, word_segs, true, false);
 
-    prune_unreachable_nodes(nodes);
-
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
 }
@@ -424,8 +420,6 @@ void graphtest::GraphTest18(void)
 
     vector<DecoderGraph::Node> nodes(2);
     graphbuilder::create_graph(dg, nodes, word_segs, true, false);
-
-    prune_unreachable_nodes(nodes);
 
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_words(dg, nodes, word_segs) );
@@ -473,15 +467,7 @@ void graphtest::GraphTest20(void)
     CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs) );
     CPPUNIT_ASSERT( assert_only_segmented_cw_word_pairs(dg, nodes, word_segs) );
 
-    push_word_ids_right(nodes);
-    tie_state_prefixes(nodes, false);
-
-    push_word_ids_left(nodes);
-    CPPUNIT_ASSERT( assert_subword_ids_left(dg, nodes));
-    tie_state_suffixes(nodes);
-    tie_state_prefixes(nodes);
-    tie_word_id_prefixes(nodes);
-    push_word_ids_left(nodes);
+    graphbuilder::tie_graph(nodes, false, false);
 
     CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
@@ -501,18 +487,7 @@ void graphtest::GraphTest21(void)
 
     vector<DecoderGraph::Node> nodes(2);
     graphbuilder::create_graph(dg, nodes, word_segs, false, true);
-
-    push_word_ids_left(nodes);
-    tie_state_prefixes(nodes);
-    tie_word_id_prefixes(nodes);
-    push_word_ids_right(nodes);
-    tie_state_prefixes(nodes);
-
-    push_word_ids_right(nodes);
-    tie_state_suffixes(nodes);
-    tie_word_id_suffixes(nodes);
-    push_word_ids_left(nodes);
-    tie_state_suffixes(nodes);
+    graphbuilder::tie_graph(nodes, false, false);
 
     CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
@@ -533,20 +508,7 @@ void graphtest::GraphTest22(void)
 
     vector<DecoderGraph::Node> nodes(2);
     graphbuilder::create_graph(dg, nodes, word_segs, false, true);
-
-    push_word_ids_left(nodes);
-    tie_state_prefixes(nodes);
-    tie_word_id_prefixes(nodes);
-    push_word_ids_right(nodes);
-    tie_state_prefixes(nodes);
-    cerr << "prefixes tied, number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-    push_word_ids_right(nodes);
-    tie_state_suffixes(nodes);
-    tie_word_id_suffixes(nodes);
-    push_word_ids_left(nodes);
-    tie_state_suffixes(nodes);
-    cerr << "suffixes tied, number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    graphbuilder::tie_graph(nodes, false, false);
 
     CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
     cerr << "asserting all words in the graph" << endl;
@@ -570,17 +532,7 @@ void graphtest::GraphTest23(void)
 
     vector<DecoderGraph::Node> nodes(2);
     graphbuilder::create_graph(dg, nodes, word_segs, false, true);
-
-    tie_state_prefixes(nodes);
-    tie_word_id_prefixes(nodes);
-    push_word_ids_right(nodes);
-    tie_state_prefixes(nodes);
-
-    push_word_ids_right(nodes);
-    tie_state_suffixes(nodes);
-    tie_word_id_suffixes(nodes);
-    push_word_ids_left(nodes);
-    tie_state_suffixes(nodes);
+    graphbuilder::tie_graph(nodes, false, false);
 
     CPPUNIT_ASSERT( assert_no_duplicate_word_ids(dg, nodes) );
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
@@ -602,20 +554,7 @@ void graphtest::GraphTest24(void)
 
     vector<DecoderGraph::Node> nodes(2);
     graphbuilder::create_graph(dg, nodes, word_segs, false, true);
-
-    push_word_ids_left(nodes);
-    tie_state_prefixes(nodes);
-    tie_word_id_prefixes(nodes);
-    push_word_ids_right(nodes);
-    tie_state_prefixes(nodes);
-    cerr << "prefixes tied, number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-    push_word_ids_right(nodes);
-    tie_state_suffixes(nodes);
-    tie_word_id_suffixes(nodes);
-    push_word_ids_left(nodes);
-    tie_state_suffixes(nodes);
-    cerr << "suffixes tied, number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    graphbuilder::tie_graph(nodes, false, false);
 
     cerr << "asserting all words in the graph" << endl;
     CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );

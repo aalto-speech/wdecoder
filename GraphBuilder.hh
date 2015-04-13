@@ -32,6 +32,10 @@ void create_graph(DecoderGraph &dg,
                   bool connect_cw_network=true,
                   bool verbose=false);
 
+void tie_graph(std::vector<DecoderGraph::Node> &nodes,
+               bool no_push=false,
+               bool verbose=false);
+
 }
 
 #endif /* GRAPH_BUILDER_2_HH */

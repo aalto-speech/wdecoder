@@ -179,6 +179,77 @@ void create_graph(DecoderGraph &dg,
         connect_end_to_start_node(nodes);
         if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
     }
+
+    prune_unreachable_nodes(nodes);
+}
+
+
+void tie_graph(vector<DecoderGraph::Node> &nodes,
+               bool no_push,
+               bool verbose)
+{
+    if (verbose) cerr << "Tying state suffixes.." << endl;
+    tie_state_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    if (verbose) cerr << "Tying word id suffixes.." << endl;
+    tie_word_id_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    if (verbose) cerr << endl;
+    if (verbose) cerr << "Tying state suffixes.." << endl;
+    tie_state_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    if (verbose) cerr << "Tying word id suffixes.." << endl;
+    tie_word_id_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    if (verbose) cerr << endl;
+    if (verbose) cerr << "Tying state suffixes.." << endl;
+    tie_state_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    if (verbose) cerr << "Tying word id suffixes.." << endl;
+    tie_word_id_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    if (verbose) cerr << endl;
+    if (verbose) cerr << "Tying state suffixes.." << endl;
+    tie_state_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    if (verbose) cerr << "Tying word id suffixes.." << endl;
+    tie_word_id_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    if (verbose) cerr << endl;
+    if (verbose) cerr << "Tying state suffixes.." << endl;
+    tie_state_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    if (verbose) cerr << "Tying word id suffixes.." << endl;
+    tie_word_id_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    if (verbose) cerr << endl;
+    if (verbose) cerr << "Removing cw dummies.." << endl;
+    remove_cw_dummies(nodes);
+    if (verbose) cerr << "Tying state prefixes.." << endl;
+    tie_state_prefixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    if (verbose) cerr << "Tying state suffixes.." << endl;
+    tie_state_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    if (!no_push) {
+        if (verbose) cerr << "Pushing subword ids right.." << endl;
+        push_word_ids_right(nodes);
+        if (verbose) cerr << "Tying state prefixes.." << endl;
+        tie_state_prefixes(nodes);
+        if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        if (verbose) cerr << "Pushing subword ids left.." << endl;
+        push_word_ids_left(nodes);
+        if (verbose) cerr << "Tying state suffixes.." << endl;
+        tie_state_suffixes(nodes);
+        if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    }
 }
 
 
