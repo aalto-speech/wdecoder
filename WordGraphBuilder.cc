@@ -135,7 +135,8 @@ connect_one_phone_words_from_cw_to_end(DecoderGraph &dg,
 void
 create_graph(DecoderGraph &dg,
              const set<string> &words,
-             vector<DecoderGraph::Node> &nodes)
+             vector<DecoderGraph::Node> &nodes,
+             bool verbose)
 {
     nodes.clear();
     nodes.resize(2);
@@ -158,17 +159,52 @@ create_graph(DecoderGraph &dg,
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
     wordgraphbuilder::create_crossword_network(dg, words, cw_nodes, fanout, fanin);
-    cerr << "crossword network size: " << cw_nodes.size() << endl;
+    if (verbose) cerr << "crossword network size: " << cw_nodes.size() << endl;
     minimize_crossword_network(cw_nodes, fanout, fanin);
-    cerr << "tied crossword network size: " << cw_nodes.size() << endl;
+    if (verbose) cerr << "tied crossword network size: " << cw_nodes.size() << endl;
 
-    cerr << "Connecting crossword network.." << endl;
+    if (verbose) cerr << "Connecting crossword network.." << endl;
     graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
     connect_end_to_start_node(nodes);
-    cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+    if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
     wordgraphbuilder::connect_one_phone_words_from_start_to_cw(dg, words, nodes, fanout);
     wordgraphbuilder::connect_one_phone_words_from_cw_to_end(dg, words, nodes, fanin);
+}
+
+
+void tie_graph(vector<DecoderGraph::Node> &nodes,
+               bool verbose)
+{
+    if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    if (verbose) cerr << endl;
+    if (verbose) cerr << "Pushing word ids right.." << endl;
+    push_word_ids_right(nodes);
+    if (verbose) cerr << "Tying state prefixes.." << endl;
+    tie_state_prefixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    if (verbose) cerr << endl;
+    if (verbose) cerr << "Pushing word ids left.." << endl;
+    push_word_ids_left(nodes);
+    if (verbose) cerr << "Tying state suffixes.." << endl;
+    tie_state_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    //cerr << endl;
+    //cerr << "Removing cw dummies.." << endl;
+    //remove_cw_dummies(nodes);
+    //cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    if (verbose) cerr << endl;
+    if (verbose) cerr << "Tying state suffixes.." << endl;
+    tie_state_suffixes(nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    //cerr << "Tying state prefixes.." << endl;
+    //tie_state_prefixes(nodes);
+    //cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 }
 
 

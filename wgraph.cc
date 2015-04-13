@@ -37,38 +37,8 @@ int main(int argc, char* argv[])
         cerr << "Result graph file name: " << graphfname << endl;
 
         vector<DecoderGraph::Node> nodes(2);
-        wordgraphbuilder::create_graph(dg, words, nodes);
-
-        connect_end_to_start_node(nodes);
-        cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        cerr << endl;
-        cerr << "Pushing word ids right.." << endl;
-        push_word_ids_right(nodes);
-        cerr << "Tying state prefixes.." << endl;
-        tie_state_prefixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        cerr << endl;
-        cerr << "Pushing word ids left.." << endl;
-        push_word_ids_left(nodes);
-        cerr << "Tying state suffixes.." << endl;
-        tie_state_suffixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        //cerr << endl;
-        //cerr << "Removing cw dummies.." << endl;
-        //remove_cw_dummies(nodes);
-        //cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        cerr << endl;
-        cerr << "Tying state suffixes.." << endl;
-        tie_state_suffixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        //cerr << "Tying state prefixes.." << endl;
-        //tie_state_prefixes(nodes);
-        //cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        wordgraphbuilder::create_graph(dg, words, nodes, true);
+        wordgraphbuilder::tie_graph(nodes, true);
 
         add_long_silence(dg, nodes);
         add_hmm_self_transitions(nodes);

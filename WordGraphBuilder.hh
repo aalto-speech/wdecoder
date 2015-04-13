@@ -31,7 +31,11 @@ void connect_one_phone_words_from_cw_to_end(DecoderGraph &dg,
 
 void create_graph(DecoderGraph &dg,
                   const std::set<std::string> &words,
-                  std::vector<DecoderGraph::Node> &nodes);
+                  std::vector<DecoderGraph::Node> &nodes,
+                  bool verbose=false);
+
+void tie_graph(std::vector<DecoderGraph::Node> &nodes,
+               bool verbose=false);
 
 }
 
