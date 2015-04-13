@@ -32,58 +32,11 @@ int main(int argc, char* argv[])
         cerr << "Result graph file name: " << graphfname << endl;
 
         set<string> subwords;
-        vector<DecoderGraph::Node> nodes(2);
-        for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
+        for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit)
             subwords.insert(swit->first);
-            if (swit->second.size() < 2) continue;
-            vector<TriphoneNode> sw_triphones;
-            triphonize_subword(dg, swit->first, sw_triphones);
-            vector<DecoderGraph::Node> sw_nodes;
-            triphones_to_state_chain(dg, sw_triphones, sw_nodes);
-            sw_nodes[3].from_fanin.insert(swit->second[0]);
-            sw_nodes[sw_nodes.size()-4].to_fanout.insert(swit->second.back());
-            add_nodes_to_tree(dg, nodes, sw_nodes);
-        }
-        lookahead_to_arcs(nodes);
 
-        prune_unreachable_nodes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        set<node_idx_t> third_nodes;
-        set_reverse_arcs(nodes);
-        find_nodes_in_depth_reverse(nodes, third_nodes, dg.m_states_per_phone+1);
-        clear_reverse_arcs(nodes);
-        for (auto nii=third_nodes.begin(); nii != third_nodes.end(); ++nii)
-            nodes[*nii].flags |= NODE_LM_RIGHT_LIMIT;
-
-        third_nodes.clear();
-        find_nodes_in_depth(nodes, third_nodes, dg.m_states_per_phone+1);
-        for (auto nii=third_nodes.begin(); nii !=third_nodes.end(); ++nii)
-            nodes[*nii].flags |= NODE_LM_LEFT_LIMIT;
-
-        push_word_ids_right(nodes);
-        cerr << "Tying state prefixes.." << endl;
-        tie_state_prefixes(nodes);
-        push_word_ids_left(nodes);
-        tie_state_suffixes(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        vector<DecoderGraph::Node> cw_nodes;
-        map<string, int> fanout, fanin;
-        cerr << "Creating crossword network.." << endl;
-        create_crossword_network(dg, subwords, cw_nodes, fanout, fanin);
-        cerr << "crossword network size: " << cw_nodes.size() << endl;
-        minimize_crossword_network(cw_nodes, fanout, fanin);
-        cerr << "tied crossword network size: " << cw_nodes.size() << endl;
-
-        cerr << "Connecting crossword network.." << endl;
-        connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
-        connect_end_to_start_node(nodes);
-        cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        connect_one_phone_subwords_from_start_to_cw(dg, subwords, nodes, fanout);
-        connect_one_phone_subwords_from_cw_to_end(dg, subwords, nodes, fanin);
-        prune_unreachable_nodes(nodes);
+        vector<DecoderGraph::Node> nodes(2);
+        subwordgraphbuilder::create_graph(dg, nodes, subwords, true);
 
         cerr << "Removing cw dummies.." << endl;
         remove_cw_dummies(nodes);

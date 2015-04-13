@@ -43,7 +43,8 @@ void create_forced_path(DecoderGraph &dg,
 
 void create_graph(DecoderGraph &dg,
                   std::vector<DecoderGraph::Node> &nodes,
-                  const std::set<std::string> &subwords);
+                  const std::set<std::string> &subwords,
+                  bool verbose=false);
 
 }
 
