@@ -1,6 +1,7 @@
 #include <cassert>
 
 #include "gutils.hh"
+#include "GraphBuilder.hh"
 
 using namespace std;
 using namespace gutils;
@@ -128,6 +129,46 @@ connect_one_phone_words_from_cw_to_end(DecoderGraph &dg,
         int idx = connect_word(dg, nodes, *wit, fanin[fanint]);
         nodes[idx].arcs.insert(END_NODE);
     }
+}
+
+
+void
+make_graph(DecoderGraph &dg,
+           const set<string> &words,
+           vector<DecoderGraph::Node> &nodes)
+{
+    nodes.clear();
+    nodes.resize(2);
+
+    for (auto wit = words.begin(); wit != words.end(); ++wit) {
+        vector<TriphoneNode> word_triphones;
+        triphonize_subword(dg, *wit, word_triphones);
+        vector<DecoderGraph::Node> word_nodes;
+        triphones_to_state_chain(dg, word_triphones, word_nodes);
+        // FIXME: check the number of phones
+        if (wit->length() > 1) {
+            word_nodes[3].from_fanin.insert(dg.m_lexicon[*wit][0]);
+            word_nodes[word_nodes.size()-4].to_fanout.insert(dg.m_lexicon[*wit].back());
+        }
+        add_nodes_to_tree(dg, nodes, word_nodes);
+    }
+    lookahead_to_arcs(nodes);
+    prune_unreachable_nodes(nodes);
+
+    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> fanout, fanin;
+    wordgraphbuilder::create_crossword_network(dg, words, cw_nodes, fanout, fanin);
+    cerr << "crossword network size: " << cw_nodes.size() << endl;
+    minimize_crossword_network(cw_nodes, fanout, fanin);
+    cerr << "tied crossword network size: " << cw_nodes.size() << endl;
+
+    cerr << "Connecting crossword network.." << endl;
+    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
+    connect_end_to_start_node(nodes);
+    cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+
+    wordgraphbuilder::connect_one_phone_words_from_start_to_cw(dg, words, nodes, fanout);
+    wordgraphbuilder::connect_one_phone_words_from_cw_to_end(dg, words, nodes, fanin);
 }
 
 

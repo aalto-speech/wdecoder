@@ -37,31 +37,8 @@ int main(int argc, char* argv[])
         cerr << "Result graph file name: " << graphfname << endl;
 
         vector<DecoderGraph::Node> nodes(2);
-        for (auto wit = words.begin(); wit != words.end(); ++wit) {
-            vector<TriphoneNode> word_triphones;
-            triphonize_subword(dg, *wit, word_triphones);
-            if (word_triphones.size() == 2) {
-                cerr << "skipping one phone word: " << *wit << endl;
-                continue;
-            }
-            vector<DecoderGraph::Node> word_nodes;
-            triphones_to_state_chain(dg, word_triphones, word_nodes);
-            add_nodes_to_tree(dg, nodes, word_nodes);
-        }
-        lookahead_to_arcs(nodes);
-        prune_unreachable_nodes(nodes);
-        cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+        wordgraphbuilder::make_graph(dg, words, nodes);
 
-        cerr << "Creating crossword network.." << endl;
-        vector<DecoderGraph::Node> cw_nodes;
-        map<string, int> fanout, fanin;
-        wordgraphbuilder::create_crossword_network(dg, words, cw_nodes, fanout, fanin);
-        cerr << "crossword network size: " << cw_nodes.size() << endl;
-        minimize_crossword_network(cw_nodes, fanout, fanin);
-        cerr << "tied crossword network size: " << cw_nodes.size() << endl;
-
-        cerr << "Connecting crossword network.." << endl;
-        graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
         connect_end_to_start_node(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
