@@ -142,6 +142,7 @@ create_graph(DecoderGraph &dg,
     nodes.resize(2);
 
     for (auto wit = words.begin(); wit != words.end(); ++wit) {
+        if (wit->find("<") != string::npos) continue;
         vector<TriphoneNode> word_triphones;
         triphonize_subword(dg, *wit, word_triphones);
         vector<DecoderGraph::Node> word_nodes;

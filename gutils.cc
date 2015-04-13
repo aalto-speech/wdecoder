@@ -185,6 +185,7 @@ void triphonize_subword(DecoderGraph &dg,
     nodes.clear();
 
     vector<string> &triphones = dg.m_lexicon[subword];
+    if (triphones.size() == 0) return;
     int word_id_pos = max(1, (int) (triphones.size() - 1));
     for (auto triit = triphones.begin(); triit != triphones.end(); ++triit) {
         TriphoneNode trin;

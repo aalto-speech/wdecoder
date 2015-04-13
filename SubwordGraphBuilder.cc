@@ -292,6 +292,7 @@ create_graph(DecoderGraph &dg,
 {
     nodes.clear(); nodes.resize(2);
     for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
+        if (swit->find("<") != string::npos) continue;
         vector<TriphoneNode> subword_triphones;
         triphonize_subword(dg, *swit, subword_triphones);
         // One phone subwords not connected yet to the main tree

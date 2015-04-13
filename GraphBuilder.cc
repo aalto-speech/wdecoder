@@ -128,6 +128,9 @@ void create_graph(DecoderGraph &dg,
 
     int triphonize_error = 0;
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
+
+        if (wit->first.find("<") != string::npos) continue;
+
         vector<TriphoneNode> word_triphones;
         bool ok = triphonize(dg, wit->second, word_triphones);
         if (!ok) {
