@@ -12,7 +12,7 @@
 namespace graphbuilder {
 
 void create_crossword_network(DecoderGraph &dg,
-                              std::map<std::string, std::vector<std::string> > &word_segs,
+                              const std::map<std::string, std::vector<std::string> > &word_segs,
                               std::vector<DecoderGraph::Node> &nodes,
                               std::map<std::string, int> &fanout,
                               std::map<std::string, int> &fanin,
@@ -27,7 +27,9 @@ void connect_crossword_network(DecoderGraph &dg,
 
 void create_graph(DecoderGraph &dg,
                   std::vector<DecoderGraph::Node> &nodes,
-                  const std::map<std::string, std::vector<std::string> > word_segs);
+                  const std::map<std::string, std::vector<std::string> > word_segs,
+                  bool wb_symbol=true,
+                  bool connect_cw_network=true);
 
 }
 

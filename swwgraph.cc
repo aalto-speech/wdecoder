@@ -39,22 +39,7 @@ int main(int argc, char* argv[])
         cerr << "Result graph file name: " << graphfname << endl;
 
         vector<DecoderGraph::Node> nodes(2);
-        graphbuilder::create_graph(dg, nodes, word_segs);
-
-        prune_unreachable_nodes(nodes);
-        cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
-
-        cerr << "Creating crossword network.." << endl;
-        vector<DecoderGraph::Node> cw_nodes;
-        map<string, int> fanout, fanin;
-        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, wb_symbol);
-        cerr << "crossword network size: " << cw_nodes.size() << endl;
-        minimize_crossword_network(cw_nodes, fanout, fanin);
-        cerr << "tied crossword network size: " << cw_nodes.size() << endl;
-
-        connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
-        connect_end_to_start_node(nodes);
-        cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+        graphbuilder::create_graph(dg, nodes, word_segs, wb_symbol, true);
 
         cerr << "Tying state suffixes.." << endl;
         tie_state_suffixes(nodes);

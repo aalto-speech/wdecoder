@@ -11,7 +11,7 @@ namespace graphbuilder {
 
 void
 create_crossword_network(DecoderGraph &dg,
-                         map<string, vector<string> > &word_segs,
+                         const map<string, vector<string> > &word_segs,
                          vector<DecoderGraph::Node> &nodes,
                          map<string, int> &fanout,
                          map<string, int> &fanin,
@@ -118,7 +118,9 @@ connect_crossword_network(DecoderGraph &dg,
 
 void create_graph(DecoderGraph &dg,
                   vector<DecoderGraph::Node> &nodes,
-                  const map<string, vector<string> > word_segs)
+                  const map<string, vector<string> > word_segs,
+                  bool wb_symbol,
+                  bool connect_cw_network)
 {
     nodes.clear();
     nodes.resize(2);
@@ -159,6 +161,23 @@ void create_graph(DecoderGraph &dg,
     }
     lookahead_to_arcs(nodes);
     if (triphonize_error > 0) cerr << triphonize_error << " words could not be triphonized." << endl;
+
+    if (connect_cw_network) {
+        prune_unreachable_nodes(nodes);
+        cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+
+        cerr << "Creating crossword network.." << endl;
+        vector<DecoderGraph::Node> cw_nodes;
+        map<string, int> fanout, fanin;
+        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, wb_symbol);
+        cerr << "crossword network size: " << cw_nodes.size() << endl;
+        minimize_crossword_network(cw_nodes, fanout, fanin);
+        cerr << "tied crossword network size: " << cw_nodes.size() << endl;
+
+        connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
+        connect_end_to_start_node(nodes);
+        cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+    }
 }
 
 
