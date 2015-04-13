@@ -120,12 +120,17 @@ void create_graph(DecoderGraph &dg,
                   vector<DecoderGraph::Node> &nodes,
                   const map<string, vector<string> > word_segs)
 {
-    vector<TriphoneNode> triphone_nodes(2);
     nodes.clear();
     nodes.resize(2);
+
+    int triphonize_error = 0;
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
         vector<TriphoneNode> word_triphones;
-        triphonize(dg, wit->second, word_triphones);
+        bool ok = triphonize(dg, wit->second, word_triphones);
+        if (!ok) {
+            triphonize_error++;
+            continue;
+        }
         vector<DecoderGraph::Node> word_nodes;
         triphones_to_state_chain(dg, word_triphones, word_nodes);
 
@@ -152,8 +157,8 @@ void create_graph(DecoderGraph &dg,
 
         add_nodes_to_tree(dg, nodes, word_nodes);
     }
-
     lookahead_to_arcs(nodes);
+    if (triphonize_error > 0) cerr << triphonize_error << " words could not be triphonized." << endl;
 }
 
 

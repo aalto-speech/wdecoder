@@ -38,42 +38,8 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        int triphonize_error = 0;
         vector<DecoderGraph::Node> nodes(2);
-        for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
-            vector<TriphoneNode> word_triphones;
-            bool ok = triphonize(dg, wit->second, word_triphones);
-            if (!ok) {
-                triphonize_error++;
-                continue;
-            }
-            vector<DecoderGraph::Node> word_nodes;
-            triphones_to_state_chain(dg, word_triphones, word_nodes);
-
-            if (word_nodes.size() < 3) {
-                cerr << "One phone words not supported at the moment" << endl;
-                exit(1);
-            }
-
-            bool first_assigned = false;
-            string first_triphone;
-            string last_triphone;
-            for (unsigned int i=0; i< word_triphones.size(); i++) {
-                if (word_triphones[i].hmm_id == -1) continue;
-                string triphone_label = dg.m_hmms[word_triphones[i].hmm_id].label;
-                if (!first_assigned) {
-                    first_triphone.assign(triphone_label);
-                    first_assigned = true;
-                }
-                last_triphone.assign(triphone_label);
-            }
-            word_nodes[3].from_fanin.insert(first_triphone);
-            word_nodes[word_nodes.size()-4].to_fanout.insert(last_triphone);
-
-            add_nodes_to_tree(dg, nodes, word_nodes);
-        }
-        lookahead_to_arcs(nodes);
-        if (triphonize_error > 0) cerr << triphonize_error << " words could not be triphonized." << endl;
+        graphbuilder::create_graph(dg, nodes, word_segs);
 
         prune_unreachable_nodes(nodes);
         cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
