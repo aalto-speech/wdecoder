@@ -77,9 +77,6 @@ private:
     std::map<std::string, std::vector<std::string> > word_segs;
 
     void read_fixtures(DecoderGraph &dg);
-    void make_graph(DecoderGraph &dg,
-                    std::vector<DecoderGraph::Node> &nodes,
-                    const std::map<std::string, std::vector<std::string> > word_segs);
 
 };
 

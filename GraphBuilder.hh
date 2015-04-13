@@ -25,6 +25,10 @@ void connect_crossword_network(DecoderGraph &dg,
                                std::map<std::string, int> &fanin,
                                bool push_left_after_fanin=true);
 
+void create_graph(DecoderGraph &dg,
+                  std::vector<DecoderGraph::Node> &nodes,
+                  const std::map<std::string, std::vector<std::string> > word_segs);
+
 }
 
 #endif /* GRAPH_BUILDER_2_HH */
