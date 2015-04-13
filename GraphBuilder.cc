@@ -120,7 +120,8 @@ void create_graph(DecoderGraph &dg,
                   vector<DecoderGraph::Node> &nodes,
                   const map<string, vector<string> > word_segs,
                   bool wb_symbol,
-                  bool connect_cw_network)
+                  bool connect_cw_network,
+                  bool verbose)
 {
     nodes.clear();
     nodes.resize(2);
@@ -164,19 +165,19 @@ void create_graph(DecoderGraph &dg,
 
     if (connect_cw_network) {
         prune_unreachable_nodes(nodes);
-        cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+        if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
 
-        cerr << "Creating crossword network.." << endl;
+        if (verbose) cerr << "Creating crossword network.." << endl;
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
         create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, wb_symbol);
-        cerr << "crossword network size: " << cw_nodes.size() << endl;
+        if (verbose) cerr << "crossword network size: " << cw_nodes.size() << endl;
         minimize_crossword_network(cw_nodes, fanout, fanin);
-        cerr << "tied crossword network size: " << cw_nodes.size() << endl;
+        if (verbose) cerr << "tied crossword network size: " << cw_nodes.size() << endl;
 
         connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
         connect_end_to_start_node(nodes);
-        cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+        if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
     }
 }
 
