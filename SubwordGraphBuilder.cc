@@ -308,25 +308,6 @@ create_graph(DecoderGraph &dg,
     prune_unreachable_nodes(nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 
-    set<node_idx_t> third_nodes;
-    set_reverse_arcs(nodes);
-    find_nodes_in_depth_reverse(nodes, third_nodes, dg.m_states_per_phone+1);
-    clear_reverse_arcs(nodes);
-    for (auto nii=third_nodes.begin(); nii != third_nodes.end(); ++nii)
-        nodes[*nii].flags |= NODE_LM_RIGHT_LIMIT;
-
-    third_nodes.clear();
-    find_nodes_in_depth(nodes, third_nodes, dg.m_states_per_phone+1);
-    for (auto nii=third_nodes.begin(); nii !=third_nodes.end(); ++nii)
-        nodes[*nii].flags |= NODE_LM_LEFT_LIMIT;
-
-    push_word_ids_right(nodes);
-    if (verbose) cerr << "Tying state prefixes.." << endl;
-    tie_state_prefixes(nodes);
-    push_word_ids_left(nodes);
-    tie_state_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
     if (verbose) cerr << "Creating crossword network.." << endl;
@@ -346,8 +327,23 @@ create_graph(DecoderGraph &dg,
 
     if (verbose) cerr << "Removing cw dummies.." << endl;
     remove_cw_dummies(nodes);
-    tie_state_suffixes(nodes);
+
+    if (verbose) cerr << "Tying nodes.." << endl;
+    push_word_ids_right(nodes);
     tie_state_prefixes(nodes);
+    tie_word_id_prefixes(nodes);
+    tie_state_prefixes(nodes);
+    tie_word_id_prefixes(nodes);
+    tie_state_prefixes(nodes);
+
+    push_word_ids_left(nodes);
+    tie_state_suffixes(nodes);
+    tie_word_id_suffixes(nodes);
+    tie_state_suffixes(nodes);
+    tie_word_id_suffixes(nodes);
+    tie_state_suffixes(nodes);
+
+    prune_unreachable_nodes(nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
 }
 
