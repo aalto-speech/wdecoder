@@ -139,8 +139,8 @@ void create_graph(DecoderGraph &dg,
         }
 
         if (num_triphones(word_triphones) < 2) {
-            cerr << "One phone words not supported at the moment" << endl;
-            exit(1);
+            cerr << "Skipping one phone word " << wit->first << endl;
+            continue;
         }
 
         vector<DecoderGraph::Node> word_nodes;
