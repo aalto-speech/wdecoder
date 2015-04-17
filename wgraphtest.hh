@@ -2,7 +2,7 @@
 #define DECODER_WGRAPH_CPPUNIT
 
 #define private public
-#include "WordGraphBuilder.hh"
+#include "WordGraph.hh"
 #undef private
 
 #include <set>

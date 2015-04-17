@@ -1,7 +1,7 @@
 
 #include "wgraphtest.hh"
 #include "gutils.hh"
-#include "WordGraphBuilder.hh"
+#include "WordGraph.hh"
 
 
 using namespace std;

@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "WordGraphBuilder.hh"
+#include "WordGraph.hh"
 
 using namespace std;
 
