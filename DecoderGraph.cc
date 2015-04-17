@@ -329,11 +329,11 @@ DecoderGraph::lookahead_to_arcs(vector<DecoderGraph::Node> &nodes)
 
 void
 DecoderGraph::get_hmm_states(const vector<string> &triphones,
-                             vector<int> &states)
+                             vector<int> &states) const
 {
     for (auto tit = triphones.begin(); tit != triphones.end(); ++tit) {
-        int hmm_index = m_hmm_map[*tit];
-        Hmm &hmm = m_hmms[hmm_index];
+        int hmm_index = m_hmm_map.at(*tit);
+        const Hmm &hmm = m_hmms.at(hmm_index);
         for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx)
             states.push_back(hmm.states[sidx].model);
     }
@@ -342,7 +342,7 @@ DecoderGraph::get_hmm_states(const vector<string> &triphones,
 void
 DecoderGraph::get_hmm_states(map<string, vector<string> > &word_segs,
                              string word,
-                             vector<int> &states)
+                             vector<int> &states) const
 {
     vector<string> triphones;
     triphonize(word_segs, word, triphones);
@@ -353,23 +353,23 @@ void
 DecoderGraph::get_hmm_states_cw(map<string, vector<string> > &word_segs,
                                 string wrd1,
                                 string wrd2,
-                                vector<int> &states)
+                                vector<int> &states) const
 {
     string phonestring;
     vector<string> triphones;
 
     for (auto swit = word_segs[wrd1].begin();
             swit != word_segs[wrd1].end(); ++swit)
-        for (auto trit = m_lexicon[*swit].begin();
-                trit != m_lexicon[*swit].end(); ++trit)
+        for (auto trit = m_lexicon.at(*swit).begin();
+                trit != m_lexicon.at(*swit).end(); ++trit)
             phonestring += string(1, (*trit)[2]);
 
     phonestring += "_";
 
     for (auto swit = word_segs[wrd2].begin();
             swit != word_segs[wrd2].end(); ++swit)
-        for (auto trit = m_lexicon[*swit].begin();
-                trit != m_lexicon[*swit].end(); ++trit)
+        for (auto trit = m_lexicon.at(*swit).begin();
+                trit != m_lexicon.at(*swit).end(); ++trit)
             phonestring += string(1, (*trit)[2]);
 
     triphonize_phone_string(phonestring, triphones);

@@ -100,16 +100,15 @@ public:
     void lookahead_to_arcs(std::vector<DecoderGraph::Node> &nodes);
 
     void get_hmm_states(const std::vector<std::string> &triphones,
-                        std::vector<int> &states);
-    void get_hmm_states(std::string word,
-                        std::vector<int> &states);
+                        std::vector<int> &states) const;
     void get_hmm_states(std::map<std::string, std::vector<std::string> > &word_segs,
                         std::string word,
-                        std::vector<int> &states);
+                        std::vector<int> &states) const;
     void get_hmm_states_cw(std::map<std::string, std::vector<std::string> > &word_segs,
                            std::string wrd1,
                            std::string wrd2,
-                           std::vector<int> &states);
+                           std::vector<int> &states) const;
+
     void find_successor_word(std::vector<DecoderGraph::Node> &nodes,
                              std::set<std::pair<int, int> > &matches,
                              int word_id,

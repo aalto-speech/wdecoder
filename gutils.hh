@@ -47,9 +47,6 @@ void lookahead_to_arcs(std::vector<DecoderGraph::Node> &nodes);
 void get_hmm_states(DecoderGraph &dg,
                     const std::vector<std::string> &triphones,
                     std::vector<int> &states);
-void get_hmm_states(DecoderGraph &dg,
-                    std::string word,
-                    std::vector<int> &states);
 void get_hmm_states_cw(DecoderGraph &dg,
                        std::map<std::string, std::vector<std::string> > &word_segs,
                        std::string wrd1,
