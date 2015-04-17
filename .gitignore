@@ -3,7 +3,7 @@ dep
 decode
 wgraph
 swgraph
-swgraph2
+nowbswgraph
 swwgraph
 lastates
 runtests
