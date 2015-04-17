@@ -2,7 +2,6 @@
 
 #include "SubwordGraph.hh"
 #include "Decoder.hh"
-#include "gutils.hh"
 #include "conf.hh"
 
 using namespace std;
@@ -166,7 +165,7 @@ int main(int argc, char* argv[])
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
             swg.create_forced_path(nodes, reswordstrs, node_labels);
-            gutils::add_hmm_self_transitions(nodes);
+            swg.add_hmm_self_transitions(nodes);
 
             convert_nodes_for_decoder(nodes, d.m_nodes);
             d.set_hmm_transition_probs();

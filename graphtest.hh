@@ -1,8 +1,8 @@
-#ifndef DECODER_GRAPH_CPPUNIT
-#define DECODER_GRAPH_CPPUNIT
+#ifndef SWWGRAPH_CPPUNIT
+#define SWWGRAPH_CPPUNIT
 
 #define private public
-#include "DecoderGraph.hh"
+#include "GraphBuilder.hh"
 #undef private
 
 #include <string>
@@ -10,33 +10,33 @@
 #include <cppunit/TestFixture.h>
 #include <cppunit/extensions/HelperMacros.h>
 
-class graphtest : public CPPUNIT_NS :: TestFixture
+class swwgraphtest : public CPPUNIT_NS :: TestFixture
 {
-    CPPUNIT_TEST_SUITE (graphtest);
-    CPPUNIT_TEST (GraphTest1);
-    CPPUNIT_TEST (GraphTest2);
-    CPPUNIT_TEST (GraphTest3);
-    CPPUNIT_TEST (GraphTest4);
-    CPPUNIT_TEST (GraphTest5);
-    CPPUNIT_TEST (GraphTest6);
-    CPPUNIT_TEST (GraphTest7);
-    CPPUNIT_TEST (GraphTest8);
-    CPPUNIT_TEST (GraphTest9);
-    CPPUNIT_TEST (GraphTest10);
-    CPPUNIT_TEST (GraphTest11);
-    CPPUNIT_TEST (GraphTest12);
-    CPPUNIT_TEST (GraphTest13);
-    CPPUNIT_TEST (GraphTest14);
-    CPPUNIT_TEST (GraphTest15);
-    CPPUNIT_TEST (GraphTest16);
-    CPPUNIT_TEST (GraphTest17);
-    CPPUNIT_TEST (GraphTest18);
-    CPPUNIT_TEST (GraphTest19);
-    CPPUNIT_TEST (GraphTest20);
-    CPPUNIT_TEST (GraphTest21);
-    CPPUNIT_TEST (GraphTest22);
-    CPPUNIT_TEST (GraphTest23);
-    CPPUNIT_TEST (GraphTest24);
+    CPPUNIT_TEST_SUITE (swwgraphtest);
+    CPPUNIT_TEST (SWWGraphTest1);
+    CPPUNIT_TEST (SWWGraphTest2);
+    CPPUNIT_TEST (SWWGraphTest3);
+    CPPUNIT_TEST (SWWGraphTest4);
+    CPPUNIT_TEST (SWWGraphTest5);
+    CPPUNIT_TEST (SWWGraphTest6);
+    CPPUNIT_TEST (SWWGraphTest7);
+    CPPUNIT_TEST (SWWGraphTest8);
+    CPPUNIT_TEST (SWWGraphTest9);
+    CPPUNIT_TEST (SWWGraphTest10);
+    CPPUNIT_TEST (SWWGraphTest11);
+    CPPUNIT_TEST (SWWGraphTest12);
+    CPPUNIT_TEST (SWWGraphTest13);
+    CPPUNIT_TEST (SWWGraphTest14);
+    CPPUNIT_TEST (SWWGraphTest15);
+    CPPUNIT_TEST (SWWGraphTest16);
+    CPPUNIT_TEST (SWWGraphTest17);
+    CPPUNIT_TEST (SWWGraphTest18);
+    CPPUNIT_TEST (SWWGraphTest19);
+    CPPUNIT_TEST (SWWGraphTest20);
+    CPPUNIT_TEST (SWWGraphTest21);
+    CPPUNIT_TEST (SWWGraphTest22);
+    CPPUNIT_TEST (SWWGraphTest23);
+    CPPUNIT_TEST (SWWGraphTest24);
     CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -44,30 +44,30 @@ public:
     void tearDown(void);
 
 protected:
-    void GraphTest1(void);
-    void GraphTest2(void);
-    void GraphTest3(void);
-    void GraphTest4(void);
-    void GraphTest5(void);
-    void GraphTest6(void);
-    void GraphTest7(void);
-    void GraphTest8(void);
-    void GraphTest9(void);
-    void GraphTest10(void);
-    void GraphTest11(void);
-    void GraphTest12(void);
-    void GraphTest13(void);
-    void GraphTest14(void);
-    void GraphTest15(void);
-    void GraphTest16(void);
-    void GraphTest17(void);
-    void GraphTest18(void);
-    void GraphTest19(void);
-    void GraphTest20(void);
-    void GraphTest21(void);
-    void GraphTest22(void);
-    void GraphTest23(void);
-    void GraphTest24(void);
+    void SWWGraphTest1(void);
+    void SWWGraphTest2(void);
+    void SWWGraphTest3(void);
+    void SWWGraphTest4(void);
+    void SWWGraphTest5(void);
+    void SWWGraphTest6(void);
+    void SWWGraphTest7(void);
+    void SWWGraphTest8(void);
+    void SWWGraphTest9(void);
+    void SWWGraphTest10(void);
+    void SWWGraphTest11(void);
+    void SWWGraphTest12(void);
+    void SWWGraphTest13(void);
+    void SWWGraphTest14(void);
+    void SWWGraphTest15(void);
+    void SWWGraphTest16(void);
+    void SWWGraphTest17(void);
+    void SWWGraphTest18(void);
+    void SWWGraphTest19(void);
+    void SWWGraphTest20(void);
+    void SWWGraphTest21(void);
+    void SWWGraphTest22(void);
+    void SWWGraphTest23(void);
+    void SWWGraphTest24(void);
 
 private:
 
@@ -76,7 +76,7 @@ private:
     std::string segname;
     std::map<std::string, std::vector<std::string> > word_segs;
 
-    void read_fixtures(DecoderGraph &dg);
+    void read_fixtures(SWWGraph &swwg);
 
 };
 

@@ -1,6 +1,5 @@
 #include "conf.hh"
 #include "SubwordGraph.hh"
-#include "gutils.hh"
 
 using namespace std;
 

@@ -733,12 +733,12 @@ DecoderGraph::assert_subword_ids_right(vector<DecoderGraph::Node> &nodes)
 }
 
 bool
-DecoderGraph::assert_no_duplicate_word_ids(vector<DecoderGraph::Node> &nodes)
+DecoderGraph::assert_no_duplicate_word_ids()
 {
     bool retval = true;
     for (unsigned int i = 0; i < m_subwords.size(); i++) {
         set<pair<int, int> > results;
-        find_successor_word(nodes, results, i, START_NODE);
+        find_successor_word(m_nodes, results, i, START_NODE);
         if (results.size() > 1 && m_subwords[i].length() > 1) {
             cerr << results.size() << " matches for subword: "
                  << m_subwords[i] << endl;
@@ -749,8 +749,7 @@ DecoderGraph::assert_no_duplicate_word_ids(vector<DecoderGraph::Node> &nodes)
 }
 
 bool
-DecoderGraph::assert_only_segmented_words(vector<DecoderGraph::Node> &nodes,
-                                          map<string, vector<string> > &word_segs,
+DecoderGraph::assert_only_segmented_words(map<string, vector<string> > &word_segs,
                                           deque<int> states,
                                           deque<int> subwords,
                                           int node_idx)
@@ -788,15 +787,14 @@ DecoderGraph::assert_only_segmented_words(vector<DecoderGraph::Node> &nodes,
         return true;
     }
 
-    DecoderGraph::Node &node = nodes[node_idx];
+    DecoderGraph::Node &node = m_nodes[node_idx];
     if (node.hmm_state != -1)
         states.push_back(node.hmm_state);
     if (node.word_id != -1)
         subwords.push_back(node.word_id);
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (nodes[*ait].flags) continue;
-        bool rv = assert_only_segmented_words(nodes, word_segs,
-                                              states, subwords, *ait);
+        if (m_nodes[*ait].flags) continue;
+        bool rv = assert_only_segmented_words(word_segs, states, subwords, *ait);
         if (!rv) return false;
     }
 
@@ -810,13 +808,12 @@ DecoderGraph::assert_only_words(set<string> &words)
     map<string, vector<string> > seg_words;
     for (auto wit = words.begin(); wit != words.end(); ++wit)
         seg_words[*wit].push_back(*wit);
-    return assert_only_segmented_words(m_nodes, seg_words);
+    return assert_only_segmented_words(seg_words);
 }
 
 
 bool
-DecoderGraph::assert_only_segmented_cw_word_pairs(vector<DecoderGraph::Node> &nodes,
-                                                  map<string, vector<string> > &word_segs,
+DecoderGraph::assert_only_segmented_cw_word_pairs(map<string, vector<string> > &word_segs,
                                                   vector<int> states,
                                                   pair<vector<int>, vector<int>> subwords,
                                                   int node_idx,
@@ -850,7 +847,7 @@ DecoderGraph::assert_only_segmented_cw_word_pairs(vector<DecoderGraph::Node> &no
         return true;
     }
 
-    DecoderGraph::Node &node = nodes[node_idx];
+    DecoderGraph::Node &node = m_nodes[node_idx];
     if ((node.flags & NODE_CW) && !cw_visited) cw_visited = true;
     if (node.hmm_state != -1)
         states.push_back(node.hmm_state);
@@ -864,18 +861,18 @@ DecoderGraph::assert_only_segmented_cw_word_pairs(vector<DecoderGraph::Node> &no
     bool cw_entry_found = false;
     bool non_cw_entry_found = false;
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if ((nodes[*ait].flags) & NODE_CW) cw_entry_found = true;
+        if ((m_nodes[*ait].flags) & NODE_CW) cw_entry_found = true;
         else non_cw_entry_found = true;
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        DecoderGraph::Node &target_node = nodes[*ait];
+        DecoderGraph::Node &target_node = m_nodes[*ait];
         if (cw_visited && non_cw_entry_found && (target_node.flags & NODE_CW))
             continue;
         if (!cw_visited && cw_entry_found && !(target_node.flags & NODE_CW))
             continue;
-        bool rv = assert_only_segmented_cw_word_pairs(nodes, word_segs,
-                  states, subwords, *ait, cw_visited);
+        bool rv = assert_only_segmented_cw_word_pairs(word_segs,
+                      states, subwords, *ait, cw_visited);
         if (!rv) return false;
     }
 
@@ -888,7 +885,7 @@ DecoderGraph::assert_only_cw_word_pairs(std::set<std::string> &words)
     map<string, vector<string> > seg_words;
     for (auto wit = words.begin(); wit != words.end(); ++wit)
         seg_words[*wit].push_back(*wit);
-    return assert_only_segmented_cw_word_pairs(m_nodes, seg_words);
+    return assert_only_segmented_cw_word_pairs(seg_words);
 }
 
 
@@ -1619,8 +1616,14 @@ DecoderGraph::prune_unreachable_nodes_cw(vector<DecoderGraph::Node> &nodes,
 void
 DecoderGraph::add_hmm_self_transitions()
 {
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-        DecoderGraph::Node &node = m_nodes[i];
+    add_hmm_self_transitions(m_nodes);
+}
+
+void
+DecoderGraph::add_hmm_self_transitions(vector<DecoderGraph::Node> &nodes)
+{
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        DecoderGraph::Node &node = nodes[i];
         if (node.hmm_state == -1) continue;
         node.arcs.insert(i);
     }

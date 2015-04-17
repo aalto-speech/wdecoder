@@ -1,5 +1,5 @@
-#ifndef GRAPH_BUILDER_2_HH
-#define GRAPH_BUILDER_2_HH
+#ifndef SWW_GRAPH_HH
+#define SWW_GRAPH_HH
 
 #include <string>
 #include <vector>
@@ -9,33 +9,30 @@
 #include "DecoderGraph.hh"
 
 
-namespace graphbuilder {
+class SWWGraph : public DecoderGraph {
 
-void create_crossword_network(DecoderGraph &dg,
-                              const std::map<std::string, std::vector<std::string> > &word_segs,
-                              std::vector<DecoderGraph::Node> &nodes,
-                              std::map<std::string, int> &fanout,
-                              std::map<std::string, int> &fanin,
-                              bool wb_symbol_in_middle=false);
+public:
 
-void connect_crossword_network(DecoderGraph &dg,
-                               std::vector<DecoderGraph::Node> &nodes,
-                               std::vector<DecoderGraph::Node> &cw_nodes,
-                               std::map<std::string, int> &fanout,
-                               std::map<std::string, int> &fanin,
-                               bool push_left_after_fanin=true);
+    SWWGraph();
+    SWWGraph(const std::map<std::string, std::vector<std::string> > &word_segs,
+             bool wb_symbol=true,
+             bool connect_cw_network=true,
+             bool verbose=false);
 
-void create_graph(DecoderGraph &dg,
-                  std::vector<DecoderGraph::Node> &nodes,
-                  const std::map<std::string, std::vector<std::string> > word_segs,
-                  bool wb_symbol=true,
-                  bool connect_cw_network=true,
-                  bool verbose=false);
+    void create_graph(const std::map<std::string, std::vector<std::string> > &word_segs,
+                      bool wb_symbol=true,
+                      bool connect_cw_network=true,
+                      bool verbose=false);
 
-void tie_graph(std::vector<DecoderGraph::Node> &nodes,
-               bool no_push=false,
-               bool verbose=false);
+    void create_crossword_network(const std::map<std::string, std::vector<std::string> > &word_segs,
+                                  std::vector<DecoderGraph::Node> &nodes,
+                                  std::map<std::string, int> &fanout,
+                                  std::map<std::string, int> &fanin,
+                                  bool wb_symbol_in_middle=false);
 
-}
+    void tie_graph(bool no_push=false,
+                   bool verbose=false);
 
-#endif /* GRAPH_BUILDER_2_HH */
+};
+
+#endif /* SWW_GRAPH_HH */

@@ -1,10 +1,7 @@
 #include "conf.hh"
-#include "gutils.hh"
 #include "GraphBuilder.hh"
 
 using namespace std;
-using namespace gutils;
-using namespace graphbuilder;
 
 
 int main(int argc, char* argv[])
@@ -19,35 +16,34 @@ int main(int argc, char* argv[])
     bool wb_symbol = config["word-boundary"].specified;
     bool no_push = config["no-push"].specified;
 
-    DecoderGraph dg;
+    SWWGraph swwg;
 
     try {
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
-        dg.read_phone_model(phfname);
+        swwg.read_phone_model(phfname);
 
         string lexfname = config.arguments[1];
         cerr << "Reading lexicon: " << lexfname << endl;
-        dg.read_noway_lexicon(lexfname);
+        swwg.read_noway_lexicon(lexfname);
 
         string segfname = config.arguments[2];
         cerr << "Reading segmentations: " << segfname << endl;
         map<string, vector<string> > word_segs;
-        read_word_segmentations(dg, segfname, word_segs);
+        swwg.read_word_segmentations(segfname, word_segs);
 
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        vector<DecoderGraph::Node> nodes(2);
-        graphbuilder::create_graph(dg, nodes, word_segs, wb_symbol, true, true);
+        swwg.create_graph(word_segs, wb_symbol, true, true);
 
-        graphbuilder::tie_graph(nodes, no_push, true);
+        swwg.tie_graph(no_push, true);
 
-        if (wb_symbol) nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
-        add_long_silence(dg, nodes);
-        add_hmm_self_transitions(nodes);
+        if (wb_symbol) swwg.m_nodes[END_NODE].word_id = swwg.m_subword_map["<w>"];
+        swwg.add_long_silence();
+        swwg.add_hmm_self_transitions();
 
-        write_graph(nodes, graphfname);
+        swwg.write_graph(graphfname);
 
     } catch (string &e) {
         cerr << e << endl;

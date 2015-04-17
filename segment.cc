@@ -1,13 +1,12 @@
 #include <sstream>
 #include <string>
 
+#include "DecoderGraph.hh"
 #include "Segmenter.hh"
-#include "gutils.hh"
 #include "conf.hh"
 #include "str.hh"
 
 using namespace std;
-using namespace gutils;
 
 
 int
@@ -23,7 +22,7 @@ create_forced_path(DecoderGraph &dg,
     // Create initial triphone graph only with crossword context
     tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
     vector<string> triphones;
-    triphonize(sentstr, triphones);
+    DecoderGraph::triphonize_phone_string(sentstr, triphones);
     for (auto tit=triphones.begin(); tit != triphones.end(); ++tit)
         tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[*tit]));
     tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
@@ -32,7 +31,7 @@ create_forced_path(DecoderGraph &dg,
     node_labels.clear();
     int idx = 0;
     for (int t=0; t<(int)tnodes.size(); t++)
-        idx = connect_triphone(dg, nodes, tnodes[t].hmm_id, idx, node_labels);
+        idx = dg.connect_triphone(nodes, tnodes[t].hmm_id, idx, node_labels);
     int end_idx = idx;
 
     if (breaking_short_silence || breaking_long_silence) {
@@ -45,16 +44,16 @@ create_forced_path(DecoderGraph &dg,
             string right_triphone = node_labels[i+1].substr(0, 5);
             right_triphone[0] = '_';
 
-            int left_idx = connect_triphone(dg, nodes, left_triphone, i-4, node_labels);
+            int left_idx = dg.connect_triphone(nodes, left_triphone, i-4, node_labels);
 
             if (breaking_short_silence) {
-                int idx = connect_triphone(dg, nodes, "_", left_idx, node_labels);
-                idx = connect_triphone(dg, nodes, right_triphone, idx, node_labels);
+                int idx = dg.connect_triphone(nodes, "_", left_idx, node_labels);
+                idx = dg.connect_triphone(nodes, right_triphone, idx, node_labels);
                 nodes[idx].arcs.insert(i+4);
             }
             if (breaking_long_silence) {
-                int idx = connect_triphone(dg, nodes, "__", left_idx, node_labels);
-                idx = connect_triphone(dg, nodes, right_triphone, idx, node_labels);
+                int idx = dg.connect_triphone(nodes, "__", left_idx, node_labels);
+                idx = dg.connect_triphone(nodes, right_triphone, idx, node_labels);
                 nodes[idx].arcs.insert(i+4);
             }
         }
@@ -83,7 +82,7 @@ parse_transcript_phn(DecoderGraph &dg,
         if (parts.size() != 3) throw string("Invalid phn line: ") + phn_line;
         if (parts[2].find(".0") == string::npos) continue;
         string phone = parts[2].substr(0, parts[2].size()-2);
-        idx = connect_triphone(dg, nodes, phone, idx, node_labels);
+        idx = dg.connect_triphone(nodes, phone, idx, node_labels);
     }
 
     return idx;
@@ -289,7 +288,7 @@ int main(int argc, char* argv[])
                                                     node_labels);
             }
 
-            gutils::add_hmm_self_transitions(nodes);
+            dg.add_hmm_self_transitions(nodes);
             convert_nodes_for_decoder(nodes, s.m_nodes);
             s.set_hmm_transition_probs();
             s.m_decode_start_node = 0;

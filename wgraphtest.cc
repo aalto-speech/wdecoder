@@ -1,11 +1,7 @@
-
 #include "wgraphtest.hh"
-#include "gutils.hh"
 #include "WordGraph.hh"
 
-
 using namespace std;
-using namespace gutils;
 
 
 CPPUNIT_TEST_SUITE_REGISTRATION (wgraphtest);

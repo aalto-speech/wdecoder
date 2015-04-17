@@ -1,29 +1,39 @@
 #include <cassert>
 
-#include "gutils.hh"
+#include "GraphBuilder.hh"
 
 using namespace std;
-using namespace gutils;
 
 
-namespace graphbuilder {
+SWWGraph::SWWGraph()
+{
+
+}
+
+
+SWWGraph::SWWGraph(const map<string, vector<string> > &word_segs,
+                   bool wb_symbol,
+                   bool connect_cw_network,
+                   bool verbose)
+{
+    create_graph(word_segs, wb_symbol, connect_cw_network, verbose);
+}
 
 
 void
-create_crossword_network(DecoderGraph &dg,
-                         const map<string, vector<string> > &word_segs,
-                         vector<DecoderGraph::Node> &nodes,
-                         map<string, int> &fanout,
-                         map<string, int> &fanin,
-                         bool wb_symbol_in_middle)
+SWWGraph::create_crossword_network(const map<string, vector<string> > &word_segs,
+                                   vector<DecoderGraph::Node> &nodes,
+                                   map<string, int> &fanout,
+                                   map<string, int> &fanin,
+                                   bool wb_symbol_in_middle)
 {
-    int spp = dg.m_states_per_phone;
+    int spp = m_states_per_phone;
 
     int error_count = 0;
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
         vector<string> triphones;
         for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit) {
-            for (auto tit = dg.m_lexicon[*swit].begin(); tit != dg.m_lexicon[*swit].end(); ++tit) {
+            for (auto tit = m_lexicon[*swit].begin(); tit != m_lexicon[*swit].end(); ++tit) {
                 triphones.push_back(*tit);
             }
         }
@@ -49,12 +59,12 @@ create_crossword_network(DecoderGraph &dg,
             string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
             string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
 
-            int idx = connect_triphone(dg, nodes, triphone1, foit->second);
-            if (wb_symbol_in_middle) idx = connect_word(dg, nodes, "<w>", idx);
-            idx = connect_triphone(dg, nodes, "_", idx);
+            int idx = connect_triphone(nodes, triphone1, foit->second);
+            if (wb_symbol_in_middle) idx = connect_word(nodes, "<w>", idx);
+            idx = connect_triphone(nodes, "_", idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end()) {
-                idx = connect_triphone(dg, nodes, triphone2, idx);
+                idx = connect_triphone(nodes, triphone2, idx);
                 connected_fanin_nodes[triphone2] = idx - (spp-1);
                 if (fiit->second == -1) {
                     nodes.resize(nodes.size()+1);
@@ -74,65 +84,18 @@ create_crossword_network(DecoderGraph &dg,
 
 
 void
-connect_crossword_network(DecoderGraph &dg,
-                          vector<DecoderGraph::Node> &nodes,
-                          vector<DecoderGraph::Node> &cw_nodes,
-                          map<string, int> &fanout,
-                          map<string, int> &fanin,
-                          bool push_left_after_fanin)
+SWWGraph::create_graph(const map<string, vector<string> > &word_segs,
+                       bool wb_symbol,
+                       bool connect_cw_network,
+                       bool verbose)
 {
-    int offset = nodes.size();
-    for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {
-        nodes.push_back(*cwnit);
-        set<unsigned int> temp_arcs = nodes.back().arcs;
-        nodes.back().arcs.clear();
-        for (auto ait = temp_arcs.begin(); ait != temp_arcs.end(); ++ait)
-            nodes.back().arcs.insert(*ait + offset);
-    }
-
-    for (auto fonit = fanout.begin(); fonit != fanout.end(); ++fonit)
-        fonit->second += offset;
-    for (auto finit = fanin.begin(); finit != fanin.end(); ++finit)
-        finit->second += offset;
-
-    for (unsigned int i=0; i<nodes.size(); i++) {
-        DecoderGraph::Node &nd = nodes[i];
-        for (auto ffi=nd.from_fanin.begin(); ffi!=nd.from_fanin.end(); ++ffi)
-            nodes[fanin[*ffi]].arcs.insert(i);
-        nd.from_fanin.clear();
-    }
-
-    if (push_left_after_fanin)
-        push_word_ids_left(nodes);
-    else
-        set_reverse_arcs_also_from_unreachable(nodes);
-
-    for (unsigned int i=0; i<nodes.size(); i++) {
-        DecoderGraph::Node &nd = nodes[i];
-        for (auto tfo=nd.to_fanout.begin(); tfo!=nd.to_fanout.end(); ++tfo)
-            nd.arcs.insert(fanout[*tfo]);
-        nd.to_fanout.clear();
-    }
-}
-
-
-void create_graph(DecoderGraph &dg,
-                  vector<DecoderGraph::Node> &nodes,
-                  const map<string, vector<string> > word_segs,
-                  bool wb_symbol,
-                  bool connect_cw_network,
-                  bool verbose)
-{
-    nodes.clear();
-    nodes.resize(2);
-
     int triphonize_error = 0;
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
 
         if (wit->first.find("<") != string::npos) continue;
 
         vector<TriphoneNode> word_triphones;
-        bool ok = triphonize(dg, wit->second, word_triphones);
+        bool ok = triphonize(wit->second, word_triphones);
         if (!ok) {
             triphonize_error++;
             continue;
@@ -144,14 +107,14 @@ void create_graph(DecoderGraph &dg,
         }
 
         vector<DecoderGraph::Node> word_nodes;
-        triphones_to_state_chain(dg, word_triphones, word_nodes);
+        triphones_to_state_chain(word_triphones, word_nodes);
 
         bool first_assigned = false;
         string first_triphone;
         string last_triphone;
         for (unsigned int i=0; i< word_triphones.size(); i++) {
             if (word_triphones[i].hmm_id == -1) continue;
-            string triphone_label = dg.m_hmms[word_triphones[i].hmm_id].label;
+            string triphone_label = m_hmms[word_triphones[i].hmm_id].label;
             if (!first_assigned) {
                 first_triphone.assign(triphone_label);
                 first_assigned = true;
@@ -161,100 +124,97 @@ void create_graph(DecoderGraph &dg,
         word_nodes[3].from_fanin.insert(first_triphone);
         word_nodes[word_nodes.size()-4].to_fanout.insert(last_triphone);
 
-        add_nodes_to_tree(dg, nodes, word_nodes);
+        add_nodes_to_tree(m_nodes, word_nodes);
     }
-    lookahead_to_arcs(nodes);
+    lookahead_to_arcs(m_nodes);
     if (triphonize_error > 0) cerr << triphonize_error << " words could not be triphonized." << endl;
 
     if (connect_cw_network) {
-        prune_unreachable_nodes(nodes);
-        if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+        prune_unreachable_nodes(m_nodes);
+        if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
         if (verbose) cerr << "Creating crossword network.." << endl;
         vector<DecoderGraph::Node> cw_nodes;
         map<string, int> fanout, fanin;
-        create_crossword_network(dg, word_segs, cw_nodes, fanout, fanin, wb_symbol);
+        create_crossword_network(word_segs, cw_nodes, fanout, fanin, wb_symbol);
         if (verbose) cerr << "crossword network size: " << cw_nodes.size() << endl;
         minimize_crossword_network(cw_nodes, fanout, fanin);
         if (verbose) cerr << "tied crossword network size: " << cw_nodes.size() << endl;
 
-        connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin, false);
-        connect_end_to_start_node(nodes);
-        if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+        connect_crossword_network(cw_nodes, fanout, fanin, false);
+        connect_end_to_start_node(m_nodes);
+        if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(m_nodes) << endl;
     }
 
-    prune_unreachable_nodes(nodes);
+    prune_unreachable_nodes(m_nodes);
 }
 
 
-void tie_graph(vector<DecoderGraph::Node> &nodes,
-               bool no_push,
-               bool verbose)
+void
+SWWGraph::tie_graph(bool no_push,
+                    bool verbose)
 {
     if (verbose) cerr << "Tying state suffixes.." << endl;
-    tie_state_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_state_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
     if (verbose) cerr << "Tying word id suffixes.." << endl;
-    tie_word_id_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_word_id_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
     if (verbose) cerr << endl;
     if (verbose) cerr << "Tying state suffixes.." << endl;
-    tie_state_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_state_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
     if (verbose) cerr << "Tying word id suffixes.." << endl;
-    tie_word_id_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_word_id_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
     if (verbose) cerr << endl;
     if (verbose) cerr << "Tying state suffixes.." << endl;
-    tie_state_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_state_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
     if (verbose) cerr << "Tying word id suffixes.." << endl;
-    tie_word_id_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_word_id_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
     if (verbose) cerr << endl;
     if (verbose) cerr << "Tying state suffixes.." << endl;
-    tie_state_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_state_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
     if (verbose) cerr << "Tying word id suffixes.." << endl;
-    tie_word_id_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_word_id_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
     if (verbose) cerr << endl;
     if (verbose) cerr << "Tying state suffixes.." << endl;
-    tie_state_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_state_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
     if (verbose) cerr << "Tying word id suffixes.." << endl;
-    tie_word_id_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_word_id_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
     if (verbose) cerr << endl;
     if (verbose) cerr << "Removing cw dummies.." << endl;
-    remove_cw_dummies(nodes);
+    remove_cw_dummies(m_nodes);
     if (verbose) cerr << "Tying state prefixes.." << endl;
-    tie_state_prefixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_state_prefixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
     if (verbose) cerr << "Tying state suffixes.." << endl;
-    tie_state_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_state_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
     if (!no_push) {
         if (verbose) cerr << "Pushing subword ids right.." << endl;
-        push_word_ids_right(nodes);
+        push_word_ids_right(m_nodes);
         if (verbose) cerr << "Tying state prefixes.." << endl;
-        tie_state_prefixes(nodes);
-        if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        tie_state_prefixes(m_nodes);
+        if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
         if (verbose) cerr << "Pushing subword ids left.." << endl;
-        push_word_ids_left(nodes);
+        push_word_ids_left(m_nodes);
         if (verbose) cerr << "Tying state suffixes.." << endl;
-        tie_state_suffixes(nodes);
-        if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        tie_state_suffixes(m_nodes);
+        if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
     }
 }
-
-
-};
 

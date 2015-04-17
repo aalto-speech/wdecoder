@@ -1,11 +1,8 @@
 
 #include "swgraphtest.hh"
-#include "gutils.hh"
 #include "SubwordGraph.hh"
 
-
 using namespace std;
-using namespace gutils;
 
 
 CPPUNIT_TEST_SUITE_REGISTRATION (swgraphtest);
@@ -23,14 +20,14 @@ void swgraphtest::tearDown (void)
 }
 
 
-void swgraphtest::read_fixtures(SubwordGraph &dg,
+void swgraphtest::read_fixtures(SubwordGraph &swg,
                                 string segfname)
 {
-    dg.read_phone_model(amname + ".ph");
-    dg.read_noway_lexicon(lexname);
+    swg.read_phone_model(amname + ".ph");
+    swg.read_noway_lexicon(lexname);
     word_segs.clear();
     subwords.clear();
-    read_word_segmentations(dg, segfname, word_segs);
+    swg.read_word_segmentations(segfname, word_segs);
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
         for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
             subwords.insert(*swit);
