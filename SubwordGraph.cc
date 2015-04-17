@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "SubwordGraphBuilder.hh"
+#include "SubwordGraph.hh"
 
 using namespace std;
 

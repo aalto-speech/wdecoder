@@ -2,7 +2,7 @@
 #define DECODER_SWGRAPH_CPPUNIT
 
 #define private public
-#include "SubwordGraphBuilder.hh"
+#include "SubwordGraph.hh"
 #undef private
 
 #include <string>

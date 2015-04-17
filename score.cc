@@ -1,6 +1,6 @@
 #include <sstream>
 
-#include "SubwordGraphBuilder.hh"
+#include "SubwordGraph.hh"
 #include "Decoder.hh"
 #include "gutils.hh"
 #include "conf.hh"

@@ -1,7 +1,7 @@
 
 #include "swgraphtest.hh"
 #include "gutils.hh"
-#include "SubwordGraphBuilder.hh"
+#include "SubwordGraph.hh"
 
 
 using namespace std;
