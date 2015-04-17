@@ -2,7 +2,7 @@
 #define DECODER_WGRAPH_CPPUNIT
 
 #define private public
-#include "DecoderGraph.hh"
+#include "WordGraphBuilder.hh"
 #undef private
 
 #include <set>
@@ -32,7 +32,7 @@ private:
     std::string lexname;
     std::string segname;
 
-    void read_fixtures(DecoderGraph &dg);
+    void read_fixtures(WordGraph &dg);
 
 };
 

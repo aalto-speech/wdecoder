@@ -805,13 +805,12 @@ DecoderGraph::assert_only_segmented_words(vector<DecoderGraph::Node> &nodes,
 
 
 bool
-DecoderGraph::assert_only_words(vector<DecoderGraph::Node> &nodes,
-                                set<string> &words)
+DecoderGraph::assert_only_words(set<string> &words)
 {
     map<string, vector<string> > seg_words;
     for (auto wit = words.begin(); wit != words.end(); ++wit)
         seg_words[*wit].push_back(*wit);
-    return assert_only_segmented_words(nodes, seg_words);
+    return assert_only_segmented_words(m_nodes, seg_words);
 }
 
 
@@ -884,13 +883,12 @@ DecoderGraph::assert_only_segmented_cw_word_pairs(vector<DecoderGraph::Node> &no
 }
 
 bool
-DecoderGraph::assert_only_cw_word_pairs(std::vector<DecoderGraph::Node> &nodes,
-                                        std::set<std::string> &words)
+DecoderGraph::assert_only_cw_word_pairs(std::set<std::string> &words)
 {
     map<string, vector<string> > seg_words;
     for (auto wit = words.begin(); wit != words.end(); ++wit)
         seg_words[*wit].push_back(*wit);
-    return assert_only_segmented_cw_word_pairs(nodes, seg_words);
+    return assert_only_segmented_cw_word_pairs(m_nodes, seg_words);
 }
 
 
@@ -1208,6 +1206,46 @@ DecoderGraph::minimize_crossword_network(vector<DecoderGraph::Node> &cw_nodes,
     tie_word_id_suffixes_cw(cw_nodes, fanout, fanin);
     tie_state_prefixes_cw(cw_nodes, fanout, fanin);
     tie_word_id_prefixes_cw(cw_nodes, fanout, fanin);
+}
+
+void
+DecoderGraph::connect_crossword_network(vector<DecoderGraph::Node> &cw_nodes,
+                                        map<string, int> &fanout,
+                                        map<string, int> &fanin,
+                                        bool push_left_after_fanin)
+{
+    int offset = m_nodes.size();
+    for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {
+        m_nodes.push_back(*cwnit);
+        set<unsigned int> temp_arcs = m_nodes.back().arcs;
+        m_nodes.back().arcs.clear();
+        for (auto ait = temp_arcs.begin(); ait != temp_arcs.end(); ++ait)
+            m_nodes.back().arcs.insert(*ait + offset);
+    }
+
+    for (auto fonit = fanout.begin(); fonit != fanout.end(); ++fonit)
+        fonit->second += offset;
+    for (auto finit = fanin.begin(); finit != fanin.end(); ++finit)
+        finit->second += offset;
+
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
+        DecoderGraph::Node &nd = m_nodes[i];
+        for (auto ffi=nd.from_fanin.begin(); ffi!=nd.from_fanin.end(); ++ffi)
+            m_nodes[fanin[*ffi]].arcs.insert(i);
+        nd.from_fanin.clear();
+    }
+
+    if (push_left_after_fanin)
+        push_word_ids_left(m_nodes);
+    else
+        set_reverse_arcs_also_from_unreachable(m_nodes);
+
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
+        DecoderGraph::Node &nd = m_nodes[i];
+        for (auto tfo=nd.to_fanout.begin(); tfo!=nd.to_fanout.end(); ++tfo)
+            nd.arcs.insert(fanout[*tfo]);
+        nd.to_fanout.clear();
+    }
 }
 
 void

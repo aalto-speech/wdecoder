@@ -143,48 +143,6 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
 
 
 void
-SubwordGraph::connect_crossword_network(vector<DecoderGraph::Node> &nodes,
-                                        vector<DecoderGraph::Node> &cw_nodes,
-                                        map<string, int> &fanout,
-                                        map<string, int> &fanin,
-                                        bool push_left_after_fanin)
-{
-    int offset = nodes.size();
-    for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {
-        nodes.push_back(*cwnit);
-        set<unsigned int> temp_arcs = nodes.back().arcs;
-        nodes.back().arcs.clear();
-        for (auto ait = temp_arcs.begin(); ait != temp_arcs.end(); ++ait)
-            nodes.back().arcs.insert(*ait + offset);
-    }
-
-    for (auto fonit = fanout.begin(); fonit != fanout.end(); ++fonit)
-        fonit->second += offset;
-    for (auto finit = fanin.begin(); finit != fanin.end(); ++finit)
-        finit->second += offset;
-
-    for (unsigned int i=0; i<nodes.size(); i++) {
-        DecoderGraph::Node &nd = nodes[i];
-        for (auto ffi=nd.from_fanin.begin(); ffi!=nd.from_fanin.end(); ++ffi)
-            nodes[fanin[*ffi]].arcs.insert(i);
-        nd.from_fanin.clear();
-    }
-
-    if (push_left_after_fanin)
-        push_word_ids_left(nodes);
-    else
-        set_reverse_arcs_also_from_unreachable(nodes);
-
-    for (unsigned int i=0; i<nodes.size(); i++) {
-        DecoderGraph::Node &nd = nodes[i];
-        for (auto tfo=nd.to_fanout.begin(); tfo!=nd.to_fanout.end(); ++tfo)
-            nd.arcs.insert(fanout[*tfo]);
-        nd.to_fanout.clear();
-    }
-}
-
-
-void
 SubwordGraph::connect_one_phone_subwords_from_start_to_cw(const set<string> &subwords,
                                                           vector<DecoderGraph::Node> &nodes,
                                                           map<string, int> &fanout)
@@ -318,7 +276,7 @@ SubwordGraph::create_graph(const set<string> &subwords,
     if (verbose) cerr << "tied crossword network size: " << cw_nodes.size() << endl;
 
     if (verbose) cerr << "Connecting crossword network.." << endl;
-    connect_crossword_network(m_nodes, cw_nodes, fanout, fanin, false);
+    connect_crossword_network(cw_nodes, fanout, fanin, false);
     connect_end_to_start_node(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 

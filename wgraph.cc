@@ -1,12 +1,9 @@
 #include <sstream>
 
 #include "conf.hh"
-#include "gutils.hh"
 #include "WordGraphBuilder.hh"
-#include "GraphBuilder.hh"
 
 using namespace std;
-using namespace gutils;
 
 
 int main(int argc, char* argv[])
@@ -28,22 +25,22 @@ int main(int argc, char* argv[])
         cerr << "Reading lexicon: " << lexfname << endl;
         dg.read_noway_lexicon(lexfname);
 
+        WordGraph wg;
         string wordfname = config.arguments[2];
         cerr << "Reading word list: " << wordfname << endl;
         set<string> words;
-        read_words(dg, wordfname, words);
+        wg.read_words(wordfname, words);
 
         string graphfname = config.arguments[3];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        vector<DecoderGraph::Node> nodes(2);
-        wordgraphbuilder::create_graph(dg, words, nodes, true);
-        wordgraphbuilder::tie_graph(nodes, true);
+        wg.create_graph(words, true);
+        wg.tie_graph(true);
 
-        add_long_silence(dg, nodes);
-        add_hmm_self_transitions(nodes);
+        wg.add_long_silence();
+        wg.add_hmm_self_transitions();
 
-        write_graph(nodes, graphfname);
+        wg.write_graph(graphfname);
 
     } catch (string &e) {
         cerr << e << endl;

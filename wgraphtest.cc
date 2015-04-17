@@ -23,10 +23,10 @@ void wgraphtest::tearDown (void)
 }
 
 
-void wgraphtest::read_fixtures(DecoderGraph &dg)
+void wgraphtest::read_fixtures(WordGraph &wg)
 {
-    dg.read_phone_model(amname + ".ph");
-    dg.read_noway_lexicon(lexname);
+    wg.read_phone_model(amname + ".ph");
+    wg.read_noway_lexicon(lexname);
 }
 
 
@@ -35,22 +35,21 @@ void wgraphtest::read_fixtures(DecoderGraph &dg)
 void wgraphtest::WordGraphTest1(void)
 {
 
-    DecoderGraph dg;
-    read_fixtures(dg);
+    WordGraph wg;
+    read_fixtures(wg);
 
     set<string> words;
-    read_words(dg, "data/1k.words.txt", words);
+    wg.read_words("data/1k.words.txt", words);
 
-    vector<DecoderGraph::Node> nodes(2);
     cerr << endl;
-    wordgraphbuilder::create_graph(dg, words, nodes, false);
-    wordgraphbuilder::tie_graph(nodes, false);
-    cerr << "Number of lm id nodes: " << num_subword_states(nodes) << endl;
+    wg.create_graph(words, false);
+    wg.tie_graph(false);
+    cerr << "Number of lm id nodes: " << DecoderGraph::num_subword_states(wg.m_nodes) << endl;
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
-    CPPUNIT_ASSERT( assert_only_words(dg, nodes, words) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, words, 20000) );
-    CPPUNIT_ASSERT( assert_only_cw_word_pairs(dg, nodes, words) );
+    CPPUNIT_ASSERT( wg.assert_words(words) );
+    CPPUNIT_ASSERT( wg.assert_only_words(words) );
+    CPPUNIT_ASSERT( wg.assert_word_pairs(words, 20000) );
+    CPPUNIT_ASSERT( wg.assert_only_cw_word_pairs(words) );
 }
 
 
@@ -58,22 +57,22 @@ void wgraphtest::WordGraphTest1(void)
 // Includes one phone words
 void wgraphtest::WordGraphTest2(void)
 {
-    DecoderGraph dg;
+    WordGraph wg;
     lexname = "data/500.words.1pwords.lex";
-    read_fixtures(dg);
+    read_fixtures(wg);
 
     set<string> words;
-    read_words(dg, "data/500.words.1pwords.txt", words);
+    wg.read_words("data/500.words.1pwords.txt", words);
 
-    vector<DecoderGraph::Node> nodes(2);
     cerr << endl;
-    wordgraphbuilder::create_graph(dg, words, nodes, false);
-    wordgraphbuilder::tie_graph(nodes, false);
+    wg.create_graph(words, false);
+    wg.tie_graph(false);
+    cerr << "Number of lm id nodes: " << DecoderGraph::num_subword_states(wg.m_nodes) << endl;
 
-    CPPUNIT_ASSERT_EQUAL( 524, num_subword_states(nodes) );
-    CPPUNIT_ASSERT( assert_words(dg, nodes, words) );
-    CPPUNIT_ASSERT( assert_only_words(dg, nodes, words) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, words) );
-    CPPUNIT_ASSERT( assert_only_cw_word_pairs(dg, nodes, words) );
+    CPPUNIT_ASSERT_EQUAL( 524, DecoderGraph::num_subword_states(wg.m_nodes) );
+    CPPUNIT_ASSERT( wg.assert_words(words) );
+    CPPUNIT_ASSERT( wg.assert_only_words(words) );
+    CPPUNIT_ASSERT( wg.assert_word_pairs(words, 20000) );
+    CPPUNIT_ASSERT( wg.assert_only_cw_word_pairs(words) );
 }
 

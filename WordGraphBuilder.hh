@@ -1,5 +1,5 @@
-#ifndef WORD_GRAPH_BUILDER_HH
-#define WORD_GRAPH_BUILDER_HH
+#ifndef WORD_GRAPH_HH
+#define WORD_GRAPH_HH
 
 #include <map>
 #include <fstream>
@@ -11,32 +11,32 @@
 #include "DecoderGraph.hh"
 
 
-namespace wordgraphbuilder {
+class WordGraph : public DecoderGraph {
 
-void create_crossword_network(DecoderGraph &dg,
-                              const std::set<std::string> &words,
-                              std::vector<DecoderGraph::Node> &nodes,
-                              std::map<std::string, int> &fanout,
-                              std::map<std::string, int> &fanin);
+public:
 
-void connect_one_phone_words_from_start_to_cw(DecoderGraph &dg,
-                                              const std::set<std::string> &words,
-                                              std::vector<DecoderGraph::Node> &nodes,
-                                              std::map<std::string, int> &fanout);
+    WordGraph();
+    WordGraph(const std::set<std::string> &words,
+              bool verbose=false);
 
-void connect_one_phone_words_from_cw_to_end(DecoderGraph &dg,
-                                            const std::set<std::string> &words,
-                                            std::vector<DecoderGraph::Node> &nodes,
-                                            std::map<std::string, int> &fanin);
+    void create_graph(const std::set<std::string> &words,
+                      bool verbose=false);
 
-void create_graph(DecoderGraph &dg,
-                  const std::set<std::string> &words,
-                  std::vector<DecoderGraph::Node> &nodes,
-                  bool verbose=false);
+    void create_crossword_network(const std::set<std::string> &words,
+                                  std::vector<DecoderGraph::Node> &nodes,
+                                  std::map<std::string, int> &fanout,
+                                  std::map<std::string, int> &fanin);
 
-void tie_graph(std::vector<DecoderGraph::Node> &nodes,
-               bool verbose=false);
+    void connect_one_phone_words_from_start_to_cw(const std::set<std::string> &words,
+                                                  std::vector<DecoderGraph::Node> &nodes,
+                                                  std::map<std::string, int> &fanout);
 
-}
+    void connect_one_phone_words_from_cw_to_end(const std::set<std::string> &words,
+                                                std::vector<DecoderGraph::Node> &nodes,
+                                                std::map<std::string, int> &fanin);
 
-#endif /* WORD_GRAPH_BUILDER_HH */
+    void tie_graph(bool verbose=false);
+
+};
+
+#endif /* WORD_GRAPH_HH */

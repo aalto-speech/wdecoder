@@ -162,16 +162,14 @@ public:
                                      std::deque<int> states = std::deque<int>(),
                                      std::deque<int> subwords = std::deque<int>(),
                                      int node_idx=START_NODE);
-    bool assert_only_words(std::vector<DecoderGraph::Node> &nodes,
-                           std::set<std::string> &words);
+    bool assert_only_words(std::set<std::string> &words);
     bool assert_only_segmented_cw_word_pairs(std::vector<DecoderGraph::Node> &nodes,
             std::map<std::string, std::vector<std::string> > &word_segs,
             std::vector<int> states = std::vector<int>(),
             std::pair<std::vector<int>, std::vector<int>> subwords = std::pair<std::vector<int>, std::vector<int>>(),
             int node_idx = START_NODE,
             bool cw_visited = false);
-    bool assert_only_cw_word_pairs(std::vector<DecoderGraph::Node> &nodes,
-                                   std::set<std::string> &words);
+    bool assert_only_cw_word_pairs(std::set<std::string> &words);
 
     void tie_state_prefixes(std::vector<DecoderGraph::Node> &nodes,
                             bool stop_propagation=false,
@@ -225,6 +223,11 @@ public:
                                     std::map<std::string, int> &fanout,
                                     std::map<std::string, int> &fanin);
 
+    void connect_crossword_network(std::vector<DecoderGraph::Node> &cw_nodes,
+                                   std::map<std::string, int> &fanout,
+                                   std::map<std::string, int> &fanin,
+                                   bool push_left_after_fanin=true);
+
     void print_graph(std::vector<DecoderGraph::Node> &nodes,
                      std::vector<int> path,
                      int node_idx);
@@ -272,11 +275,11 @@ public:
                       node_idx_t node_idx,
                       int flag_mask=0);
 
-    int reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes);
-    void reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes,
+    static int reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes);
+    static void reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes,
                                std::set<node_idx_t> &node_idxs,
                                const std::set<node_idx_t> &start_nodes);
-    void reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes,
+    static void reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes,
                                std::set<node_idx_t> &node_idxs,
                                node_idx_t node_idx=START_NODE);
     void prune_unreachable_nodes(std::vector<DecoderGraph::Node> &nodes);
@@ -298,9 +301,9 @@ public:
                              node_idx_t node_idx=START_NODE,
                              node_idx_t prev_node_idx=START_NODE,
                              int subword_id=-1);
-    int num_hmm_states(std::vector<DecoderGraph::Node> &nodes);
-    int num_subword_states(std::vector<DecoderGraph::Node> &nodes);
-    int num_triphones(std::vector<TriphoneNode> &nodes);
+    static int num_hmm_states(std::vector<DecoderGraph::Node> &nodes);
+    static int num_subword_states(std::vector<DecoderGraph::Node> &nodes);
+    static int num_triphones(std::vector<TriphoneNode> &nodes);
 
     void add_hmm_self_transitions();
     void add_long_silence();

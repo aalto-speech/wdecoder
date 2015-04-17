@@ -1,27 +1,34 @@
 #include <cassert>
 
-#include "gutils.hh"
-#include "GraphBuilder.hh"
+#include "WordGraphBuilder.hh"
 
 using namespace std;
-using namespace gutils;
 
 
-namespace wordgraphbuilder {
+WordGraph::WordGraph()
+{
+
+}
+
+
+WordGraph::WordGraph(const std::set<std::string> &words,
+                     bool verbose)
+{
+    create_graph(words, verbose);
+}
 
 
 void
-create_crossword_network(DecoderGraph &dg,
-                         const set<string> &words,
-                         vector<DecoderGraph::Node> &nodes,
-                         map<string, int> &fanout,
-                         map<string, int> &fanin)
+WordGraph::create_crossword_network(const set<string> &words,
+                                    vector<DecoderGraph::Node> &nodes,
+                                    map<string, int> &fanout,
+                                    map<string, int> &fanin)
 {
-    int spp = dg.m_states_per_phone;
+    int spp = m_states_per_phone;
 
     set<string> one_phone_subwords;
     set<char> phones;
-    for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit) {
+    for (auto swit = m_lexicon.begin(); swit != m_lexicon.end(); ++swit) {
         if (words.find(swit->first) == words.end()) continue;
         vector<string> &triphones = swit->second;
         if (triphones.size() == 0) continue;
@@ -67,12 +74,12 @@ create_crossword_network(DecoderGraph &dg,
             string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
             string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
 
-            int idx = connect_triphone(dg, nodes, triphone1, start_index);
-            idx = connect_triphone(dg, nodes, "_", idx);
+            int idx = connect_triphone(nodes, triphone1, start_index);
+            idx = connect_triphone(nodes, "_", idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end())
             {
-                idx = connect_triphone(dg, nodes, triphone2, idx);
+                idx = connect_triphone(nodes, triphone2, idx);
                 connected_fanin_nodes[triphone2] = idx - (spp-1);
                 if (fiit->second == -1) {
                     nodes.resize(nodes.size()+1);
@@ -91,18 +98,16 @@ create_crossword_network(DecoderGraph &dg,
 }
 
 
-
 void
-connect_one_phone_words_from_start_to_cw(DecoderGraph &dg,
-                                         const set<string> &words,
-                                         vector<DecoderGraph::Node> &nodes,
-                                         map<string, int> &fanout)
+WordGraph::connect_one_phone_words_from_start_to_cw(const set<string> &words,
+                                                    vector<DecoderGraph::Node> &nodes,
+                                                    map<string, int> &fanout)
 {
     for (auto wit = words.begin(); wit != words.end(); ++wit) {
-        vector<string> &triphones = dg.m_lexicon[*wit];
+        vector<string> &triphones = m_lexicon[*wit];
         if (triphones.size() != 1 || triphones[0].length() == 1) continue;
         string fanoutt = triphones[0];
-        int idx = connect_word(dg, nodes, *wit, START_NODE);
+        int idx = connect_word(nodes, *wit, START_NODE);
         if (fanout.find(fanoutt) == fanout.end()) {
             cerr << "problem in connecting: " << *wit << " from start to fanout" << endl;
             assert(false);
@@ -113,85 +118,79 @@ connect_one_phone_words_from_start_to_cw(DecoderGraph &dg,
 
 
 void
-connect_one_phone_words_from_cw_to_end(DecoderGraph &dg,
-                                       const set<string> &words,
-                                       vector<DecoderGraph::Node> &nodes,
-                                       map<string, int> &fanin)
+WordGraph::connect_one_phone_words_from_cw_to_end(const set<string> &words,
+                                                  vector<DecoderGraph::Node> &nodes,
+                                                  map<string, int> &fanin)
 {
     for (auto wit = words.begin(); wit != words.end(); ++wit) {
-        vector<string> &triphones = dg.m_lexicon[*wit];
+        vector<string> &triphones = m_lexicon[*wit];
         if (triphones.size() != 1 || triphones[0].length() == 1) continue;
         string fanint = triphones[0];
         if (fanin.find(fanint) == fanin.end()) {
             cerr << "problem in connecting: " << *wit << " fanin to end" << endl;
             assert(false);
         }
-        int idx = connect_word(dg, nodes, *wit, fanin[fanint]);
+        int idx = connect_word(nodes, *wit, fanin[fanint]);
         nodes[idx].arcs.insert(END_NODE);
     }
 }
 
 
 void
-create_graph(DecoderGraph &dg,
-             const set<string> &words,
-             vector<DecoderGraph::Node> &nodes,
-             bool verbose)
+WordGraph::create_graph(const set<string> &words,
+                        bool verbose)
 {
-    nodes.clear();
-    nodes.resize(2);
-
     for (auto wit = words.begin(); wit != words.end(); ++wit) {
         if (wit->find("<") != string::npos) continue;
         vector<TriphoneNode> word_triphones;
-        triphonize_subword(dg, *wit, word_triphones);
+        triphonize_subword(*wit, word_triphones);
         vector<DecoderGraph::Node> word_nodes;
-        triphones_to_state_chain(dg, word_triphones, word_nodes);
+        triphones_to_state_chain(word_triphones, word_nodes);
         // One phone words without crossword path
         if (num_triphones(word_triphones) > 1) {
-            word_nodes[3].from_fanin.insert(dg.m_lexicon[*wit][0]);
-            word_nodes[word_nodes.size()-4].to_fanout.insert(dg.m_lexicon[*wit].back());
+            word_nodes[3].from_fanin.insert(m_lexicon[*wit][0]);
+            word_nodes[word_nodes.size()-4].to_fanout.insert(m_lexicon[*wit].back());
         }
-        add_nodes_to_tree(dg, nodes, word_nodes);
+        add_nodes_to_tree(m_nodes, word_nodes);
     }
-    lookahead_to_arcs(nodes);
-    prune_unreachable_nodes(nodes);
+    lookahead_to_arcs(m_nodes);
+    prune_unreachable_nodes(m_nodes);
 
     vector<DecoderGraph::Node> cw_nodes;
     map<string, int> fanout, fanin;
-    wordgraphbuilder::create_crossword_network(dg, words, cw_nodes, fanout, fanin);
+    create_crossword_network(words, cw_nodes, fanout, fanin);
     if (verbose) cerr << "crossword network size: " << cw_nodes.size() << endl;
     minimize_crossword_network(cw_nodes, fanout, fanin);
     if (verbose) cerr << "tied crossword network size: " << cw_nodes.size() << endl;
 
     if (verbose) cerr << "Connecting crossword network.." << endl;
-    graphbuilder::connect_crossword_network(dg, nodes, cw_nodes, fanout, fanin);
-    connect_end_to_start_node(nodes);
-    if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+    connect_crossword_network(cw_nodes, fanout, fanin);
+    connect_end_to_start_node(m_nodes);
+    if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
-    wordgraphbuilder::connect_one_phone_words_from_start_to_cw(dg, words, nodes, fanout);
-    wordgraphbuilder::connect_one_phone_words_from_cw_to_end(dg, words, nodes, fanin);
+    connect_one_phone_words_from_start_to_cw(words, m_nodes, fanout);
+    connect_one_phone_words_from_cw_to_end(words, m_nodes, fanin);
 }
 
 
-void tie_graph(vector<DecoderGraph::Node> &nodes,
-               bool verbose)
+void
+WordGraph::tie_graph(bool verbose)
 {
-    if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(nodes) << endl;
+    if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
     if (verbose) cerr << endl;
     if (verbose) cerr << "Pushing word ids right.." << endl;
-    push_word_ids_right(nodes);
+    push_word_ids_right(m_nodes);
     if (verbose) cerr << "Tying state prefixes.." << endl;
-    tie_state_prefixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_state_prefixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
     if (verbose) cerr << endl;
     if (verbose) cerr << "Pushing word ids left.." << endl;
-    push_word_ids_left(nodes);
+    push_word_ids_left(m_nodes);
     if (verbose) cerr << "Tying state suffixes.." << endl;
-    tie_state_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_state_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
     //cerr << endl;
     //cerr << "Removing cw dummies.." << endl;
@@ -200,14 +199,11 @@ void tie_graph(vector<DecoderGraph::Node> &nodes,
 
     if (verbose) cerr << endl;
     if (verbose) cerr << "Tying state suffixes.." << endl;
-    tie_state_suffixes(nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    tie_state_suffixes(m_nodes);
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
     //cerr << "Tying state prefixes.." << endl;
     //tie_state_prefixes(nodes);
     //cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
-}
-
-
 }
 
