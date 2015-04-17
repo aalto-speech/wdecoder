@@ -1,5 +1,5 @@
 #include "conf.hh"
-#include "GraphBuilder.hh"
+#include "SWWGraph.hh"
 
 using namespace std;
 

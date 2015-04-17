@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "GraphBuilder.hh"
+#include "SWWGraph.hh"
 
 using namespace std;
 
