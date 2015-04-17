@@ -64,31 +64,37 @@ public:
 
     int m_states_per_phone;
 
-    DecoderGraph() { m_states_per_phone = -1; }
+    std::vector<DecoderGraph::Node> m_nodes;
+
+
+    DecoderGraph() { m_states_per_phone = -1;
+                     m_nodes.resize(2); }
 
     void read_phone_model(std::string phnfname);
     void read_noway_lexicon(std::string lexfname);
 
 
     void read_words(std::string wordfname,
-                    std::set<std::string> &words);
+                    std::set<std::string> &words) const;
 
     void read_word_segmentations(std::string segfname,
-                                 std::map<std::string, std::vector<std::string> > &word_segs);
+                                 std::map<std::string, std::vector<std::string> > &word_segs) const;
 
-    void triphonize_phone_string(std::string pstring,
-                                 std::vector<std::string> &triphones);
+    // Static and const functions for triphonizing subwords and words
+    static void triphonize_phone_string(std::string pstring,
+                                        std::vector<std::string> &triphones);
     void triphonize(std::map<std::string, std::vector<std::string> > &word_segs,
                     std::string word,
-                    std::vector<std::string> &triphones);
+                    std::vector<std::string> &triphones) const;
     bool triphonize(const std::vector<std::string> &word_seg,
-                    std::vector<TriphoneNode> &nodes);
+                    std::vector<TriphoneNode> &nodes) const;
     void triphonize(std::string word,
-                    std::vector<std::string> &triphones);
+                    std::vector<std::string> &triphones) const;
     void triphonize_subword(const std::string &subword,
-                            std::vector<TriphoneNode> &nodes);
+                            std::vector<TriphoneNode> &nodes) const;
     void triphones_to_state_chain(std::vector<TriphoneNode> &triphone_nodes,
-                                  std::vector<DecoderGraph::Node> &nodes);
+                                  std::vector<DecoderGraph::Node> &nodes) const;
+
     void add_nodes_to_tree(std::vector<DecoderGraph::Node> &nodes,
                            std::vector<DecoderGraph::Node> &new_nodes);
     void lookahead_to_arcs(std::vector<DecoderGraph::Node> &nodes);

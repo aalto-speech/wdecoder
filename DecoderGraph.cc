@@ -80,7 +80,7 @@ DecoderGraph::read_noway_lexicon(string lexfname)
 
 void
 DecoderGraph::read_words(string wordfname,
-                         set<string> &words)
+                         set<string> &words) const
 {
     ifstream wordf(wordfname);
     if (!wordf) throw string("Problem opening word list.");
@@ -103,7 +103,7 @@ DecoderGraph::read_words(string wordfname,
 
 void
 DecoderGraph::read_word_segmentations(string segfname,
-                                      map<string, vector<string> > &word_segs)
+                                      map<string, vector<string> > &word_segs) const
 {
     ifstream segf(segfname);
     if (!segf) throw string("Problem opening word segmentations.");
@@ -176,13 +176,13 @@ DecoderGraph::triphonize_phone_string(string pstring,
 void
 DecoderGraph::triphonize(map<string, vector<string> > &word_segs,
                          string word,
-                         vector<string> &triphones)
+                         vector<string> &triphones) const
 {
     if (word_segs.find(word) != word_segs.end()) {
         string tripstring;
         for (auto swit = word_segs[word].begin();
                 swit != word_segs[word].end(); ++swit) {
-            vector<string> &temp_triphones = m_lexicon[*swit];
+            const vector<string> &temp_triphones = m_lexicon.at(*swit);
             for (auto tit = temp_triphones.begin(); tit != temp_triphones.end(); ++tit)
                 tripstring += (*tit)[2];
         }
@@ -193,10 +193,10 @@ DecoderGraph::triphonize(map<string, vector<string> > &word_segs,
 
 void
 DecoderGraph::triphonize(string word,
-                         vector<string> &triphones)
+                         vector<string> &triphones) const
 {
     string tripstring;
-    vector<string> &word_triphones = m_lexicon[word];
+    const vector<string> &word_triphones = m_lexicon.at(word);
     for (auto tit = word_triphones.begin(); tit != word_triphones.end(); ++tit)
         tripstring += (*tit)[2];
     triphonize_phone_string(tripstring, triphones);
@@ -204,7 +204,7 @@ DecoderGraph::triphonize(string word,
 
 bool
 DecoderGraph::triphonize(const vector<string> &word_seg,
-                         vector<TriphoneNode> &nodes)
+                         vector<TriphoneNode> &nodes) const
 {
     nodes.clear();
 
@@ -216,11 +216,11 @@ DecoderGraph::triphonize(const vector<string> &word_seg,
         if (m_lexicon.find(*swit) == m_lexicon.end())
              return false;
 
-        vector<string> &triphones = m_lexicon[*swit];
+        const vector<string> &triphones = m_lexicon.at(*swit);
         for (auto tit = triphones.begin(); tit != triphones.end(); ++tit)
             tripstring += (*tit)[2];
         int word_id_pos = max(1, (int) (tripstring.size() - 1));
-        word_id_positions.push_back(make_pair(m_subword_map[*swit], word_id_pos));
+        word_id_positions.push_back(make_pair(m_subword_map.at(*swit), word_id_pos));
     }
 
     triphonize_phone_string(tripstring, triphones);
@@ -228,7 +228,7 @@ DecoderGraph::triphonize(const vector<string> &word_seg,
     for (auto triit = triphones.begin(); triit != triphones.end(); ++triit)
     {
         TriphoneNode trin;
-        trin.hmm_id = m_hmm_map[*triit];
+        trin.hmm_id = m_hmm_map.at(*triit);
         nodes.push_back(trin);
     }
 
@@ -246,27 +246,27 @@ DecoderGraph::triphonize(const vector<string> &word_seg,
 
 void
 DecoderGraph::triphonize_subword(const string &subword,
-                                 vector<TriphoneNode> &nodes)
+                                 vector<TriphoneNode> &nodes) const
 {
     nodes.clear();
 
-    vector<string> &triphones = m_lexicon[subword];
+    const vector<string> &triphones = m_lexicon.at(subword);
     if (triphones.size() == 0) return;
     int word_id_pos = max(1, (int) (triphones.size() - 1));
     for (auto triit = triphones.begin(); triit != triphones.end(); ++triit) {
         TriphoneNode trin;
-        trin.hmm_id = m_hmm_map[*triit];
+        trin.hmm_id = m_hmm_map.at(*triit);
         nodes.push_back(trin);
     }
 
     TriphoneNode trin;
-    trin.subword_id = m_subword_map[subword];
+    trin.subword_id = m_subword_map.at(subword);
     nodes.insert(nodes.begin() + word_id_pos, trin);
 }
 
 void
 DecoderGraph::triphones_to_state_chain(vector<TriphoneNode> &triphone_nodes,
-                                       vector<DecoderGraph::Node> &nodes)
+                                       vector<DecoderGraph::Node> &nodes) const
 {
     for (auto triit = triphone_nodes.begin(); triit != triphone_nodes.end(); ++triit)
     {
@@ -275,7 +275,7 @@ DecoderGraph::triphones_to_state_chain(vector<TriphoneNode> &triphone_nodes,
             nodes.back().word_id = triit->subword_id;
         }
         else {
-            Hmm &hmm = m_hmms[triit->hmm_id];
+            const Hmm &hmm = m_hmms.at(triit->hmm_id);
             for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
                 nodes.resize(nodes.size() + 1);
                 nodes.back().hmm_state = hmm.states[sidx].model;
