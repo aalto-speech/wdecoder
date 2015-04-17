@@ -2,6 +2,7 @@
 #define DECODERGRAPH_HH
 
 #include <map>
+#include <deque>
 #include <fstream>
 #include <vector>
 #include <set>
@@ -69,50 +70,37 @@ public:
     void read_noway_lexicon(std::string lexfname);
 
 
-    void read_words(DecoderGraph &dg,
-                    std::string wordfname,
+    void read_words(std::string wordfname,
                     std::set<std::string> &words);
 
-    void read_word_segmentations(DecoderGraph &dg,
-                                 std::string segfname,
+    void read_word_segmentations(std::string segfname,
                                  std::map<std::string, std::vector<std::string> > &word_segs);
 
+    void triphonize_phone_string(std::string pstring,
+                                 std::vector<std::string> &triphones);
+    void triphonize(std::map<std::string, std::vector<std::string> > &word_segs,
+                    std::string word,
+                    std::vector<std::string> &triphones);
+    bool triphonize(const std::vector<std::string> &word_seg,
+                    std::vector<TriphoneNode> &nodes);
     void triphonize(std::string word,
                     std::vector<std::string> &triphones);
-
-    void triphonize(DecoderGraph &dg,
-                    std::map<std::string, std::vector<std::string> > &word_segs,
-                    std::string word,
-                    std::vector<std::string> &triphones);
-    void triphonize(DecoderGraph &dg,
-                    std::string word,
-                    std::vector<std::string> &triphones);
-    bool triphonize(DecoderGraph &dg,
-                    const std::vector<std::string> &word_seg,
-                    std::vector<TriphoneNode> &nodes);
-    void triphonize_subword(DecoderGraph &dg,
-                            const std::string &subword,
+    void triphonize_subword(const std::string &subword,
                             std::vector<TriphoneNode> &nodes);
-    void triphones_to_state_chain(DecoderGraph &dg,
-                                  std::vector<TriphoneNode> &triphone_nodes,
+    void triphones_to_state_chain(std::vector<TriphoneNode> &triphone_nodes,
                                   std::vector<DecoderGraph::Node> &nodes);
-    void add_nodes_to_tree(DecoderGraph &dg,
-                           std::vector<DecoderGraph::Node> &nodes,
+    void add_nodes_to_tree(std::vector<DecoderGraph::Node> &nodes,
                            std::vector<DecoderGraph::Node> &new_nodes);
     void lookahead_to_arcs(std::vector<DecoderGraph::Node> &nodes);
 
-    void get_hmm_states(DecoderGraph &dg,
-                        const std::vector<std::string> &triphones,
+    void get_hmm_states(const std::vector<std::string> &triphones,
                         std::vector<int> &states);
-    void get_hmm_states(DecoderGraph &dg,
+    void get_hmm_states(std::string word,
+                        std::vector<int> &states);
+    void get_hmm_states(std::map<std::string, std::vector<std::string> > &word_segs,
                         std::string word,
                         std::vector<int> &states);
-    void get_hmm_states(DecoderGraph &dg,
-                        std::map<std::string, std::vector<std::string> > &word_segs,
-                        std::string word,
-                        std::vector<int> &states)
-    void get_hmm_states_cw(DecoderGraph &dg,
-                           std::map<std::string, std::vector<std::string> > &word_segs,
+    void get_hmm_states_cw(std::map<std::string, std::vector<std::string> > &word_segs,
                            std::string wrd1,
                            std::string wrd2,
                            std::vector<int> &states);
@@ -131,77 +119,60 @@ public:
                                      int target_depth,
                                      int curr_depth=0,
                                      node_idx_t curr_node=END_NODE);
-    bool assert_path(DecoderGraph &dg,
-                     std::vector<DecoderGraph::Node> &nodes,
+    bool assert_path(std::vector<DecoderGraph::Node> &nodes,
                      std::deque<int> states,
                      std::deque<std::string> subwords,
                      node_idx_t node_idx);
-    bool assert_path(DecoderGraph &dg,
-                     std::vector<DecoderGraph::Node> &nodes,
+    bool assert_path(std::vector<DecoderGraph::Node> &nodes,
                      std::vector<std::string> &triphones,
                      std::vector<std::string> &subwords);
-    bool assert_transitions(DecoderGraph &dg,
-                            std::vector<DecoderGraph::Node> &nodes);
-    bool assert_words(DecoderGraph &dg,
-                      std::vector<DecoderGraph::Node> &nodes,
+    bool assert_transitions(std::vector<DecoderGraph::Node> &nodes);
+    bool assert_words(std::vector<DecoderGraph::Node> &nodes,
                       std::map<std::string, std::vector<std::string> > &word_segs);
-    bool assert_words(DecoderGraph &dg,
-                      std::vector<DecoderGraph::Node> &nodes,
+    bool assert_words(std::vector<DecoderGraph::Node> &nodes,
                       std::set<std::string> &words);
-    bool assert_word_pair_crossword(DecoderGraph &dg,
-                                    std::vector<DecoderGraph::Node> &nodes,
+    bool assert_word_pair_crossword(std::vector<DecoderGraph::Node> &nodes,
                                     std::map<std::string, std::vector<std::string> > &word_segs,
                                     std::string word1,
                                     std::string word2,
                                     bool short_silence=true,
                                     bool wb_symbol=false);
-    bool assert_word_pairs(DecoderGraph &dg,
-                           std::vector<DecoderGraph::Node> &nodes,
+    bool assert_word_pairs(std::vector<DecoderGraph::Node> &nodes,
                            std::map<std::string, std::vector<std::string> > &word_segs,
                            bool short_silence=true,
                            bool wb_symbol=false);
-    bool assert_word_pairs(DecoderGraph &dg,
-                           std::vector<DecoderGraph::Node> &nodes,
+    bool assert_word_pairs(std::vector<DecoderGraph::Node> &nodes,
                            std::set<std::string> &words,
                            bool short_silence=true,
                            bool wb_symbol=false);
-    bool assert_word_pairs(DecoderGraph &dg,
-                           std::vector<DecoderGraph::Node> &nodes,
+    bool assert_word_pairs(std::vector<DecoderGraph::Node> &nodes,
                            std::map<std::string, std::vector<std::string> > &word_segs,
                            int num_pairs,
                            bool short_silence=true,
                            bool wb_symbol=false);
-    bool assert_word_pairs(DecoderGraph &dg,
-                           std::vector<DecoderGraph::Node> &nodes,
+    bool assert_word_pairs(std::vector<DecoderGraph::Node> &nodes,
                            std::set<std::string> &words,
                            int num_pairs,
                            bool short_silence=true,
                            bool wb_symbol=false);
-    bool assert_subword_ids_left(DecoderGraph &dg,
-                                 std::vector<DecoderGraph::Node> &nodes);
-    bool assert_subword_ids_right(DecoderGraph &dg,
-                                  std::vector<DecoderGraph::Node> &nodes);
-    bool assert_no_duplicate_word_ids(DecoderGraph &dg,
-                                      std::vector<DecoderGraph::Node> &nodes);
-    bool assert_only_segmented_words(DecoderGraph &dg,
-                                     std::vector<DecoderGraph::Node> &nodes,
+    bool assert_subword_ids_left(std::vector<DecoderGraph::Node> &nodes);
+    bool assert_subword_ids_right(std::vector<DecoderGraph::Node> &nodes);
+    bool assert_no_duplicate_word_ids(std::vector<DecoderGraph::Node> &nodes);
+    bool assert_only_segmented_words(std::vector<DecoderGraph::Node> &nodes,
                                      std::map<std::string, std::vector<std::string> > &word_segs,
                                      std::deque<int> states = std::deque<int>(),
                                      std::deque<int> subwords = std::deque<int>(),
                                      int node_idx=START_NODE);
-    bool assert_only_words(DecoderGraph &dg,
-                           std::vector<DecoderGraph::Node> &nodes,
+    bool assert_only_words(std::vector<DecoderGraph::Node> &nodes,
                            std::set<std::string> &words);
-    bool assert_only_segmented_cw_word_pairs(DecoderGraph &dg,
-            std::vector<DecoderGraph::Node> &nodes,
+    bool assert_only_segmented_cw_word_pairs(std::vector<DecoderGraph::Node> &nodes,
             std::map<std::string, std::vector<std::string> > &word_segs,
             std::vector<int> states = std::vector<int>(),
             std::pair<std::vector<int>, std::vector<int>> subwords = std::pair<std::vector<int>, std::vector<int>>(),
             int node_idx = START_NODE,
             bool cw_visited = false);
-    bool assert_only_cw_word_pairs(DecoderGraph &dg,
-            std::vector<DecoderGraph::Node> &nodes,
-            std::set<std::string> &words);
+    bool assert_only_cw_word_pairs(std::vector<DecoderGraph::Node> &nodes,
+                                   std::set<std::string> &words);
 
     void tie_state_prefixes(std::vector<DecoderGraph::Node> &nodes,
                             bool stop_propagation=false,
@@ -255,14 +226,11 @@ public:
                                     std::map<std::string, int> &fanout,
                                     std::map<std::string, int> &fanin);
 
-    void print_graph(DecoderGraph &dg,
-                     std::vector<DecoderGraph::Node> &nodes,
+    void print_graph(std::vector<DecoderGraph::Node> &nodes,
                      std::vector<int> path,
                      int node_idx);
-    void print_graph(DecoderGraph &dg,
-                     std::vector<DecoderGraph::Node> &nodes);
-    void print_dot_digraph(DecoderGraph &dg,
-                           std::vector<DecoderGraph::Node> &nodes,
+    void print_graph(std::vector<DecoderGraph::Node> &nodes);
+    void print_dot_digraph(std::vector<DecoderGraph::Node> &nodes,
                            std::ostream &fstr = std::cout,
                            bool mark_start_end = true);
 
@@ -276,30 +244,25 @@ public:
     void connect_end_to_start_node(std::vector<DecoderGraph::Node> &nodes);
     void write_graph(std::vector<DecoderGraph::Node> &nodes, std::string fname);
 
-    int connect_triphone(DecoderGraph &dg,
-                         std::vector<DecoderGraph::Node> &nodes,
+    int connect_triphone(std::vector<DecoderGraph::Node> &nodes,
                          std::string triphone,
                          node_idx_t node_idx,
                          int flag_mask=0);
-    int connect_triphone(DecoderGraph &dg,
-                         std::vector<DecoderGraph::Node> &nodes,
+    int connect_triphone(std::vector<DecoderGraph::Node> &nodes,
                          int triphone_idx,
                          node_idx_t node_idx,
                          int flag_mask=0);
-    int connect_triphone(DecoderGraph &dg,
-                         std::vector<DecoderGraph::Node> &nodes,
+    int connect_triphone(std::vector<DecoderGraph::Node> &nodes,
                          std::string triphone,
                          node_idx_t node_idx,
                          std::map<int, std::string> &node_labels,
                          int flag_mask=0);
-    int connect_triphone(DecoderGraph &dg,
-                         std::vector<DecoderGraph::Node> &nodes,
+    int connect_triphone(std::vector<DecoderGraph::Node> &nodes,
                          int triphone_idx,
                          node_idx_t node_idx,
                          std::map<int, std::string> &node_labels,
                          int flag_mask=0);
-    int connect_word(DecoderGraph &dg,
-                     std::vector<DecoderGraph::Node> &nodes,
+    int connect_word(std::vector<DecoderGraph::Node> &nodes,
                      std::string word,
                      node_idx_t node_idx,
                      int flag_mask=0);
@@ -342,10 +305,8 @@ public:
     int num_subword_states(std::vector<DecoderGraph::Node> &nodes);
     int num_triphones(std::vector<TriphoneNode> &nodes);
 
-    void add_long_silence(DecoderGraph &dg,
-                          std::vector<DecoderGraph::Node> &nodes);
-    void add_long_silence_no_start_end_wb(DecoderGraph &dg,
-                                          std::vector<DecoderGraph::Node> &nodes);
+    void add_long_silence(std::vector<DecoderGraph::Node> &nodes);
+    void add_long_silence_no_start_end_wb(std::vector<DecoderGraph::Node> &nodes);
 
     void remove_cw_dummies(std::vector<DecoderGraph::Node> &nodes);
 
