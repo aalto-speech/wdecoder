@@ -23,7 +23,7 @@ void swgraphtest::tearDown (void)
 }
 
 
-void swgraphtest::read_fixtures(DecoderGraph &dg,
+void swgraphtest::read_fixtures(SubwordGraph &dg,
                                 string segfname)
 {
     dg.read_phone_model(amname + ".ph");
@@ -40,113 +40,105 @@ void swgraphtest::read_fixtures(DecoderGraph &dg,
 // Normal case
 void swgraphtest::SubwordGraphTest1(void)
 {
-    DecoderGraph dg;
-    read_fixtures(dg, "data/segs.txt");
+    SubwordGraph swg;
+    read_fixtures(swg, "data/segs.txt");
 
-    vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, subwords);
+    swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false) );
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
 }
 
 
 void swgraphtest::SubwordGraphTest2(void)
 {
-    DecoderGraph dg;
-    read_fixtures(dg, "data/segs2.txt");
+    SubwordGraph swg;
+    read_fixtures(swg, "data/segs2.txt");
 
-    vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, subwords);
+    swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false) );
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
 }
 
 
 void swgraphtest::SubwordGraphTest3(void)
 {
-    DecoderGraph dg;
-    read_fixtures(dg, "data/segs3.txt");
+    SubwordGraph swg;
+    read_fixtures(swg, "data/segs3.txt");
 
-    vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, subwords);
+    swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false) );
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
 }
 
 
 void swgraphtest::SubwordGraphTest4(void)
 {
-    DecoderGraph dg;
-    read_fixtures(dg, "data/segs4.txt");
+    SubwordGraph swg;
+    read_fixtures(swg, "data/segs4.txt");
 
-    vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, subwords);
+    swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false) );
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
 }
 
 
 void swgraphtest::SubwordGraphTest5(void)
 {
-    DecoderGraph dg;
-    read_fixtures(dg, "data/segs5.txt");
+    SubwordGraph swg;
+    read_fixtures(swg, "data/segs5.txt");
 
-    vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, subwords);
+    swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false) );
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
 }
 
 
 void swgraphtest::SubwordGraphTest6(void)
 {
-    DecoderGraph dg;
-    read_fixtures(dg, "data/segs6.txt");
+    SubwordGraph swg;
+    read_fixtures(swg, "data/segs6.txt");
 
-    vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, subwords);
+    swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false) );
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
 }
 
 
 void swgraphtest::SubwordGraphTest7(void)
 {
-    DecoderGraph dg;
-    read_fixtures(dg, "data/subword_tie_expand_problem.segs");
+    SubwordGraph swg;
+    read_fixtures(swg, "data/subword_tie_expand_problem.segs");
 
-    vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, subwords);
+    swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false) );
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
 }
 
 
 void swgraphtest::SubwordGraphTest8(void)
 {
-    DecoderGraph dg;
-    read_fixtures(dg, "data/500.segs");
+    SubwordGraph swg;
+    read_fixtures(swg, "data/500.segs");
 
-    vector<DecoderGraph::Node> nodes(2);
-    subwordgraphbuilder::create_graph(dg, nodes, subwords);
+    swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( assert_words(dg, nodes, word_segs) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, true, true) );
-    CPPUNIT_ASSERT( assert_word_pairs(dg, nodes, word_segs, false, false) );
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
 }
 
 

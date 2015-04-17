@@ -132,31 +132,25 @@ public:
                      std::vector<std::string> &triphones,
                      std::vector<std::string> &subwords);
     bool assert_transitions(std::vector<DecoderGraph::Node> &nodes);
-    bool assert_words(std::vector<DecoderGraph::Node> &nodes,
-                      std::map<std::string, std::vector<std::string> > &word_segs);
-    bool assert_words(std::vector<DecoderGraph::Node> &nodes,
-                      std::set<std::string> &words);
+    bool assert_words(std::map<std::string, std::vector<std::string> > &word_segs);
+    bool assert_words(std::set<std::string> &words);
     bool assert_word_pair_crossword(std::vector<DecoderGraph::Node> &nodes,
                                     std::map<std::string, std::vector<std::string> > &word_segs,
                                     std::string word1,
                                     std::string word2,
                                     bool short_silence=true,
                                     bool wb_symbol=false);
-    bool assert_word_pairs(std::vector<DecoderGraph::Node> &nodes,
-                           std::map<std::string, std::vector<std::string> > &word_segs,
+    bool assert_word_pairs(std::map<std::string, std::vector<std::string> > &word_segs,
                            bool short_silence=true,
                            bool wb_symbol=false);
-    bool assert_word_pairs(std::vector<DecoderGraph::Node> &nodes,
-                           std::set<std::string> &words,
+    bool assert_word_pairs(std::set<std::string> &words,
                            bool short_silence=true,
                            bool wb_symbol=false);
-    bool assert_word_pairs(std::vector<DecoderGraph::Node> &nodes,
-                           std::map<std::string, std::vector<std::string> > &word_segs,
+    bool assert_word_pairs(std::map<std::string, std::vector<std::string> > &word_segs,
                            int num_pairs,
                            bool short_silence=true,
                            bool wb_symbol=false);
-    bool assert_word_pairs(std::vector<DecoderGraph::Node> &nodes,
-                           std::set<std::string> &words,
+    bool assert_word_pairs(std::set<std::string> &words,
                            int num_pairs,
                            bool short_silence=true,
                            bool wb_symbol=false);
@@ -247,7 +241,6 @@ public:
     void clear_reverse_arcs(std::vector<DecoderGraph::Node> &nodes);
     int merge_nodes(std::vector<DecoderGraph::Node> &nodes, int node_idx_1, int node_idx_2);
     void connect_end_to_start_node(std::vector<DecoderGraph::Node> &nodes);
-    void write_graph(std::vector<DecoderGraph::Node> &nodes, std::string fname);
 
     int connect_triphone(std::vector<DecoderGraph::Node> &nodes,
                          std::string triphone,
@@ -291,7 +284,6 @@ public:
                                     const std::set<node_idx_t> &start_nodes,
                                     std::map<std::string, int> &fanout,
                                     std::map<std::string, int> &fanin);
-    void add_hmm_self_transitions(std::vector<DecoderGraph::Node> &nodes);
     void push_word_ids_left(std::vector<DecoderGraph::Node> &nodes);
     void push_word_ids_left(std::vector<DecoderGraph::Node> &nodes,
                             int &move_count,
@@ -310,8 +302,9 @@ public:
     int num_subword_states(std::vector<DecoderGraph::Node> &nodes);
     int num_triphones(std::vector<TriphoneNode> &nodes);
 
-    void add_long_silence(std::vector<DecoderGraph::Node> &nodes);
-    void add_long_silence_no_start_end_wb(std::vector<DecoderGraph::Node> &nodes);
+    void add_hmm_self_transitions();
+    void add_long_silence();
+    void write_graph(std::string fname);
 
     void remove_cw_dummies(std::vector<DecoderGraph::Node> &nodes);
 

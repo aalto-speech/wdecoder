@@ -498,13 +498,12 @@ DecoderGraph::assert_path(vector<DecoderGraph::Node> &nodes,
 }
 
 bool
-DecoderGraph::assert_words(vector<DecoderGraph::Node> &nodes,
-                           map<string, vector<string> > &word_segs)
+DecoderGraph::assert_words(map<string, vector<string> > &word_segs)
 {
     for (auto sit = word_segs.begin(); sit != word_segs.end(); ++sit) {
         vector<string> triphones;
         triphonize(word_segs, sit->first, triphones);
-        bool result = assert_path(nodes, triphones, sit->second);
+        bool result = assert_path(m_nodes, triphones, sit->second);
         if (!result) {
             cerr << "error, word: " << sit->first << " not found" << endl;
             return false;
@@ -514,14 +513,13 @@ DecoderGraph::assert_words(vector<DecoderGraph::Node> &nodes,
 }
 
 bool
-DecoderGraph::assert_words(vector<DecoderGraph::Node> &nodes,
-                           set<string> &words)
+DecoderGraph::assert_words(set<string> &words)
 {
     for (auto sit = words.begin(); sit != words.end(); ++sit) {
         vector<string> triphones;
         triphonize(*sit, triphones);
         vector<string> lm_ids; lm_ids.push_back(*sit);
-        bool result = assert_path(nodes, triphones, lm_ids);
+        bool result = assert_path(m_nodes, triphones, lm_ids);
         if (!result) {
             cerr << "error, word: " << *sit << " not found" << endl;
             return false;
@@ -572,15 +570,14 @@ DecoderGraph::assert_word_pair_crossword(vector<DecoderGraph::Node> &nodes,
 }
 
 bool
-DecoderGraph::assert_word_pairs(vector<DecoderGraph::Node> &nodes,
-                                map<string, vector<string> > &word_segs,
+DecoderGraph::assert_word_pairs(map<string, vector<string> > &word_segs,
                                 bool short_silence,
                                 bool wb_symbol)
 {
     for (auto fit = word_segs.begin(); fit != word_segs.end(); ++fit)
         for (auto sit = word_segs.begin(); sit != word_segs.end(); ++sit)
         {
-            bool result = assert_word_pair_crossword(nodes, word_segs,
+            bool result = assert_word_pair_crossword(m_nodes, word_segs,
                           fit->first, sit->first, short_silence, wb_symbol);
             if (!result) {
                 cerr << endl << "word pair: " << fit->first << " - "
@@ -593,8 +590,7 @@ DecoderGraph::assert_word_pairs(vector<DecoderGraph::Node> &nodes,
 }
 
 bool
-DecoderGraph::assert_word_pairs(vector<DecoderGraph::Node> &nodes,
-                                map<string, vector<string> > &word_segs,
+DecoderGraph::assert_word_pairs(map<string, vector<string> > &word_segs,
                                 int num_pairs,
                                 bool short_silence,
                                 bool wb_symbol)
@@ -611,7 +607,7 @@ DecoderGraph::assert_word_pairs(vector<DecoderGraph::Node> &nodes,
         string first_word = wit1->first;
         string second_word = wit2->first;
 
-        bool result = assert_word_pair_crossword(nodes, word_segs,
+        bool result = assert_word_pair_crossword(m_nodes, word_segs,
                       first_word, second_word, short_silence, wb_symbol);
         if (!result) {
             cerr << endl << "word pair: " << first_word << " - " << second_word
@@ -626,8 +622,7 @@ DecoderGraph::assert_word_pairs(vector<DecoderGraph::Node> &nodes,
 }
 
 bool
-DecoderGraph::assert_word_pairs(vector<DecoderGraph::Node> &nodes,
-                                set<string> &words,
+DecoderGraph::assert_word_pairs(set<string> &words,
                                 bool short_silence,
                                 bool wb_symbol)
 {
@@ -635,12 +630,11 @@ DecoderGraph::assert_word_pairs(vector<DecoderGraph::Node> &nodes,
     for (auto wit=words.begin(); wit != words.end(); ++wit)
         word_segs[*wit].push_back(*wit);
 
-    return assert_word_pairs(nodes, word_segs, short_silence, wb_symbol);
+    return assert_word_pairs(word_segs, short_silence, wb_symbol);
 }
 
 bool
-DecoderGraph::assert_word_pairs(vector<DecoderGraph::Node> &nodes,
-                                set<string> &words,
+DecoderGraph::assert_word_pairs(set<string> &words,
                                 int num_pairs,
                                 bool short_silence,
                                 bool wb_symbol)
@@ -649,7 +643,7 @@ DecoderGraph::assert_word_pairs(vector<DecoderGraph::Node> &nodes,
     for (auto wit=words.begin(); wit != words.end(); ++wit)
         word_segs[*wit].push_back(*wit);
 
-    return assert_word_pairs(nodes, word_segs, num_pairs, short_silence, wb_symbol);
+    return assert_word_pairs(word_segs, num_pairs, short_silence, wb_symbol);
 }
 
 bool
@@ -1375,17 +1369,16 @@ DecoderGraph::connect_end_to_start_node(vector<DecoderGraph::Node> &nodes)
 }
 
 void
-DecoderGraph::write_graph(vector<DecoderGraph::Node> &nodes,
-                          string fname)
+DecoderGraph::write_graph(string fname)
 {
     SimpleFileOutput outf(fname);
-    outf << nodes.size() << "\n";
-    for (unsigned int i = 0; i < nodes.size(); i++)
-        outf << "n " << i << " " << nodes[i].hmm_state << " "
-             << nodes[i].word_id << " " << nodes[i].arcs.size() << " "
-             << nodes[i].flags << "\n";
-    for (unsigned int i = 0; i < nodes.size(); i++) {
-        DecoderGraph::Node &node = nodes[i];
+    outf << m_nodes.size() << "\n";
+    for (unsigned int i = 0; i < m_nodes.size(); i++)
+        outf << "n " << i << " " << m_nodes[i].hmm_state << " "
+             << m_nodes[i].word_id << " " << m_nodes[i].arcs.size() << " "
+             << m_nodes[i].flags << "\n";
+    for (unsigned int i = 0; i < m_nodes.size(); i++) {
+        DecoderGraph::Node &node = m_nodes[i];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             outf << "a " << i << " " << *ait << "\n";
     }
@@ -1586,10 +1579,10 @@ DecoderGraph::prune_unreachable_nodes_cw(vector<DecoderGraph::Node> &nodes,
 }
 
 void
-DecoderGraph::add_hmm_self_transitions(vector<DecoderGraph::Node> &nodes)
+DecoderGraph::add_hmm_self_transitions()
 {
-    for (unsigned int i=0; i<nodes.size(); i++) {
-        DecoderGraph::Node &node = nodes[i];
+    for (unsigned int i=0; i<m_nodes.size(); i++) {
+        DecoderGraph::Node &node = m_nodes[i];
         if (node.hmm_state == -1) continue;
         node.arcs.insert(i);
     }
@@ -1722,45 +1715,21 @@ DecoderGraph::num_triphones(vector<TriphoneNode> &nodes)
 
 // All graph styles
 void
-DecoderGraph::add_long_silence(vector<DecoderGraph::Node> &nodes)
+DecoderGraph::add_long_silence()
 {
-    nodes[END_NODE].arcs.clear();
+    m_nodes[END_NODE].arcs.clear();
 
     int ls_len = m_hmms[m_hmm_map["__"]].states.size() - 2;
 
     node_idx_t node_idx = END_NODE;
-    node_idx = connect_word(nodes, "</s>", node_idx);
-    node_idx = connect_triphone(nodes, "__", node_idx, NODE_SILENCE);
-    nodes[node_idx].arcs.insert(START_NODE);
-    nodes[node_idx-(ls_len-1)].flags |= NODE_DECODE_START;
+    node_idx = connect_word(m_nodes, "</s>", node_idx);
+    node_idx = connect_triphone(m_nodes, "__", node_idx, NODE_SILENCE);
+    m_nodes[node_idx].arcs.insert(START_NODE);
+    m_nodes[node_idx-(ls_len-1)].flags |= NODE_DECODE_START;
 
     node_idx = END_NODE;
-    node_idx = connect_triphone(nodes, "_", node_idx, NODE_SILENCE);
-    nodes[node_idx].arcs.insert(START_NODE);
-}
-
-
-// Subword graph with word boundaries as below
-// <s> sw sw <w> sw sw <w> sw sw sw </s>
-void
-DecoderGraph::add_long_silence_no_start_end_wb(vector<DecoderGraph::Node> &nodes)
-{
-    nodes[END_NODE].arcs.clear();
-
-    int ls_len = m_hmms[m_hmm_map["__"]].states.size() - 2;
-
-    node_idx_t node_idx = END_NODE;
-    node_idx = connect_triphone(nodes, "__", node_idx, NODE_SILENCE);
-    node_idx = connect_word(nodes, "</s>", node_idx);
-    node_idx = connect_triphone(nodes, "__", node_idx, NODE_SILENCE);
-    nodes[node_idx].arcs.insert(START_NODE);
-    nodes[node_idx-ls_len].arcs.insert(START_NODE);
-    nodes[node_idx-(ls_len-1)].flags |= NODE_DECODE_START;
-
-    node_idx = END_NODE;
-    node_idx = connect_triphone(nodes, "_", node_idx, NODE_SILENCE);
-    node_idx = connect_word(nodes, "<w>", node_idx);
-    nodes[node_idx].arcs.insert(START_NODE);
+    node_idx = connect_triphone(m_nodes, "_", node_idx, NODE_SILENCE);
+    m_nodes[node_idx].arcs.insert(START_NODE);
 }
 
 

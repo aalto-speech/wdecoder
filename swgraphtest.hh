@@ -2,7 +2,7 @@
 #define DECODER_SWGRAPH_CPPUNIT
 
 #define private public
-#include "DecoderGraph.hh"
+#include "SubwordGraphBuilder.hh"
 #undef private
 
 #include <string>
@@ -44,7 +44,7 @@ private:
     std::map<std::string, std::vector<std::string> > word_segs;
     std::set<std::string> subwords;
 
-    void read_fixtures(DecoderGraph &dg,
+    void read_fixtures(SubwordGraph &dg,
                        std::string segfname);
 
 };

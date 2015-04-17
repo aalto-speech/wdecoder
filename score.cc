@@ -148,9 +148,9 @@ int main(int argc, char* argv[])
         double total_lp = 0.0;
         int file_count = 0;
 
-        DecoderGraph dg;
-        dg.read_phone_model(phfname);
-        dg.read_noway_lexicon(lexfname);
+        SubwordGraph swg;
+        swg.read_phone_model(phfname);
+        swg.read_noway_lexicon(lexfname);
 
         while (getline(lnalistf, line)) {
             getline(reslistf, resline);
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
-            subwordgraphbuilder::create_forced_path(dg, nodes, reswordstrs, node_labels);
+            swg.create_forced_path(nodes, reswordstrs, node_labels);
             gutils::add_hmm_self_transitions(nodes);
 
             convert_nodes_for_decoder(nodes, d.m_nodes);

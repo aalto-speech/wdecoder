@@ -3,8 +3,6 @@
 #include "gutils.hh"
 
 using namespace std;
-using namespace gutils;
-using namespace subwordgraphbuilder;
 
 
 int main(int argc, char* argv[])
@@ -35,19 +33,19 @@ int main(int argc, char* argv[])
         for (auto swit = dg.m_lexicon.begin(); swit != dg.m_lexicon.end(); ++swit)
             subwords.insert(swit->first);
 
-        vector<DecoderGraph::Node> nodes(2);
-        subwordgraphbuilder::create_graph(dg, nodes, subwords, true);
+        SubwordGraph swg;
+        swg.create_graph(subwords, true);
 
         if (no_start_end_wb)
-            add_long_silence_no_start_end_wb(dg, nodes);
+            swg.add_long_silence_no_start_end_wb();
         else {
-            add_long_silence(dg, nodes);
-            nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
+            swg.add_long_silence();
+            swg.m_nodes[END_NODE].word_id = dg.m_subword_map["<w>"];
         }
 
-        add_hmm_self_transitions(nodes);
+        swg.add_hmm_self_transitions();
 
-        write_graph(nodes, graphfname);
+        swg.write_graph(graphfname);
 
     } catch (string &e) {
         cerr << e << endl;
