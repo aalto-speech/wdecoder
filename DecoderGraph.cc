@@ -516,10 +516,8 @@ bool
 DecoderGraph::assert_words(set<string> &words)
 {
     for (auto sit = words.begin(); sit != words.end(); ++sit) {
-        vector<string> triphones;
-        triphonize(*sit, triphones);
         vector<string> lm_ids; lm_ids.push_back(*sit);
-        bool result = assert_path(m_nodes, triphones, lm_ids);
+        bool result = assert_path(m_nodes, m_lexicon.at(*sit), lm_ids);
         if (!result) {
             cerr << "error, word: " << *sit << " not found" << endl;
             return false;
