@@ -109,6 +109,48 @@ NoWBSubwordGraph::create_crossword_network(const set<string> &fanout_subwords,
 
 
 void
+NoWBSubwordGraph::connect_crossword_network(vector<DecoderGraph::Node> &nodes,
+                                            vector<DecoderGraph::Node> &cw_nodes,
+                                            map<string, int> &fanout,
+                                            map<string, int> &fanin,
+                                            bool push_left_after_fanin)
+{
+    int offset = nodes.size();
+    for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {
+        nodes.push_back(*cwnit);
+        set<unsigned int> temp_arcs = nodes.back().arcs;
+        nodes.back().arcs.clear();
+        for (auto ait = temp_arcs.begin(); ait != temp_arcs.end(); ++ait)
+            nodes.back().arcs.insert(*ait + offset);
+    }
+
+    for (auto fonit = fanout.begin(); fonit != fanout.end(); ++fonit)
+        fonit->second += offset;
+    for (auto finit = fanin.begin(); finit != fanin.end(); ++finit)
+        finit->second += offset;
+
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        DecoderGraph::Node &nd = nodes[i];
+        for (auto ffi=nd.from_fanin.begin(); ffi!=nd.from_fanin.end(); ++ffi)
+            nodes[fanin[*ffi]].arcs.insert(i);
+        nd.from_fanin.clear();
+    }
+
+    if (push_left_after_fanin)
+        push_word_ids_left(nodes);
+    else
+        set_reverse_arcs_also_from_unreachable(nodes);
+
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        DecoderGraph::Node &nd = nodes[i];
+        for (auto tfo=nd.to_fanout.begin(); tfo!=nd.to_fanout.end(); ++tfo)
+            nd.arcs.insert(fanout[*tfo]);
+        nd.to_fanout.clear();
+    }
+}
+
+
+void
 NoWBSubwordGraph::connect_one_phone_subwords_from_start_to_cw(const set<string> &subwords,
                                                               vector<DecoderGraph::Node> &nodes,
                                                               map<string, int> &fanout)
@@ -147,12 +189,14 @@ NoWBSubwordGraph::connect_one_phone_subwords_from_cw_to_end(const set<string> &s
 
 
 void
-NoWBSubwordGraph::create_graph(const set<string> &word_start_subwords,
-                               const set<string> &subwords,
+NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
+                               const set<string> &suffix_subwords,
                                bool verbose)
 {
-    std::vector<DecoderGraph::Node> word_start_nodes(2);
-    for (auto swit = word_start_subwords.begin(); swit != word_start_subwords.end(); ++swit) {
+    vector<DecoderGraph::Node> prefix_nodes(2);
+    set<unsigned int> prefix_fanout_connectors;
+    set<unsigned int> prefix_fanin_connectors;
+    for (auto swit = prefix_subwords.begin(); swit != prefix_subwords.end(); ++swit) {
         if (swit->find("<") != string::npos) continue;
         vector<TriphoneNode> subword_triphones;
         triphonize_subword(*swit, subword_triphones);
@@ -162,15 +206,14 @@ NoWBSubwordGraph::create_graph(const set<string> &word_start_subwords,
         triphones_to_state_chain(subword_triphones, subword_nodes);
         //subword_nodes[3].from_fanin.insert(m_lexicon[*swit][0]);
         subword_nodes[subword_nodes.size()-4].to_fanout.insert(m_lexicon[*swit].back());
-        add_nodes_to_tree(word_start_nodes, subword_nodes);
+        add_nodes_to_tree(prefix_nodes, subword_nodes);
     }
-    lookahead_to_arcs(word_start_nodes);
+    lookahead_to_arcs(prefix_nodes);
 
-    prune_unreachable_nodes(word_start_nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(word_start_nodes) << endl;
-
-    std::vector<DecoderGraph::Node> nodes(2);
-    for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
+    std::vector<DecoderGraph::Node> suffix_nodes(2);
+    set<unsigned int> suffix_fanout_connectors;
+    set<unsigned int> suffix_fanin_connectors;
+    for (auto swit = suffix_subwords.begin(); swit != suffix_subwords.end(); ++swit) {
         if (swit->find("<") != string::npos) continue;
         vector<TriphoneNode> subword_triphones;
         triphonize_subword(*swit, subword_triphones);
@@ -180,23 +223,24 @@ NoWBSubwordGraph::create_graph(const set<string> &word_start_subwords,
         triphones_to_state_chain(subword_triphones, subword_nodes);
         subword_nodes[3].from_fanin.insert(m_lexicon[*swit][0]);
         //subword_nodes[subword_nodes.size()-4].to_fanout.insert(m_lexicon[*swit].back());
-        add_nodes_to_tree(nodes, subword_nodes);
+        add_nodes_to_tree(suffix_nodes, subword_nodes);
     }
-    lookahead_to_arcs(nodes);
+    lookahead_to_arcs(suffix_nodes);
 
-    offset(nodes, word_start_nodes.size());
-    word_start_nodes[END_NODE].arcs.insert(START_NODE);
-    nodes[END_NODE].arcs.insert(START_NODE);
+    offset(suffix_nodes, prefix_nodes.size());
+    prefix_nodes[END_NODE].arcs.insert(START_NODE);
+    suffix_nodes[END_NODE].arcs.insert(START_NODE);
 
-    word_start_nodes.insert(word_start_nodes.end(), nodes.begin(), nodes.end());
+    prefix_nodes.insert(prefix_nodes.end(), suffix_nodes.begin(), suffix_nodes.end());
 
     map<string, int> fanout;
     map<string, int> fanin;
     vector<DecoderGraph::Node> cw_nodes;
-    create_crossword_network(word_start_subwords, subwords, cw_nodes, fanout, fanin);
-    m_nodes.swap(word_start_nodes);
-    connect_crossword_network(cw_nodes, fanout, fanin, false);
+    create_crossword_network(prefix_subwords, suffix_subwords, cw_nodes, fanout, fanin);
+    minimize_crossword_network(cw_nodes, fanout, fanin);
+    connect_crossword_network(prefix_nodes, cw_nodes, fanout, fanin, false);
 
+    m_nodes.swap(prefix_nodes);
     prune_unreachable_nodes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 

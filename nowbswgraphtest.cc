@@ -118,6 +118,7 @@ void nowbswgraphtest::NoWBSubwordGraphTest3(void)
     map<string, vector<string> > word_segs;
     construct_complex_words(word_start_subwords, subwords, word_segs);
 
+    cerr << endl;
     CPPUNIT_ASSERT( swg.assert_words(word_segs) );
 }
 
