@@ -1,4 +1,4 @@
-#include "graphtest.hh"
+#include "swwgraphtest.hh"
 
 using namespace std;
 
