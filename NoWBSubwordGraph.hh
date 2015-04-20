@@ -16,10 +16,12 @@ class NoWBSubwordGraph : public DecoderGraph {
 public:
 
     NoWBSubwordGraph();
-    NoWBSubwordGraph(const std::set<std::string> &subwords,
+    NoWBSubwordGraph(const std::set<std::string> &word_start_subwords,
+                     const std::set<std::string> &subwords,
                      bool verbose=false);
 
-    void create_graph(const std::set<std::string> &subwords,
+    void create_graph(const std::set<std::string> &word_start_subwords,
+                      const std::set<std::string> &subwords,
                       bool verbose=false);
 
     void create_crossword_network(const std::set<std::string> &subwords,

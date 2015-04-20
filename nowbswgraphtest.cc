@@ -43,9 +43,10 @@ void nowbswgraphtest::NoWBSubwordGraphTest1(void)
     lexname = "data/nowb_1.lex";
     read_fixtures(swg);
 
-    swg.create_graph(subwords);
+    swg.create_graph(word_start_subwords, subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(subwords) );
+    CPPUNIT_ASSERT( swg.assert_words(word_start_subwords) );
+    CPPUNIT_ASSERT( swg.assert_only_words(word_start_subwords) );
 }
 
 //ofstream origoutf("acw.dot");

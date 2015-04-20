@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
         for (auto swit = swg.m_lexicon.begin(); swit != swg.m_lexicon.end(); ++swit)
             subwords.insert(swit->first);
 
-        swg.create_graph(subwords, true);
+        swg.create_graph(subwords, subwords, true);
         swg.add_long_silence();
         swg.add_hmm_self_transitions();
         swg.write_graph(graphfname);
