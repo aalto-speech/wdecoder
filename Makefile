@@ -13,9 +13,9 @@ test_progs = runtests
 test_progs_srcs = $(test_progs:=.cc)
 test_progs_objs = $(test_progs:=.o)
 test_srcs = nowbswgraphtest.cc
-#test_srcs = graphtest.cc swgraphtest.cc wgraphtest.cc decodertest.cc
+#test_srcs = swwgraphtest.cc swgraphtest.cc wgraphtest.cc decodertest.cc
 #test_srcs = wgraphtest.cc
-#test_srcs = graphtest.cc swgraphtest.cc wgraphtest.cc
+#test_srcs = swwgraphtest.cc swgraphtest.cc wgraphtest.cc
 #test_srcs = decodertest.cc
 test_objs = $(test_srcs:.cc=.o)
 
