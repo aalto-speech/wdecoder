@@ -19,17 +19,20 @@ void nowbswgraphtest::tearDown (void)
 }
 
 
-void nowbswgraphtest::read_fixtures(NoWBSubwordGraph &swg,
-                                    string segfname)
+void nowbswgraphtest::read_fixtures(NoWBSubwordGraph &swg)
 {
     swg.read_phone_model(amname + ".ph");
     swg.read_noway_lexicon(lexname);
-    word_segs.clear();
+    word_start_subwords.clear();
     subwords.clear();
-    swg.read_word_segmentations(segfname, word_segs);
-    for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
-        for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
-            subwords.insert(*swit);
+
+    for (auto swit = swg.m_lexicon.begin(); swit != swg.m_lexicon.end(); ++swit) {
+        if (swit->first.find("<") != string::npos) continue;
+        if (swit->first.length() == 0) continue;
+        if ((swit->first)[0] == '_')
+            word_start_subwords.insert(swit->first);
+        else subwords.insert(swit->first);
+    }
 }
 
 
@@ -37,13 +40,12 @@ void nowbswgraphtest::read_fixtures(NoWBSubwordGraph &swg,
 void nowbswgraphtest::NoWBSubwordGraphTest1(void)
 {
     NoWBSubwordGraph swg;
-    read_fixtures(swg, "data/segs.txt");
+    lexname = "data/nowb_1.lex";
+    read_fixtures(swg);
 
     swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
+    CPPUNIT_ASSERT( swg.assert_words(subwords) );
 }
 
 //ofstream origoutf("acw.dot");

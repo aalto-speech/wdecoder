@@ -27,11 +27,10 @@ private:
 
     std::string amname;
     std::string lexname;
-    std::map<std::string, std::vector<std::string> > word_segs;
+    std::set<std::string> word_start_subwords;
     std::set<std::string> subwords;
 
-    void read_fixtures(NoWBSubwordGraph &dg,
-                       std::string segfname);
+    void read_fixtures(NoWBSubwordGraph &dg);
 
 };
 
