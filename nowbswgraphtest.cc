@@ -36,6 +36,23 @@ void nowbswgraphtest::read_fixtures(NoWBSubwordGraph &swg)
 }
 
 
+void nowbswgraphtest::construct_words(const set<string> &word_start_subwords,
+                                      const set<string> &subwords,
+                                      map<string, vector<string> > &word_segs)
+{
+    word_segs.clear();
+    for (auto wssit = word_start_subwords.begin(); wssit != word_start_subwords.end(); ++wssit) {
+        for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
+            vector<string> word_seg;
+            word_seg.push_back(*wssit);
+            word_seg.push_back(*swit);
+            string wrd = *wssit + *swit;
+            word_segs[wrd] = word_seg;
+        }
+    }
+}
+
+
 // Normal case
 void nowbswgraphtest::NoWBSubwordGraphTest1(void)
 {
@@ -48,6 +65,26 @@ void nowbswgraphtest::NoWBSubwordGraphTest1(void)
     CPPUNIT_ASSERT( swg.assert_words(word_start_subwords) );
     CPPUNIT_ASSERT( swg.assert_only_words(word_start_subwords) );
 }
+
+
+// Normal case
+void nowbswgraphtest::NoWBSubwordGraphTest2(void)
+{
+    NoWBSubwordGraph swg;
+    lexname = "data/nowb_1.lex";
+    read_fixtures(swg);
+
+    swg.create_graph(word_start_subwords, subwords);
+
+    CPPUNIT_ASSERT( swg.assert_words(word_start_subwords) );
+    CPPUNIT_ASSERT( swg.assert_only_words(word_start_subwords) );
+
+    map<string, vector<string> > word_segs;
+    construct_words(word_start_subwords, subwords, word_segs);
+
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+}
+
 
 //ofstream origoutf("acw.dot");
 //print_dot_digraph(dg, nodes, origoutf, true);
