@@ -44,8 +44,12 @@ public:
                                                    std::vector<DecoderGraph::Node> &nodes,
                                                    std::map<std::string, int> &fanin);
 
-    void offset(std::vector<DecoderGraph::Node> &nodes,
-                int offset);
+    static void offset(std::vector<DecoderGraph::Node> &nodes,
+                       int offset);
+
+    static void collect_crossword_connectors(std::vector<DecoderGraph::Node> &nodes,
+                                             std::vector<std::pair<unsigned int, std::string> > fanout_connectors,
+                                             std::vector<std::pair<unsigned int, std::string> > fanin_connectors);
 
 };
 

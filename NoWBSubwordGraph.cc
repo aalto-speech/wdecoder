@@ -194,8 +194,6 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
                                bool verbose)
 {
     vector<DecoderGraph::Node> prefix_nodes(2);
-    set<unsigned int> prefix_fanout_connectors;
-    set<unsigned int> prefix_fanin_connectors;
     for (auto swit = prefix_subwords.begin(); swit != prefix_subwords.end(); ++swit) {
         if (swit->find("<") != string::npos) continue;
         vector<TriphoneNode> subword_triphones;
@@ -210,9 +208,10 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     }
     lookahead_to_arcs(prefix_nodes);
 
+    vector<pair<unsigned int, string> > prefix_fanout_connectors, prefix_fanin_connectors;
+    collect_crossword_connectors(prefix_nodes, prefix_fanout_connectors, prefix_fanin_connectors);
+
     std::vector<DecoderGraph::Node> suffix_nodes(2);
-    set<unsigned int> suffix_fanout_connectors;
-    set<unsigned int> suffix_fanin_connectors;
     for (auto swit = suffix_subwords.begin(); swit != suffix_subwords.end(); ++swit) {
         if (swit->find("<") != string::npos) continue;
         vector<TriphoneNode> subword_triphones;
@@ -226,6 +225,9 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
         add_nodes_to_tree(suffix_nodes, subword_nodes);
     }
     lookahead_to_arcs(suffix_nodes);
+
+    vector<pair<unsigned int, string> > suffix_fanout_connectors, suffix_fanin_connectors;
+    collect_crossword_connectors(suffix_nodes, suffix_fanout_connectors, suffix_fanin_connectors);
 
     offset(suffix_nodes, prefix_nodes.size());
     prefix_nodes[END_NODE].arcs.insert(START_NODE);
@@ -261,6 +263,23 @@ NoWBSubwordGraph::offset(vector<DecoderGraph::Node> &nodes,
         for (auto ait = nit->reverse_arcs.begin(); ait != nit->reverse_arcs.end(); ++ait)
             rev_arcs.insert(*ait + offset);
         nit->reverse_arcs.swap(rev_arcs);
+    }
+}
+
+
+void
+NoWBSubwordGraph::collect_crossword_connectors(vector<DecoderGraph::Node> &nodes,
+                                               vector<pair<unsigned int, string> > fanout_connectors,
+                                               vector<pair<unsigned int, string> > fanin_connectors)
+{
+    fanout_connectors.clear();
+    fanin_connectors.clear();
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        Node &nd = nodes[i];
+        for (auto fiit = nd.from_fanin.begin(); fiit != nd.from_fanin.end(); ++fiit)
+            fanin_connectors.push_back(make_pair(i, *fiit));
+        for (auto foit = nd.to_fanout.begin(); foit != nd.to_fanout.end(); ++foit)
+            fanout_connectors.push_back(make_pair(i, *foit));
     }
 }
 
