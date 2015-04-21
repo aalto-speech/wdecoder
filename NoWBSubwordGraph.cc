@@ -348,15 +348,24 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
 
     prefix_nodes.insert(prefix_nodes.end(), suffix_nodes.begin(), suffix_nodes.end());
 
+    // Prefix-suffix cross-unit network
     map<string, int> fanout;
     map<string, int> fanin;
     vector<DecoderGraph::Node> cw_nodes;
-    //create_crossword_network(prefix_subwords, suffix_subwords, cw_nodes, fanout, fanin);
     create_crossword_network(prefix_fanout_connectors, suffix_fanin_connectors, cw_nodes, fanout, fanin);
     minimize_crossword_network(cw_nodes, fanout, fanin);
-    //connect_crossword_network(prefix_nodes, cw_nodes, fanout, fanin, false);
     connect_crossword_network(prefix_nodes,
                               prefix_fanout_connectors, suffix_fanin_connectors,
+                              cw_nodes, fanout, fanin, false);
+
+    // Suffix-suffix cross-unit network
+    fanout.clear();
+    fanin.clear();
+    cw_nodes.clear();
+    create_crossword_network(suffix_fanout_connectors, suffix_fanin_connectors, cw_nodes, fanout, fanin);
+    minimize_crossword_network(cw_nodes, fanout, fanin);
+    connect_crossword_network(prefix_nodes,
+                              suffix_fanout_connectors, suffix_fanin_connectors,
                               cw_nodes, fanout, fanin, false);
 
     m_nodes.swap(prefix_nodes);
