@@ -174,6 +174,7 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
                                const set<string> &suffix_subwords,
                                bool verbose)
 {
+    // Construct prefix tree
     vector<DecoderGraph::Node> prefix_nodes(2);
     for (auto swit = prefix_subwords.begin(); swit != prefix_subwords.end(); ++swit) {
         if (swit->find("<") != string::npos) continue;
@@ -188,10 +189,10 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
         add_nodes_to_tree(prefix_nodes, subword_nodes);
     }
     lookahead_to_arcs(prefix_nodes);
-
     vector<pair<unsigned int, string> > prefix_fanout_connectors, prefix_fanin_connectors;
     collect_crossword_connectors(prefix_nodes, prefix_fanout_connectors, prefix_fanin_connectors);
 
+    // Construct suffix/stem tree
     std::vector<DecoderGraph::Node> suffix_nodes(2);
     for (auto swit = suffix_subwords.begin(); swit != suffix_subwords.end(); ++swit) {
         if (swit->find("<") != string::npos) continue;
@@ -206,46 +207,35 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
         add_nodes_to_tree(suffix_nodes, subword_nodes);
     }
     lookahead_to_arcs(suffix_nodes);
-
     vector<pair<unsigned int, string> > suffix_fanout_connectors, suffix_fanin_connectors;
     collect_crossword_connectors(suffix_nodes, suffix_fanout_connectors, suffix_fanin_connectors);
 
+    // Combine prefix and suffix/stem trees
     offset(suffix_nodes, prefix_nodes.size());
     offset(suffix_fanout_connectors, prefix_nodes.size());
     offset(suffix_fanin_connectors, prefix_nodes.size());
     prefix_nodes[END_NODE].arcs.insert(START_NODE);
     suffix_nodes[END_NODE].arcs.insert(START_NODE);
-
     prefix_nodes.insert(prefix_nodes.end(), suffix_nodes.begin(), suffix_nodes.end());
 
-    // Prefix-suffix cross-unit network
+    // Cross-unit network (prefix-suffix, suffix-suffix)
     map<string, int> fanout;
     map<string, int> fanin;
     vector<DecoderGraph::Node> cw_nodes;
-    create_crossword_network(prefix_fanout_connectors, suffix_fanin_connectors, cw_nodes, fanout, fanin);
+    vector<pair<unsigned int, string> > all_fanout_connectors = suffix_fanout_connectors;
+    all_fanout_connectors.insert(all_fanout_connectors.end(),
+                                 prefix_fanout_connectors.begin(),
+                                 prefix_fanout_connectors.end());
+    create_crossword_network(all_fanout_connectors, suffix_fanin_connectors, cw_nodes, fanout, fanin);
     minimize_crossword_network(cw_nodes, fanout, fanin);
     connect_crossword_network(prefix_nodes,
-                              prefix_fanout_connectors, suffix_fanin_connectors,
-                              cw_nodes, fanout, fanin, false);
-
-    // Suffix-suffix cross-unit network
-    fanout.clear();
-    fanin.clear();
-    cw_nodes.clear();
-    create_crossword_network(suffix_fanout_connectors, suffix_fanin_connectors, cw_nodes, fanout, fanin);
-    minimize_crossword_network(cw_nodes, fanout, fanin);
-    connect_crossword_network(prefix_nodes,
-                              suffix_fanout_connectors, suffix_fanin_connectors,
+                              all_fanout_connectors, suffix_fanin_connectors,
                               cw_nodes, fanout, fanin, false);
 
     // Cross-word network
     fanout.clear();
     fanin.clear();
     cw_nodes.clear();
-    vector<pair<unsigned int, string> > all_fanout_connectors = suffix_fanout_connectors;
-    all_fanout_connectors.insert(all_fanout_connectors.end(),
-                                 prefix_fanout_connectors.begin(),
-                                 prefix_fanout_connectors.end());
     create_crossword_network(all_fanout_connectors, prefix_fanin_connectors, cw_nodes, fanout, fanin, true);
     minimize_crossword_network(cw_nodes, fanout, fanin);
     connect_crossword_network(prefix_nodes,
