@@ -26,9 +26,23 @@ public:
 
     void create_crossword_network(const std::set<std::string> &fanout_subwords,
                                   const std::set<std::string> &fanin_subwords,
-                                  std::vector<DecoderGraph::Node> &nodes,
+                                  std::vector<DecoderGraph::Node> &cw_nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin);
+
+    void create_crossword_network(std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
+                                  std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
+                                  std::vector<DecoderGraph::Node> &cw_nodes,
+                                  std::map<std::string, int> &fanout,
+                                  std::map<std::string, int> &fanin);
+
+    void connect_crossword_network(std::vector<DecoderGraph::Node> &nodes,
+                                   std::vector<std::pair<unsigned int, std::string> > &fanout_connectors,
+                                   std::vector<std::pair<unsigned int, std::string> > &fanin_connectors,
+                                   std::vector<DecoderGraph::Node> &cw_nodes,
+                                   std::map<std::string, int> &fanout,
+                                   std::map<std::string, int> &fanin,
+                                   bool push_left_after_fanin=true);
 
     void connect_crossword_network(std::vector<DecoderGraph::Node> &nodes,
                                    std::vector<DecoderGraph::Node> &cw_nodes,
@@ -47,9 +61,12 @@ public:
     static void offset(std::vector<DecoderGraph::Node> &nodes,
                        int offset);
 
+    static void offset(std::vector<std::pair<unsigned int, std::string> > &connectors,
+                       int offset);
+
     static void collect_crossword_connectors(std::vector<DecoderGraph::Node> &nodes,
-                                             std::vector<std::pair<unsigned int, std::string> > fanout_connectors,
-                                             std::vector<std::pair<unsigned int, std::string> > fanin_connectors);
+                                             std::vector<std::pair<unsigned int, std::string> > &fanout_connectors,
+                                             std::vector<std::pair<unsigned int, std::string> > &fanin_connectors);
 
 };
 
