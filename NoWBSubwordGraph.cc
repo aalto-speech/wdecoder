@@ -21,7 +21,8 @@ NoWBSubwordGraph::NoWBSubwordGraph(const set<string> &prefix_subwords,
 void
 NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &fanout_triphones,
                                            vector<pair<unsigned int, string> > &fanin_triphones,
-                                           std::set<std::string> &one_phone_subwords,
+                                           set<string> &one_phone_fanout_subwords,
+                                           set<string> &one_phone_fanin_subwords,
                                            vector<DecoderGraph::Node> &nodes,
                                            map<string, int> &fanout,
                                            map<string, int> &fanin,
@@ -32,8 +33,11 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
     for (auto foit=fanout_triphones.begin(); foit != fanout_triphones.end(); ++foit)
         fanout[foit->second] = -1;
 
-    for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit)
+    for (auto opswit = one_phone_fanout_subwords.begin(); opswit != one_phone_fanout_subwords.end(); ++opswit)
         fanout[m_lexicon.at(*opswit)[0]] = -1;
+
+    for (auto opswit = one_phone_fanin_subwords.begin(); opswit != one_phone_fanin_subwords.end(); ++opswit)
+        fanin[m_lexicon.at(*opswit)[0]] = -1;
 
     for (auto fiit=fanin_triphones.begin(); fiit != fanin_triphones.end(); ++fiit)
         fanin[fiit->second] = -1;
@@ -241,13 +245,15 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
                                  prefix_fanout_connectors.begin(),
                                  prefix_fanout_connectors.end());
     create_crossword_network(all_fanout_connectors, suffix_fanin_connectors,
-                             one_phone_prefix_subwords, cw_nodes, fanout, fanin);
+                             one_phone_prefix_subwords, one_phone_suffix_subwords,
+                             cw_nodes, fanout, fanin);
     minimize_crossword_network(cw_nodes, fanout, fanin);
     connect_crossword_network(prefix_nodes,
                               all_fanout_connectors, suffix_fanin_connectors,
                               cw_nodes, fanout, fanin, false);
 
     connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, prefix_nodes, fanout);
+    connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, prefix_nodes, fanin);
 
     // Cross-word network
     fanout.clear();
@@ -255,7 +261,7 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     cw_nodes.clear();
     set<string> empty_set;
     create_crossword_network(all_fanout_connectors, prefix_fanin_connectors,
-                             empty_set, cw_nodes, fanout, fanin, true);
+                             empty_set, empty_set, cw_nodes, fanout, fanin, true);
     minimize_crossword_network(cw_nodes, fanout, fanin);
     connect_crossword_network(prefix_nodes,
                               all_fanout_connectors, prefix_fanin_connectors,
