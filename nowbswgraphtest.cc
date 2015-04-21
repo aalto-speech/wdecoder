@@ -140,6 +140,21 @@ void nowbswgraphtest::NoWBSubwordGraphTest4(void)
 }
 
 
+void nowbswgraphtest::NoWBSubwordGraphTest5(void)
+{
+    NoWBSubwordGraph swg;
+    lexname = "data/nowb_2.lex";
+    read_fixtures(swg);
+
+    swg.create_graph(word_start_subwords, subwords);
+
+    map<string, vector<string> > word_segs;
+    construct_words(word_start_subwords, subwords, word_segs);
+
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+}
+
+
 //ofstream origoutf("acw.dot");
 //print_dot_digraph(dg, nodes, origoutf, true);
 //origoutf.close();
