@@ -29,6 +29,7 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
                                            bool short_silence)
 {
     int spp = m_states_per_phone;
+    set<char> phones;
 
     for (auto foit=fanout_triphones.begin(); foit != fanout_triphones.end(); ++foit)
         fanout[foit->second] = -1;
@@ -36,28 +37,23 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
     for (auto opswit = one_phone_fanout_subwords.begin(); opswit != one_phone_fanout_subwords.end(); ++opswit)
         fanout[m_lexicon.at(*opswit)[0]] = -1;
 
-    for (auto opswit = one_phone_fanin_subwords.begin(); opswit != one_phone_fanin_subwords.end(); ++opswit)
+    for (auto opswit = one_phone_fanin_subwords.begin(); opswit != one_phone_fanin_subwords.end(); ++opswit) {
         fanin[m_lexicon.at(*opswit)[0]] = -1;
+        phones.insert(m_lexicon.at(*opswit)[0][2]);
+    }
 
     for (auto fiit=fanin_triphones.begin(); fiit != fanin_triphones.end(); ++fiit)
         fanin[fiit->second] = -1;
 
-    //set<string> one_phone_subwords;
-    //set<char> phones;
-
-    // All phone-phone combinations from one phone words to fanout
-    /*
+    // All phone-phone combinations from one phone suffix subwords to fanout
     for (auto fphit = phones.begin(); fphit != phones.end(); ++fphit) {
         for (auto sphit = phones.begin(); sphit != phones.end(); ++sphit) {
-            string fanint = string("_-") + string(1,*fphit) + string(1,'+') + string(1,*sphit);
             string fanoutt = string(1,*fphit) + string(1,'-') + string(1,*sphit) + string("+_");
             fanout[fanoutt] = -1;
         }
     }
-    */
 
-    // Fanout last triphone + phone from one phone words, all combinations to fanout
-    /*
+    // Fanout last triphone + phone from one phone suffix subwords, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
         if ((foit->first)[0] == '_') continue;
         for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
@@ -65,7 +61,6 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
             fanout[fanoutt] = -1;
         }
     }
-    */
 
     map<string, int> connected_fanin_nodes;
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
@@ -98,6 +93,28 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
         }
     }
 
+
+    // Add loops for one phone subwords from fanout back to fanout
+    for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
+
+        for (auto opswit = one_phone_fanin_subwords.begin(); opswit != one_phone_fanin_subwords.end(); ++opswit) {
+
+            string single_phone = m_lexicon[*opswit][0];
+            string triphone = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + string(1,single_phone[2]);
+
+            int tridx = connect_triphone(nodes, triphone, foit->second);
+            string fanout_loop_connector = foit->first[2] + string(1,'-') + string(1,single_phone[2]) + string("+_");
+            if (fanout.find(fanout_loop_connector) == fanout.end()) {
+                cerr << "problem in connecting fanout loop for one phone subword: " << *opswit << endl;
+                cerr << fanout_loop_connector << endl;
+                assert(false);
+            }
+
+            int lidx = connect_word(nodes, *opswit, tridx);
+            nodes[lidx].arcs.insert(fanout[fanout_loop_connector]);
+        }
+    }
+
     for (auto cwnit = nodes.begin(); cwnit != nodes.end(); ++cwnit)
         cwnit->flags |= NODE_CW;
 }
@@ -126,10 +143,8 @@ NoWBSubwordGraph::connect_crossword_network(vector<DecoderGraph::Node> &nodes,
     for (auto finit = fanin.begin(); finit != fanin.end(); ++finit)
         finit->second += offset;
 
-    for (auto ficit = fanin_connectors.begin(); ficit != fanin_connectors.end(); ++ficit) {
-        DecoderGraph::Node &nd = nodes[ficit->first];
+    for (auto ficit = fanin_connectors.begin(); ficit != fanin_connectors.end(); ++ficit)
         nodes[fanin[ficit->second]].arcs.insert(ficit->first);
-    }
 
     if (push_left_after_fanin)
         push_word_ids_left(nodes);
