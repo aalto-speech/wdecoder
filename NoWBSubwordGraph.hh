@@ -26,6 +26,7 @@ public:
 
     void create_crossword_network(std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
                                   std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
+                                  std::set<std::string> &one_phone_subwords,
                                   std::vector<DecoderGraph::Node> &cw_nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin,
@@ -46,6 +47,9 @@ public:
     void connect_one_phone_subwords_from_cw_to_end(const std::set<std::string> &subwords,
                                                    std::vector<DecoderGraph::Node> &nodes,
                                                    std::map<std::string, int> &fanin);
+
+    void get_one_phone_subwords(const std::set<std::string> &subwords,
+                                std::set<std::string> &one_phone_subwords) const;
 
     static void offset(std::vector<DecoderGraph::Node> &nodes,
                        int offset);
