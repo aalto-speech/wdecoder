@@ -118,8 +118,25 @@ void nowbswgraphtest::NoWBSubwordGraphTest3(void)
     map<string, vector<string> > word_segs;
     construct_complex_words(word_start_subwords, subwords, word_segs);
 
-    cerr << endl;
     CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+}
+
+
+void nowbswgraphtest::NoWBSubwordGraphTest4(void)
+{
+    NoWBSubwordGraph swg;
+    lexname = "data/nowb_1.lex";
+    read_fixtures(swg);
+
+    swg.create_graph(word_start_subwords, subwords);
+
+    CPPUNIT_ASSERT( swg.assert_words(word_start_subwords) );
+    CPPUNIT_ASSERT( swg.assert_only_words(word_start_subwords) );
+
+    map<string, vector<string> > word_segs;
+    construct_complex_words(word_start_subwords, subwords, word_segs);
+
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
 }
 
 

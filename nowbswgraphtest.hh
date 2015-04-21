@@ -16,6 +16,7 @@ class nowbswgraphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (NoWBSubwordGraphTest1);
     CPPUNIT_TEST (NoWBSubwordGraphTest2);
     CPPUNIT_TEST (NoWBSubwordGraphTest3);
+    CPPUNIT_TEST (NoWBSubwordGraphTest4);
     CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -26,6 +27,7 @@ protected:
     void NoWBSubwordGraphTest1(void);
     void NoWBSubwordGraphTest2(void);
     void NoWBSubwordGraphTest3(void);
+    void NoWBSubwordGraphTest4(void);
 
 private:
 
