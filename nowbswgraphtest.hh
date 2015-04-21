@@ -19,6 +19,7 @@ class nowbswgraphtest : public CPPUNIT_NS :: TestFixture
     CPPUNIT_TEST (NoWBSubwordGraphTest4);
     CPPUNIT_TEST (NoWBSubwordGraphTest5);
     CPPUNIT_TEST (NoWBSubwordGraphTest6);
+    CPPUNIT_TEST (NoWBSubwordGraphTest7);
     CPPUNIT_TEST_SUITE_END ();
 
 public:
@@ -32,12 +33,13 @@ protected:
     void NoWBSubwordGraphTest4(void);
     void NoWBSubwordGraphTest5(void);
     void NoWBSubwordGraphTest6(void);
+    void NoWBSubwordGraphTest7(void);
 
 private:
 
     std::string amname;
     std::string lexname;
-    std::set<std::string> word_start_subwords;
+    std::set<std::string> prefix_subwords;
     std::set<std::string> subwords;
 
     void read_fixtures(NoWBSubwordGraph &dg);
