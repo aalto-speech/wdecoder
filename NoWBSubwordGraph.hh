@@ -26,8 +26,8 @@ public:
 
     void create_crossunit_network(std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
                                   std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
-                                  std::set<std::string> &one_phone_fanout_subwords,
-                                  std::set<std::string> &one_phone_fanin_subwords,
+                                  std::set<std::string> &one_phone_prefix_subwords,
+                                  std::set<std::string> &one_phone_suffix_subwords,
                                   std::vector<DecoderGraph::Node> &cw_nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin,
@@ -35,6 +35,8 @@ public:
 
     void create_crossword_network(std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
                                   std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
+                                  std::set<std::string> &one_phone_prefix_subwords,
+                                  std::set<std::string> &one_phone_suffix_subwords,
                                   std::vector<DecoderGraph::Node> &cw_nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin,
