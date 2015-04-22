@@ -32,6 +32,8 @@ int main(int argc, char* argv[])
             if (swit->first[0] == '#' || swit->first[0] == '_') prefix_subwords.insert(swit->first);
             else suffix_subwords.insert(swit->first);
         }
+        cerr << "Number of prefix subwords: " << prefix_subwords.size() << endl;
+        cerr << "Number of stem/suffix subwords: " << suffix_subwords.size() << endl;
 
         swg.create_graph(prefix_subwords, suffix_subwords, true);
         swg.add_long_silence();
