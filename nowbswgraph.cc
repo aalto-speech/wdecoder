@@ -26,11 +26,14 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[2];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        set<string> subwords;
-        for (auto swit = swg.m_lexicon.begin(); swit != swg.m_lexicon.end(); ++swit)
-            subwords.insert(swit->first);
+        set<string> prefix_subwords, suffix_subwords;
+        for (auto swit = swg.m_lexicon.begin(); swit != swg.m_lexicon.end(); ++swit) {
+            if (swit->first.find("<") != string::npos) continue;
+            if (swit->first[0] == '#' || swit->first[0] == '_') prefix_subwords.insert(swit->first);
+            else suffix_subwords.insert(swit->first);
+        }
 
-        swg.create_graph(subwords, subwords, true);
+        swg.create_graph(prefix_subwords, suffix_subwords, true);
         swg.add_long_silence();
         swg.add_hmm_self_transitions();
         swg.write_graph(graphfname);
