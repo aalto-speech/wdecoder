@@ -210,6 +210,26 @@ void nowbswgraphtest::NoWBSubwordGraphTest8(void)
     CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
 }
 
+void nowbswgraphtest::NoWBSubwordGraphTest9(void)
+{
+    NoWBSubwordGraph swg;
+    lexname = "data/nowb_4.lex";
+    read_fixtures(swg);
+
+    swg.create_graph(prefix_subwords, subwords);
+
+    map<string, vector<string> > word_segs;
+    word_segs["_iho"] = {"_iho"};
+    word_segs["_atooppinen"] = {"_a", "tooppinen"};
+    word_segs["_atopia"] = {"_a", "topi", "a"};
+    word_segs["_aie"] = {"_a", "i", "e"};
+    word_segs["_aito"] = {"_a", "i", "to"};
+    word_segs["_ai"] = {"_a", "i"};
+    word_segs["_atopiaa"] = {"_a", "topi", "a", "a"};
+
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
+}
+
 
 //ofstream origoutf("acw.dot");
 //print_dot_digraph(dg, nodes, origoutf, true);
