@@ -18,11 +18,12 @@ NoWBSubwordGraph::NoWBSubwordGraph(const set<string> &prefix_subwords,
 }
 
 
+
 void
-NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &fanout_triphones,
+NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &fanout_triphones,
                                            vector<pair<unsigned int, string> > &fanin_triphones,
-                                           set<string> &one_phone_fanout_subwords,
-                                           set<string> &one_phone_fanin_subwords,
+                                           set<string> &one_phone_prefix_subwords,
+                                           set<string> &one_phone_suffix_subwords,
                                            vector<DecoderGraph::Node> &nodes,
                                            map<string, int> &fanout,
                                            map<string, int> &fanin,
@@ -34,10 +35,12 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
     for (auto foit=fanout_triphones.begin(); foit != fanout_triphones.end(); ++foit)
         fanout[foit->second] = -1;
 
-    for (auto opswit = one_phone_fanout_subwords.begin(); opswit != one_phone_fanout_subwords.end(); ++opswit)
+    for (auto opswit = one_phone_prefix_subwords.begin(); opswit != one_phone_prefix_subwords.end(); ++opswit) {
         fanout[m_lexicon.at(*opswit)[0]] = -1;
+        phones.insert(m_lexicon.at(*opswit)[0][2]);
+    }
 
-    for (auto opswit = one_phone_fanin_subwords.begin(); opswit != one_phone_fanin_subwords.end(); ++opswit) {
+    for (auto opswit = one_phone_suffix_subwords.begin(); opswit != one_phone_suffix_subwords.end(); ++opswit) {
         fanin[m_lexicon.at(*opswit)[0]] = -1;
         phones.insert(m_lexicon.at(*opswit)[0][2]);
     }
@@ -94,15 +97,13 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
     }
 
 
-    // Add loops for one phone subwords from fanout back to fanout
+    // Add loops for one phone suffix subwords from fanout back to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
 
-        for (auto opswit = one_phone_fanin_subwords.begin(); opswit != one_phone_fanin_subwords.end(); ++opswit) {
+        for (auto opswit = one_phone_suffix_subwords.begin(); opswit != one_phone_suffix_subwords.end(); ++opswit) {
 
             string single_phone = m_lexicon[*opswit][0];
             string triphone = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + string(1,single_phone[2]);
-
-            int tridx = connect_triphone(nodes, triphone, foit->second);
             string fanout_loop_connector = foit->first[2] + string(1,'-') + string(1,single_phone[2]) + string("+_");
             if (fanout.find(fanout_loop_connector) == fanout.end()) {
                 cerr << "problem in connecting fanout loop for one phone subword: " << *opswit << endl;
@@ -110,8 +111,82 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
                 assert(false);
             }
 
-            int lidx = connect_word(nodes, *opswit, tridx);
-            nodes[lidx].arcs.insert(fanout[fanout_loop_connector]);
+            int idx = connect_triphone(nodes, triphone, foit->second);
+            idx = connect_word(nodes, *opswit, idx);
+            nodes[idx].arcs.insert(fanout[fanout_loop_connector]);
+        }
+    }
+
+    // Add loops for one phone suffix subwords from fanout back to fanout
+    for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
+        for (auto opswit = one_phone_prefix_subwords.begin(); opswit != one_phone_prefix_subwords.end(); ++opswit) {
+
+            string single_phone = m_lexicon[*opswit][0];
+            string triphone = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + string(1,single_phone[2]);
+            string fanout_loop_connector = foit->first[2] + string(1,'-') + string(1,single_phone[2]) + string("+_");
+            if (fanout.find(fanout_loop_connector) == fanout.end()) {
+                cerr << "problem in connecting fanout loop for one phone subword: " << *opswit << endl;
+                cerr << fanout_loop_connector << endl;
+                assert(false);
+            }
+
+            int idx = connect_triphone(nodes, triphone, foit->second);
+            idx = connect_triphone(nodes, "_", idx);
+            idx = connect_word(nodes, *opswit, idx);
+            nodes[idx].arcs.insert(fanout[fanout_loop_connector]);
+        }
+    }
+
+    for (auto cwnit = nodes.begin(); cwnit != nodes.end(); ++cwnit)
+        cwnit->flags |= NODE_CW;
+}
+
+
+
+void
+NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &fanout_triphones,
+                                           vector<pair<unsigned int, string> > &fanin_triphones,
+                                           vector<DecoderGraph::Node> &nodes,
+                                           map<string, int> &fanout,
+                                           map<string, int> &fanin,
+                                           bool short_silence)
+{
+    int spp = m_states_per_phone;
+
+    for (auto foit=fanout_triphones.begin(); foit != fanout_triphones.end(); ++foit)
+        fanout[foit->second] = -1;
+
+    for (auto fiit=fanin_triphones.begin(); fiit != fanin_triphones.end(); ++fiit)
+        fanin[fiit->second] = -1;
+
+    map<string, int> connected_fanin_nodes;
+    for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
+
+        nodes.resize(nodes.size()+1);
+        nodes.back().flags |= NODE_FAN_OUT_DUMMY;
+        foit->second = nodes.size()-1;
+        int start_index = foit->second;
+
+        for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
+            string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
+            string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
+
+            int idx = connect_triphone(nodes, triphone1, start_index);
+            if (short_silence) idx = connect_triphone(nodes, "_", idx);
+
+            if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end())
+            {
+                idx = connect_triphone(nodes, triphone2, idx);
+                connected_fanin_nodes[triphone2] = idx - (spp-1);
+                if (fiit->second == -1) {
+                    nodes.resize(nodes.size()+1);
+                    nodes.back().flags |= NODE_FAN_IN_DUMMY;
+                    fiit->second = nodes.size()-1;
+                }
+                nodes[idx].arcs.insert(fiit->second);
+            }
+            else
+                nodes[idx].arcs.insert(connected_fanin_nodes[triphone2]);
         }
     }
 
@@ -259,7 +334,7 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     all_fanout_connectors.insert(all_fanout_connectors.end(),
                                  prefix_fanout_connectors.begin(),
                                  prefix_fanout_connectors.end());
-    create_crossword_network(all_fanout_connectors, suffix_fanin_connectors,
+    create_crossunit_network(all_fanout_connectors, suffix_fanin_connectors,
                              one_phone_prefix_subwords, one_phone_suffix_subwords,
                              cw_nodes, fanout, fanin);
     minimize_crossword_network(cw_nodes, fanout, fanin);
@@ -274,9 +349,8 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     fanout.clear();
     fanin.clear();
     cw_nodes.clear();
-    set<string> empty_set;
     create_crossword_network(all_fanout_connectors, prefix_fanin_connectors,
-                             empty_set, empty_set, cw_nodes, fanout, fanin, true);
+                             cw_nodes, fanout, fanin, true);
     minimize_crossword_network(cw_nodes, fanout, fanin);
     connect_crossword_network(prefix_nodes,
                               all_fanout_connectors, prefix_fanin_connectors,
