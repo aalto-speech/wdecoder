@@ -213,7 +213,7 @@ void nowbswgraphtest::NoWBSubwordGraphTest8(void)
 void nowbswgraphtest::NoWBSubwordGraphTest9(void)
 {
     NoWBSubwordGraph swg;
-    lexname = "data/nowb_4.lex";
+    lexname = "data/nowb_5.lex";
     read_fixtures(swg);
 
     swg.create_graph(prefix_subwords, subwords);
