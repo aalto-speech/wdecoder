@@ -18,7 +18,6 @@ NoWBSubwordGraph::NoWBSubwordGraph(const set<string> &prefix_subwords,
 }
 
 
-
 void
 NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &fanout_triphones,
                                            vector<pair<unsigned int, string> > &fanin_triphones,
@@ -48,7 +47,7 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
     for (auto fiit=fanin_triphones.begin(); fiit != fanin_triphones.end(); ++fiit)
         fanin[fiit->second] = -1;
 
-    // All phone-phone combinations from one phone suffix subwords to fanout
+    // All phone-phone combinations from one phone subwords to fanout
     for (auto fphit = phones.begin(); fphit != phones.end(); ++fphit) {
         for (auto sphit = phones.begin(); sphit != phones.end(); ++sphit) {
             string fanoutt = string(1,*fphit) + string(1,'-') + string(1,*sphit) + string("+_");
@@ -56,7 +55,7 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
         }
     }
 
-    // Fanout last triphone + phone from one phone suffix subwords, all combinations to fanout
+    // Fanout last triphone + phone from one phone subwords, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
         if ((foit->first)[0] == '_') continue;
         for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
@@ -117,7 +116,7 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
         }
     }
 
-    // Add loops for one phone suffix subwords from fanout back to fanout
+    // Add loops for one phone prefix subwords from fanout back to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
         for (auto opswit = one_phone_prefix_subwords.begin(); opswit != one_phone_prefix_subwords.end(); ++opswit) {
 
@@ -140,7 +139,6 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
     for (auto cwnit = nodes.begin(); cwnit != nodes.end(); ++cwnit)
         cwnit->flags |= NODE_CW;
 }
-
 
 
 void
@@ -299,6 +297,7 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     lookahead_to_arcs(prefix_nodes);
     vector<pair<unsigned int, string> > prefix_fanout_connectors, prefix_fanin_connectors;
     collect_crossword_connectors(prefix_nodes, prefix_fanout_connectors, prefix_fanin_connectors);
+    if (verbose) cerr << "prefix tree size: " << reachable_graph_nodes(prefix_nodes) << endl;
 
     // Construct suffix/stem tree
     std::vector<DecoderGraph::Node> suffix_nodes(2);
@@ -317,8 +316,11 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     lookahead_to_arcs(suffix_nodes);
     vector<pair<unsigned int, string> > suffix_fanout_connectors, suffix_fanin_connectors;
     collect_crossword_connectors(suffix_nodes, suffix_fanout_connectors, suffix_fanin_connectors);
+    if (verbose) cerr << "stem/suffix tree size: " << reachable_graph_nodes(suffix_nodes) << endl;
 
     // Combine prefix and suffix/stem trees
+    if (verbose) cerr << "combining trees" << endl;
+    int prefix_size = prefix_nodes.size();
     offset(suffix_nodes, prefix_nodes.size());
     offset(suffix_fanout_connectors, prefix_nodes.size());
     offset(suffix_fanin_connectors, prefix_nodes.size());
@@ -326,7 +328,12 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     suffix_nodes[END_NODE].arcs.insert(START_NODE);
     prefix_nodes.insert(prefix_nodes.end(), suffix_nodes.begin(), suffix_nodes.end());
 
+    vector<DecoderGraph::Node> nodes;
+    nodes.swap(prefix_nodes);
+    merge_nodes(nodes, END_NODE, prefix_size+END_NODE);
+
     // Cross-unit network (prefix-suffix, suffix-suffix)
+    if (verbose) cerr << "creating cross-unit network" << endl;
     map<string, int> fanout;
     map<string, int> fanin;
     vector<DecoderGraph::Node> cw_nodes;
@@ -338,28 +345,53 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
                              one_phone_prefix_subwords, one_phone_suffix_subwords,
                              cw_nodes, fanout, fanin);
     minimize_crossword_network(cw_nodes, fanout, fanin);
-    connect_crossword_network(prefix_nodes,
+    if (verbose) cerr << "tied cross-unit network size: " << cw_nodes.size() << endl;
+    connect_crossword_network(nodes,
                               all_fanout_connectors, suffix_fanin_connectors,
                               cw_nodes, fanout, fanin, false);
 
-    connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, prefix_nodes, fanout);
-    connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, prefix_nodes, fanin);
+    connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, nodes, fanout);
+    connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, nodes, fanin);
 
     // Cross-word network
+    if (verbose) cerr << "creating cross-word network" << endl;
     fanout.clear();
     fanin.clear();
     cw_nodes.clear();
     create_crossword_network(all_fanout_connectors, prefix_fanin_connectors,
                              cw_nodes, fanout, fanin, true);
     minimize_crossword_network(cw_nodes, fanout, fanin);
-    connect_crossword_network(prefix_nodes,
+    if (verbose) cerr << "tied cross-word network size: " << cw_nodes.size() << endl;
+    connect_crossword_network(nodes,
                               all_fanout_connectors, prefix_fanin_connectors,
                               cw_nodes, fanout, fanin, false);
 
-    m_nodes.swap(prefix_nodes);
+    m_nodes.swap(nodes);
+
     prune_unreachable_nodes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
+    if (verbose) cerr << "Removing cw dummies.." << endl;
+    remove_cw_dummies(m_nodes);
+
+    if (verbose) cerr << "Tying nodes.." << endl;
+    push_word_ids_right(m_nodes);
+    tie_state_prefixes(m_nodes);
+    tie_word_id_prefixes(m_nodes);
+    tie_state_prefixes(m_nodes);
+    tie_word_id_prefixes(m_nodes);
+    tie_state_prefixes(m_nodes);
+
+    push_word_ids_left(m_nodes);
+    tie_state_suffixes(m_nodes);
+    tie_word_id_suffixes(m_nodes);
+    tie_state_suffixes(m_nodes);
+    tie_word_id_suffixes(m_nodes);
+    tie_state_suffixes(m_nodes);
+
+    prune_unreachable_nodes(m_nodes);
+
+    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 }
 
 

@@ -83,6 +83,7 @@ void nowbswgraphtest::NoWBSubwordGraphTest1(void)
 
     CPPUNIT_ASSERT( swg.assert_words(prefix_subwords) );
     CPPUNIT_ASSERT( swg.assert_only_words(prefix_subwords) );
+    CPPUNIT_ASSERT( swg.assert_word_pairs(prefix_subwords, true, false) ); //short sil, wb symbol
 }
 
 

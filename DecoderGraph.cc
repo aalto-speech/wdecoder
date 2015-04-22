@@ -1,3 +1,4 @@
+#include <cassert>
 #include <sstream>
 #include <algorithm>
 
@@ -1368,6 +1369,10 @@ DecoderGraph::merge_nodes(vector<DecoderGraph::Node> &nodes,
 
     DecoderGraph::Node &merged_node = nodes[node_idx_1];
     DecoderGraph::Node &removed_node = nodes[node_idx_2];
+
+    assert(merged_node.hmm_state == removed_node.hmm_state);
+    assert(merged_node.word_id == removed_node.word_id);
+
     removed_node.hmm_state = -1;
     removed_node.word_id = -1;
 
