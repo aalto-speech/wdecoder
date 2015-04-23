@@ -381,10 +381,13 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     prefix_nodes[END_NODE].arcs.insert(START_NODE);
     suffix_nodes[END_NODE].arcs.insert(START_NODE);
     prefix_nodes.insert(prefix_nodes.end(), suffix_nodes.begin(), suffix_nodes.end());
+    suffix_nodes.clear();
 
     vector<DecoderGraph::Node> nodes;
-    nodes.swap(prefix_nodes);
+    nodes.swap(prefix_nodes); prefix_nodes.clear();
+    set_reverse_arcs_also_from_unreachable(nodes);
     merge_nodes(nodes, END_NODE, prefix_size+END_NODE);
+    clear_reverse_arcs(nodes);
 
     // Cross-unit network (prefix-suffix, suffix-suffix)
     if (verbose) cerr << "creating cross-unit network" << endl;

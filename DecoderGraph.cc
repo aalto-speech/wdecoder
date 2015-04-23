@@ -446,6 +446,9 @@ DecoderGraph::assert_path(vector<DecoderGraph::Node> &nodes,
 {
     DecoderGraph::Node &curr_node = nodes[node_idx];
 
+    if (node_idx == END_NODE && states.size() == 0 && subwords.size() == 0)
+        return true;
+
     if (curr_node.hmm_state != -1) {
         if (states.size() == 0)
             return false;
@@ -453,8 +456,6 @@ DecoderGraph::assert_path(vector<DecoderGraph::Node> &nodes,
             return false;
         else
             states.pop_back();
-        if (states.size() == 0 && subwords.size() == 0)
-            return true;
     }
 
     if (curr_node.word_id != -1) {
@@ -464,8 +465,6 @@ DecoderGraph::assert_path(vector<DecoderGraph::Node> &nodes,
             return false;
         else
             subwords.pop_back();
-        if (states.size() == 0 && subwords.size() == 0)
-            return true;
     }
 
     for (auto ait = curr_node.arcs.begin(); ait != curr_node.arcs.end(); ++ait) {

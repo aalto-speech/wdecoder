@@ -227,6 +227,7 @@ void nowbswgraphtest::NoWBSubwordGraphTest9(void)
     word_segs["_ai"] = {"_a", "i"};
     word_segs["_atopiaa"] = {"_a", "topi", "a", "a"};
 
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
     CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
 }
 
