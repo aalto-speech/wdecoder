@@ -14,18 +14,17 @@ int main(int argc, char* argv[])
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
 
-    DecoderGraph dg;
+    WordGraph wg;
 
     try {
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
-        dg.read_phone_model(phfname);
+        wg.read_phone_model(phfname);
 
         string lexfname = config.arguments[1];
         cerr << "Reading lexicon: " << lexfname << endl;
-        dg.read_noway_lexicon(lexfname);
+        wg.read_noway_lexicon(lexfname);
 
-        WordGraph wg;
         string wordfname = config.arguments[2];
         cerr << "Reading word list: " << wordfname << endl;
         set<string> words;
