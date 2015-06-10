@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstring>
+#include <cstdlib>
 
 #include "NowayHmmReader.hh"
 

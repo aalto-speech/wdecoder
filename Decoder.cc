@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <sstream>
+#include <ctime>
 
 #include "NowayHmmReader.hh"
 #include "Decoder.hh"

@@ -55,9 +55,9 @@ Segmenter::print_phn_segmentation(SToken &token,
         if (label.length() > 0) {
             int start_sample = round(float(sh.start_frame) * 16000.0 / 125.0);
             int end_sample = round(float(sh.end_frame) * 16000.0 / 125.0);
-            string segline = to_string(start_sample)
+            string segline = int2str(start_sample)
                              + " "
-                             + to_string(end_sample)
+                             + int2str(end_sample)
                              + " "
                              + label;
             outf << segline << endl;

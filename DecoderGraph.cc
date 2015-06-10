@@ -1476,7 +1476,7 @@ DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
         nodes.back().flags |= flag_mask;
         nodes[node_idx].arcs.insert(nodes.size() - 1);
         node_idx = nodes.size() - 1;
-        string label = hmm.label + "." + to_string(sidx-2);
+        string label = hmm.label + "." + int2str(sidx-2);
         node_labels[node_idx] = label;
     }
 

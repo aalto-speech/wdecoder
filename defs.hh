@@ -1,6 +1,8 @@
 #ifndef DEFS_HH
 #define DEFS_HH
 
+#include <sstream>
+#include <string>
 #ifndef nullptr
 #include <cstdlib>
 #define nullptr NULL
@@ -22,5 +24,20 @@ typedef unsigned int node_idx_t;
 #define NODE_LM_LEFT_LIMIT              0x0080
 #define NODE_LM_RIGHT_LIMIT             0x0100
 #define NODE_TAIL                       0x0200
+
+static int str2int(std::string str) {
+    int val;
+    std::istringstream numstr(str);
+    numstr >> val;
+    return val;
+}
+
+
+static std::string int2str(int a)
+{
+    std::ostringstream temp;
+    temp<<a;
+    return temp.str();
+}
 
 #endif /* DEFS_HH */

@@ -4,6 +4,7 @@
 
 #include "Ngram.hh"
 #include "str.hh"
+#include "defs.hh"
 
 using namespace std;
 
@@ -115,7 +116,7 @@ Ngram::read_arpa(string arpafname) {
         stringstream vals(line);
         getline(vals, line, '=');
         getline(vals, line, '=');
-        int count = stoi(line);
+        int count = str2int(line);
         ngram_counts_per_order[curr_ngram_order] = count;
         total_ngram_count += count;
         curr_ngram_order++;
