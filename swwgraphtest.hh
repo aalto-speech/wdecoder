@@ -2,7 +2,7 @@
 #define SWWGRAPH_CPPUNIT
 
 #define private public
-#include "SWWGraph.hh"
+#include "ConstrainedSWGraph.hh"
 #undef private
 
 #include <string>

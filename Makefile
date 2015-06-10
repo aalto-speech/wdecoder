@@ -6,14 +6,14 @@ cxxflags = -O3 -march=native -DNDEBUG -std=gnu++0x -Wall -Wno-write-strings
 progs = wgraph swwgraph swgraph nowbswgraph decode score segment lastates cleanlex lasc
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
-srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc SWWGraph.cc SubwordGraph.cc WordGraph.cc NoWBSubwordGraph.cc LnaReaderCircular.cc Decoder.cc Segmenter.cc Lookahead.cc 
+srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc ConstrainedSWGraph.cc SubwordGraph.cc WordGraph.cc NoWBSubwordGraph.cc LnaReaderCircular.cc Decoder.cc Segmenter.cc Lookahead.cc 
 objs = $(srcs:.cc=.o)
 
 test_progs = runtests
 test_progs_srcs = $(test_progs:=.cc)
 test_progs_objs = $(test_progs:=.o)
-test_srcs = nowbswgraphtest.cc
-#test_srcs = swwgraphtest.cc swgraphtest.cc wgraphtest.cc decodertest.cc
+#test_srcs = nowbswgraphtest.cc
+test_srcs = swwgraphtest.cc swgraphtest.cc wgraphtest.cc decodertest.cc
 #test_srcs = wgraphtest.cc
 #test_srcs = swwgraphtest.cc swgraphtest.cc wgraphtest.cc
 #test_srcs = decodertest.cc

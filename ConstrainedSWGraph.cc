@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "SWWGraph.hh"
+#include "ConstrainedSWGraph.hh"
 
 using namespace std;
 

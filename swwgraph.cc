@@ -1,5 +1,5 @@
 #include "conf.hh"
-#include "SWWGraph.hh"
+#include "ConstrainedSWGraph.hh"
 
 using namespace std;
 
