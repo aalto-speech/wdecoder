@@ -97,6 +97,8 @@ recognize_lnas(Decoder &d,
     int total_frames = 0;
     double total_time = 0.0;
     double total_lp = 0.0;
+    double total_am_lp = 0.0;
+    double total_lm_lp = 0.0;
     double total_token_count = 0.0;
     int file_count = 0;
     while (getline(lnalistf, line)) {
@@ -111,6 +113,8 @@ recognize_lnas(Decoder &d,
         total_frames += curr_frames;
         total_time += curr_time;
         total_lp += curr_lp;
+        total_am_lp += curr_am_lp;
+        total_lm_lp += curr_lm_lp;
         total_token_count += token_count;
         logf << "\trecognized " << curr_frames << " frames in " << curr_time << " seconds." << endl;
         logf << "\tRTF: " << curr_time / ((double)curr_frames/125.0) << endl;
@@ -127,9 +131,11 @@ recognize_lnas(Decoder &d,
         logf << "total recognition time: " << total_time << endl;
         logf << "total frame count: " << total_frames << endl;
         logf << "total RTF: " << total_time/ ((double)total_frames/125.0) << endl;
-        logf << "total log prob: " << total_lp << endl;
+        logf << "total log likelihood: " << total_lp << endl;
+        logf << "total LM likelihood: " << total_lm_lp << endl;
+        logf << "total AM likelihood: " << total_am_lp << endl;
         if (d.m_token_stats)
-            logf << "total average token count: " << total_token_count / (double)total_frames << endl;
+            logf << "total mean token count: " << total_token_count / (double)total_frames << endl;
     }
 }
 
