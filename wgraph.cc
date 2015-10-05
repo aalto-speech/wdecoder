@@ -10,9 +10,11 @@ int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: wgraph [OPTION...] PH LEXICON WORDS GRAPH\n")
+    ('l', "word-labels", "", "", "Write word labels instead of indices")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
+    bool word_labels = config["word-labels"].specified;
 
     WordGraph wg;
 
@@ -39,7 +41,7 @@ int main(int argc, char* argv[])
         wg.add_long_silence();
         wg.add_hmm_self_transitions();
 
-        wg.write_graph(graphfname);
+        wg.write_graph(graphfname, word_labels);
 
     } catch (string &e) {
         cerr << e << endl;

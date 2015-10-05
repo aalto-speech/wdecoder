@@ -307,7 +307,8 @@ public:
     void add_hmm_self_transitions();
     void add_hmm_self_transitions(std::vector<DecoderGraph::Node> &nodes);
     void add_long_silence();
-    void write_graph(std::string fname);
+    void write_graph(std::string fname,
+                     bool lm_labels=false);
 
     void remove_cw_dummies(std::vector<DecoderGraph::Node> &nodes);
 

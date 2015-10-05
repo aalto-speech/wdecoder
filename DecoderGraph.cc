@@ -1406,14 +1406,17 @@ DecoderGraph::connect_end_to_start_node(vector<DecoderGraph::Node> &nodes)
 }
 
 void
-DecoderGraph::write_graph(string fname)
+DecoderGraph::write_graph(string fname,
+                          bool lm_labels)
 {
     SimpleFileOutput outf(fname);
     outf << m_nodes.size() << "\n";
-    for (unsigned int i = 0; i < m_nodes.size(); i++)
-        outf << "n " << i << " " << m_nodes[i].hmm_state << " "
-             << m_nodes[i].word_id << " " << m_nodes[i].arcs.size() << " "
-             << m_nodes[i].flags << "\n";
+    for (unsigned int i = 0; i < m_nodes.size(); i++) {
+        outf << "n " << i << " " << m_nodes[i].hmm_state << " ";
+        if (lm_labels) outf << m_subwords[m_nodes[i].word_id];
+        else outf << m_nodes[i].word_id;
+        outf << " " << m_nodes[i].arcs.size() << " " << m_nodes[i].flags << "\n";
+    }
     for (unsigned int i = 0; i < m_nodes.size(); i++) {
         DecoderGraph::Node &node = m_nodes[i];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
