@@ -81,6 +81,13 @@ public:
                                  std::map<std::string, std::vector<std::string> > &word_segs) const;
 
     // Static and const functions for triphonizing subwords and words
+
+    static std::string construct_triphone(std::string left_ctxt,
+                                          std::string phone,
+                                          std::string right_ctxt);
+    static std::string construct_triphone(char left_ctxt,
+                                          char phone,
+                                          char right_ctxt);
     static void triphonize_phone_string(std::string pstring,
                                         std::vector<std::string> &triphones);
     void triphonize(std::map<std::string, std::vector<std::string> > &word_segs,

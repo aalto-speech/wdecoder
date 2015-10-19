@@ -142,6 +142,34 @@ DecoderGraph::read_word_segmentations(string segfname,
 }
 
 
+string
+DecoderGraph::construct_triphone(string left_ctxt,
+                                 string phone,
+                                 string right_ctxt)
+{
+    string triphone = left_ctxt;
+    triphone += string(1,'-');
+    triphone += phone;
+    triphone += string(1,'+');
+    triphone += right_ctxt;
+    return triphone;
+}
+
+
+string
+DecoderGraph::construct_triphone(char left_ctxt,
+                                 char phone,
+                                 char right_ctxt)
+{
+    string triphone = string(1,left_ctxt);
+    triphone += string(1,'-');
+    triphone += phone;
+    triphone += string(1,'+');
+    triphone += right_ctxt;
+    return triphone;
+}
+
+
 void
 DecoderGraph::triphonize_phone_string(string pstring,
                                       vector<string> &triphones)
