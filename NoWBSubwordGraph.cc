@@ -401,7 +401,7 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     if (verbose) cerr << "tied cross-unit network size: " << cw_nodes.size() << endl;
     connect_crossword_network(nodes,
                               all_fanout_connectors, suffix_fanin_connectors,
-                              cw_nodes, fanout, fanin, false);
+                              cw_nodes, fanout, fanin);
 
     connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, nodes, fanout);
     connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, nodes, fanin);
@@ -418,7 +418,7 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     if (verbose) cerr << "tied cross-word network size: " << cw_nodes.size() << endl;
     connect_crossword_network(nodes,
                               all_fanout_connectors, prefix_fanin_connectors,
-                              cw_nodes, fanout, fanin, false);
+                              cw_nodes, fanout, fanin);
 
     connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, nodes, fanout);
     connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, nodes, fanin);
