@@ -232,6 +232,26 @@ void nowbswgraphtest::NoWBSubwordGraphTest9(void)
 }
 
 
+void nowbswgraphtest::NoWBSubwordGraphTest10(void)
+{
+    NoWBSubwordGraph swg;
+    lexname = "data/nowb_20k.lex";
+    read_fixtures(swg);
+
+    cerr << endl;
+    swg.create_graph(prefix_subwords, subwords, true);
+
+    map<string, vector<string> > word_segs;
+    swg.read_word_segmentations("data/nowb_20k.wsegs", word_segs);
+
+    cerr << "Asserting words.." << endl;
+    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    cerr << "Asserting word pairs.." << endl;
+    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, 50000, true, false) ); //short sil, wb symbol
+}
+
+
+
 //ofstream origoutf("acw.dot");
 //print_dot_digraph(dg, nodes, origoutf, true);
 //origoutf.close();
