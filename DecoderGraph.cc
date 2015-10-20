@@ -1779,6 +1779,17 @@ DecoderGraph::num_subword_states(vector<DecoderGraph::Node> &nodes)
 }
 
 int
+DecoderGraph::num_arcs(vector<DecoderGraph::Node> &nodes)
+{
+    set<node_idx_t> node_idxs;
+    reachable_graph_nodes(nodes, node_idxs, START_NODE);
+    int arc_count = 0;
+    for (auto iit = node_idxs.begin(); iit != node_idxs.end(); ++iit)
+        arc_count += nodes[*iit].arcs.size();
+    return arc_count;
+}
+
+int
 DecoderGraph::num_triphones(vector<TriphoneNode> &nodes)
 {
     int hmm_state_count = 0;
