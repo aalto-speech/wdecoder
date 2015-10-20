@@ -384,41 +384,41 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
 
     // Cross-unit network (prefix-suffix, suffix-suffix)
     if (verbose) cerr << "creating cross-unit network" << endl;
-    map<string, int> fanout;
-    map<string, int> fanin;
-    vector<DecoderGraph::Node> cw_nodes;
+    map<string, int> cu_fanout;
+    map<string, int> cu_fanin;
+    vector<DecoderGraph::Node> cu_nodes;
     vector<pair<unsigned int, string> > all_fanout_connectors = suffix_fanout_connectors;
     all_fanout_connectors.insert(all_fanout_connectors.end(),
                                  prefix_fanout_connectors.begin(),
                                  prefix_fanout_connectors.end());
     create_crossunit_network(all_fanout_connectors, suffix_fanin_connectors,
                              one_phone_prefix_subwords, one_phone_suffix_subwords,
-                             cw_nodes, fanout, fanin);
-    minimize_crossword_network(cw_nodes, fanout, fanin);
-    if (verbose) cerr << "tied cross-unit network size: " << cw_nodes.size() << endl;
+                             cu_nodes, cu_fanout, cu_fanin);
+    minimize_crossword_network(cu_nodes, cu_fanout, cu_fanin);
+    if (verbose) cerr << "tied cross-unit network size: " << cu_nodes.size() << endl;
     connect_crossword_network(nodes,
                               all_fanout_connectors, suffix_fanin_connectors,
-                              cw_nodes, fanout, fanin);
+                              cu_nodes, cu_fanout, cu_fanin);
 
-    connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, nodes, fanout);
-    connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, nodes, fanin);
+    connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, nodes, cu_fanout);
+    connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, nodes, cu_fanin);
 
     // Cross-word network
     if (verbose) cerr << "creating cross-word network" << endl;
-    fanout.clear();
-    fanin.clear();
-    cw_nodes.clear();
+    map<string, int> cw_fanout;
+    map<string, int> cw_fanin;
+    vector<DecoderGraph::Node> cw_nodes;
     create_crossword_network(all_fanout_connectors, prefix_fanin_connectors,
                              one_phone_prefix_subwords, one_phone_suffix_subwords,
-                             cw_nodes, fanout, fanin);
-    minimize_crossword_network(cw_nodes, fanout, fanin);
+                             cw_nodes, cw_fanout, cw_fanin);
+    minimize_crossword_network(cw_nodes, cw_fanout, cw_fanin);
     if (verbose) cerr << "tied cross-word network size: " << cw_nodes.size() << endl;
     connect_crossword_network(nodes,
                               all_fanout_connectors, prefix_fanin_connectors,
-                              cw_nodes, fanout, fanin);
+                              cw_nodes, cw_fanout, cw_fanin);
 
-    connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, nodes, fanout);
-    connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, nodes, fanin);
+    connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, nodes, cw_fanout);
+    connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, nodes, cw_fanin);
 
     m_nodes.swap(nodes);
 
