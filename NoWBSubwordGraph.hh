@@ -47,8 +47,7 @@ public:
                                    std::vector<std::pair<unsigned int, std::string> > &fanin_connectors,
                                    std::vector<DecoderGraph::Node> &cw_nodes,
                                    std::map<std::string, int> &fanout,
-                                   std::map<std::string, int> &fanin,
-                                   bool push_left_after_fanin=true);
+                                   std::map<std::string, int> &fanin);
 
     void connect_one_phone_subwords_from_start_to_cw(const std::set<std::string> &subwords,
                                                      std::vector<DecoderGraph::Node> &nodes,

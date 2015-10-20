@@ -167,7 +167,6 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
 
     for (auto opswit = one_phone_prefix_subwords.begin(); opswit != one_phone_prefix_subwords.end(); ++opswit) {
         fanout[m_lexicon.at(*opswit)[0]] = -1;
-        phones.insert(m_lexicon.at(*opswit)[0][2]);
     }
 
     for (auto opswit = one_phone_suffix_subwords.begin(); opswit != one_phone_suffix_subwords.end(); ++opswit) {
@@ -256,8 +255,7 @@ NoWBSubwordGraph::connect_crossword_network(vector<DecoderGraph::Node> &nodes,
                                             vector<pair<unsigned int, string> > &fanin_connectors,
                                             vector<DecoderGraph::Node> &cw_nodes,
                                             map<string, int> &fanout,
-                                            map<string, int> &fanin,
-                                            bool push_left_after_fanin)
+                                            map<string, int> &fanin)
 {
     int offset = nodes.size();
     for (auto cwnit = cw_nodes.begin(); cwnit != cw_nodes.end(); ++cwnit) {
@@ -275,11 +273,6 @@ NoWBSubwordGraph::connect_crossword_network(vector<DecoderGraph::Node> &nodes,
 
     for (auto ficit = fanin_connectors.begin(); ficit != fanin_connectors.end(); ++ficit)
         nodes[fanin[ficit->second]].arcs.insert(ficit->first);
-
-    if (push_left_after_fanin)
-        push_word_ids_left(nodes);
-    else
-        set_reverse_arcs_also_from_unreachable(nodes);
 
     for (auto focit = fanout_connectors.begin(); focit != fanout_connectors.end(); ++focit) {
         DecoderGraph::Node &nd = nodes[focit->first];
