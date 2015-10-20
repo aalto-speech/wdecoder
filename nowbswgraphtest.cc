@@ -240,6 +240,7 @@ void nowbswgraphtest::NoWBSubwordGraphTest10(void)
 
     cerr << endl;
     swg.create_graph(prefix_subwords, subwords, true);
+    cerr << "number of arcs: " << DecoderGraph::num_arcs(swg.m_nodes) << endl;
 
     map<string, vector<string> > word_segs;
     swg.read_word_segmentations("data/nowb_20k.wsegs", word_segs);
