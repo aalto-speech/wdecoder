@@ -30,8 +30,7 @@ public:
                                   std::set<std::string> &one_phone_suffix_subwords,
                                   std::vector<DecoderGraph::Node> &cw_nodes,
                                   std::map<std::string, int> &fanout,
-                                  std::map<std::string, int> &fanin,
-                                  bool short_silence=false);
+                                  std::map<std::string, int> &fanin);
 
     void create_crossword_network(std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
                                   std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
@@ -39,8 +38,7 @@ public:
                                   std::set<std::string> &one_phone_suffix_subwords,
                                   std::vector<DecoderGraph::Node> &cw_nodes,
                                   std::map<std::string, int> &fanout,
-                                  std::map<std::string, int> &fanin,
-                                  bool short_silence=false);
+                                  std::map<std::string, int> &fanin);
 
     void connect_crossword_network(std::vector<DecoderGraph::Node> &nodes,
                                    std::vector<std::pair<unsigned int, std::string> > &fanout_connectors,

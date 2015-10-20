@@ -25,8 +25,7 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
                                            set<string> &one_phone_suffix_subwords,
                                            vector<DecoderGraph::Node> &nodes,
                                            map<string, int> &fanout,
-                                           map<string, int> &fanin,
-                                           bool short_silence)
+                                           map<string, int> &fanin)
 {
     int spp = m_states_per_phone;
     set<char> all_phones;
@@ -79,7 +78,6 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
             string triphone2 = DecoderGraph::construct_triphone(foit->first[2], fiit->first[2], fiit->first[4]);
 
             int idx = connect_triphone(nodes, triphone1, start_index);
-            if (short_silence) idx = connect_triphone(nodes, "_", idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end())
             {
@@ -155,8 +153,7 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
                                            set<string> &one_phone_suffix_subwords,
                                            vector<DecoderGraph::Node> &nodes,
                                            map<string, int> &fanout,
-                                           map<string, int> &fanin,
-                                           bool short_silence)
+                                           map<string, int> &fanin)
 {
     int spp = m_states_per_phone;
     set<char> phones;
@@ -205,7 +202,7 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
             string triphone2 = DecoderGraph::construct_triphone(foit->first[2], fiit->first[2], fiit->first[4]);
 
             int idx = connect_triphone(nodes, triphone1, start_index);
-            if (short_silence) idx = connect_triphone(nodes, "_", idx);
+            idx = connect_triphone(nodes, "_", idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end())
             {
@@ -413,7 +410,7 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     cw_nodes.clear();
     create_crossword_network(all_fanout_connectors, prefix_fanin_connectors,
                              one_phone_prefix_subwords, one_phone_suffix_subwords,
-                             cw_nodes, fanout, fanin, true);
+                             cw_nodes, fanout, fanin);
     minimize_crossword_network(cw_nodes, fanout, fanin);
     if (verbose) cerr << "tied cross-word network size: " << cw_nodes.size() << endl;
     connect_crossword_network(nodes,
