@@ -29,7 +29,8 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
                                            bool short_silence)
 {
     int spp = m_states_per_phone;
-    set<char> phones;
+    set<char> all_phones;
+    set<char> suffix_phones;
 
     for (auto foit=fanout_triphones.begin(); foit != fanout_triphones.end(); ++foit)
         fanout[foit->second] = -1;
@@ -39,28 +40,28 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
 
     for (auto opswit = one_phone_prefix_subwords.begin(); opswit != one_phone_prefix_subwords.end(); ++opswit) {
         fanout[m_lexicon.at(*opswit)[0]] = -1;
-        phones.insert(m_lexicon.at(*opswit)[0][2]);
+        all_phones.insert(m_lexicon.at(*opswit)[0][2]);
     }
 
     for (auto opswit = one_phone_suffix_subwords.begin(); opswit != one_phone_suffix_subwords.end(); ++opswit) {
         fanin[m_lexicon.at(*opswit)[0]] = -1;
-        fanout[m_lexicon.at(*opswit)[0]] = -1;
-        phones.insert(m_lexicon.at(*opswit)[0][2]);
-    }
-
-    // All phone-phone combinations from one phone subwords to fanout
-    for (auto fphit = phones.begin(); fphit != phones.end(); ++fphit) {
-        for (auto sphit = phones.begin(); sphit != phones.end(); ++sphit) {
-            string fanoutt = DecoderGraph::construct_triphone(*fphit, *sphit, '_');
-            fanout[fanoutt] = -1;
-        }
+        suffix_phones.insert(m_lexicon.at(*opswit)[0][2]);
+        all_phones.insert(m_lexicon.at(*opswit)[0][2]);
     }
 
     // Fanout last triphone + phone from one phone subwords, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
         if ((foit->first)[0] == '_') continue;
-        for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
+        for (auto phit = all_phones.begin(); phit != all_phones.end(); ++phit) {
             string fanoutt = DecoderGraph::construct_triphone((foit->first)[2], *phit, '_');
+            fanout[fanoutt] = -1;
+        }
+    }
+
+    // All suffix one phone combinations to fanout
+    for (auto fphit = suffix_phones.begin(); fphit != suffix_phones.end(); ++fphit) {
+        for (auto sphit = suffix_phones.begin(); sphit != suffix_phones.end(); ++sphit) {
+            string fanoutt = DecoderGraph::construct_triphone(*fphit, *sphit, '_');
             fanout[fanoutt] = -1;
         }
     }
@@ -120,6 +121,9 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
 
     // Add loops for one phone prefix subwords from fanout back to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
+
+        if ((foit->first)[0] == '_') continue;
+
         for (auto opswit = one_phone_prefix_subwords.begin(); opswit != one_phone_prefix_subwords.end(); ++opswit) {
 
             char single_phone = m_lexicon[*opswit][0][2];
@@ -157,20 +161,16 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
     int spp = m_states_per_phone;
     set<char> phones;
 
-    for (auto foit=fanout_triphones.begin(); foit != fanout_triphones.end(); ++foit) {
+    for (auto foit=fanout_triphones.begin(); foit != fanout_triphones.end(); ++foit)
         fanout[foit->second] = -1;
-        phones.insert(foit->second[2]);
-    }
 
     for (auto fiit=fanin_triphones.begin(); fiit != fanin_triphones.end(); ++fiit)
         fanin[fiit->second] = -1;
 
-    for (auto opswit = one_phone_prefix_subwords.begin(); opswit != one_phone_prefix_subwords.end(); ++opswit) {
+    for (auto opswit = one_phone_prefix_subwords.begin(); opswit != one_phone_prefix_subwords.end(); ++opswit)
         fanout[m_lexicon.at(*opswit)[0]] = -1;
-    }
 
     for (auto opswit = one_phone_suffix_subwords.begin(); opswit != one_phone_suffix_subwords.end(); ++opswit) {
-        fanout[m_lexicon.at(*opswit)[0]] = -1;
         fanin[m_lexicon.at(*opswit)[0]] = -1;
         phones.insert(m_lexicon.at(*opswit)[0][2]);
     }
