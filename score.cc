@@ -145,6 +145,8 @@ int main(int argc, char* argv[])
 
         int total_frames = 0;
         double total_lp = 0.0;
+        double total_am_lp = 0.0;
+        double total_lm_lp = 0.0;
         int file_count = 0;
 
         SubwordGraph swg;
@@ -181,6 +183,8 @@ int main(int argc, char* argv[])
 
             total_frames += curr_frames;
             total_lp += curr_lp;
+            total_am_lp += curr_am_lp;
+            total_lm_lp += curr_lm_lp;
             file_count++;
         }
         lnalistf.close();
@@ -188,7 +192,9 @@ int main(int argc, char* argv[])
         cerr << endl;
         cerr << file_count << " files scored" << endl;
         cerr << "total frame count: " << total_frames << endl;
-        cerr << "total log prob: " << total_lp << endl;
+        cerr << "total log likelihood: " << total_lp << endl;
+        cerr << "total LM likelihood: " << total_lm_lp << endl;
+        cerr << "total AM likelihood: " << total_am_lp << endl;
 
     } catch (string &e) {
         cerr << e << endl;
