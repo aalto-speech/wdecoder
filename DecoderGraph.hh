@@ -69,6 +69,7 @@ public:
 
     DecoderGraph() { m_states_per_phone = -1;
                      m_nodes.resize(2); }
+    virtual ~DecoderGraph() { };
 
     void read_phone_model(std::string phnfname);
     void read_noway_lexicon(std::string lexfname);
@@ -319,6 +320,12 @@ public:
                      bool lm_labels=false);
 
     void remove_cw_dummies(std::vector<DecoderGraph::Node> &nodes);
+
+    virtual void create_forced_path(std::vector<DecoderGraph::Node> &nodes,
+                                    std::vector<std::string> &sentence,
+                                    std::map<int, std::string> &node_labels) {
+        throw std::string("create_forced_path not defined here");
+    }
 
 };
 

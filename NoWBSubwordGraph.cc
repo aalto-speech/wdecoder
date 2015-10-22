@@ -502,3 +502,68 @@ NoWBSubwordGraph::collect_crossword_connectors(vector<DecoderGraph::Node> &nodes
     }
 }
 
+
+void
+NoWBSubwordGraph::create_forced_path(vector<DecoderGraph::Node> &nodes,
+                                     vector<string> &sentence,
+                                     map<int, string> &node_labels)
+{
+    vector<string> word;
+    vector<TriphoneNode> tnodes;
+
+    // Create initial triphone graph
+    tnodes.push_back(TriphoneNode(-1, m_hmm_map["__"]));
+
+    for (int i=1; i<(int)sentence.size(); i++) {
+        if (i > 2 && (sentence[i] == "</s>" || sentence[i][0] == '_' || sentence[i][0] == '#')) {
+            vector<TriphoneNode> word_tnodes;
+            triphonize(word, word_tnodes);
+            tnodes.insert(tnodes.end(), word_tnodes.begin(), word_tnodes.end());
+            tnodes.push_back(TriphoneNode(-1, m_hmm_map["__"]));
+            word.clear();
+            if (sentence[i][0] == '_' || sentence[i][0] == '#')
+                word.push_back(sentence[i]);
+        }
+        else (word.push_back(sentence[i]));
+    }
+
+    // Convert to HMM states, also with crossword context
+    nodes.clear(); nodes.resize(1);
+    int idx = 0, crossword_start = -1;
+    string crossword_left, crossword_right, label;
+    node_labels.clear();
+
+    for (int t=0; t<(int)tnodes.size(); t++)
+        if (tnodes[t].hmm_id != -1) {
+
+            if (m_hmms[tnodes[t].hmm_id].label.length() == 5 &&
+                m_hmms[tnodes[t].hmm_id].label[4] == '_')
+            {
+                crossword_start = idx;
+                crossword_left = m_hmms[tnodes[t].hmm_id].label;
+            }
+
+            idx = connect_triphone(nodes, tnodes[t].hmm_id, idx, node_labels);
+
+            if (crossword_start != -1 &&
+                m_hmms[tnodes[t].hmm_id].label.length() == 5 &&
+                m_hmms[tnodes[t].hmm_id].label[0] == '_')
+            {
+                idx = connect_dummy(nodes, idx);
+
+                crossword_right = m_hmms[tnodes[t].hmm_id].label;
+                crossword_left[4] = crossword_right[2];
+                crossword_right[0] = crossword_left[2];
+
+                int tmp = connect_triphone(nodes, crossword_left, crossword_start, node_labels);
+                tmp = connect_triphone(nodes, "_", tmp, node_labels);
+                tmp = connect_triphone(nodes, crossword_right, tmp, node_labels);
+
+                nodes[tmp].arcs.insert(idx);
+            }
+
+        }
+        else
+            idx = connect_word(nodes, tnodes[t].subword_id, idx);
+}
+

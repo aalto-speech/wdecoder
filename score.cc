@@ -1,6 +1,7 @@
 #include <sstream>
 
 #include "SubwordGraph.hh"
+#include "NoWBSubwordGraph.hh"
 #include "Decoder.hh"
 #include "conf.hh"
 
@@ -102,6 +103,7 @@ int main(int argc, char* argv[])
     conf::Config config;
     config("usage: score [OPTION...] PH LEXICON LM CFGFILE LNALIST RESLIST\n")
     ('h', "help", "", "", "display help")
+    ('n', "no-word-boundary", "", "", "Subword model without a word boundary")
     ('d', "duration-model=STRING", "arg", "", "Duration model");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
@@ -149,9 +151,11 @@ int main(int argc, char* argv[])
         double total_lm_lp = 0.0;
         int file_count = 0;
 
-        SubwordGraph swg;
-        swg.read_phone_model(phfname);
-        swg.read_noway_lexicon(lexfname);
+        DecoderGraph *dg;
+        if (config["no-word-boundary"].specified) dg = new NoWBSubwordGraph();
+        else dg = new SubwordGraph();
+        dg->read_phone_model(phfname);
+        dg->read_noway_lexicon(lexfname);
 
         while (getline(lnalistf, line)) {
             getline(reslistf, resline);
@@ -166,8 +170,8 @@ int main(int argc, char* argv[])
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
-            swg.create_forced_path(nodes, reswordstrs, node_labels);
-            swg.add_hmm_self_transitions(nodes);
+            dg->create_forced_path(nodes, reswordstrs, node_labels);
+            dg->add_hmm_self_transitions(nodes);
 
             convert_nodes_for_decoder(nodes, d.m_nodes);
             d.set_hmm_transition_probs();

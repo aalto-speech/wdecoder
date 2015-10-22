@@ -68,6 +68,10 @@ public:
                                              std::vector<std::pair<unsigned int, std::string> > &fanout_connectors,
                                              std::vector<std::pair<unsigned int, std::string> > &fanin_connectors);
 
+    virtual void create_forced_path(std::vector<DecoderGraph::Node> &nodes,
+                                    std::vector<std::string> &sentence,
+                                    std::map<int, std::string> &node_labels);
+
 };
 
 #endif /* NO WB_SUBWORD_GRAPH_HH */
