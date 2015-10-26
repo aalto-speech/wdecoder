@@ -35,7 +35,7 @@ read_config(Decoder &d, string cfgfname)
         else if (parameter == "force_sentence_end") {
             string force_str;
             ss >> force_str;
-            d.m_force_sentence_end = true ? force_str == "true": false;
+            d.m_force_sentence_end = (force_str == "true") ? true: false;
         }
         else if (parameter == "word_boundary_symbol") {
             d.m_use_word_boundary_symbol = true;
