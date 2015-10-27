@@ -471,10 +471,12 @@ Decoder::prune_tokens(bool collect_active_histories)
             histogram[tit->histogram_bin]++;
             m_token_count_after_pruning++;
         }
-
-        if (collect_active_histories)
-            m_active_histories.insert(tit->history);
     }
+
+    if (collect_active_histories)
+        for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit)
+            for (auto tit = m_recombined_tokens[*nit].begin(); tit != m_recombined_tokens[*nit].end(); ++tit)
+                m_active_histories.insert(tit->second.history);
 
     m_histogram_bin_limit = 0;
     int histogram_tok_count = 0;
