@@ -1,26 +1,16 @@
+#include <boost/test/unit_test.hpp>
 
-#include "decodertest.hh"
-
+#define private public
+#include "Decoder.hh"
+#include "Lookahead.hh"
+#undef private
 
 using namespace std;
 
 int eval_ratio = 50;
 
 
-CPPUNIT_TEST_SUITE_REGISTRATION (decodertest);
-
-
-void decodertest::setUp (void)
-{
-}
-
-
-void decodertest::tearDown (void)
-{
-}
-
-
-void decodertest::BigramLookaheadTest1(void)
+BOOST_AUTO_TEST_CASE(BigramLookaheadTest1)
 {
     cerr << endl;
     Decoder d;
@@ -39,13 +29,13 @@ void decodertest::BigramLookaheadTest1(void)
             if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
-            CPPUNIT_ASSERT_EQUAL( ref, hyp );
+            BOOST_CHECK_EQUAL( ref, hyp );
         }
     }
 }
 
 
-void decodertest::BigramLookaheadTest2(void)
+BOOST_AUTO_TEST_CASE(BigramLookaheadTest2)
 {
     cerr << endl;
     Decoder d;
@@ -64,13 +54,13 @@ void decodertest::BigramLookaheadTest2(void)
             if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
-            CPPUNIT_ASSERT_EQUAL( ref, hyp );
+            BOOST_CHECK_EQUAL( ref, hyp );
         }
     }
 }
 
 
-void decodertest::BigramLookaheadTest3(void)
+BOOST_AUTO_TEST_CASE(BigramLookaheadTest3)
 {
     cerr << endl;
     Decoder d;
@@ -90,12 +80,12 @@ void decodertest::BigramLookaheadTest3(void)
         int la_state = lbla->m_node_la_states[i];
         set<int> node_successors;
         lbla->find_successor_words(i, node_successors);
-        CPPUNIT_ASSERT( state_successors[la_state] == node_successors );
+        BOOST_CHECK( state_successors[la_state] == node_successors );
     }
 }
 
 
-void decodertest::BigramLookaheadTest4(void)
+BOOST_AUTO_TEST_CASE(BigramLookaheadTest4)
 {
     cerr << endl;
     Decoder d;
@@ -112,13 +102,13 @@ void decodertest::BigramLookaheadTest4(void)
             if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
-            CPPUNIT_ASSERT_EQUAL( ref, hyp );
+            BOOST_CHECK_EQUAL( ref, hyp );
         }
     }
 }
 
 
-void decodertest::BigramLookaheadTest5(void)
+BOOST_AUTO_TEST_CASE(BigramLookaheadTest5)
 {
     cerr << endl;
     Decoder d;
@@ -137,7 +127,7 @@ void decodertest::BigramLookaheadTest5(void)
                 if (idx % eval_ratio != 0) continue;
                 float ref = refla.get_lookahead_score(i, w);
                 float hyp = d.m_la->get_lookahead_score(i, w);
-                CPPUNIT_ASSERT_EQUAL( ref, hyp );
+                BOOST_CHECK_EQUAL( ref, hyp );
             }
         }
     }
@@ -152,14 +142,14 @@ void decodertest::BigramLookaheadTest5(void)
             for (auto wit=pred_word_ids.begin(); wit != pred_word_ids.end(); ++wit) {
                 float ref = refla.get_lookahead_score(i, *wit);
                 float hyp = d.m_la->get_lookahead_score(i, *wit);
-                CPPUNIT_ASSERT_EQUAL( ref, hyp );
+                BOOST_CHECK_EQUAL( ref, hyp );
             }
         }
     }
 }
 
 
-void decodertest::BigramLookaheadTest6(void)
+BOOST_AUTO_TEST_CASE(BigramLookaheadTest6)
 {
     cerr << endl;
     Decoder d;
@@ -177,7 +167,7 @@ void decodertest::BigramLookaheadTest6(void)
                 idx++;
                 float ref = refla.get_lookahead_score(i, w);
                 float hyp = d.m_la->get_lookahead_score(i, w);
-                CPPUNIT_ASSERT_EQUAL( ref, hyp );
+                BOOST_CHECK_EQUAL( ref, hyp );
             }
         }
     }
@@ -192,7 +182,7 @@ void decodertest::BigramLookaheadTest6(void)
             for (auto wit=pred_word_ids.begin(); wit != pred_word_ids.end(); ++wit) {
                 float ref = refla.get_lookahead_score(i, *wit);
                 float hyp = d.m_la->get_lookahead_score(i, *wit);
-                CPPUNIT_ASSERT_EQUAL( ref, hyp );
+                BOOST_CHECK_EQUAL( ref, hyp );
             }
         }
     }

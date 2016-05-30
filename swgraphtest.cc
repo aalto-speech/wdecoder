@@ -1,141 +1,130 @@
+#include <boost/test/unit_test.hpp>
 
-#include "swgraphtest.hh"
 #include "SubwordGraph.hh"
 
 using namespace std;
 
 
-CPPUNIT_TEST_SUITE_REGISTRATION (swgraphtest);
+map<string, vector<string> > _word_segs;
+set<string> subwords;
 
 
-void swgraphtest::setUp (void)
+void read_fixtures(SubwordGraph &swg,
+                   string segfname)
 {
-    amname = string("data/speecon_ml_gain3500_occ300_21.7.2011_22");
-    lexname = string("data/lex");
-}
-
-
-void swgraphtest::tearDown (void)
-{
-}
-
-
-void swgraphtest::read_fixtures(SubwordGraph &swg,
-                                string segfname)
-{
-    swg.read_phone_model(amname + ".ph");
-    swg.read_noway_lexicon(lexname);
-    word_segs.clear();
+    swg.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    swg.read_noway_lexicon("data/lex");
+    _word_segs.clear();
     subwords.clear();
-    swg.read_word_segmentations(segfname, word_segs);
-    for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit)
+    swg.read_word_segmentations(segfname, _word_segs);
+    for (auto wit = _word_segs.begin(); wit != _word_segs.end(); ++wit)
         for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
             subwords.insert(*swit);
 }
 
 
 // Normal case
-void swgraphtest::SubwordGraphTest1(void)
+BOOST_AUTO_TEST_CASE(SubwordGraphTest1)
 {
     SubwordGraph swg;
     read_fixtures(swg, "data/segs.txt");
 
     swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
+    BOOST_CHECK( swg.assert_words(_word_segs) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, true, true) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, false, false) );
 }
 
 
-void swgraphtest::SubwordGraphTest2(void)
+BOOST_AUTO_TEST_CASE(SubwordGraphTest2)
 {
     SubwordGraph swg;
     read_fixtures(swg, "data/segs2.txt");
 
     swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
+    BOOST_CHECK( swg.assert_words(_word_segs) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, true, true) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, false, false) );
 }
 
 
-void swgraphtest::SubwordGraphTest3(void)
+BOOST_AUTO_TEST_CASE(SubwordGraphTest3)
 {
     SubwordGraph swg;
     read_fixtures(swg, "data/segs3.txt");
 
     swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
+    BOOST_CHECK( swg.assert_words(_word_segs) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, true, true) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, false, false) );
 }
 
 
-void swgraphtest::SubwordGraphTest4(void)
+BOOST_AUTO_TEST_CASE(SubwordGraphTest4)
 {
     SubwordGraph swg;
     read_fixtures(swg, "data/segs4.txt");
 
     swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
+    BOOST_CHECK( swg.assert_words(_word_segs) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, true, true) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, false, false) );
 }
 
 
-void swgraphtest::SubwordGraphTest5(void)
+BOOST_AUTO_TEST_CASE(SubwordGraphTest5)
 {
     SubwordGraph swg;
     read_fixtures(swg, "data/segs5.txt");
 
     swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
+    BOOST_CHECK( swg.assert_words(_word_segs) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, true, true) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, false, false) );
 }
 
 
-void swgraphtest::SubwordGraphTest6(void)
+BOOST_AUTO_TEST_CASE(SubwordGraphTest6)
 {
     SubwordGraph swg;
     read_fixtures(swg, "data/segs6.txt");
 
     swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
+    BOOST_CHECK( swg.assert_words(_word_segs) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, true, true) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, false, false) );
 }
 
 
-void swgraphtest::SubwordGraphTest7(void)
+BOOST_AUTO_TEST_CASE(SubwordGraphTest7)
 {
     SubwordGraph swg;
     read_fixtures(swg, "data/subword_tie_expand_problem.segs");
 
     swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
+    BOOST_CHECK( swg.assert_words(_word_segs) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, true, true) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, false, false) );
 }
 
 
-void swgraphtest::SubwordGraphTest8(void)
+BOOST_AUTO_TEST_CASE(SubwordGraphTest8)
 {
     SubwordGraph swg;
     read_fixtures(swg, "data/500.segs");
 
     swg.create_graph(subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, true) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, false, false) );
+    BOOST_CHECK( swg.assert_words(_word_segs) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, true, true) );
+    BOOST_CHECK( swg.assert_word_pairs(_word_segs, false, false) );
 }
 
 
