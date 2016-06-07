@@ -11,6 +11,8 @@
 typedef unsigned int sw_node_idx_t;
 typedef unsigned int node_idx_t;
 
+#define SIL_CTXT '_'
+
 #define START_NODE   0
 #define END_NODE     1
 

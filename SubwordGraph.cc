@@ -47,16 +47,16 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
     // All phone-phone combinations from one phone subwords to fanout
     for (auto fphit = phones.begin(); fphit != phones.end(); ++fphit) {
         for (auto sphit = phones.begin(); sphit != phones.end(); ++sphit) {
-            string fanoutt = construct_triphone(*fphit, *sphit, '_');
+            string fanoutt = construct_triphone(*fphit, *sphit, SIL_CTXT);
             fanout[fanoutt] = -1;
         }
     }
 
     // Fanout last triphone + phone from one phone subwords, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
-        if (tlc(foit->first) == '_') continue;
+        if (tlc(foit->first) == SIL_CTXT) continue;
         for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
-            string fanoutt = construct_triphone(tphone(foit->first), *phit, '_');
+            string fanoutt = construct_triphone(tphone(foit->first), *phit, SIL_CTXT);
             fanout[fanoutt] = -1;
         }
     }
@@ -106,7 +106,7 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
 
             string single_phone = m_lexicon[*opswit][0];
             string triphone = construct_triphone(tlc(foit->first), tphone(foit->first), tphone(single_phone));
-            string fanout_loop_connector = construct_triphone(tphone(foit->first), tphone(single_phone), '_');
+            string fanout_loop_connector = construct_triphone(tphone(foit->first), tphone(single_phone), SIL_CTXT);
             if (fanout.find(fanout_loop_connector) == fanout.end()) {
                 cerr << "problem in connecting fanout loop for one phone subword:" << *opswit << endl;
                 cerr << fanout_loop_connector << endl;
@@ -120,7 +120,7 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
             nodes[lidx].arcs.insert(fanout[fanout_loop_connector]);
 
             // loops with word boundary only if not _-x+_ source connector
-            if (tlc(foit->first) != '_' || trc(foit->first) != '_') {
+            if (tlc(foit->first) != SIL_CTXT || trc(foit->first) != SIL_CTXT) {
                 // optionally word boundary after subword
                 int wbidx = connect_word(nodes, "<w>", lidx);
                 wbidx = connect_triphone(nodes, "_", wbidx);
@@ -216,7 +216,7 @@ SubwordGraph::create_forced_path(vector<DecoderGraph::Node> &nodes,
         if (tnodes[t].hmm_id != -1) {
 
             if (is_triphone(m_hmms[tnodes[t].hmm_id].label) &&
-                trc(m_hmms[tnodes[t].hmm_id].label) == '_')
+                trc(m_hmms[tnodes[t].hmm_id].label) == SIL_CTXT)
             {
                 crossword_start = idx;
                 crossword_left = m_hmms[tnodes[t].hmm_id].label;
@@ -226,7 +226,7 @@ SubwordGraph::create_forced_path(vector<DecoderGraph::Node> &nodes,
 
             if (crossword_start != -1 &&
                 is_triphone(m_hmms[tnodes[t].hmm_id].label) &&
-                tlc(m_hmms[tnodes[t].hmm_id].label) == '_')
+                tlc(m_hmms[tnodes[t].hmm_id].label) == SIL_CTXT)
             {
                 idx = connect_dummy(nodes, idx);
 
