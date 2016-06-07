@@ -70,8 +70,8 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
         int start_index = foit->second;
 
         for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
-            string triphone1 = construct_triphone(foit->first[0], foit->first[2], fiit->first[2]);
-            string triphone2 = construct_triphone(foit->first[2], fiit->first[2], fiit->first[4]);
+            string triphone1 = construct_triphone(tlc(foit->first), tphone(foit->first), tphone(fiit->first));
+            string triphone2 = construct_triphone(tphone(foit->first), tphone(fiit->first), trc(fiit->first));
 
             int tri1_idx = connect_triphone(nodes, triphone1, start_index);
             int idx = connect_word(nodes, "<w>", tri1_idx);
@@ -105,22 +105,22 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
         for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit) {
 
             string single_phone = m_lexicon[*opswit][0];
-            string triphone = construct_triphone(foit->first[0], foit->first[2], single_phone[2]);
-
-            int tridx = connect_triphone(nodes, triphone, foit->second);
-            string fanout_loop_connector = construct_triphone(foit->first[2], single_phone[2], '_');
+            string triphone = construct_triphone(tlc(foit->first), tphone(foit->first), tphone(single_phone));
+            string fanout_loop_connector = construct_triphone(tphone(foit->first), tphone(single_phone), '_');
             if (fanout.find(fanout_loop_connector) == fanout.end()) {
                 cerr << "problem in connecting fanout loop for one phone subword:" << *opswit << endl;
                 cerr << fanout_loop_connector << endl;
                 assert(false);
             }
 
+            int tridx = connect_triphone(nodes, triphone, foit->second);
+
             // just subword in all cases
             int lidx = connect_word(nodes, *opswit, tridx);
             nodes[lidx].arcs.insert(fanout[fanout_loop_connector]);
 
-            // loops with word boundary only if not _-x+_ connector
-            if (foit->first[0] != '_' || foit->first[4] != '_') {
+            // loops with word boundary only if not _-x+_ source connector
+            if (tlc(foit->first) != '_' || trc(foit->first) != '_') {
                 // optionally word boundary after subword
                 int wbidx = connect_word(nodes, "<w>", lidx);
                 wbidx = connect_triphone(nodes, "_", wbidx);
@@ -168,7 +168,8 @@ SubwordGraph::connect_one_phone_subwords_from_cw_to_end(const set<string> &subwo
 {
     for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
         vector<string> &triphones = m_lexicon[*swit];
-        if (triphones.size() != 1 || triphones[0].length() == 1) continue;
+        if (triphones.size() != 1) continue;
+        if (!is_triphone(triphones[0])) continue;
         string fanint = triphones[0];
         if (fanin.find(fanint) == fanin.end()) {
             cerr << "problem in connecting: " << *swit << " fanin to end" << endl;
