@@ -47,8 +47,7 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
     // All phone-phone combinations from one phone subwords to fanout
     for (auto fphit = phones.begin(); fphit != phones.end(); ++fphit) {
         for (auto sphit = phones.begin(); sphit != phones.end(); ++sphit) {
-            string fanint = string("_-") + string(1,*fphit) + string(1,'+') + string(1,*sphit);
-            string fanoutt = string(1,*fphit) + string(1,'-') + string(1,*sphit) + string("+_");
+            string fanoutt = construct_triphone(*fphit, *sphit, '_');
             fanout[fanoutt] = -1;
         }
     }
@@ -57,7 +56,7 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
         if ((foit->first)[0] == '_') continue;
         for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
-            string fanoutt = string(1,(foit->first)[2]) + string(1,'-') + string(1,*phit) + string("+_");
+            string fanoutt = construct_triphone(foit->first[2], *phit, '_');
             fanout[fanoutt] = -1;
         }
     }
@@ -71,8 +70,8 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
         int start_index = foit->second;
 
         for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
-            string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
-            string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
+            string triphone1 = construct_triphone(foit->first[0], foit->first[2], fiit->first[2]);
+            string triphone2 = construct_triphone(foit->first[2], fiit->first[2], fiit->first[4]);
 
             int tri1_idx = connect_triphone(nodes, triphone1, start_index);
             int idx = connect_word(nodes, "<w>", tri1_idx);
@@ -106,10 +105,10 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
         for (auto opswit = one_phone_subwords.begin(); opswit != one_phone_subwords.end(); ++opswit) {
 
             string single_phone = m_lexicon[*opswit][0];
-            string triphone = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + string(1,single_phone[2]);
+            string triphone = construct_triphone(foit->first[0], foit->first[2], single_phone[2]);
 
             int tridx = connect_triphone(nodes, triphone, foit->second);
-            string fanout_loop_connector = foit->first[2] + string(1,'-') + string(1,single_phone[2]) + string("+_");
+            string fanout_loop_connector = construct_triphone(foit->first[2], single_phone[2], '_');
             if (fanout.find(fanout_loop_connector) == fanout.end()) {
                 cerr << "problem in connecting fanout loop for one phone subword:" << *opswit << endl;
                 cerr << fanout_loop_connector << endl;
