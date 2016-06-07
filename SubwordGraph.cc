@@ -75,7 +75,7 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
 
             int tri1_idx = connect_triphone(nodes, triphone1, start_index);
             int idx = connect_word(nodes, "<w>", tri1_idx);
-            idx = connect_triphone(nodes, "_", idx);
+            idx = connect_triphone(nodes, SHORT_SIL, idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end())
             {
@@ -123,11 +123,11 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
             if (tlc(foit->first) != SIL_CTXT || trc(foit->first) != SIL_CTXT) {
                 // optionally word boundary after subword
                 int wbidx = connect_word(nodes, "<w>", lidx);
-                wbidx = connect_triphone(nodes, "_", wbidx);
+                wbidx = connect_triphone(nodes, SHORT_SIL, wbidx);
 
                 // word boundary first then subword
                 int l2idx = connect_word(nodes, "<w>", tridx);
-                l2idx = connect_triphone(nodes, "_", l2idx);
+                l2idx = connect_triphone(nodes, SHORT_SIL, l2idx);
                 l2idx = connect_word(nodes, *opswit, l2idx);
 
                 nodes[wbidx].arcs.insert(fanout[fanout_loop_connector]);
@@ -190,7 +190,7 @@ SubwordGraph::create_forced_path(vector<DecoderGraph::Node> &nodes,
     vector<TriphoneNode> tnodes;
 
     // Create initial triphone graph
-    tnodes.push_back(TriphoneNode(-1, m_hmm_map["__"]));
+    tnodes.push_back(TriphoneNode(-1, m_hmm_map[LONG_SIL]));
     for (int i=2; i<(int)sentence.size()-1; i++) {
         if (sentence[i] == "<w>" && sentence[i-1] == "</s>")
             continue;
@@ -199,7 +199,7 @@ SubwordGraph::create_forced_path(vector<DecoderGraph::Node> &nodes,
             triphonize(word, word_tnodes);
             tnodes.insert(tnodes.end(), word_tnodes.begin(), word_tnodes.end());
             tnodes.insert(tnodes.begin()+(tnodes.size()-1), TriphoneNode(m_subword_map["<w>"], -1));
-            tnodes.push_back(TriphoneNode(-1, m_hmm_map["__"]));
+            tnodes.push_back(TriphoneNode(-1, m_hmm_map[LONG_SIL]));
             word.clear();
         }
         else
@@ -235,7 +235,7 @@ SubwordGraph::create_forced_path(vector<DecoderGraph::Node> &nodes,
                 crossword_right[0] = crossword_left[2];
 
                 int tmp = connect_triphone(nodes, crossword_left, crossword_start, node_labels);
-                tmp = connect_triphone(nodes, "_", tmp, node_labels);
+                tmp = connect_triphone(nodes, SHORT_SIL, tmp, node_labels);
                 tmp = connect_triphone(nodes, crossword_right, tmp, node_labels);
 
                 nodes[tmp].arcs.insert(idx);
@@ -315,18 +315,18 @@ SubwordGraph::add_long_silence_no_start_end_wb()
 {
     m_nodes[END_NODE].arcs.clear();
 
-    int ls_len = m_hmms[m_hmm_map["__"]].states.size() - 2;
+    int ls_len = m_hmms[m_hmm_map[LONG_SIL]].states.size() - 2;
 
     node_idx_t node_idx = END_NODE;
-    node_idx = connect_triphone(m_nodes, "__", node_idx, NODE_SILENCE);
+    node_idx = connect_triphone(m_nodes, LONG_SIL, node_idx, NODE_SILENCE);
     node_idx = connect_word(m_nodes, "</s>", node_idx);
-    node_idx = connect_triphone(m_nodes, "__", node_idx, NODE_SILENCE);
+    node_idx = connect_triphone(m_nodes, LONG_SIL, node_idx, NODE_SILENCE);
     m_nodes[node_idx].arcs.insert(START_NODE);
     m_nodes[node_idx-ls_len].arcs.insert(START_NODE);
     m_nodes[node_idx-(ls_len-1)].flags |= NODE_DECODE_START;
 
     node_idx = END_NODE;
-    node_idx = connect_triphone(m_nodes, "_", node_idx, NODE_SILENCE);
+    node_idx = connect_triphone(m_nodes, SHORT_SIL, node_idx, NODE_SILENCE);
     node_idx = connect_word(m_nodes, "<w>", node_idx);
     m_nodes[node_idx].arcs.insert(START_NODE);
 }
