@@ -83,6 +83,11 @@ public:
 
     // Static and const functions for triphonizing subwords and words
 
+    static char tlc(std::string triphone);
+    static char trc(std::string triphone);
+    static char tphone(std::string triphone);
+    static bool is_triphone(std::string triphone);
+
     static std::string construct_triphone(std::string left_ctxt,
                                           std::string phone,
                                           std::string right_ctxt);

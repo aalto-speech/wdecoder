@@ -142,6 +142,37 @@ DecoderGraph::read_word_segmentations(string segfname,
 }
 
 
+char
+DecoderGraph::tlc(std::string triphone)
+{
+    return triphone[0];
+}
+
+
+char
+DecoderGraph::trc(std::string triphone)
+{
+    return triphone[4];
+}
+
+
+char
+DecoderGraph::tphone(std::string triphone)
+{
+    return triphone[2];
+}
+
+
+bool
+DecoderGraph::is_triphone(std::string triphone)
+{
+    if (triphone.length() != 5) return false;
+    if (triphone[1] != '-') return false;
+    if (triphone[3] != '+') return false;
+    return true;
+}
+
+
 string
 DecoderGraph::construct_triphone(string left_ctxt,
                                  string phone,

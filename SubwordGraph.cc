@@ -32,9 +32,9 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
         if (subwords.find(swit->first) == subwords.end()) continue;
         vector<string> &triphones = swit->second;
         if (triphones.size() == 0) continue;
-        else if (triphones.size() == 1 && triphones[0].length() == 5) {
+        else if (triphones.size() == 1 && is_triphone(triphones[0])) {
             one_phone_subwords.insert(swit->first);
-            phones.insert(triphones[0][2]);
+            phones.insert(tphone(triphones[0]));
             fanout[triphones[0]] = -1;
             fanin[triphones[0]] = -1;
         }
@@ -54,9 +54,9 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
 
     // Fanout last triphone + phone from one phone subwords, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
-        if ((foit->first)[0] == '_') continue;
+        if (tlc(foit->first) == '_') continue;
         for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
-            string fanoutt = construct_triphone(foit->first[2], *phit, '_');
+            string fanoutt = construct_triphone(tphone(foit->first), *phit, '_');
             fanout[fanoutt] = -1;
         }
     }
@@ -148,7 +148,8 @@ SubwordGraph::connect_one_phone_subwords_from_start_to_cw(const set<string> &sub
 {
     for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
         vector<string> &triphones = m_lexicon[*swit];
-        if (triphones.size() != 1 || triphones[0].length() == 1) continue;
+        if (triphones.size() != 1) continue;
+        if (!is_triphone(triphones[0])) continue;
         string fanoutt = triphones[0];
         int idx = connect_word(nodes, *swit, START_NODE);
         if (fanout.find(fanoutt) == fanout.end()) {
@@ -213,8 +214,8 @@ SubwordGraph::create_forced_path(vector<DecoderGraph::Node> &nodes,
     for (int t=0; t<(int)tnodes.size(); t++)
         if (tnodes[t].hmm_id != -1) {
 
-            if (m_hmms[tnodes[t].hmm_id].label.length() == 5 &&
-                m_hmms[tnodes[t].hmm_id].label[4] == '_')
+            if (is_triphone(m_hmms[tnodes[t].hmm_id].label) &&
+                trc(m_hmms[tnodes[t].hmm_id].label) == '_')
             {
                 crossword_start = idx;
                 crossword_left = m_hmms[tnodes[t].hmm_id].label;
@@ -223,8 +224,8 @@ SubwordGraph::create_forced_path(vector<DecoderGraph::Node> &nodes,
             idx = connect_triphone(nodes, tnodes[t].hmm_id, idx, node_labels);
 
             if (crossword_start != -1 &&
-                m_hmms[tnodes[t].hmm_id].label.length() == 5 &&
-                m_hmms[tnodes[t].hmm_id].label[0] == '_')
+                is_triphone(m_hmms[tnodes[t].hmm_id].label) &&
+                tlc(m_hmms[tnodes[t].hmm_id].label) == '_')
             {
                 idx = connect_dummy(nodes, idx);
 
