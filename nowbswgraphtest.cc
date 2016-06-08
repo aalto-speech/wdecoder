@@ -1,25 +1,16 @@
+#include <boost/test/unit_test.hpp>
 
-#include "nowbswgraphtest.hh"
 #include "NoWBSubwordGraph.hh"
 
 using namespace std;
 
-CPPUNIT_TEST_SUITE_REGISTRATION (nowbswgraphtest);
 
+string amname = string("data/speecon_ml_gain3500_occ300_21.7.2011_22");
+string lexname = string("data/lex");
+set<string> prefix_subwords;
+set<string> subwords;
 
-void nowbswgraphtest::setUp (void)
-{
-    amname = string("data/speecon_ml_gain3500_occ300_21.7.2011_22");
-    lexname = string("data/lex");
-}
-
-
-void nowbswgraphtest::tearDown (void)
-{
-}
-
-
-void nowbswgraphtest::read_fixtures(NoWBSubwordGraph &swg)
+void read_fixtures(NoWBSubwordGraph &swg)
 {
     swg.read_phone_model(amname + ".ph");
     swg.read_noway_lexicon(lexname);
@@ -36,9 +27,9 @@ void nowbswgraphtest::read_fixtures(NoWBSubwordGraph &swg)
 }
 
 
-void nowbswgraphtest::construct_words(const set<string> &prefix_subwords,
-                                      const set<string> &subwords,
-                                      map<string, vector<string> > &word_segs)
+void construct_words(const set<string> &prefix_subwords,
+                     const set<string> &subwords,
+                     map<string, vector<string> > &word_segs)
 {
     word_segs.clear();
     for (auto wssit = prefix_subwords.begin(); wssit != prefix_subwords.end(); ++wssit) {
@@ -53,9 +44,9 @@ void nowbswgraphtest::construct_words(const set<string> &prefix_subwords,
 }
 
 
-void nowbswgraphtest::construct_complex_words(const set<string> &prefix_subwords,
-                                              const set<string> &subwords,
-                                              map<string, vector<string> > &word_segs)
+void construct_complex_words(const set<string> &prefix_subwords,
+                             const set<string> &subwords,
+                             map<string, vector<string> > &word_segs)
 {
     word_segs.clear();
     for (auto wssit = prefix_subwords.begin(); wssit != prefix_subwords.end(); ++wssit) {
@@ -73,7 +64,7 @@ void nowbswgraphtest::construct_complex_words(const set<string> &prefix_subwords
 }
 
 
-void nowbswgraphtest::NoWBSubwordGraphTest1(void)
+BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest1)
 {
     NoWBSubwordGraph swg;
     lexname = "data/nowb_1.lex";
@@ -81,13 +72,13 @@ void nowbswgraphtest::NoWBSubwordGraphTest1(void)
 
     swg.create_graph(prefix_subwords, subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(prefix_subwords) );
-    CPPUNIT_ASSERT( swg.assert_only_words(prefix_subwords) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(prefix_subwords, true, false) ); //short sil, wb symbol
+    BOOST_CHECK( swg.assert_words(prefix_subwords) );
+    BOOST_CHECK( swg.assert_only_words(prefix_subwords) );
+    BOOST_CHECK( swg.assert_word_pairs(prefix_subwords, true, false) ); //short sil, wb symbol
 }
 
 
-void nowbswgraphtest::NoWBSubwordGraphTest2(void)
+BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest2)
 {
     NoWBSubwordGraph swg;
     lexname = "data/nowb_1.lex";
@@ -95,17 +86,17 @@ void nowbswgraphtest::NoWBSubwordGraphTest2(void)
 
     swg.create_graph(prefix_subwords, subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(prefix_subwords) );
-    CPPUNIT_ASSERT( swg.assert_only_words(prefix_subwords) );
+    BOOST_CHECK( swg.assert_words(prefix_subwords) );
+    BOOST_CHECK( swg.assert_only_words(prefix_subwords) );
 
     map<string, vector<string> > word_segs;
     construct_words(prefix_subwords, subwords, word_segs);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    BOOST_CHECK( swg.assert_words(word_segs) );
 }
 
 
-void nowbswgraphtest::NoWBSubwordGraphTest3(void)
+BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest3)
 {
     NoWBSubwordGraph swg;
     lexname = "data/nowb_1.lex";
@@ -113,17 +104,17 @@ void nowbswgraphtest::NoWBSubwordGraphTest3(void)
 
     swg.create_graph(prefix_subwords, subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(prefix_subwords) );
-    CPPUNIT_ASSERT( swg.assert_only_words(prefix_subwords) );
+    BOOST_CHECK( swg.assert_words(prefix_subwords) );
+    BOOST_CHECK( swg.assert_only_words(prefix_subwords) );
 
     map<string, vector<string> > word_segs;
     construct_complex_words(prefix_subwords, subwords, word_segs);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    BOOST_CHECK( swg.assert_words(word_segs) );
 }
 
 
-void nowbswgraphtest::NoWBSubwordGraphTest4(void)
+BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest4)
 {
     NoWBSubwordGraph swg;
     lexname = "data/nowb_1.lex";
@@ -131,17 +122,17 @@ void nowbswgraphtest::NoWBSubwordGraphTest4(void)
 
     swg.create_graph(prefix_subwords, subwords);
 
-    CPPUNIT_ASSERT( swg.assert_words(prefix_subwords) );
-    CPPUNIT_ASSERT( swg.assert_only_words(prefix_subwords) );
+    BOOST_CHECK( swg.assert_words(prefix_subwords) );
+    BOOST_CHECK( swg.assert_only_words(prefix_subwords) );
 
     map<string, vector<string> > word_segs;
     construct_complex_words(prefix_subwords, subwords, word_segs);
 
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
+    BOOST_CHECK( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
 }
 
 
-void nowbswgraphtest::NoWBSubwordGraphTest5(void)
+BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest5)
 {
     NoWBSubwordGraph swg;
     lexname = "data/nowb_2.lex";
@@ -152,11 +143,11 @@ void nowbswgraphtest::NoWBSubwordGraphTest5(void)
     map<string, vector<string> > word_segs;
     construct_words(prefix_subwords, subwords, word_segs);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    BOOST_CHECK( swg.assert_words(word_segs) );
 }
 
 
-void nowbswgraphtest::NoWBSubwordGraphTest6(void)
+BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest6)
 {
     NoWBSubwordGraph swg;
     lexname = "data/nowb_3.lex";
@@ -167,11 +158,11 @@ void nowbswgraphtest::NoWBSubwordGraphTest6(void)
     map<string, vector<string> > word_segs;
     construct_words(prefix_subwords, subwords, word_segs);
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    BOOST_CHECK( swg.assert_words(word_segs) );
 }
 
 
-void nowbswgraphtest::NoWBSubwordGraphTest7(void)
+BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest7)
 {
     NoWBSubwordGraph swg;
     lexname = "data/nowb_4.lex";
@@ -187,11 +178,11 @@ void nowbswgraphtest::NoWBSubwordGraphTest7(void)
     word_segs["_ai"] = {"_a", "i"};
     word_segs["_atopiaa"] = {"_a", "topi", "a", "a"};
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    BOOST_CHECK( swg.assert_words(word_segs) );
 }
 
 
-void nowbswgraphtest::NoWBSubwordGraphTest8(void)
+BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest8)
 {
     NoWBSubwordGraph swg;
     lexname = "data/nowb_4.lex";
@@ -207,10 +198,11 @@ void nowbswgraphtest::NoWBSubwordGraphTest8(void)
     word_segs["_ai"] = {"_a", "i"};
     word_segs["_atopiaa"] = {"_a", "topi", "a", "a"};
 
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
+    BOOST_CHECK( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
 }
 
-void nowbswgraphtest::NoWBSubwordGraphTest9(void)
+
+BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest9)
 {
     NoWBSubwordGraph swg;
     lexname = "data/nowb_5.lex";
@@ -227,12 +219,12 @@ void nowbswgraphtest::NoWBSubwordGraphTest9(void)
     word_segs["_ai"] = {"_a", "i"};
     word_segs["_atopiaa"] = {"_a", "topi", "a", "a"};
 
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
+    BOOST_CHECK( swg.assert_words(word_segs) );
+    BOOST_CHECK( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
 }
 
 
-void nowbswgraphtest::NoWBSubwordGraphTest10(void)
+BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest10)
 {
     NoWBSubwordGraph swg;
     lexname = "data/nowb_20k.lex";
@@ -246,11 +238,10 @@ void nowbswgraphtest::NoWBSubwordGraphTest10(void)
     swg.read_word_segmentations("data/nowb_20k.wsegs", word_segs);
 
     cerr << "Asserting words.." << endl;
-    CPPUNIT_ASSERT( swg.assert_words(word_segs) );
+    BOOST_CHECK( swg.assert_words(word_segs) );
     cerr << "Asserting word pairs.." << endl;
-    CPPUNIT_ASSERT( swg.assert_word_pairs(word_segs, 50000, true, false) ); //short sil, wb symbol
+    BOOST_CHECK( swg.assert_word_pairs(word_segs, 50000, true, false) ); //short sil, wb symbol
 }
-
 
 
 //ofstream origoutf("acw.dot");
