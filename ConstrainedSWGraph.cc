@@ -32,17 +32,15 @@ SWWGraph::create_crossword_network(const map<string, vector<string> > &word_segs
     int error_count = 0;
     for (auto wit = word_segs.begin(); wit != word_segs.end(); ++wit) {
         vector<string> triphones;
-        for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit) {
-            for (auto tit = m_lexicon[*swit].begin(); tit != m_lexicon[*swit].end(); ++tit) {
+        for (auto swit = wit->second.begin(); swit != wit->second.end(); ++swit)
+            for (auto tit = m_lexicon[*swit].begin(); tit != m_lexicon[*swit].end(); ++tit)
                 triphones.push_back(*tit);
-            }
-        }
         if (triphones.size() < 2) {
             error_count++;
             continue;
         }
-        string fanint = string("_-") + triphones[0][2] + string(1,'+') + triphones[1][2];
-        string fanoutt = triphones[triphones.size()-2][2] + string(1,'-') + triphones[triphones.size()-1][2] + string("+_");
+        string fanint = construct_triphone(SIL_CTXT, tphone(triphones[0]), tphone(triphones[1]));
+        string fanoutt = construct_triphone(tphone(triphones[triphones.size()-2]), tphone(triphones.back()), SIL_CTXT);
         fanout[fanoutt] = -1;
         fanin[fanint] = -1;
     }
@@ -56,12 +54,12 @@ SWWGraph::create_crossword_network(const map<string, vector<string> > &word_segs
         foit->second = nodes.size()-1;
 
         for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
-            string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
-            string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
+            string triphone1 = construct_triphone(tlc(foit->first), tphone(foit->first), tphone(fiit->first));
+            string triphone2 = construct_triphone(tphone(foit->first), tphone(fiit->first), trc(fiit->first));
 
             int idx = connect_triphone(nodes, triphone1, foit->second);
             if (wb_symbol_in_middle) idx = connect_word(nodes, "<w>", idx);
-            idx = connect_triphone(nodes, "_", idx);
+            idx = connect_triphone(nodes, SHORT_SIL, idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end()) {
                 idx = connect_triphone(nodes, triphone2, idx);
