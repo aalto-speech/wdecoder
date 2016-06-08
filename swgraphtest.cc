@@ -128,6 +128,6 @@ BOOST_AUTO_TEST_CASE(SubwordGraphTest8)
 }
 
 
-//ofstream origoutf("acw.dot");
-//print_dot_digraph(dg, nodes, origoutf, true);
-//origoutf.close();
+//ofstream outf("acw.dot");
+//swg.print_dot_digraph(swg.m_nodes, outf, true);
+//outf.close();
