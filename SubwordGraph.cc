@@ -121,12 +121,6 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
 
             // loops with word boundary only if not _-x+_ source connector
             if (tlc(foit->first) != SIL_CTXT || trc(foit->first) != SIL_CTXT) {
-                // optionally word boundary after subword
-                int wbidx = connect_word(nodes, "<w>", lidx);
-                wbidx = connect_triphone(nodes, SHORT_SIL, wbidx);
-                nodes[wbidx].arcs.insert(fanout[fanout_loop_connector]);
-
-                // word boundary first then subword
                 int l2idx = connect_word(nodes, "<w>", tridx);
                 l2idx = connect_triphone(nodes, SHORT_SIL, l2idx);
                 l2idx = connect_word(nodes, *opswit, l2idx);
