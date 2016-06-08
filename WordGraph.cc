@@ -32,9 +32,9 @@ WordGraph::create_crossword_network(const set<string> &words,
         if (words.find(swit->first) == words.end()) continue;
         vector<string> &triphones = swit->second;
         if (triphones.size() == 0) continue;
-        else if (triphones.size() == 1 && triphones[0].length() == 5) {
+        else if (triphones.size() == 1 && is_triphone(triphones[0])) {
             one_phone_subwords.insert(swit->first);
-            phones.insert(triphones[0][2]);
+            phones.insert(tphone(triphones[0]));
             fanout[triphones[0]] = -1;
             fanin[triphones[0]] = -1;
         }
@@ -45,19 +45,17 @@ WordGraph::create_crossword_network(const set<string> &words,
     }
 
     // All phone-phone combinations from one phone words to fanout
-    for (auto fphit = phones.begin(); fphit != phones.end(); ++fphit) {
+    for (auto fphit = phones.begin(); fphit != phones.end(); ++fphit)
         for (auto sphit = phones.begin(); sphit != phones.end(); ++sphit) {
-            string fanint = string("_-") + string(1,*fphit) + string(1,'+') + string(1,*sphit);
-            string fanoutt = string(1,*fphit) + string(1,'-') + string(1,*sphit) + string("+_");
+            string fanoutt = construct_triphone(*fphit, *sphit, SIL_CTXT);
             fanout[fanoutt] = -1;
         }
-    }
 
     // Fanout last triphone + phone from one phone words, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
-        if ((foit->first)[0] == '_') continue;
+        if (tlc(foit->first) == SIL_CTXT) continue;
         for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
-            string fanoutt = string(1,(foit->first)[2]) + string(1,'-') + string(1,*phit) + string("+_");
+            string fanoutt = construct_triphone(tphone(foit->first), *phit, SIL_CTXT);
             fanout[fanoutt] = -1;
         }
     }
@@ -71,11 +69,11 @@ WordGraph::create_crossword_network(const set<string> &words,
         int start_index = foit->second;
 
         for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
-            string triphone1 = foit->first[0] + string(1,'-') + foit->first[2] + string(1,'+') + fiit->first[2];
-            string triphone2 = foit->first[2] + string(1,'-') + fiit->first[2] + string(1,'+') + fiit->first[4];
+            string triphone1 = construct_triphone(tlc(foit->first), tphone(foit->first), tphone(fiit->first));
+            string triphone2 = construct_triphone(tphone(foit->first), tphone(fiit->first), trc(fiit->first));
 
             int idx = connect_triphone(nodes, triphone1, start_index);
-            idx = connect_triphone(nodes, "_", idx);
+            idx = connect_triphone(nodes, SHORT_SIL, idx);
 
             if (connected_fanin_nodes.find(triphone2) == connected_fanin_nodes.end())
             {
@@ -105,7 +103,7 @@ WordGraph::connect_one_phone_words_from_start_to_cw(const set<string> &words,
 {
     for (auto wit = words.begin(); wit != words.end(); ++wit) {
         vector<string> &triphones = m_lexicon[*wit];
-        if (triphones.size() != 1 || triphones[0].length() == 1) continue;
+        if (triphones.size() != 1 || !is_triphone(triphones[0])) continue;
         string fanoutt = triphones[0];
         int idx = connect_word(nodes, *wit, START_NODE);
         if (fanout.find(fanoutt) == fanout.end()) {
@@ -124,7 +122,7 @@ WordGraph::connect_one_phone_words_from_cw_to_end(const set<string> &words,
 {
     for (auto wit = words.begin(); wit != words.end(); ++wit) {
         vector<string> &triphones = m_lexicon[*wit];
-        if (triphones.size() != 1 || triphones[0].length() == 1) continue;
+        if (triphones.size() != 1 || !is_triphone(triphones[0])) continue;
         string fanint = triphones[0];
         if (fanin.find(fanint) == fanin.end()) {
             cerr << "problem in connecting: " << *wit << " fanin to end" << endl;
