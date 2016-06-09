@@ -31,15 +31,14 @@ SubwordGraph::create_crossword_network(const set<string> &subwords,
     for (auto swit = m_lexicon.begin(); swit != m_lexicon.end(); ++swit) {
         if (subwords.find(swit->first) == subwords.end()) continue;
         vector<string> &triphones = swit->second;
-        if (triphones.size() == 0) continue;
+        if (triphones.size() > 1) {
+            fanout[triphones.back()] = -1;
+            fanin[triphones[0]] = -1;
+        }
         else if (triphones.size() == 1 && is_triphone(triphones[0])) {
             one_phone_subwords.insert(swit->first);
             phones.insert(tphone(triphones[0]));
             fanout[triphones[0]] = -1;
-            fanin[triphones[0]] = -1;
-        }
-        else if (triphones.size() > 1) {
-            fanout[triphones.back()] = -1;
             fanin[triphones[0]] = -1;
         }
     }

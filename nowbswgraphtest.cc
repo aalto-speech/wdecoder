@@ -8,21 +8,21 @@ using namespace std;
 string amname = string("data/speecon_ml_gain3500_occ300_21.7.2011_22");
 string lexname = string("data/lex");
 set<string> prefix_subwords;
-set<string> subwords;
+set<string> stem_subwords;
 
 void read_fixtures(NoWBSubwordGraph &swg)
 {
     swg.read_phone_model(amname + ".ph");
     swg.read_noway_lexicon(lexname);
     prefix_subwords.clear();
-    subwords.clear();
+    stem_subwords.clear();
 
     for (auto swit = swg.m_lexicon.begin(); swit != swg.m_lexicon.end(); ++swit) {
         if (swit->first.find("<") != string::npos) continue;
         if (swit->first.length() == 0) continue;
         if ((swit->first)[0] == '_')
             prefix_subwords.insert(swit->first);
-        else subwords.insert(swit->first);
+        else stem_subwords.insert(swit->first);
     }
 }
 
@@ -33,7 +33,7 @@ void construct_words(const set<string> &prefix_subwords,
 {
     word_segs.clear();
     for (auto wssit = prefix_subwords.begin(); wssit != prefix_subwords.end(); ++wssit) {
-        for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
+        for (auto swit = stem_subwords.begin(); swit != stem_subwords.end(); ++swit) {
             vector<string> word_seg;
             word_seg.push_back(*wssit);
             word_seg.push_back(*swit);
@@ -50,8 +50,8 @@ void construct_complex_words(const set<string> &prefix_subwords,
 {
     word_segs.clear();
     for (auto wssit = prefix_subwords.begin(); wssit != prefix_subwords.end(); ++wssit) {
-        for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
-            for (auto eswit = subwords.begin(); eswit != subwords.end(); ++eswit) {
+        for (auto swit = stem_subwords.begin(); swit != stem_subwords.end(); ++swit) {
+            for (auto eswit = stem_subwords.begin(); eswit != stem_subwords.end(); ++eswit) {
                 vector<string> word_seg;
                 word_seg.push_back(*wssit);
                 word_seg.push_back(*swit);
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest1)
     lexname = "data/nowb_1.lex";
     read_fixtures(swg);
 
-    swg.create_graph(prefix_subwords, subwords);
+    swg.create_graph(prefix_subwords, stem_subwords);
 
     BOOST_CHECK( swg.assert_words(prefix_subwords) );
     BOOST_CHECK( swg.assert_only_words(prefix_subwords) );
@@ -84,13 +84,13 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest2)
     lexname = "data/nowb_1.lex";
     read_fixtures(swg);
 
-    swg.create_graph(prefix_subwords, subwords);
+    swg.create_graph(prefix_subwords, stem_subwords);
 
     BOOST_CHECK( swg.assert_words(prefix_subwords) );
     BOOST_CHECK( swg.assert_only_words(prefix_subwords) );
 
     map<string, vector<string> > word_segs;
-    construct_words(prefix_subwords, subwords, word_segs);
+    construct_words(prefix_subwords, stem_subwords, word_segs);
 
     BOOST_CHECK( swg.assert_words(word_segs) );
 }
@@ -102,13 +102,13 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest3)
     lexname = "data/nowb_1.lex";
     read_fixtures(swg);
 
-    swg.create_graph(prefix_subwords, subwords);
+    swg.create_graph(prefix_subwords, stem_subwords);
 
     BOOST_CHECK( swg.assert_words(prefix_subwords) );
     BOOST_CHECK( swg.assert_only_words(prefix_subwords) );
 
     map<string, vector<string> > word_segs;
-    construct_complex_words(prefix_subwords, subwords, word_segs);
+    construct_complex_words(prefix_subwords, stem_subwords, word_segs);
 
     BOOST_CHECK( swg.assert_words(word_segs) );
 }
@@ -120,13 +120,13 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest4)
     lexname = "data/nowb_1.lex";
     read_fixtures(swg);
 
-    swg.create_graph(prefix_subwords, subwords);
+    swg.create_graph(prefix_subwords, stem_subwords);
 
     BOOST_CHECK( swg.assert_words(prefix_subwords) );
     BOOST_CHECK( swg.assert_only_words(prefix_subwords) );
 
     map<string, vector<string> > word_segs;
-    construct_complex_words(prefix_subwords, subwords, word_segs);
+    construct_complex_words(prefix_subwords, stem_subwords, word_segs);
 
     BOOST_CHECK( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
 }
@@ -138,10 +138,10 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest5)
     lexname = "data/nowb_2.lex";
     read_fixtures(swg);
 
-    swg.create_graph(prefix_subwords, subwords);
+    swg.create_graph(prefix_subwords, stem_subwords);
 
     map<string, vector<string> > word_segs;
-    construct_words(prefix_subwords, subwords, word_segs);
+    construct_words(prefix_subwords, stem_subwords, word_segs);
 
     BOOST_CHECK( swg.assert_words(word_segs) );
 }
@@ -153,10 +153,10 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest6)
     lexname = "data/nowb_3.lex";
     read_fixtures(swg);
 
-    swg.create_graph(prefix_subwords, subwords);
+    swg.create_graph(prefix_subwords, stem_subwords);
 
     map<string, vector<string> > word_segs;
-    construct_words(prefix_subwords, subwords, word_segs);
+    construct_words(prefix_subwords, stem_subwords, word_segs);
 
     BOOST_CHECK( swg.assert_words(word_segs) );
 }
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest7)
     lexname = "data/nowb_4.lex";
     read_fixtures(swg);
 
-    swg.create_graph(prefix_subwords, subwords);
+    swg.create_graph(prefix_subwords, stem_subwords);
 
     map<string, vector<string> > word_segs;
     word_segs["_atooppinen"] = {"_a", "tooppinen"};
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest8)
     lexname = "data/nowb_4.lex";
     read_fixtures(swg);
 
-    swg.create_graph(prefix_subwords, subwords);
+    swg.create_graph(prefix_subwords, stem_subwords);
 
     map<string, vector<string> > word_segs;
     word_segs["_atooppinen"] = {"_a", "tooppinen"};
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest9)
     lexname = "data/nowb_5.lex";
     read_fixtures(swg);
 
-    swg.create_graph(prefix_subwords, subwords);
+    swg.create_graph(prefix_subwords, stem_subwords);
 
     map<string, vector<string> > word_segs;
     word_segs["_iho"] = {"_iho"};
@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest10)
     read_fixtures(swg);
 
     cerr << endl;
-    swg.create_graph(prefix_subwords, subwords, true);
+    swg.create_graph(prefix_subwords, stem_subwords, true);
     cerr << "number of arcs: " << DecoderGraph::num_arcs(swg.m_nodes) << endl;
 
     map<string, vector<string> > word_segs;

@@ -52,7 +52,7 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
         if (tlc(foit->first) == SIL_CTXT) continue;
         for (auto phit = all_phones.begin(); phit != all_phones.end(); ++phit) {
-            string fanoutt = DecoderGraph::construct_triphone(tphone(foit->first), *phit, SIL_CTXT);
+            string fanoutt = construct_triphone(tphone(foit->first), *phit, SIL_CTXT);
             fanout[fanoutt] = -1;
         }
     }
@@ -60,7 +60,7 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
     // All suffix one phone combinations to fanout
     for (auto fphit = suffix_phones.begin(); fphit != suffix_phones.end(); ++fphit)
         for (auto sphit = suffix_phones.begin(); sphit != suffix_phones.end(); ++sphit) {
-            string fanoutt = DecoderGraph::construct_triphone(*fphit, *sphit, SIL_CTXT);
+            string fanoutt = construct_triphone(*fphit, *sphit, SIL_CTXT);
             fanout[fanoutt] = -1;
         }
 
@@ -101,8 +101,8 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
         for (auto opswit = one_phone_suffix_subwords.begin(); opswit != one_phone_suffix_subwords.end(); ++opswit) {
 
             char single_phone = tphone(m_lexicon[*opswit][0]);
-            string triphone = DecoderGraph::construct_triphone(tlc(foit->first), tphone(foit->first), single_phone);
-            string fanout_loop_connector = DecoderGraph::construct_triphone(tphone(foit->first), single_phone, SIL_CTXT);
+            string triphone = construct_triphone(tlc(foit->first), tphone(foit->first), single_phone);
+            string fanout_loop_connector = construct_triphone(tphone(foit->first), single_phone, SIL_CTXT);
 
             if (fanout.find(fanout_loop_connector) == fanout.end()) {
                 cerr << "problem in connecting fanout loop for one phone subword: " << *opswit << endl;
@@ -119,13 +119,13 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
     // Add loops for one phone prefix subwords from fanout back to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
 
-        if ((foit->first)[0] == '_') continue;
+        if (tlc(foit->first) == SIL_CTXT) continue;
 
         for (auto opswit = one_phone_prefix_subwords.begin(); opswit != one_phone_prefix_subwords.end(); ++opswit) {
 
             char single_phone = tphone(m_lexicon[*opswit][0]);
-            string triphone = DecoderGraph::construct_triphone(tlc(foit->first), tphone(foit->first), single_phone);
-            string fanout_loop_connector = DecoderGraph::construct_triphone(tphone(foit->first), single_phone, SIL_CTXT);
+            string triphone = construct_triphone(tlc(foit->first), tphone(foit->first), single_phone);
+            string fanout_loop_connector = construct_triphone(tphone(foit->first), single_phone, SIL_CTXT);
 
             if (fanout.find(fanout_loop_connector) == fanout.end()) {
                 cerr << "problem in connecting fanout loop for one phone subword: " << *opswit << endl;
@@ -168,16 +168,15 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
 
     for (auto opswit = one_phone_suffix_subwords.begin(); opswit != one_phone_suffix_subwords.end(); ++opswit) {
         fanin[m_lexicon.at(*opswit)[0]] = -1;
-        phones.insert(m_lexicon.at(*opswit)[0][2]);
+        phones.insert(tphone(m_lexicon.at(*opswit)[0]));
     }
 
     // All phone-phone combinations from one phone subwords to fanout
-    for (auto fphit = phones.begin(); fphit != phones.end(); ++fphit) {
+    for (auto fphit = phones.begin(); fphit != phones.end(); ++fphit)
         for (auto sphit = phones.begin(); sphit != phones.end(); ++sphit) {
-            string fanoutt = DecoderGraph::construct_triphone(*fphit, *sphit, '_');
+            string fanoutt = DecoderGraph::construct_triphone(*fphit, *sphit, SIL_CTXT);
             fanout[fanoutt] = -1;
         }
-    }
 
     // Fanout last triphone + phone from one phone subwords, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
@@ -332,7 +331,7 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
         if (swit->find("<") != string::npos) continue;
         vector<TriphoneNode> subword_triphones;
         triphonize_subword(*swit, subword_triphones);
-        // One phone subwords not connected yet to the main tree
+        // One phone subwords not connected to the main tree
         if (num_triphones(subword_triphones) < 2) continue;
         vector<DecoderGraph::Node> subword_nodes;
         triphones_to_state_chain(subword_triphones, subword_nodes);
@@ -351,7 +350,7 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
         if (swit->find("<") != string::npos) continue;
         vector<TriphoneNode> subword_triphones;
         triphonize_subword(*swit, subword_triphones);
-        // One phone subwords not connected yet to the main tree
+        // One phone subwords not connected to the main tree
         if (num_triphones(subword_triphones) < 2) continue;
         vector<DecoderGraph::Node> subword_nodes;
         triphones_to_state_chain(subword_triphones, subword_nodes);
@@ -371,7 +370,6 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     offset(suffix_fanout_connectors, prefix_nodes.size());
     offset(suffix_fanin_connectors, prefix_nodes.size());
     prefix_nodes[END_NODE].arcs.insert(START_NODE);
-    suffix_nodes[END_NODE].arcs.insert(START_NODE);
     prefix_nodes.insert(prefix_nodes.end(), suffix_nodes.begin(), suffix_nodes.end());
     suffix_nodes.clear();
 
