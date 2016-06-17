@@ -11,12 +11,12 @@
 #include "DecoderGraph.hh"
 
 
-class NoWBSubwordGraph : public DecoderGraph {
+class LWBSubwordGraph : public DecoderGraph {
 
 public:
 
-    NoWBSubwordGraph();
-    NoWBSubwordGraph(const std::set<std::string> &word_start_subwords,
+    LWBSubwordGraph();
+    LWBSubwordGraph(const std::set<std::string> &word_start_subwords,
                      const std::set<std::string> &subwords,
                      bool verbose=false);
 

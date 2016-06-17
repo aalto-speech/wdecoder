@@ -1,6 +1,6 @@
 #include <boost/test/unit_test.hpp>
 
-#include "NoWBSubwordGraph.hh"
+#include "LWBSubwordGraph.hh"
 
 using namespace std;
 
@@ -10,7 +10,7 @@ string lexname = string("data/lex");
 set<string> prefix_subwords;
 set<string> stem_subwords;
 
-void read_fixtures(NoWBSubwordGraph &swg)
+void read_fixtures(LWBSubwordGraph &swg)
 {
     swg.read_phone_model(amname + ".ph");
     swg.read_noway_lexicon(lexname);
@@ -66,7 +66,7 @@ void construct_complex_words(const set<string> &prefix_subwords,
 
 BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest1)
 {
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
     lexname = "data/nowb_1.lex";
     read_fixtures(swg);
 
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest1)
 
 BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest2)
 {
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
     lexname = "data/nowb_1.lex";
     read_fixtures(swg);
 
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest2)
 
 BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest3)
 {
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
     lexname = "data/nowb_1.lex";
     read_fixtures(swg);
 
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest3)
 
 BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest4)
 {
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
     lexname = "data/nowb_1.lex";
     read_fixtures(swg);
 
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest4)
 
 BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest5)
 {
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
     lexname = "data/nowb_2.lex";
     read_fixtures(swg);
 
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest5)
 
 BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest6)
 {
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
     lexname = "data/nowb_3.lex";
     read_fixtures(swg);
 
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest6)
 
 BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest7)
 {
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
     lexname = "data/nowb_4.lex";
     read_fixtures(swg);
 
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest7)
 
 BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest8)
 {
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
     lexname = "data/nowb_4.lex";
     read_fixtures(swg);
 
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest8)
 
 BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest9)
 {
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
     lexname = "data/nowb_5.lex";
     read_fixtures(swg);
 
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest9)
 
 BOOST_AUTO_TEST_CASE(NoWBSubwordGraphTest10)
 {
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
     lexname = "data/nowb_20k.lex";
     read_fixtures(swg);
 

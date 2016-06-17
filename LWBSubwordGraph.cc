@@ -1,16 +1,16 @@
 #include <cassert>
 
-#include "NoWBSubwordGraph.hh"
+#include "LWBSubwordGraph.hh"
 
 using namespace std;
 
 
-NoWBSubwordGraph::NoWBSubwordGraph()
+LWBSubwordGraph::LWBSubwordGraph()
 {
 }
 
 
-NoWBSubwordGraph::NoWBSubwordGraph(const set<string> &prefix_subwords,
+LWBSubwordGraph::LWBSubwordGraph(const set<string> &prefix_subwords,
                                    const set<string> &subwords,
                                    bool verbose)
 {
@@ -19,7 +19,7 @@ NoWBSubwordGraph::NoWBSubwordGraph(const set<string> &prefix_subwords,
 
 
 void
-NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &fanout_triphones,
+LWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &fanout_triphones,
                                            vector<pair<unsigned int, string> > &fanin_triphones,
                                            set<string> &one_phone_prefix_subwords,
                                            set<string> &one_phone_suffix_subwords,
@@ -146,7 +146,7 @@ NoWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &
 
 
 void
-NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &fanout_triphones,
+LWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &fanout_triphones,
                                            vector<pair<unsigned int, string> > &fanin_triphones,
                                            set<string> &one_phone_prefix_subwords,
                                            set<string> &one_phone_suffix_subwords,
@@ -245,7 +245,7 @@ NoWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &
 
 
 void
-NoWBSubwordGraph::connect_crossword_network(vector<DecoderGraph::Node> &nodes,
+LWBSubwordGraph::connect_crossword_network(vector<DecoderGraph::Node> &nodes,
                                             vector<pair<unsigned int, string> > &fanout_connectors,
                                             vector<pair<unsigned int, string> > &fanin_connectors,
                                             vector<DecoderGraph::Node> &cw_nodes,
@@ -278,7 +278,7 @@ NoWBSubwordGraph::connect_crossword_network(vector<DecoderGraph::Node> &nodes,
 
 
 void
-NoWBSubwordGraph::connect_one_phone_subwords_from_start_to_cw(const set<string> &subwords,
+LWBSubwordGraph::connect_one_phone_subwords_from_start_to_cw(const set<string> &subwords,
                                                               vector<DecoderGraph::Node> &nodes,
                                                               map<string, int> &fanout)
 {
@@ -297,7 +297,7 @@ NoWBSubwordGraph::connect_one_phone_subwords_from_start_to_cw(const set<string> 
 
 
 void
-NoWBSubwordGraph::connect_one_phone_subwords_from_cw_to_end(const set<string> &subwords,
+LWBSubwordGraph::connect_one_phone_subwords_from_cw_to_end(const set<string> &subwords,
                                                             vector<DecoderGraph::Node> &nodes,
                                                             map<string, int> &fanin)
 {
@@ -316,7 +316,7 @@ NoWBSubwordGraph::connect_one_phone_subwords_from_cw_to_end(const set<string> &s
 
 
 void
-NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
+LWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
                                const set<string> &suffix_subwords,
                                bool verbose)
 {
@@ -447,7 +447,7 @@ NoWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
 
 
 void
-NoWBSubwordGraph::offset(vector<DecoderGraph::Node> &nodes,
+LWBSubwordGraph::offset(vector<DecoderGraph::Node> &nodes,
                          int offset)
 {
     for (auto nit = nodes.begin(); nit != nodes.end(); ++nit) {
@@ -465,7 +465,7 @@ NoWBSubwordGraph::offset(vector<DecoderGraph::Node> &nodes,
 
 
 void
-NoWBSubwordGraph::get_one_phone_subwords(const set<string> &subwords,
+LWBSubwordGraph::get_one_phone_subwords(const set<string> &subwords,
                                          set<string> &one_phone_subwords) const
 {
     for (auto swit = subwords.begin(); swit != subwords.end(); ++swit)
@@ -475,7 +475,7 @@ NoWBSubwordGraph::get_one_phone_subwords(const set<string> &subwords,
 
 
 void
-NoWBSubwordGraph::offset(vector<pair<unsigned int, string> > &connectors,
+LWBSubwordGraph::offset(vector<pair<unsigned int, string> > &connectors,
                          int offset)
 {
     for (auto cit = connectors.begin(); cit != connectors.end(); ++cit)
@@ -484,7 +484,7 @@ NoWBSubwordGraph::offset(vector<pair<unsigned int, string> > &connectors,
 
 
 void
-NoWBSubwordGraph::collect_crossword_connectors(vector<DecoderGraph::Node> &nodes,
+LWBSubwordGraph::collect_crossword_connectors(vector<DecoderGraph::Node> &nodes,
                                                vector<pair<unsigned int, string> > &fanout_connectors,
                                                vector<pair<unsigned int, string> > &fanin_connectors)
 {
@@ -501,7 +501,7 @@ NoWBSubwordGraph::collect_crossword_connectors(vector<DecoderGraph::Node> &nodes
 
 
 void
-NoWBSubwordGraph::create_forced_path(vector<DecoderGraph::Node> &nodes,
+LWBSubwordGraph::create_forced_path(vector<DecoderGraph::Node> &nodes,
                                      vector<string> &sentence,
                                      map<int, string> &node_labels)
 {

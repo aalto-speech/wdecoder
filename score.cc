@@ -1,7 +1,7 @@
 #include <sstream>
 
 #include "SubwordGraph.hh"
-#include "NoWBSubwordGraph.hh"
+#include "LWBSubwordGraph.hh"
 #include "Decoder.hh"
 #include "conf.hh"
 
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
         int file_count = 0;
 
         DecoderGraph *dg;
-        if (config["no-word-boundary"].specified) dg = new NoWBSubwordGraph();
+        if (config["no-word-boundary"].specified) dg = new LWBSubwordGraph();
         else dg = new SubwordGraph();
         dg->read_phone_model(phfname);
         dg->read_noway_lexicon(lexfname);

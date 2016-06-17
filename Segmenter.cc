@@ -162,7 +162,7 @@ Segmenter::propagate_tokens()
     vector<int> sorted_nodes;
     active_nodes_sorted_by_lp(sorted_nodes);
 
-    for (int i=0; i<m_token_limit && i<sorted_nodes.size(); i++) {
+    for (int i=0; i<m_token_limit && i<(int)sorted_nodes.size(); i++) {
         int node_idx = sorted_nodes[i];
         Node &node = m_nodes[node_idx];
         SToken &tok = m_recombined_tokens[node_idx];

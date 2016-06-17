@@ -1,5 +1,5 @@
 #include "conf.hh"
-#include "NoWBSubwordGraph.hh"
+#include "LWBSubwordGraph.hh"
 
 using namespace std;
 
@@ -7,12 +7,12 @@ using namespace std;
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: nowbswgraph [OPTION...] PH LEXICON GRAPH\n")
+    config("usage: lwbswgraph [OPTION...] PH LEXICON GRAPH\n")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 3) config.print_help(stderr, 1);
 
-    NoWBSubwordGraph swg;
+    LWBSubwordGraph swg;
 
     try {
         string phfname = config.arguments[0];
