@@ -1,5 +1,5 @@
-#ifndef LWB_SUBWORD_GRAPH_HH
-#define LWB_SUBWORD_GRAPH_HH
+#ifndef RWB_SUBWORD_GRAPH_HH
+#define RWB_SUBWORD_GRAPH_HH
 
 #include <map>
 #include <fstream>
@@ -11,12 +11,12 @@
 #include "DecoderGraph.hh"
 
 
-class LWBSubwordGraph : public DecoderGraph {
+class RWBSubwordGraph : public DecoderGraph {
 
 public:
 
-    LWBSubwordGraph();
-    LWBSubwordGraph(const std::set<std::string> &word_start_subwords,
+    RWBSubwordGraph();
+    RWBSubwordGraph(const std::set<std::string> &word_start_subwords,
                      const std::set<std::string> &subwords,
                      bool verbose=false);
 

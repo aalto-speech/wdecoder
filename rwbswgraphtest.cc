@@ -1,16 +1,16 @@
 #include <boost/test/unit_test.hpp>
 
-#include "LWBSubwordGraph.hh"
+#include "RWBSubwordGraph.hh"
 
 using namespace std;
 
 
 string amname = string("data/speecon_ml_gain3500_occ300_21.7.2011_22");
 string lexname = string("data/lex");
-set<string> suffix_subwords;
 set<string> stem_subwords;
+set<string> suffix_subwords;
 
-void read_fixtures(LWBSubwordGraph &swg)
+void read_fixtures(RWBSubwordGraph &swg)
 {
     swg.read_phone_model(amname + ".ph");
     swg.read_noway_lexicon(lexname);
@@ -20,7 +20,7 @@ void read_fixtures(LWBSubwordGraph &swg)
     for (auto swit = swg.m_lexicon.begin(); swit != swg.m_lexicon.end(); ++swit) {
         if (swit->first.find("<") != string::npos) continue;
         if (swit->first.length() == 0) continue;
-        if ((swit->first)[0] == '_')
+        if (swit->first.back() == '_')
             suffix_subwords.insert(swit->first);
         else stem_subwords.insert(swit->first);
     }
@@ -32,12 +32,12 @@ void construct_words(const set<string> &prefix_subwords,
                      map<string, vector<string> > &word_segs)
 {
     word_segs.clear();
-    for (auto wssit = prefix_subwords.begin(); wssit != prefix_subwords.end(); ++wssit) {
-        for (auto swit = stem_subwords.begin(); swit != stem_subwords.end(); ++swit) {
+    for (auto stemit = stem_subwords.begin(); stemit != stem_subwords.end(); ++stemit) {
+        for (auto suffit = suffix_subwords.begin(); suffit != suffix_subwords.end(); ++suffit) {
             vector<string> word_seg;
-            word_seg.push_back(*wssit);
-            word_seg.push_back(*swit);
-            string wrd = *wssit + *swit;
+            word_seg.push_back(*stemit);
+            word_seg.push_back(*suffit);
+            string wrd = *stemit + *suffit;
             word_segs[wrd] = word_seg;
         }
     }
@@ -49,14 +49,14 @@ void construct_complex_words(const set<string> &prefix_subwords,
                              map<string, vector<string> > &word_segs)
 {
     word_segs.clear();
-    for (auto wssit = prefix_subwords.begin(); wssit != prefix_subwords.end(); ++wssit) {
-        for (auto swit = stem_subwords.begin(); swit != stem_subwords.end(); ++swit) {
-            for (auto eswit = stem_subwords.begin(); eswit != stem_subwords.end(); ++eswit) {
+    for (auto stemit = stem_subwords.begin(); stemit != stem_subwords.end(); ++stemit) {
+        for (auto stemit2 = stem_subwords.begin(); stemit2 != stem_subwords.end(); ++stemit2) {
+            for (auto suffit = suffix_subwords.begin(); suffit != suffix_subwords.end(); ++suffit) {
                 vector<string> word_seg;
-                word_seg.push_back(*wssit);
-                word_seg.push_back(*swit);
-                word_seg.push_back(*eswit);
-                string wrd = *wssit + *swit + *eswit;
+                word_seg.push_back(*stemit);
+                word_seg.push_back(*stemit2);
+                word_seg.push_back(*suffit);
+                string wrd = *stemit + *stemit2 + *suffit;
                 word_segs[wrd] = word_seg;
             }
         }
@@ -64,9 +64,9 @@ void construct_complex_words(const set<string> &prefix_subwords,
 }
 
 
-BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest1)
+BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest1)
 {
-    LWBSubwordGraph swg;
+    RWBSubwordGraph swg;
     lexname = "data/lwb_1.lex";
     read_fixtures(swg);
 
@@ -78,9 +78,9 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest1)
 }
 
 
-BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest2)
+BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest2)
 {
-    LWBSubwordGraph swg;
+    RWBSubwordGraph swg;
     lexname = "data/lwb_1.lex";
     read_fixtures(swg);
 
@@ -96,9 +96,9 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest2)
 }
 
 
-BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest3)
+BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest3)
 {
-    LWBSubwordGraph swg;
+    RWBSubwordGraph swg;
     lexname = "data/lwb_1.lex";
     read_fixtures(swg);
 
@@ -114,9 +114,9 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest3)
 }
 
 
-BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest4)
+BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest4)
 {
-    LWBSubwordGraph swg;
+    RWBSubwordGraph swg;
     lexname = "data/lwb_1.lex";
     read_fixtures(swg);
 
@@ -132,9 +132,9 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest4)
 }
 
 
-BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest5)
+BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest5)
 {
-    LWBSubwordGraph swg;
+    RWBSubwordGraph swg;
     lexname = "data/lwb_2.lex";
     read_fixtures(swg);
 
@@ -147,9 +147,9 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest5)
 }
 
 
-BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest6)
+BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest6)
 {
-    LWBSubwordGraph swg;
+    RWBSubwordGraph swg;
     lexname = "data/lwb_3.lex";
     read_fixtures(swg);
 
@@ -162,9 +162,9 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest6)
 }
 
 
-BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest7)
+BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest7)
 {
-    LWBSubwordGraph swg;
+    RWBSubwordGraph swg;
     lexname = "data/lwb_4.lex";
     read_fixtures(swg);
 
@@ -182,9 +182,9 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest7)
 }
 
 
-BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest8)
+BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest8)
 {
-    LWBSubwordGraph swg;
+    RWBSubwordGraph swg;
     lexname = "data/lwb_4.lex";
     read_fixtures(swg);
 
@@ -202,9 +202,9 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest8)
 }
 
 
-BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest9)
+BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest9)
 {
-    LWBSubwordGraph swg;
+    RWBSubwordGraph swg;
     lexname = "data/lwb_5.lex";
     read_fixtures(swg);
 
@@ -224,9 +224,9 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest9)
 }
 
 
-BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest10)
+BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest10)
 {
-    LWBSubwordGraph swg;
+    RWBSubwordGraph swg;
     lexname = "data/lwb_20k.lex";
     read_fixtures(swg);
 

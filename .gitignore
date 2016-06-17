@@ -4,6 +4,7 @@ decode
 wgraph
 swgraph
 lwbswgraph
+rwbswgraph
 swwgraph
 lastates
 runtests

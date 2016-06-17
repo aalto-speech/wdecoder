@@ -3,17 +3,18 @@ cxxflags = -O3 -DNDEBUG -std=gnu++0x -Wall -Wno-unused-function
 
 ##################################################
 
-progs = wgraph swwgraph swgraph lwbswgraph decode score segment lastates cleanlex lasc
+progs = wgraph swwgraph swgraph lwbswgraph rwbswgraph decode score segment lastates cleanlex lasc
 progs_srcs = $(progs:=.cc)
 progs_objs = $(progs:=.o)
 srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc ConstrainedSWGraph.cc WordGraph.cc\
-	SubwordGraph.cc LWBSubwordGraph.cc LnaReaderCircular.cc Decoder.cc Segmenter.cc Lookahead.cc
+	SubwordGraph.cc LWBSubwordGraph.cc RWBSubwordGraph.cc LnaReaderCircular.cc Decoder.cc Segmenter.cc Lookahead.cc
 objs = $(srcs:.cc=.o)
 
 test_progs = runtests
 test_progs_srcs = $(test_progs:=.cc)
 test_progs_objs = $(test_progs:=.o)
-test_srcs = swwgraphtest.cc swgraphtest.cc lwbswgraphtest.cc wgraphtest.cc decodertest.cc
+#test_srcs = swwgraphtest.cc swgraphtest.cc lwbswgraphtest.cc rwbswgraphtest.cc wgraphtest.cc decodertest.cc
+test_srcs = rwbswgraphtest.cc
 test_objs = $(test_srcs:.cc=.o)
 
 ##################################################
