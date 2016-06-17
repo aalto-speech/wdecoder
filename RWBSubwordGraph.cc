@@ -325,7 +325,7 @@ RWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     set<string> one_phone_suffix_subwords;
     get_one_phone_subwords(suffix_subwords, one_phone_suffix_subwords);
 
-    // Construct prefix tree
+    // Construct prefix/stem tree
     vector<DecoderGraph::Node> prefix_nodes(2);
     for (auto swit = prefix_subwords.begin(); swit != prefix_subwords.end(); ++swit) {
         if (swit->find("<") != string::npos) continue;
@@ -344,7 +344,7 @@ RWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     collect_crossword_connectors(prefix_nodes, prefix_fanout_connectors, prefix_fanin_connectors);
     if (verbose) cerr << "prefix tree size: " << reachable_graph_nodes(prefix_nodes) << endl;
 
-    // Construct suffix/stem tree
+    // Construct suffix tree
     std::vector<DecoderGraph::Node> suffix_nodes(2);
     for (auto swit = suffix_subwords.begin(); swit != suffix_subwords.end(); ++swit) {
         if (swit->find("<") != string::npos) continue;
@@ -366,20 +366,21 @@ RWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     // Combine prefix and suffix/stem trees
     if (verbose) cerr << "combining trees" << endl;
     int prefix_size = prefix_nodes.size();
-    offset(suffix_nodes, prefix_nodes.size());
-    offset(suffix_fanout_connectors, prefix_nodes.size());
-    offset(suffix_fanin_connectors, prefix_nodes.size());
-    prefix_nodes[END_NODE].arcs.insert(START_NODE);
-    prefix_nodes.insert(prefix_nodes.end(), suffix_nodes.begin(), suffix_nodes.end());
-    suffix_nodes.clear();
+    offset(prefix_nodes, suffix_nodes.size());
+    offset(prefix_fanout_connectors, suffix_nodes.size());
+    offset(prefix_fanin_connectors, suffix_nodes.size());
+    suffix_nodes[END_NODE].arcs.insert(START_NODE);
+    suffix_nodes.insert(suffix_nodes.end(), prefix_nodes.begin(), prefix_nodes.end());
+    prefix_nodes.clear();
 
     vector<DecoderGraph::Node> nodes;
-    nodes.swap(prefix_nodes); prefix_nodes.clear();
+    nodes.swap(suffix_nodes); suffix_nodes.clear();
     set_reverse_arcs_also_from_unreachable(nodes);
-    merge_nodes(nodes, END_NODE, prefix_size+END_NODE);
+    merge_nodes(nodes, START_NODE, prefix_size+START_NODE);
     clear_reverse_arcs(nodes);
 
     // Cross-unit network (prefix-suffix, suffix-suffix)
+    /*
     if (verbose) cerr << "creating cross-unit network" << endl;
     map<string, int> cu_fanout;
     map<string, int> cu_fanin;
@@ -399,8 +400,10 @@ RWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
 
     connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, nodes, cu_fanout);
     connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, nodes, cu_fanin);
+    */
 
     // Cross-word network
+    /*
     if (verbose) cerr << "creating cross-word network" << endl;
     map<string, int> cw_fanout;
     map<string, int> cw_fanin;
@@ -416,6 +419,7 @@ RWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
 
     connect_one_phone_subwords_from_start_to_cw(one_phone_prefix_subwords, nodes, cw_fanout);
     connect_one_phone_subwords_from_cw_to_end(one_phone_suffix_subwords, nodes, cw_fanin);
+    */
 
     m_nodes.swap(nodes);
 
