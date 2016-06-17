@@ -67,10 +67,10 @@ void construct_complex_words(const set<string> &prefix_subwords,
 BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest1)
 {
     RWBSubwordGraph swg;
-    lexname = "data/lwb_1.lex";
+    lexname = "data/rwb_1.lex";
     read_fixtures(swg);
 
-    swg.create_graph(suffix_subwords, stem_subwords);
+    swg.create_graph(stem_subwords, suffix_subwords);
 
     BOOST_CHECK( swg.assert_words(suffix_subwords) );
     BOOST_CHECK( swg.assert_only_words(suffix_subwords) );
@@ -81,16 +81,16 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest1)
 BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest2)
 {
     RWBSubwordGraph swg;
-    lexname = "data/lwb_1.lex";
+    lexname = "data/rwb_1.lex";
     read_fixtures(swg);
 
-    swg.create_graph(suffix_subwords, stem_subwords);
+    swg.create_graph(stem_subwords, suffix_subwords);
 
     BOOST_CHECK( swg.assert_words(suffix_subwords) );
     BOOST_CHECK( swg.assert_only_words(suffix_subwords) );
 
     map<string, vector<string> > word_segs;
-    construct_words(suffix_subwords, stem_subwords, word_segs);
+    construct_words(stem_subwords, suffix_subwords, word_segs);
 
     BOOST_CHECK( swg.assert_words(word_segs) );
 }
@@ -99,16 +99,16 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest2)
 BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest3)
 {
     RWBSubwordGraph swg;
-    lexname = "data/lwb_1.lex";
+    lexname = "data/rwb_1.lex";
     read_fixtures(swg);
 
-    swg.create_graph(suffix_subwords, stem_subwords);
+    swg.create_graph(stem_subwords, suffix_subwords);
 
     BOOST_CHECK( swg.assert_words(suffix_subwords) );
     BOOST_CHECK( swg.assert_only_words(suffix_subwords) );
 
     map<string, vector<string> > word_segs;
-    construct_complex_words(suffix_subwords, stem_subwords, word_segs);
+    construct_complex_words(stem_subwords, suffix_subwords, word_segs);
 
     BOOST_CHECK( swg.assert_words(word_segs) );
 }
@@ -117,16 +117,16 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest3)
 BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest4)
 {
     RWBSubwordGraph swg;
-    lexname = "data/lwb_1.lex";
+    lexname = "data/rwb_1.lex";
     read_fixtures(swg);
 
-    swg.create_graph(suffix_subwords, stem_subwords);
+    swg.create_graph(stem_subwords, suffix_subwords);
 
     BOOST_CHECK( swg.assert_words(suffix_subwords) );
     BOOST_CHECK( swg.assert_only_words(suffix_subwords) );
 
     map<string, vector<string> > word_segs;
-    construct_complex_words(suffix_subwords, stem_subwords, word_segs);
+    construct_complex_words(stem_subwords, suffix_subwords, word_segs);
 
     BOOST_CHECK( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
 }
@@ -135,13 +135,13 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest4)
 BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest5)
 {
     RWBSubwordGraph swg;
-    lexname = "data/lwb_2.lex";
+    lexname = "data/rwb_2.lex";
     read_fixtures(swg);
 
-    swg.create_graph(suffix_subwords, stem_subwords);
+    swg.create_graph(stem_subwords, suffix_subwords);
 
     map<string, vector<string> > word_segs;
-    construct_words(suffix_subwords, stem_subwords, word_segs);
+    construct_words(stem_subwords, suffix_subwords, word_segs);
 
     BOOST_CHECK( swg.assert_words(word_segs) );
 }
@@ -150,13 +150,13 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest5)
 BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest6)
 {
     RWBSubwordGraph swg;
-    lexname = "data/lwb_3.lex";
+    lexname = "data/rwb_3.lex";
     read_fixtures(swg);
 
-    swg.create_graph(suffix_subwords, stem_subwords);
+    swg.create_graph(stem_subwords, suffix_subwords);
 
     map<string, vector<string> > word_segs;
-    construct_words(suffix_subwords, stem_subwords, word_segs);
+    construct_words(stem_subwords, suffix_subwords, word_segs);
 
     BOOST_CHECK( swg.assert_words(word_segs) );
 }
@@ -165,18 +165,18 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest6)
 BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest7)
 {
     RWBSubwordGraph swg;
-    lexname = "data/lwb_4.lex";
+    lexname = "data/rwb_4.lex";
     read_fixtures(swg);
 
-    swg.create_graph(suffix_subwords, stem_subwords);
+    swg.create_graph(stem_subwords, suffix_subwords);
 
     map<string, vector<string> > word_segs;
-    word_segs["_atooppinen"] = {"_a", "tooppinen"};
-    word_segs["_atopia"] = {"_a", "topi", "a"};
-    word_segs["_aie"] = {"_a", "i", "e"};
-    word_segs["_aito"] = {"_a", "i", "to"};
-    word_segs["_ai"] = {"_a", "i"};
-    word_segs["_atopiaa"] = {"_a", "topi", "a", "a"};
+    word_segs["atooppinen_"] = {"a", "tooppinen_"};
+    word_segs["atopia_"] = {"a", "topi", "a_"};
+    word_segs["aie_"] = {"a", "i", "e_"};
+    word_segs["aito_"] = {"a", "i", "to_"};
+    word_segs["ai_"] = {"a", "i_"};
+    word_segs["atopiaa_"] = {"a", "topi", "a", "a_"};
 
     BOOST_CHECK( swg.assert_words(word_segs) );
 }
@@ -185,18 +185,18 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest7)
 BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest8)
 {
     RWBSubwordGraph swg;
-    lexname = "data/lwb_4.lex";
+    lexname = "data/rwb_4.lex";
     read_fixtures(swg);
 
-    swg.create_graph(suffix_subwords, stem_subwords);
+    swg.create_graph(stem_subwords, suffix_subwords);
 
     map<string, vector<string> > word_segs;
-    word_segs["_atooppinen"] = {"_a", "tooppinen"};
-    word_segs["_atopia"] = {"_a", "topi", "a"};
-    word_segs["_aie"] = {"_a", "i", "e"};
-    word_segs["_aito"] = {"_a", "i", "to"};
-    word_segs["_ai"] = {"_a", "i"};
-    word_segs["_atopiaa"] = {"_a", "topi", "a", "a"};
+    word_segs["atooppinen_"] = {"a", "tooppinen_"};
+    word_segs["atopia_"] = {"a", "topi", "a_"};
+    word_segs["aie_"] = {"a", "i", "e_"};
+    word_segs["aito_"] = {"a", "i", "to_"};
+    word_segs["ai_"] = {"a", "i_"};
+    word_segs["atopiaa_"] = {"a", "topi", "a", "a_"};
 
     BOOST_CHECK( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
 }
@@ -205,19 +205,19 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest8)
 BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest9)
 {
     RWBSubwordGraph swg;
-    lexname = "data/lwb_5.lex";
+    lexname = "data/rwb_5.lex";
     read_fixtures(swg);
 
-    swg.create_graph(suffix_subwords, stem_subwords);
+    swg.create_graph(stem_subwords, suffix_subwords);
 
     map<string, vector<string> > word_segs;
-    word_segs["_iho"] = {"_iho"};
-    word_segs["_atooppinen"] = {"_a", "tooppinen"};
-    word_segs["_atopia"] = {"_a", "topi", "a"};
-    word_segs["_aie"] = {"_a", "i", "e"};
-    word_segs["_aito"] = {"_a", "i", "to"};
-    word_segs["_ai"] = {"_a", "i"};
-    word_segs["_atopiaa"] = {"_a", "topi", "a", "a"};
+    word_segs["iho_"] = {"iho_"};
+    word_segs["atooppinen_"] = {"a", "tooppinen_"};
+    word_segs["atopia_"] = {"a", "topi", "a_"};
+    word_segs["aie_"] = {"a", "i", "e_"};
+    word_segs["aito_"] = {"a", "i", "to_"};
+    word_segs["ai_"] = {"a", "i_"};
+    word_segs["atopiaa_"] = {"a", "topi", "a", "a_"};
 
     BOOST_CHECK( swg.assert_words(word_segs) );
     BOOST_CHECK( swg.assert_word_pairs(word_segs, true, false) ); //short sil, wb symbol
@@ -227,15 +227,15 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest9)
 BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest10)
 {
     RWBSubwordGraph swg;
-    lexname = "data/lwb_20k.lex";
+    lexname = "data/rwb_20k.lex";
     read_fixtures(swg);
 
     cerr << endl;
-    swg.create_graph(suffix_subwords, stem_subwords, true);
+    swg.create_graph(stem_subwords, suffix_subwords, true);
     cerr << "number of arcs: " << DecoderGraph::num_arcs(swg.m_nodes) << endl;
 
     map<string, vector<string> > word_segs;
-    swg.read_word_segmentations("data/lwb_20k.wsegs", word_segs);
+    swg.read_word_segmentations("data/rwb_20k.wsegs", word_segs);
 
     cerr << "Asserting words.." << endl;
     BOOST_CHECK( swg.assert_words(word_segs) );
