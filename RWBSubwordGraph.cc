@@ -58,8 +58,8 @@ RWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &f
     }
 
     // All suffix one phone combinations to fanout
-    for (auto fphit = suffix_phones.begin(); fphit != suffix_phones.end(); ++fphit)
-        for (auto sphit = suffix_phones.begin(); sphit != suffix_phones.end(); ++sphit) {
+    for (auto fphit = all_phones.begin(); fphit != all_phones.end(); ++fphit)
+        for (auto sphit = all_phones.begin(); sphit != all_phones.end(); ++sphit) {
             string fanoutt = construct_triphone(*fphit, *sphit, SIL_CTXT);
             fanout[fanoutt] = -1;
         }
@@ -96,6 +96,7 @@ RWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &f
 
 
     // Add loops for one phone suffix subwords from fanout back to fanout
+    /*
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
 
         for (auto opswit = one_phone_suffix_subwords.begin(); opswit != one_phone_suffix_subwords.end(); ++opswit) {
@@ -115,11 +116,10 @@ RWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &f
             nodes[idx].arcs.insert(fanout[fanout_loop_connector]);
         }
     }
+    */
 
     // Add loops for one phone prefix subwords from fanout back to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
-
-        if (tlc(foit->first) == SIL_CTXT) continue;
 
         for (auto opswit = one_phone_prefix_subwords.begin(); opswit != one_phone_prefix_subwords.end(); ++opswit) {
 
@@ -134,7 +134,6 @@ RWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &f
             }
 
             int idx = connect_triphone(nodes, triphone, foit->second);
-            idx = connect_triphone(nodes, SHORT_SIL, idx);
             idx = connect_word(nodes, *opswit, idx);
             nodes[idx].arcs.insert(fanout[fanout_loop_connector]);
         }
