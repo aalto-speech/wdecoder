@@ -4,4 +4,4 @@ _talo(1.0) _-t+a t-a+l a-l+o l-o+_
 _auto(1.0) _-a+u a-u+t u-t+o t-o+_
 a(1.0) _-a+_
 n(1.0) _-n+_
-
+ssa(1.0) _-s+s s-s+a s-a+_
