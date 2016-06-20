@@ -101,7 +101,7 @@ RWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &f
             string fanout_loop_connector = construct_triphone(tphone(foit->first), single_phone, SIL_CTXT);
 
             if (fanout.find(fanout_loop_connector) == fanout.end()) {
-                cerr << "problem in connecting fanout loop for one phone subword: " << *opswit << endl;
+                cerr << "problem in connecting cross-unit fanout loop for one phone subword: " << *opswit << endl;
                 cerr << fanout_loop_connector << endl;
                 assert(false);
             }
@@ -152,7 +152,7 @@ RWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &f
 
     // Fanout last triphone + phone from one phone subwords, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
-        if (tlc(foit->first) == SIL_CTXT) continue;
+        //if (tlc(foit->first) == SIL_CTXT) continue;
         for (auto phit = phones.begin(); phit != phones.end(); ++phit) {
             string fanoutt = DecoderGraph::construct_triphone(tphone(foit->first), *phit, SIL_CTXT);
             fanout[fanoutt] = -1;
@@ -200,7 +200,7 @@ RWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &f
             string fanout_loop_connector = construct_triphone(tphone(foit->first), single_phone, SIL_CTXT);
 
             if (fanout.find(fanout_loop_connector) == fanout.end()) {
-                cerr << "problem in connecting fanout loop for one phone subword: " << *opswit << endl;
+                cerr << "problem in connecting cross-word fanout loop for one phone subword: " << *opswit << endl;
                 cerr << fanout_loop_connector << endl;
                 assert(false);
             }
