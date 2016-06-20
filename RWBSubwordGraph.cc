@@ -339,6 +339,11 @@ RWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
         subword_nodes[subword_nodes.size()-4].to_fanout.insert(m_lexicon[*swit].back());
         add_nodes_to_tree(prefix_nodes, subword_nodes);
     }
+    if (prefix_nodes.size() == 2) {
+        cerr << "Warning, no subwords in the prefix/stem tree" << endl;
+        exit(1);
+    }
+
     lookahead_to_arcs(prefix_nodes);
     vector<pair<unsigned int, string> > prefix_fanout_connectors, prefix_fanin_connectors;
     collect_crossword_connectors(prefix_nodes, prefix_fanout_connectors, prefix_fanin_connectors);
@@ -358,6 +363,11 @@ RWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
         subword_nodes[subword_nodes.size()-4].to_fanout.insert(m_lexicon[*swit].back());
         add_nodes_to_tree(suffix_nodes, subword_nodes);
     }
+    if (suffix_nodes.size() == 2) {
+        cerr << "Warning, no subwords in the suffix tree" << endl;
+        exit(1);
+    }
+
     lookahead_to_arcs(suffix_nodes);
     vector<pair<unsigned int, string> > suffix_fanout_connectors, suffix_fanin_connectors;
     collect_crossword_connectors(suffix_nodes, suffix_fanout_connectors, suffix_fanin_connectors);
