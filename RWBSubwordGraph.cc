@@ -240,34 +240,7 @@ RWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &f
         }
     }
 
-    // Add loops for one phone suffix subwords from fanin to fanout
-    for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
-
-        char firc = trc(fiit->first);
-        if (firc == SIL_CTXT) continue;
-
-        cerr << endl;
-        cerr << fiit->first << " " << fiit->second << endl;
-        for (auto opswit = one_phone_suffix_subwords.begin(); opswit != one_phone_suffix_subwords.end(); ++opswit) {
-            char single_phone = tphone(m_lexicon[*opswit][0]);
-            if (single_phone != firc) continue;
-
-            cerr << *opswit << endl;
-            string fanout_connector = construct_triphone(tphone(fiit->first), single_phone, SIL_CTXT);
-            if (fanout.find(fanout_connector) == fanout.end()) {
-                cerr << "problem in connecting suffixes from fanin to fanout for one phone subword: " << *opswit << endl;
-                cerr << fanout_connector << endl;
-                assert(false);
-            }
-            cerr << fanout_connector << endl;
-
-            int idx = connect_word(nodes, *opswit, fiit->second);
-            idx = connect_triphone(nodes, SHORT_SIL, idx);
-            nodes[idx].arcs.insert(fanout[fanout_connector]);
-        }
-    }
-
-    // Add loops for one phone suffi+prefix subwords from fanin to fanout
+    // Add loops for one phone suffix+prefix subwords from fanin to fanout
     for (auto sswit = one_phone_suffix_subwords.begin(); sswit != one_phone_suffix_subwords.end(); ++sswit) {
         for (auto pswit = one_phone_prefix_subwords.begin(); pswit != one_phone_prefix_subwords.end(); ++pswit) {
             char suffix_phone = tphone(m_lexicon[*sswit][0]);
