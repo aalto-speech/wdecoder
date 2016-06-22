@@ -209,6 +209,7 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest9)
     read_fixtures(swg);
 
     swg.create_graph(stem_subwords, suffix_subwords);
+    BOOST_CHECK_EQUAL( 0, DecoderGraph::num_nodes_with_no_arcs(swg.m_nodes) );
 
     map<string, vector<string> > word_segs;
     word_segs["iho_"] = {"iho_"};
@@ -233,6 +234,7 @@ BOOST_AUTO_TEST_CASE(RWBSubwordGraphTest10)
     cerr << endl;
     swg.create_graph(stem_subwords, suffix_subwords, true);
     cerr << "number of arcs: " << DecoderGraph::num_arcs(swg.m_nodes) << endl;
+    BOOST_CHECK_EQUAL( 0, DecoderGraph::num_nodes_with_no_arcs(swg.m_nodes) );
 
     map<string, vector<string> > word_segs;
     swg.read_word_segmentations("data/rwb_20k.wsegs", word_segs);

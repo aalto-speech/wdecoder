@@ -209,6 +209,7 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest9)
     read_fixtures(swg);
 
     swg.create_graph(prefix_subwords, stem_subwords);
+    BOOST_CHECK_EQUAL( 0, DecoderGraph::num_nodes_with_no_arcs(swg.m_nodes) );
 
     map<string, vector<string> > word_segs;
     word_segs["_iho"] = {"_iho"};
@@ -233,6 +234,7 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest10)
     cerr << endl;
     swg.create_graph(prefix_subwords, stem_subwords, true);
     cerr << "number of arcs: " << DecoderGraph::num_arcs(swg.m_nodes) << endl;
+    BOOST_CHECK_EQUAL( 0, DecoderGraph::num_nodes_with_no_arcs(swg.m_nodes) );
 
     map<string, vector<string> > word_segs;
     swg.read_word_segmentations("data/lwb_20k.wsegs", word_segs);
