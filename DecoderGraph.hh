@@ -316,6 +316,7 @@ public:
     static int num_hmm_states(std::vector<DecoderGraph::Node> &nodes);
     static int num_subword_states(std::vector<DecoderGraph::Node> &nodes);
     static int num_arcs(std::vector<DecoderGraph::Node> &nodes);
+    static int num_nodes_with_no_arcs(std::vector<DecoderGraph::Node> &nodes);
     static int num_triphones(std::vector<TriphoneNode> &nodes);
 
     void add_hmm_self_transitions();

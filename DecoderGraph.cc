@@ -1821,6 +1821,15 @@ DecoderGraph::num_arcs(vector<DecoderGraph::Node> &nodes)
 }
 
 int
+DecoderGraph::num_nodes_with_no_arcs(vector<DecoderGraph::Node> &nodes)
+{
+    int num_nodes = 0;
+    for (int i=0; i<(int)nodes.size(); i++)
+        if (nodes[i].arcs.size() == 0) num_nodes++;
+    return num_nodes;
+}
+
+int
 DecoderGraph::num_triphones(vector<TriphoneNode> &nodes)
 {
     int hmm_state_count = 0;
