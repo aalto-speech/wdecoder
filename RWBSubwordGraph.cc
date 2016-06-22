@@ -202,22 +202,6 @@ RWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &f
         suffix_phones.insert(tphone(m_lexicon.at(*opswit)[0]));
     }
 
-    // All phone-phone combinations from one phone suffix subwords to fanout
-    for (auto fphit = suffix_phones.begin(); fphit != suffix_phones.end(); ++fphit)
-        for (auto sphit = suffix_phones.begin(); sphit != suffix_phones.end(); ++sphit) {
-            string fanoutt = DecoderGraph::construct_triphone(*fphit, *sphit, SIL_CTXT);
-            fanout[fanoutt] = -1;
-        }
-
-    // Fanout last triphone + phone from one phone subwords, all combinations to fanout
-    for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
-        //if (tlc(foit->first) == SIL_CTXT) continue;
-        for (auto phit = suffix_phones.begin(); phit != suffix_phones.end(); ++phit) {
-            string fanoutt = DecoderGraph::construct_triphone(tphone(foit->first), *phit, SIL_CTXT);
-            fanout[fanoutt] = -1;
-        }
-    }
-
     for (auto fphit = suffix_phones.begin(); fphit != suffix_phones.end(); ++fphit) {
         for (auto sphit = prefix_phones.begin(); sphit != prefix_phones.end(); ++sphit) {
             string fanint = construct_triphone(SIL_CTXT, *fphit, *sphit);
