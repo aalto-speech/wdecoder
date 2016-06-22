@@ -572,6 +572,21 @@ DecoderGraph::assert_words(map<string, vector<string> > &word_segs)
 }
 
 bool
+DecoderGraph::assert_words_not_in_graph(map<string, vector<string> > &word_segs)
+{
+    for (auto sit = word_segs.begin(); sit != word_segs.end(); ++sit) {
+        vector<string> triphones;
+        triphonize(word_segs, sit->first, triphones);
+        bool result = assert_path(m_nodes, triphones, sit->second);
+        if (result) {
+            cerr << "error, word: " << sit->first << " was in the graph" << endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+bool
 DecoderGraph::assert_words(set<string> &words)
 {
     for (auto sit = words.begin(); sit != words.end(); ++sit) {

@@ -146,6 +146,7 @@ public:
                      std::vector<std::string> &subwords);
     bool assert_transitions(std::vector<DecoderGraph::Node> &nodes);
     bool assert_words(std::map<std::string, std::vector<std::string> > &word_segs);
+    bool assert_words_not_in_graph(std::map<std::string, std::vector<std::string> > &word_segs);
     bool assert_words(std::set<std::string> &words);
     bool assert_word_pair_crossword(std::vector<DecoderGraph::Node> &nodes,
                                     std::map<std::string, std::vector<std::string> > &word_segs,
