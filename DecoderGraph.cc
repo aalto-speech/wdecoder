@@ -1882,3 +1882,26 @@ DecoderGraph::remove_cw_dummies(vector<DecoderGraph::Node> &nodes)
     prune_unreachable_nodes(nodes);
 }
 
+
+void
+DecoderGraph::remove_nodes_with_no_arcs(vector<DecoderGraph::Node> &nodes)
+{
+    set_reverse_arcs_also_from_unreachable(nodes);
+
+    set<int> cleared_nodes;
+    unsigned int prev_sz = 1;
+    while (prev_sz != cleared_nodes.size()) {
+        prev_sz = cleared_nodes.size();
+        for (int i=0; i<(int)nodes.size(); i++) {
+            if (nodes[i].arcs.size() > 0) continue;
+            for (auto rait=nodes[i].reverse_arcs.begin(); rait != nodes[i].reverse_arcs.end(); ++rait)
+                nodes[*rait].arcs.erase(i);
+            nodes[i].reverse_arcs.clear();
+            cleared_nodes.insert(i);
+        }
+    }
+
+    clear_reverse_arcs(nodes);
+
+    prune_unreachable_nodes(nodes);
+}

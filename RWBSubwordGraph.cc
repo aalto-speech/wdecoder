@@ -492,6 +492,8 @@ RWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
 
     if (verbose) cerr << "Removing cw dummies.." << endl;
     remove_cw_dummies(m_nodes);
+    if (verbose) cerr << "Removing nodes with no arcs.." << endl;
+    remove_nodes_with_no_arcs(m_nodes);
 
     if (verbose) cerr << "Tying nodes.." << endl;
     push_word_ids_right(m_nodes);

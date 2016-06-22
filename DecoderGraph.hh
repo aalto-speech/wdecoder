@@ -326,6 +326,7 @@ public:
                      bool lm_labels=false);
 
     void remove_cw_dummies(std::vector<DecoderGraph::Node> &nodes);
+    void remove_nodes_with_no_arcs(std::vector<DecoderGraph::Node> &nodes);
 
     virtual void create_forced_path(std::vector<DecoderGraph::Node> &nodes,
                                     std::vector<std::string> &sentence,
