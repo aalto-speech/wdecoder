@@ -121,6 +121,7 @@ BOOST_AUTO_TEST_CASE(SubwordGraphTest8)
     read_fixtures(swg, "data/500.segs");
 
     swg.create_graph(subwords);
+    BOOST_CHECK_EQUAL( 0, DecoderGraph::num_nodes_with_no_arcs(swg.m_nodes) );
 
     BOOST_CHECK( swg.assert_words(_word_segs) );
     BOOST_CHECK( swg.assert_word_pairs(_word_segs, true, true) );
