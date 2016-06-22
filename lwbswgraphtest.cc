@@ -228,6 +228,27 @@ BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest9)
 BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest10)
 {
     LWBSubwordGraph swg;
+    lexname = "data/lwb_5.lex";
+    read_fixtures(swg);
+
+    swg.create_graph(prefix_subwords, stem_subwords);
+    BOOST_CHECK_EQUAL( 0, DecoderGraph::num_nodes_with_no_arcs(swg.m_nodes) );
+
+    map<string, vector<string> > word_segs;
+    word_segs["tooppinen"] = {"tooppinen"};
+    word_segs["topi"] = {"topi"};
+    word_segs["ie"] = {"i", "e"};
+    word_segs["ito"] = {"i", "to"};
+    word_segs["atopi"] = {"a", "topi"};
+    word_segs["topia"] = {"topi", "a"};
+
+    BOOST_CHECK( swg.assert_words_not_in_graph(word_segs) );
+}
+
+
+BOOST_AUTO_TEST_CASE(LWBSubwordGraphTest11)
+{
+    LWBSubwordGraph swg;
     lexname = "data/lwb_20k.lex";
     read_fixtures(swg);
 
