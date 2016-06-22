@@ -147,6 +147,24 @@ RWBSubwordGraph::create_crossunit_network(vector<pair<unsigned int, string> > &f
         }
     }
 
+    // handles a b_ def_ by connecting b_ as fan-in loop
+    for (auto fi_src = fanin.begin(); fi_src != fanin.end(); ++fi_src) {
+        char required_phone = tphone(fi_src->first);
+        for (auto sswit = one_phone_suffix_subwords.begin(); sswit != one_phone_suffix_subwords.end(); ++sswit) {
+            char suffix_phone = tphone(m_lexicon[*sswit][0]);
+            if (suffix_phone != required_phone) continue;
+
+            for (auto fi_tgt = fanin.begin(); fi_tgt != fanin.end(); ++fi_tgt) {
+                if (trc(fi_src->first) != tphone(fi_tgt->first)) continue;
+                string triphone = construct_triphone(tphone(fi_src->first), tphone(fi_tgt->first), trc(fi_tgt->first));
+                int idx = connect_word(nodes, *sswit, fi_src->second);
+                idx = connect_triphone(nodes, SHORT_SIL, idx);
+                idx = connect_triphone(nodes, triphone, idx);
+                nodes[idx].arcs.insert(fi_tgt->second);
+            }
+        }
+    }
+
     for (auto cwnit = nodes.begin(); cwnit != nodes.end(); ++cwnit)
         cwnit->flags |= NODE_CW;
 }
