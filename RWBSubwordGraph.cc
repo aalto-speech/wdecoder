@@ -303,47 +303,16 @@ RWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &f
         }
     }
 
-    // Handle defg_ + a b_
-    /*
-    for (auto fiit = fanin.begin(); fiit != fanin.end(); ++fiit) {
-        cerr << "fanin: " << fiit->first << endl;
-        for (auto pswit = one_phone_prefix_subwords.begin(); pswit != one_phone_prefix_subwords.end(); ++pswit) {
-            char prefix_phone = tphone(m_lexicon[*pswit][0]);
-            if (tphone(fiit->first) != prefix_phone) continue;
-            if (trc(fiit->first) == SIL_CTXT) continue;
-
-            string fanin_connector = construct_triphone(SIL_CTXT, trc(fiit->first), SIL_CTXT);
-            if (fanin.find(fanin_connector) == fanin.end())
-            {
-                cerr << "problem in connecting a loop from fanin to fanin" << endl;
-                cerr << fanin_connector << endl;
-                assert(false);
-            }
-            string triphone = construct_triphone(tphone(fiit->first), trc(fiit->first), SIL_CTXT);
-
-            cerr << "loop from " << fiit->first << " to " << fanin_connector << ", triphone: " << triphone << endl;
-
-            int idx = connect_word(nodes, *pswit, fiit->second);
-            idx = connect_triphone(nodes, triphone, idx);
-            nodes[idx].arcs.insert(fanin[fanin_connector]);
-        }
-    }
-    */
-
+    // Loops for one phone prefix subwords in the fanin
     for (auto fis = fanin.begin(); fis != fanin.end(); ++fis) {
         for (auto fit = fanin.begin(); fit != fanin.end(); ++fit) {
             if (trc(fis->first) != tphone(fit->first)) continue;
-
-            //cerr << "fanin source: " << fis->first << endl;
-            //cerr << "fanin target: " << fit->first << endl;
             char loop_phone = tphone(fis->first);
             for (auto pswit = one_phone_prefix_subwords.begin(); pswit != one_phone_prefix_subwords.end(); ++pswit) {
                 char prefix_phone = tphone(m_lexicon[*pswit][0]);
                 if (loop_phone != prefix_phone) continue;
 
                 string triphone = construct_triphone(tphone(fis->first), trc(fis->first), trc(fit->first));
-                //cerr << "loop from " << fis->first << " to " << fit->first << ", triphone: " << triphone << endl;
-
                 int idx = connect_word(nodes, *pswit, fis->second);
                 idx = connect_triphone(nodes, triphone, idx);
                 nodes[idx].arcs.insert(fit->second);
