@@ -228,13 +228,6 @@ RWBSubwordGraph::create_crossword_network(vector<pair<unsigned int, string> > &f
     }
 
     for (auto fphit = prefix_phones.begin(); fphit != prefix_phones.end(); ++fphit) {
-        for (auto sphit = suffix_phones.begin(); sphit != suffix_phones.end(); ++sphit) {
-            string fanint = construct_triphone(SIL_CTXT, *fphit, *sphit);
-            fanin[fanint] = -1;
-        }
-    }
-
-    for (auto fphit = prefix_phones.begin(); fphit != prefix_phones.end(); ++fphit) {
         for (auto sphit = prefix_phones.begin(); sphit != prefix_phones.end(); ++sphit) {
             string fanint = construct_triphone(SIL_CTXT, *fphit, *sphit);
             fanin[fanint] = -1;
