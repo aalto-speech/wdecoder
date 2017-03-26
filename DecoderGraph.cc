@@ -1484,12 +1484,12 @@ DecoderGraph::write_graph(string fname,
                           bool lm_labels)
 {
     SimpleFileOutput outf(fname);
-    outf << m_nodes.size() << "\n";
+    outf << (unsigned int)m_nodes.size() << "\n";
     for (unsigned int i = 0; i < m_nodes.size(); i++) {
         outf << "n " << i << " " << m_nodes[i].hmm_state << " ";
         if (lm_labels && m_nodes[i].word_id != -1) outf << m_subwords[m_nodes[i].word_id];
         else outf << m_nodes[i].word_id;
-        outf << " " << m_nodes[i].arcs.size() << " " << m_nodes[i].flags << "\n";
+        outf << " " << (unsigned int)m_nodes[i].arcs.size() << " " << m_nodes[i].flags << "\n";
     }
     for (unsigned int i = 0; i < m_nodes.size(); i++) {
         DecoderGraph::Node &node = m_nodes[i];

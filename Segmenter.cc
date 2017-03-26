@@ -78,11 +78,9 @@ Segmenter::segment_lna_file(string lnafname,
 
     m_frame_idx = 0;
     while (m_lna_reader.go_to(m_frame_idx)) {
-        if (m_debug) cerr << "Frame: " << m_frame_idx << endl;
         m_best_log_prob = -1e20;
         propagate_tokens();
         recombine_tokens();
-        if (m_debug) cerr << "Number of tokens: " << m_active_nodes.size() << endl;
         m_frame_idx++;
     }
 

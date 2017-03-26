@@ -218,7 +218,6 @@ int main(int argc, char* argv[])
         Segmenter s;
         s.m_global_beam = config["global-beam"].get_float();
         s.m_token_limit = config["max-tokens"].get_int();
-        s.m_debug = config["info"].get_int();
 
         if (!config["text-field"].specified &&
             (config["long-silence"].specified || config["short-silence"].specified))
