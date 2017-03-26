@@ -1,16 +1,16 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "Ngram.hh"
 #include "str.hh"
-#include "defs.hh"
 
 using namespace std;
 
 
 int
-Ngram::score(int node_idx, int word, double &score)
+Ngram::score(int node_idx, int word, double &score) const
 {
     while (true) {
         int tmp = find_node(node_idx, word);
@@ -33,7 +33,7 @@ Ngram::score(int node_idx, int word, double &score)
 
 
 int
-Ngram::score(int node_idx, int word, float &score)
+Ngram::score(int node_idx, int word, float &score) const
 {
     while (true) {
         int tmp = find_node(node_idx, word);
@@ -73,7 +73,7 @@ Ngram::get_reverse_bigrams(map<int, vector<int> > &reverse_bigrams)
 
 
 int
-Ngram::find_node(int node_idx, int word)
+Ngram::find_node(int node_idx, int word) const
 {
     int first_arc = nodes[node_idx].first_arc;
     if (first_arc == -1) return -1;
@@ -91,6 +91,50 @@ void _getline(SimpleFileInput &sfi, string &line, int &linei) {
     if (!sfi.getline(line)) throw read_error;
     str::clean(line);
     linei++;
+}
+
+
+void
+Ngram::write_arpa(string arpafname) {
+
+    SimpleFileOutput arpafile(arpafname);
+
+    arpafile << "\n";
+    arpafile << "\\data\\\n";
+    for (int order=1; order<=max_order; order++)
+        arpafile << "ngram " << order << "=" << ngram_counts_per_order.at(order) << "\n";
+
+    vector<pair<int, vector<string> > > order_nodes, next_order_nodes;
+    order_nodes.push_back(make_pair(root_node, vector<string>()));
+
+    for (int order=1; order<=max_order; order++) {
+        arpafile << "\n";
+        arpafile << "\\" << order << "-grams:\n";
+        for (auto cnit = order_nodes.begin(); cnit != order_nodes.end(); ++cnit) {
+            int curr_node = cnit->first;
+            vector<string> &ctxt = cnit->second;
+            Node &nd = nodes[curr_node];
+            if (nd.first_arc == -1) continue;
+            for (int a=nd.first_arc; a<=nd.last_arc; a++) {
+                int target_node_idx = arc_target_nodes[a];
+                Node &target_nd = nodes[target_node_idx];
+                string word = vocabulary[arc_words[a]];
+                arpafile << target_nd.prob << "\t";
+                for (auto ctxtit = ctxt.begin(); ctxtit != ctxt.end(); ++ctxtit)
+                    arpafile << *ctxtit << " ";
+                arpafile << word;
+                if (target_nd.backoff_prob != 0.0) arpafile << "\t" << target_nd.backoff_prob;
+                arpafile << "\n";
+                vector<string> new_ctxt(ctxt);
+                new_ctxt.push_back(word);
+                next_order_nodes.push_back(make_pair(target_node_idx, new_ctxt));
+            }
+        }
+        order_nodes.swap(next_order_nodes);
+        next_order_nodes.clear();
+    }
+
+    arpafile << "\n\\end\\\n";
 }
 
 
@@ -116,7 +160,11 @@ Ngram::read_arpa(string arpafname) {
         stringstream vals(line);
         getline(vals, line, '=');
         getline(vals, line, '=');
-        int count = str2int(line);
+        if (vals.fail()) throw header_error;
+        int count;
+        std::istringstream numstr(line);
+        numstr >> count;
+        if (numstr.fail()) throw header_error;
         ngram_counts_per_order[curr_ngram_order] = count;
         total_ngram_count += count;
         curr_ngram_order++;
@@ -158,9 +206,30 @@ Ngram::read_arpa(string arpafname) {
         total_ngrams_read += ngrams_read;
     }
 
+    if (vocabulary_lookup.find(sentence_start_symbol) == vocabulary_lookup.end())
+        throw string("Sentence start symbol not found.");
     sentence_start_symbol_idx = vocabulary_lookup[sentence_start_symbol];
     sentence_start_node = find_node(root_node, sentence_start_symbol_idx);
-    if (sentence_start_node == -1) throw string("Sentence start symbol not found.");
+    if (sentence_start_node == -1)
+        throw string("Sentence start node not set.");
+
+    if (vocabulary_lookup.find(sentence_end_symbol) == vocabulary_lookup.end())
+        throw string("Sentence end symbol not found.");
+    sentence_end_symbol_idx = vocabulary_lookup[sentence_end_symbol];
+
+    if (vocabulary_lookup.find("<unk>") != vocabulary_lookup.end()
+        && vocabulary_lookup.find("<UNK>") != vocabulary_lookup.end())
+            throw string("Error, both <unk> and <UNK> symbols in the language model");
+    else if (vocabulary_lookup.find("<unk>") != vocabulary_lookup.end()) {
+        cerr << "Detected unk symbol: <unk>" << endl;
+        unk_symbol_idx = vocabulary_lookup["<unk>"];
+    }
+    else if (vocabulary_lookup.find("<UNK>") != vocabulary_lookup.end()) {
+        cerr << "Detected unk symbol: <UNK>" << endl;
+        unk_symbol.assign("<UNK>");
+        unk_symbol_idx = vocabulary_lookup["<UNK>"];
+    }
+    else throw string("Error, no unk symbol in the language model");
 }
 
 
@@ -178,13 +247,14 @@ Ngram::read_arpa_read_order(SimpleFileInput &arpafile,
 
         NgramInfo ngram;
         vals >> ngram.prob;
-        if (ngram.prob > 0.0)
-            throw string("Invalid log probability");
+        if (ngram.prob > 0.0) {
+            throw string("Invalid log probability " + line);
+        }
 
         vector<string> curr_ngram_str;
         string tmp;
         for (int i=0; i<curr_ngram_order; i++) {
-            if (vals.eof()) throw string("Invalid ARPA line");
+            if (vals.eof()) throw string("Problem reading line: " + line);
             vals >> tmp;
             curr_ngram_str.push_back(tmp);
         }
@@ -200,6 +270,7 @@ Ngram::read_arpa_read_order(SimpleFileInput &arpafile,
 
         if (!vals.eof())
             vals >> ngram.backoff_prob;
+        if (vals.fail()) throw string("Problem reading line: " + line);
 
         order_ngrams.push_back(ngram);
         _getline(arpafile, line, linei);
@@ -255,4 +326,28 @@ Ngram::read_arpa_insert_order_to_tree(std::vector<NgramInfo> &order_ngrams,
         curr_arc_idx++;
         curr_node_idx++;
     }
+}
+
+
+void
+LNNgram::multiply_probs(double multiplier) {
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        nodes[i].prob *= multiplier;
+        nodes[i].backoff_prob *= multiplier;
+    }
+}
+
+
+void
+LNNgram::read_arpa(string arpafname) {
+    Ngram::read_arpa(arpafname);
+    multiply_probs(log(10.0));
+}
+
+
+void
+LNNgram::write_arpa(string arpafname) {
+    multiply_probs(1.0/log(10.0));
+    Ngram::write_arpa(arpafname);
+    multiply_probs(log(10.0));
 }

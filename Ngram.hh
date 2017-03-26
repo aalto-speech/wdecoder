@@ -14,8 +14,8 @@ public:
     public:
         Node() : prob(0.0), backoff_prob(0.0), backoff_node(-1),
             first_arc(-1), last_arc(-1) { }
-        float prob;
-        float backoff_prob;
+        double prob;
+        double backoff_prob;
         int backoff_node;
         int first_arc;
         int last_arc;
@@ -24,14 +24,18 @@ public:
     Ngram() : root_node(0),
         sentence_start_node(-1),
         sentence_start_symbol_idx(-1),
-        max_order(-1)
-    {
-        sentence_start_symbol.assign("<s>");
-    };
+        sentence_start_symbol("<s>"),
+        sentence_end_symbol_idx(-1),
+        sentence_end_symbol("</s>"),
+        unk_symbol_idx(-1),
+        unk_symbol("<unk>"),
+        max_order(-1) { };
     ~Ngram() {};
-    void read_arpa(std::string arpafname);
-    int score(int node_idx, int word, double &score);
-    int score(int node_idx, int word, float &score);
+    virtual void read_arpa(std::string arpafname);
+    virtual void write_arpa(std::string arpafname);
+    int score(int node_idx, int word, double &score) const;
+    int score(int node_idx, int word, float &score) const;
+    int advance(int node_idx, int word) const { float tmp; return score(node_idx, word, tmp); }
     int order() { return max_order; };
     void get_reverse_bigrams(std::map<int, std::vector<int> > &reverse_bigrams);
 
@@ -39,8 +43,16 @@ public:
     int sentence_start_node;
     int sentence_start_symbol_idx;
     std::string sentence_start_symbol;
+
+    int sentence_end_symbol_idx;
+    std::string sentence_end_symbol;
+
+    int unk_symbol_idx;
+    std::string unk_symbol;
+
     std::vector<std::string> vocabulary;
     std::map<std::string, int> vocabulary_lookup;
+
 
 //private:
 
@@ -61,7 +73,7 @@ public:
         }
     };
 
-    int find_node(int node_idx, int word);
+    int find_node(int node_idx, int word) const;
     int read_arpa_read_order(SimpleFileInput &arpafile,
                              std::vector<NgramInfo> &order_ngrams,
                              std::string &line,
@@ -78,6 +90,14 @@ public:
     std::map<int, int> ngram_counts_per_order;
     int max_order;
 };
+
+class LNNgram : public Ngram {
+public:
+    void read_arpa(std::string arpafname);
+    void write_arpa(std::string arpafname);
+    void multiply_probs(double multiplier);
+};
+
 
 #endif
 
