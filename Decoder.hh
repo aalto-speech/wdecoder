@@ -188,10 +188,8 @@ public:
     std::vector<std::map<int, Token> > m_recombined_tokens;
     std::vector<float> m_best_node_scores;
 
-    int m_debug;
     int m_stats;
 
-    int m_token_stats;
     double m_total_token_count;
 
     float m_lm_scale;
@@ -214,8 +212,6 @@ public:
     float m_global_beam;
     float m_node_beam;
     float m_word_end_beam;
-    float m_current_word_end_beam;
-    float m_word_boundary_penalty;
 
     float m_best_log_prob;
     float m_best_word_end_prob;

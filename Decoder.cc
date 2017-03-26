@@ -10,10 +10,8 @@ using namespace std;
 
 Decoder::Decoder()
 {
-    m_debug = 0;
     m_stats = 0;
 
-    m_token_stats = 0;
     m_total_token_count = 0;
 
     m_duration_model_in_use = false;
@@ -45,7 +43,6 @@ Decoder::Decoder()
     m_histogram_bin_limit = 0;
 
     m_global_beam = 0.0;
-    m_current_word_end_beam = 0.0;
     m_word_end_beam = 0.0;
     m_node_beam = 0.0;
 
@@ -56,7 +53,6 @@ Decoder::Decoder()
 
     m_history_clean_frame_interval = 10;
 
-    m_word_boundary_penalty = 0.0;
     m_max_state_duration = 80;
 
     m_ngram_state_sentence_begin = -1;
@@ -549,9 +545,17 @@ Decoder::move_token_to_node(Token token,
         token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
         token.last_word_id = node.word_id;
 
-        if (update_lookahead)
-            update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
-
+        if (update_lookahead) {
+            if ((node.word_id == m_sentence_end_symbol_idx) && m_use_word_boundary_symbol) {
+                update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, m_word_boundary_symbol_idx));
+            }
+            else if (node.word_id == m_sentence_end_symbol_idx) {
+                update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, m_sentence_begin_symbol_idx));
+            }
+            else {
+                update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
+            }
+        }
         update_total_log_prob(token);
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
@@ -567,10 +571,9 @@ Decoder::move_token_to_node(Token token,
                 advance_in_word_history(token, m_word_boundary_symbol_idx);
                 token.last_word_id = m_word_boundary_symbol_idx;
             }
-
-            if (update_lookahead)
-                update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
-            update_total_log_prob(token);
+            else {
+                token.last_word_id = m_sentence_begin_symbol_idx;
+            }
         }
     }
 
