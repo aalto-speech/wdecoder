@@ -196,7 +196,6 @@ public:
     float m_duration_scale;
     float m_transition_scale;
     int m_token_limit;
-    int m_active_node_limit;
     int m_token_count;
     int m_token_count_after_pruning;
     bool m_force_sentence_end;
