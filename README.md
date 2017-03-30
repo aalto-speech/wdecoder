@@ -1,6 +1,6 @@
 ## Wdecoder
 
-This project contains different dynamic token-passing decoders to be used with AaltoASR acoustic models. The acoustic model states are read from a .ph file definition and acoustic probabilities from .lna files. Duration models (.dur) can be used optionally. The project was initially intended for evaluating subword n-grams using a constrained vocabulary. It was also found out that word n-grams work reasonably well especially if used with class n-gram models.
+This project contains different dynamic token-passing decoders to be used with AaltoASR acoustic models. The acoustic model states are read from a .ph file definition and acoustic probabilities from .lna files. Duration models (.dur) can be used optionally and are recommended. The project was initially intended for evaluating subword n-grams using a constrained vocabulary. It was also found out that word n-grams work reasonably well especially if used with class n-gram models.
 
 This code is mostly (c) Matti Varjokallio with the exception of the code that is from the AaltoASR package: Acoustics, Hmm, NowayHmmReader, LnaReaderCircular, str, conf.
 Aalto University internal research use is permitted.
@@ -16,16 +16,16 @@ Please contact for possible other purposes.
     * Constrained vocabulary subword decoder (up to 4M vocabulary size tested)
     * Word decoder (up to 4M vocabulary size tested)
 
-The graphs are created by inserting the words to a prefix tree. The cross-word network is connected next. The suffixes are then tied to reach the minimal size in all cases. 
+The graphs are created by inserting the words to a prefix tree. The cross-word/cross-unit network is connected next. The suffixes are then tied to reach the minimal size in all cases. 
 
 * Pruning and look-ahead
     * Hypothesis recombination always done using the n-gram model states
-    * Combination of beam pruning, word end beam pruning, node beam pruning, histogram pruning. Nodes are sorted by the highest likelihood prior to pruning to start with good beam settings
-    * Inapproximate and precomputed unigram and bigram lookahead for all the graph types. With the subword n-grams, the bigram look-aheads give the best results. With unlimited vocabulary decoders use the setting `bigram-precomputed-full`, with constrained vocabulary `bigram-precomputed-hybrid`. For large vocabularies the bigram lookahead (`large-bigram`) is computationally quite heavy (long precomputation, high memory requirements and RTF in decoding) and mostly does not improve the results so `unigram` is recommended. This is computationally simple and gives reasonable results. For smaller vocabulary sizes like for English recognition the `bigram-precomputed-full` should be ok
+    * Combination of beam pruning, word end beam pruning, node beam pruning, histogram pruning. To start with good global beam settings, the nodes are sorted by the highest likelihood prior to propagating the tokens to the next frame.
+    * Inapproximate and precomputed unigram and bigram lookahead for all the graph types. With the subword n-grams, the bigram look-aheads give the best results. With unlimited vocabulary decoders use the setting `bigram-precomputed-full`, with constrained vocabulary `bigram-precomputed-hybrid`. For large vocabularies the bigram lookahead (`large-bigram`) is computationally quite heavy (long precomputation, high memory requirements and RTF in decoding) and mostly does not improve the results compared to the unigram look-ahead (0-1% percent relative so far) so `unigram` is recommended. This is computationally simple and gives reasonable results. For smaller vocabulary sizes like for English recognition the `bigram-precomputed-full` should be ok. Please note that the bigram look-ahead models have somewhat high memory consumption. The memory consumption for the full table bigram lookahead is the number of look-ahead states times the vocabulary size. The number of look-ahead states can be checked with the `lasc`executable.
 
 ### Notes
 
-The graph construction and lookahead algorithms are pretty well unit tested so there shouldn't be any major problems in those. The accuracy should be equal or slightly better in Finnish tasks with the `<w>` symbols compared to the original AaltoASR decoder. In some cases (for instance Estonian task), however, this decoder may be several percent absolute better. This is due to slightly different silence loops along with the search improvements.
+The graph construction and lookahead algorithms are pretty well unit tested so there shouldn't be any major problems in those. The accuracy should be equal or slightly better in Finnish tasks with the `<w>` symbols compared to the original AaltoASR decoder. In some cases (for instance Estonian BN task), however, this decoder may be several percent absolute better. This is due to slightly different silence loops along with the search improvements.
 
 This code passes the tokens by-value. This has the advantage that the decoding code is fairly simple. The recognition history is stored separately. Currently there is no support for lattice generation. In principle it shouldn't be so big effort to implement, but testing for all the graph types could take some time.
 
@@ -36,20 +36,43 @@ Only triphone models are supported.
 Graphs are created by a separate program which is given as input to the `decode` executable.
 
 ### Branches
+
 * `master`, normal n-gram decoder for all the graph types
 * `class-only`, class n-gram decoder for word-based recognition and the unlimited vocabulary recognizers without `<w>` symbol
 * `class-ip`, interpolated n-gram and class n-gram decoder for word-based recognition and the unlimited vocabulary recognizers without `<w>` symbol
 * `wsw`, constrained vocabulary word based recognizer with a three-way model interpolation, word n-gram, class n-gram over words, subword n-gram
 
 ### Programs
+
 * `cleanlex`, removes words without proper triphones
 * `decode`, main decoder
 * `lasc`, counts look-ahead states
 * `lastates`, precomputes `large-bigram` lookahead scores
 * `score`, scores utterances
 * `segment`, segments utterances to triphone states, selects the most likely silence path
-* `swgraph, normal `<w>` unlimited vocabulary graph
+* `swgraph`, normal `<w>` unlimited vocabulary graph
 * `swwgraph`, constrained vocabulary subword n-gram graph
 * `wgraph`, word graph
 * `lwbswgraph`, unlimited vocabulary graph with the left-most subword markers
 * `rwbswgraph`, unlimited vocabulary graph with the right-most subword markers
+
+### Configuration
+
+Example configuration below. The lm scale, global beam, duration scale and transition scale values are similar to the earlier AaltoASR decoder.
+
+`lm_scale 32.0`  
+`token_limit 35000`  
+`duration_scale 3.0`  
+`transition_scale 1.0`  
+`global_beam 240.0`  
+`word_end_beam 160.0`  
+`node_beam 160.0`  
+`force_sentence_end true`  
+`history_clean_frame_interval 25`  
+`stats 0`
+
+If word boundary symbols are used, add the following
+
+`word_boundary_symbol <w>`
+
+Also if using interpolated models in the `class-ip` and `wsw` branches, the interpolation weights need to be configured.
