@@ -47,7 +47,6 @@ Decoder::Decoder()
     m_node_beam = 0.0;
 
     m_token_limit = 500000;
-    m_active_node_limit = 50000;
 
     m_history_root = nullptr;
 
