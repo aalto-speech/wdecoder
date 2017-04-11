@@ -14,6 +14,7 @@ segment
 .cproject
 .settings
 .settings/*
+.idea
 speechdat*.txt
 lm-*
 score
@@ -25,3 +26,6 @@ aaltoasr
 cmd.txt
 lasc
 latables
+*.exe
+zconf.h
+zlib.h
