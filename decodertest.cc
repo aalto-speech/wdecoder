@@ -8,6 +8,7 @@
 using namespace std;
 
 int eval_ratio = 50;
+float tolerance = 0.0001;
 
 
 BOOST_AUTO_TEST_CASE(BigramLookaheadTest1)
@@ -29,7 +30,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest1)
             if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
-            BOOST_CHECK_EQUAL( ref, hyp );
+            BOOST_CHECK_CLOSE( ref, hyp, tolerance );
         }
     }
 }
@@ -54,7 +55,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest2)
             if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
-            BOOST_CHECK_EQUAL( ref, hyp );
+            BOOST_CHECK_CLOSE( ref, hyp, tolerance );
         }
     }
 }
@@ -102,7 +103,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest4)
             if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
-            BOOST_CHECK_EQUAL( ref, hyp );
+            BOOST_CHECK_CLOSE( ref, hyp, tolerance );
         }
     }
 }
@@ -127,7 +128,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest5)
                 if (idx % eval_ratio != 0) continue;
                 float ref = refla.get_lookahead_score(i, w);
                 float hyp = d.m_la->get_lookahead_score(i, w);
-                BOOST_CHECK_EQUAL( ref, hyp );
+                BOOST_CHECK_CLOSE( ref, hyp, tolerance );
             }
         }
     }
@@ -142,7 +143,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest5)
             for (auto wit=pred_word_ids.begin(); wit != pred_word_ids.end(); ++wit) {
                 float ref = refla.get_lookahead_score(i, *wit);
                 float hyp = d.m_la->get_lookahead_score(i, *wit);
-                BOOST_CHECK_EQUAL( ref, hyp );
+                BOOST_CHECK_CLOSE( ref, hyp, tolerance );
             }
         }
     }
@@ -167,7 +168,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest6)
                 idx++;
                 float ref = refla.get_lookahead_score(i, w);
                 float hyp = d.m_la->get_lookahead_score(i, w);
-                BOOST_CHECK_EQUAL( ref, hyp );
+                BOOST_CHECK_CLOSE( ref, hyp, tolerance );
             }
         }
     }
@@ -182,9 +183,8 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest6)
             for (auto wit=pred_word_ids.begin(); wit != pred_word_ids.end(); ++wit) {
                 float ref = refla.get_lookahead_score(i, *wit);
                 float hyp = d.m_la->get_lookahead_score(i, *wit);
-                BOOST_CHECK_EQUAL( ref, hyp );
+                BOOST_CHECK_CLOSE( ref, hyp, tolerance );
             }
         }
     }
 }
-
