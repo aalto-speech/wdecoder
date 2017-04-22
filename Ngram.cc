@@ -64,6 +64,7 @@ Ngram::get_reverse_bigrams(map<int, vector<int> > &reverse_bigrams)
     for (int i=root_nd.first_arc; i<=root_nd.last_arc; i++) {
         int first_word = arc_words[i];
         Node &arc_target_node = nodes[arc_target_nodes[i]];
+        if (arc_target_node.first_arc == -1) continue;
         for (int j=arc_target_node.first_arc; j<=arc_target_node.last_arc; j++) {
             int second_word = arc_words[j];
             reverse_bigrams[second_word].push_back(first_word);
