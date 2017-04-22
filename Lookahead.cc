@@ -279,10 +279,8 @@ DummyBigramLookahead::get_lookahead_score(int node_idx, int word_id)
     vector<int> successor_words;
     find_successor_words(node_idx, successor_words);
 
-    float dummy;
-    int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
-
     float la_prob = -1e20;
+    int la_node = m_la_lm.advance(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id]);
     for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
     {
         float curr_prob = 0.0;
@@ -452,8 +450,7 @@ FullTableBigramLookahead::get_lookahead_score(int node_idx, int word_id)
     int la_state_idx = m_node_la_states[node_idx];
 
     if (m_bigram_la_scores[la_state_idx][word_id] < -1e10) {
-        float dummy;
-        int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
+        int la_node = m_la_lm.advance(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id]);
         vector<int> &word_ids = m_la_state_successor_words[la_state_idx];
         for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
             float la_lm_prob = 0.0;
@@ -641,9 +638,8 @@ PrecomputedFullTableBigramLookahead::set_bigram_la_scores()
         vector<int> &pred_words = reverse_bigrams[word_id];
 
         for (auto pwit = pred_words.begin(); pwit != pred_words.end(); ++pwit) {
-            float dummy_prob = 0.0;
-            int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy_prob);
             float la_prob = 0.0;
+            int nd = m_la_lm.advance(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit]);
             m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[word_id], la_prob);
 
             for (auto lasit = la_states.begin(); lasit != la_states.end(); ++lasit)
@@ -760,8 +756,7 @@ HybridBigramLookahead::set_bigram_la_maps()
 
         map<int, float> &bigram_la_map = m_bigram_la_maps[i];
         for (auto pwit = predecessor_words.begin(); pwit != predecessor_words.end(); ++pwit) {
-            float dummy = 0.0;
-            int lm_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy);
+            int lm_node = m_la_lm.advance(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit]);
             bigram_la_map[*pwit] = -1e20;
             for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
                 float la_lm_prob = 0.0;
@@ -803,8 +798,7 @@ HybridBigramLookahead::get_lookahead_score(int node_idx, int word_id)
         int la_state_idx = m_node_la_states[node_idx];
         float &score = m_bigram_la_scores[la_state_idx][word_id];
         if (score < -1e10) {
-            float dummy;
-            int la_node = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id], dummy);
+            int la_node = m_la_lm.advance(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[word_id]);
             vector<int> &word_ids = m_la_state_successor_words[la_state_idx];
             for (auto wit = word_ids.begin(); wit != word_ids.end(); ++wit) {
                 float la_lm_prob = 0.0;
@@ -1448,9 +1442,8 @@ LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
                 continue;
             }
 
-            float la_prob;
-            int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], la_prob);
-            la_prob = 0.0;
+            float la_prob = 0.0;
+            int nd = m_la_lm.advance(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit]);
             m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[word_id], la_prob);
 
             float unigram_prob = 0.0;
@@ -1523,9 +1516,8 @@ LargeBigramLookahead::set_bigram_la_scores_2()
         vector<int> &pred_words = reverse_bigrams[word_id];
 
         for (auto pwit = pred_words.begin(); pwit != pred_words.end(); ++pwit) {
-            float dummy_prob = 0.0;
-            int nd = m_la_lm.score(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit], dummy_prob);
             float la_prob = 0.0;
+            int nd = m_la_lm.advance(m_la_lm.root_node, m_subword_id_to_la_ngram_symbol[*pwit]);
             m_la_lm.score(nd, m_subword_id_to_la_ngram_symbol[word_id], la_prob);
 
             for (auto lasit = la_states.begin(); lasit != la_states.end(); ++lasit) {
