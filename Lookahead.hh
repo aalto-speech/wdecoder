@@ -36,7 +36,16 @@ public:
 };
 
 
-class LookaheadStateCount : public Decoder::Lookahead {
+class BigramLookahead : public Decoder::Lookahead {
+protected:
+    void set_word_id_la_states();
+    void convert_reverse_bigram_idxs(std::map<int, std::vector<int> > &reverse_bigrams);
+
+    std::vector<int> m_word_id_la_state_lookup;
+};
+
+
+class LookaheadStateCount : public BigramLookahead {
 public:
     LookaheadStateCount(Decoder &decoder,
                         bool successor_lists=false,
@@ -81,8 +90,6 @@ public:
     float get_lookahead_score(int node_idx, int word_id);
 
 private:
-    void set_word_id_la_states();
-    void convert_reverse_bigram_idxs(std::map<int, std::vector<int> > &reverse_bigrams);
     void find_preceeding_la_states(int node_idx,
                                    std::set<int> &la_states,
                                    const std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
@@ -98,14 +105,13 @@ private:
                                     bool start_node);
     void set_bigram_la_scores();
 
-    std::vector<int> m_word_id_la_state_lookup;
     bool m_precomputed;
 };
 
 
 // Full bigram tables for cross-word and initial nodes
 // Vectors with binary search in inner nodes
-class HybridBigramLookahead : public Decoder::Lookahead {
+class HybridBigramLookahead : public BigramLookahead {
 public:
     HybridBigramLookahead(Decoder &decoder,
                           std::string lafname);
@@ -141,8 +147,6 @@ public:
     float get_lookahead_score(int node_idx, int word_id);
 
 private:
-    void set_word_id_la_states();
-    void convert_reverse_bigram_idxs(std::map<int, std::vector<int> > &reverse_bigrams);
     void find_preceeding_la_states(int node_idx,
                                    std::set<int> &la_states,
                                    const std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
@@ -162,12 +166,11 @@ private:
                                     bool start_node);
     void set_bigram_la_scores();
 
-    std::vector<int> m_word_id_la_state_lookup;
     bool m_precomputed;
 };
 
 
-class LargeBigramLookahead : public Decoder::Lookahead {
+class LargeBigramLookahead : public BigramLookahead {
 public:
     LargeBigramLookahead(Decoder &decoder,
                          std::string lafname);
@@ -177,10 +180,8 @@ public:
     void read(std::string ifname);
 
 private:
-
     int set_la_state_indices_to_nodes();
     float set_arc_la_updates();
-    void set_word_id_la_states();
     void propagate_la_state_idx(int node_idx,
                                 int la_state_idx,
                                 int &max_state_idx,
@@ -190,7 +191,6 @@ private:
                                    const std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
                                    bool first_node=true,
                                    bool state_change=true);
-    void convert_reverse_bigram_idxs(std::map<int, std::vector<int> > &reverse_bigrams);
 
     void set_unigram_la_scores();
     void propagate_unigram_la_score(int node_idx,
@@ -220,7 +220,6 @@ private:
 
     std::vector<int> m_node_la_states;
     std::vector<LookaheadState> m_lookahead_states;
-    std::vector<int> m_word_id_la_state_lookup;
 };
 
 
