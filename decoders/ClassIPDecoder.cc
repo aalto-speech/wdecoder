@@ -123,17 +123,6 @@ ClassIPDecoder::read_class_lm(string ngramfname,
 
 
 void
-ClassIPDecoder::set_subword_id_ngram_symbol_mapping()
-{
-    m_subword_id_to_ngram_symbol.resize(m_subwords.size(), -1);
-    for (unsigned int i=0; i<m_subwords.size(); i++) {
-        string tmp(m_subwords[i]);
-        m_subword_id_to_ngram_symbol[i] = m_lm.vocabulary_lookup[tmp];
-    }
-}
-
-
-void
 ClassIPDecoder::recognize_lna_file(string lnafname,
                             ostream &outf,
                             int *frame_count,

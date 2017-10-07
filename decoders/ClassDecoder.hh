@@ -118,8 +118,6 @@ public:
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
 
-    void set_subword_id_ngram_symbol_mapping();
-
     void prune_word_history();
     void clear_word_history();
 
