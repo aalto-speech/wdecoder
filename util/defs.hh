@@ -29,6 +29,8 @@ typedef unsigned int node_idx_t;
 #define NODE_LM_RIGHT_LIMIT             0x0100
 #define NODE_TAIL                       0x0200
 
+#define MIN_LOG_PROB    -1000
+
 static int str2int(std::string str) {
     int val;
     std::istringstream numstr(str);

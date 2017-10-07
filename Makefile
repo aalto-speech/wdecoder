@@ -28,11 +28,13 @@ graph_progs = wgraph\
 	rwbswgraph
 
 decoder_srcs = decoders/Decoder.cc\
+	decoders/ClassDecoder.cc\
 	decoders/Segmenter.cc\
 	decoders/Lookahead.cc
 decoder_objs = $(decoder_srcs:.cc=.o)
 
 decoder_progs = decode\
+	class-decode\
 	score\
 	segment\
 	lastates\
