@@ -29,12 +29,14 @@ graph_progs = wgraph\
 
 decoder_srcs = decoders/Decoder.cc\
 	decoders/ClassDecoder.cc\
+	decoders/ClassIPDecoder.cc\
 	decoders/Segmenter.cc\
 	decoders/Lookahead.cc
 decoder_objs = $(decoder_srcs:.cc=.o)
 
 decoder_progs = decode\
 	class-decode\
+	class-ip-decode\
 	score\
 	segment\
 	lastates\

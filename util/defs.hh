@@ -7,6 +7,7 @@
 #include <cstdlib>
 #define nullptr NULL
 #endif
+#include <cmath>
 
 typedef unsigned int sw_node_idx_t;
 typedef unsigned int node_idx_t;
@@ -30,6 +31,26 @@ typedef unsigned int node_idx_t;
 #define NODE_TAIL                       0x0200
 
 #define MIN_LOG_PROB    -1000
+
+// Return log(X+Y) where a=log(X) b=log(Y)
+static float add_log_domain_probs(float a, float b) {
+    float delta = a - b;
+    if (delta > 0) {
+      b = a;
+      delta = -delta;
+    }
+    return b + log1p(exp(delta));
+}
+
+// Return log(X-Y) where a=log(X) b=log(Y)
+static float sub_log_domain_probs(float a, float b) {
+    float delta = b - a;
+    if (delta > 0) {
+      fprintf(stderr, "invalid call to sub_log_domain_probs, a should be bigger than b (a=%f,b=%f)\n",a,b);
+      exit(1);
+    }
+    return a + log1p(-exp(delta));
+}
 
 static int str2int(std::string str) {
     int val;

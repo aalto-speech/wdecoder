@@ -1,7 +1,6 @@
 #include <sstream>
-#include <cmath>
 
-#include "ClassDecoder.hh"
+#include "ClassIPDecoder.hh"
 #include "Lookahead.hh"
 #include "conf.hh"
 
@@ -9,7 +8,7 @@ using namespace std;
 
 
 void
-read_config(ClassDecoder &d, string cfgfname)
+read_config(ClassIPDecoder &d, string cfgfname)
 {
     ifstream cfgf(cfgfname);
     if (!cfgf) throw string("Problem opening configuration file: ") + cfgfname;
@@ -20,7 +19,6 @@ read_config(ClassDecoder &d, string cfgfname)
         stringstream ss(line);
         string parameter, val;
         ss >> parameter;
-        // Language model probs in ln
         if (parameter == "lm_scale") ss >> d.m_lm_scale;
         else if (parameter == "token_limit") ss >> d.m_token_limit;
         else if (parameter == "duration_scale") ss >> d.m_duration_scale;
@@ -38,6 +36,7 @@ read_config(ClassDecoder &d, string cfgfname)
             throw string("Word boundary symbol not supported in this branch.");
         }
         else if (parameter == "stats") ss >> d.m_stats;
+        else if (parameter == "interpolation_weight") ss >> d.m_iw;
         else throw string("Unknown parameter: ") + parameter;
     }
 
@@ -46,7 +45,7 @@ read_config(ClassDecoder &d, string cfgfname)
 
 
 void
-print_config(ClassDecoder &d,
+print_config(ClassIPDecoder &d,
              conf::Config &config,
              ostream &outf)
 {
@@ -72,11 +71,12 @@ print_config(ClassDecoder &d,
     outf << "word end beam: " << d.m_word_end_beam << endl;
     outf << "node beam: " << d.m_node_beam << endl;
     outf << "history clean frame interval: " << d.m_history_clean_frame_interval << endl;
+    outf << "interpolation weight (word lm): " << d.m_iw << endl;
 }
 
 
 void
-recognize_lnas(ClassDecoder &d,
+recognize_lnas(ClassIPDecoder &d,
                conf::Config &config,
                string lnalistfname,
                ostream &resultf,
@@ -86,7 +86,6 @@ recognize_lnas(ClassDecoder &d,
     string line;
 
     print_config(d, config, logf);
-    d.m_lm_scale *= 1.0/(log(10.0)); // language model scores are in ln.
 
     int total_frames = 0;
     double total_time = 0.0;
@@ -104,7 +103,6 @@ recognize_lnas(ClassDecoder &d,
         double token_count;
         d.recognize_lna_file(line, resultf, &curr_frames, &curr_time,
                              &curr_lp, &curr_am_lp, &curr_lm_lp, &token_count);
-        curr_lm_lp *= 1.0/log(10.0);
         total_frames += curr_frames;
         total_time += curr_time;
         total_lp += curr_lp;
@@ -136,7 +134,7 @@ recognize_lnas(ClassDecoder &d,
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: class-decode [OPTION...] PH LEXICON CLASS_ARPA CMEMPROBS CFGFILE GRAPH LNALIST\n")
+    config("usage: class-ip-decode [OPTION...] PH LEXICON LM CLASS_ARPA CMEMPROBS CFGFILE GRAPH LNALIST\n")
     ('h', "help", "", "", "display help")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('f', "result-file=STRING", "arg", "", "Base filename for results (.rec and .log)")
@@ -150,19 +148,20 @@ int main(int argc, char* argv[])
             "\tlarge-bigram")
     ('w', "write-la-states=STRING", "arg", "", "Writes lookahead model information to a file");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 7) config.print_help(stderr, 1);
+    if (config.arguments.size() != 8) config.print_help(stderr, 1);
 
     try {
 
-        ClassDecoder d;
+        ClassIPDecoder d;
 
         string phfname = config.arguments[0];
         string lexfname = config.arguments[1];
-        string class_arpa_fname = config.arguments[2];
-        string wordpfname = config.arguments[3];
-        string cfgfname = config.arguments[4];
-        string graphfname = config.arguments[5];
-        string lnalistfname = config.arguments[6];
+        string lmfname = config.arguments[2];
+        string class_arpa_fname = config.arguments[3];
+        string wordpfname = config.arguments[4];
+        string cfgfname = config.arguments[5];
+        string graphfname = config.arguments[6];
+        string lnalistfname = config.arguments[7];
 
         cerr << "Reading hmms: " << phfname << endl;
         d.read_phone_model(phfname);
@@ -175,6 +174,9 @@ int main(int argc, char* argv[])
 
         cerr << "Reading lexicon: " << lexfname << endl;
         d.read_noway_lexicon(lexfname);
+
+        cerr << "Reading language model: " << lmfname << endl;
+        d.read_lm(lmfname);
 
         cerr << "Reading configuration: " << cfgfname << endl;
         read_config(d, cfgfname);
