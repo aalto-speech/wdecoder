@@ -18,14 +18,16 @@ graph_srcs = graphs/DecoderGraph.cc\
 	graphs/SubwordGraph.cc\
 	graphs/ConstrainedSWGraph.cc\
 	graphs/LWBSubwordGraph.cc\
-	graphs/RWBSubwordGraph.cc
+	graphs/RWBSubwordGraph.cc\
+	graphs/LRWBSubwordGraph.cc
 graph_objs = $(graph_srcs:.cc=.o)
 
 graph_progs = wgraph\
 	swwgraph\
 	swgraph\
 	lwbswgraph\
-	rwbswgraph
+	rwbswgraph\
+	lrwbswgraph
 
 decoder_srcs = decoders/Decoder.cc\
 	decoders/ClassDecoder.cc\
@@ -50,6 +52,7 @@ test_srcs = test/wgraphtest.cc\
 	test/swwgraphtest.cc\
 	test/lwbswgraphtest.cc\
 	test/rwbswgraphtest.cc\
+	test/lrwbswgraphtest.cc\
 	test/decodertest.cc
 test_objs = $(test_srcs:.cc=.o)
 

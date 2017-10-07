@@ -51,6 +51,7 @@ Graphs are created by a separate program which is given as input to the `decode`
 * `wgraph`, word graph
 * `lwbswgraph`, unlimited vocabulary graph with the word boundary marker in the left-most subword
 * `rwbswgraph`, unlimited vocabulary graph with the word boundary marker in the right-most subword
+* `lrwbswgraph`, unlimited vocabulary graph with the word boundary markers in both the left-most and the right-most subwords
 
 ### Configuration
 
