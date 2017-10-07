@@ -1,48 +1,83 @@
-cxxflags = -O3 -DNDEBUG -std=gnu++0x -Wall -Wno-unused-function
+-include Makefile.local
+
+cxxflags = -O3 -DNDEBUG -std=gnu++0x -Wall -Wno-unused-function -I./util $(LOCAL_CXXFLAGS)
 #cxxflags = -O0 -g -std=gnu++0x -Wall -Wno-unused-function
 
 ##################################################
 
-progs = wgraph swwgraph swgraph lwbswgraph rwbswgraph decode score segment lastates cleanlex lasc
-progs_srcs = $(progs:=.cc)
-progs_objs = $(progs:=.o)
-srcs = conf.cc io.cc Ngram.cc Hmm.cc NowayHmmReader.cc DecoderGraph.cc ConstrainedSWGraph.cc WordGraph.cc\
-	SubwordGraph.cc LWBSubwordGraph.cc RWBSubwordGraph.cc LnaReaderCircular.cc Decoder.cc Segmenter.cc Lookahead.cc
-objs = $(srcs:.cc=.o)
+util_srcs = util/conf.cc\
+	util/io.cc\
+	util/Hmm.cc\
+	util/LnaReaderCircular.cc\
+	util/Ngram.cc\
+	util/NowayHmmReader.cc
+util_objs = $(util_srcs:.cc=.o)
+
+graph_srcs = graphs/DecoderGraph.cc\
+	graphs/WordGraph.cc\
+	graphs/SubwordGraph.cc\
+	graphs/ConstrainedSWGraph.cc\
+	graphs/LWBSubwordGraph.cc\
+	graphs/RWBSubwordGraph.cc
+graph_objs = $(graph_srcs:.cc=.o)
+
+graph_progs = wgraph\
+	swwgraph\
+	swgraph\
+	lwbswgraph\
+	rwbswgraph
+
+decoder_srcs = decoders/Decoder.cc\
+	decoders/Segmenter.cc\
+	decoders/Lookahead.cc
+decoder_objs = $(decoder_srcs:.cc=.o)
+
+decoder_progs = decode\
+	score\
+	segment\
+	lastates\
+	cleanlex\
+	lasc
+
+test_srcs = test/wgraphtest.cc\
+	test/swgraphtest.cc\
+	test/swwgraphtest.cc\
+	test/lwbswgraphtest.cc\
+	test/rwbswgraphtest.cc\
+	test/decodertest.cc
+test_objs = $(test_srcs:.cc=.o)
 
 test_progs = runtests
-test_progs_srcs = $(test_progs:=.cc)
-test_progs_objs = $(test_progs:=.o)
-test_srcs = swwgraphtest.cc swgraphtest.cc lwbswgraphtest.cc rwbswgraphtest.cc wgraphtest.cc decodertest.cc
-test_objs = $(test_srcs:.cc=.o)
 
 ##################################################
 
 .SUFFIXES:
 
-all: $(progs) $(test_progs)
+all: $(graph_progs) $(decoder_progs) $(test_progs)
 
 %.o: %.cc
 	$(CXX) -c $(cxxflags) $< -o $@
 
-$(progs): %: %.o $(objs)
-	$(CXX) $(cxxflags) $< -o $@ $(objs) -lz
+$(graph_progs): $(util_objs) $(graph_objs)
+	$(CXX) $(cxxflags) -o $@ graphs/$@.cc $(util_objs) $(graph_objs) -lz -I./graphs
 
-%: %.o $(objs)
-	$(CXX) $(cxxflags) $< -o $@ $(objs) -lz
+$(decoder_progs): $(util_objs) $(graph_objs) $(decoder_objs)
+	$(CXX) $(cxxflags) -o $@ decoders/$@.cc $(util_objs) $(graph_objs) $(decoder_objs)\
+	 -lz -I./graphs -I./decoders
 
-$(test_progs): %: %.o $(objs) $(test_objs)
-	$(CXX) $(cxxflags) $< -o $@ $(objs) $(test_objs) -lboost_unit_test_framework -lz
+$(test_objs): %.o: %.cc $(test_srcs) $(util_objs) $(graph_objs) $(decoder_objs)
+	$(CXX) -c $(cxxflags) $< -o $@ -I./graphs -I./decoders
 
-test_objs: $(test_srcs)
-
-test_progs: $(objs) $(test_objs)
-
-test: $(test_progs)
+$(test_progs): $(test_objs)
+	$(CXX) $(cxxflags) -o $@ test/$@.cc $(test_objs) $(util_objs) $(graph_objs) $(decoder_objs)\
+	 -lboost_unit_test_framework -lz -I./graphs -I./decoders
 
 .PHONY: clean
 clean:
-	rm -f $(objs) *.o $(progs) $(progs_objs) $(test_progs) $(test_progs_objs) $(test_objs) .depend *~
+	rm -f $(util_objs)\
+	 $(graph_objs) $(graph_progs)\
+	 $(decoder_objs)  $(decoder_progs)\
+	 $(test_progs) $(test_objs) .depend
 
 dep:
 	$(CXX) -MM $(cxxflags) $(DEPFLAGS) $(all_srcs) > dep
