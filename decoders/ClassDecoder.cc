@@ -98,14 +98,14 @@ ClassDecoder::read_class_lm(string ngramfname,
     cerr << "Reading class membership probs.." << classmfname << endl;
     int num_classes = read_class_memberships(classmfname, m_class_memberships);
 
-    m_class_membership_lookup.resize(m_subwords.size(), make_pair(-1,MIN_LOG_PROB));
+    m_class_membership_lookup.resize(m_text_units.size(), make_pair(-1,MIN_LOG_PROB));
     for (auto wpit=m_class_memberships.begin(); wpit!= m_class_memberships.end(); ++wpit) {
         if (wpit->first == "<unk>") continue;
-        if (m_subword_map.find(wpit->first) == m_subword_map.end()) continue;
-        int word_idx = m_subword_map.at(wpit->first);
+        if (m_text_unit_map.find(wpit->first) == m_text_unit_map.end()) continue;
+        int word_idx = m_text_unit_map.at(wpit->first);
         m_class_membership_lookup[word_idx] = wpit->second;
     }
-    m_class_membership_lookup[m_subword_map.at("</s>")] = m_class_membership_lookup[m_subword_map.at("<s>")];
+    m_class_membership_lookup[m_text_unit_map.at("</s>")] = m_class_membership_lookup[m_text_unit_map.at("<s>")];
 
     m_class_intmap.resize(num_classes);
     for (int i=0; i<(int)m_class_intmap.size(); i++)
@@ -645,7 +645,7 @@ ClassDecoder::print_certain_word_history(ostream &outf)
     WordHistory *hist = m_history_root;
     while (true) {
         if (hist->word_id >= 0)
-            outf << m_subwords[hist->word_id] << " ";
+            outf << m_text_units[hist->word_id] << " ";
         if (hist->next.size() > 1 || hist->next.size() == 0) break;
         else hist = hist->next.begin()->second;
     }
@@ -665,17 +665,17 @@ ClassDecoder::print_word_history(WordHistory *history,
                             ostream &outf,
                             bool print_lm_probs)
 {
-    vector<int> subwords;
+    vector<int> text_units;
     while (true) {
-        subwords.push_back(history->word_id);
+        text_units.push_back(history->word_id);
         if (history->previous == nullptr) break;
         history = history->previous;
     }
 
     float total_lp = 0.0;
-    for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
+    for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit) {
         if (*swit >= 0)
-            outf << " " << m_subwords[*swit];
+            outf << " " << m_text_units[*swit];
     }
 
     if (print_lm_probs) outf << endl << "total lm log: " << total_lp;

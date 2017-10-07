@@ -131,11 +131,11 @@ Decoder::read_noway_lexicon(string lexfname)
         }
         if (problem_phone) continue;
 
-        if (m_subword_map.find(unit) == m_subword_map.end()) {
-            m_subwords.push_back(unit);
-            m_subword_map[unit] = m_subwords.size()-1;
-            if (unit == "<s>") m_sentence_begin_symbol_idx = m_subwords.size()-1;
-            if (unit == "</s>") m_sentence_end_symbol_idx = m_subwords.size()-1;
+        if (m_text_unit_map.find(unit) == m_text_unit_map.end()) {
+            m_text_units.push_back(unit);
+            m_text_unit_map[unit] = m_text_units.size()-1;
+            if (unit == "<s>") m_sentence_begin_symbol_idx = m_text_units.size()-1;
+            if (unit == "</s>") m_sentence_end_symbol_idx = m_text_units.size()-1;
         }
         m_lexicon[unit] = phones;
 
@@ -148,7 +148,7 @@ void
 Decoder::read_lm(string lmfname)
 {
     m_lm.read_arpa(lmfname);
-    set_subword_id_ngram_symbol_mapping();
+    set_text_unit_id_ngram_symbol_mapping();
 }
 
 
@@ -211,12 +211,12 @@ Decoder::set_hmm_transition_probs()
 
 
 void
-Decoder::set_subword_id_ngram_symbol_mapping()
+Decoder::set_text_unit_id_ngram_symbol_mapping()
 {
-    m_subword_id_to_ngram_symbol.resize(m_subwords.size(), -1);
-    for (unsigned int i=0; i<m_subwords.size(); i++) {
-        string tmp(m_subwords[i]);
-        m_subword_id_to_ngram_symbol[i] = m_lm.vocabulary_lookup[tmp];
+    m_text_unit_id_to_ngram_symbol.resize(m_text_units.size(), -1);
+    for (unsigned int i=0; i<m_text_units.size(); i++) {
+        string tmp(m_text_units[i]);
+        m_text_unit_id_to_ngram_symbol[i] = m_lm.vocabulary_lookup[tmp];
     }
 }
 
@@ -329,7 +329,7 @@ Decoder::initialize()
     if (m_use_word_boundary_symbol) {
         advance_in_word_history(tok, m_word_boundary_symbol_idx);
         float dummy;
-        tok.lm_node = m_lm.score(tok.lm_node, m_subword_id_to_ngram_symbol[m_word_boundary_symbol_idx], dummy);
+        tok.lm_node = m_lm.score(tok.lm_node, m_text_unit_id_to_ngram_symbol[m_word_boundary_symbol_idx], dummy);
         m_ngram_state_sentence_begin = tok.lm_node;
         tok.last_word_id = m_word_boundary_symbol_idx;
     }
@@ -535,7 +535,7 @@ Decoder::move_token_to_node(Token token,
     // Update LM score
     // Update history
     if (node.word_id != -1) {
-        token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
+        token.lm_node = m_lm.score(token.lm_node, m_text_unit_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
         token.last_word_id = node.word_id;
 
         if (update_lookahead) {
@@ -677,13 +677,13 @@ Decoder::add_sentence_ends(vector<Token> &tokens)
         Token &token = *tit;
         if (token.lm_node == m_lm.sentence_start_node) continue;
         m_active_histories.erase(token.history);
-        if (m_use_word_boundary_symbol && token.history->word_id != m_subword_map[m_word_boundary_symbol]) {
+        if (m_use_word_boundary_symbol && token.history->word_id != m_text_unit_map[m_word_boundary_symbol]) {
             token.lm_node = m_lm.score(token.lm_node,
-                                       m_subword_id_to_ngram_symbol[m_subword_map[m_word_boundary_symbol]], token.lm_log_prob);
+                                       m_text_unit_id_to_ngram_symbol[m_text_unit_map[m_word_boundary_symbol]], token.lm_log_prob);
             update_total_log_prob(token);
-            advance_in_word_history(token, m_subword_map[m_word_boundary_symbol]);
+            advance_in_word_history(token, m_text_unit_map[m_word_boundary_symbol]);
         }
-        token.lm_node = m_lm.score(token.lm_node, m_subword_id_to_ngram_symbol[m_sentence_end_symbol_idx], token.lm_log_prob);
+        token.lm_node = m_lm.score(token.lm_node, m_text_unit_id_to_ngram_symbol[m_sentence_end_symbol_idx], token.lm_log_prob);
         update_total_log_prob(token);
         advance_in_word_history(token, m_sentence_end_symbol_idx);
         m_active_histories.insert(token.history);
@@ -739,7 +739,7 @@ Decoder::print_certain_word_history(ostream &outf)
     WordHistory *hist = m_history_root;
     while (true) {
         if (hist->word_id >= 0)
-            outf << m_subwords[hist->word_id] << " ";
+            outf << m_text_units[hist->word_id] << " ";
         if (hist->next.size() > 1 || hist->next.size() == 0) break;
         else hist = hist->next.begin()->second;
     }
@@ -759,9 +759,9 @@ Decoder::print_word_history(WordHistory *history,
                             ostream &outf,
                             bool print_lm_probs)
 {
-    vector<int> subwords;
+    vector<int> text_units;
     while (true) {
-        subwords.push_back(history->word_id);
+        text_units.push_back(history->word_id);
         if (history->previous == nullptr) break;
         history = history->previous;
     }
@@ -769,20 +769,20 @@ Decoder::print_word_history(WordHistory *history,
     int lm_node = m_lm.root_node;
     float total_lp = 0.0;
     if (m_use_word_boundary_symbol) {
-        for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
-            outf << " " << m_subwords[*swit];
+        for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit) {
+            outf << " " << m_text_units[*swit];
             if (print_lm_probs) {
                 float lp = 0.0;
-                lm_node = m_lm.score(lm_node, m_subword_id_to_ngram_symbol[*swit], lp);
+                lm_node = m_lm.score(lm_node, m_text_unit_id_to_ngram_symbol[*swit], lp);
                 outf << "(" << lp << ")";
                 total_lp += lp;
             }
         }
     }
     else {
-        for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
+        for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit) {
             if (*swit >= 0)
-                outf << " " << m_subwords[*swit];
+                outf << " " << m_text_units[*swit];
         }
     }
 
@@ -806,11 +806,11 @@ Decoder::print_dot_digraph(vector<Node> &nodes,
         if (nidx == START_NODE) fstr << " [label=\"start\"]" << endl;
         else if (nidx == END_NODE) fstr << " [label=\"end\"]" << endl;
         else if (nd.hmm_state != -1 && nd.word_id >= 0)
-            fstr << " [label=\"" << nidx << ":" << nd.hmm_state << ", " << m_subwords[nd.word_id] << "\"]" << endl;
+            fstr << " [label=\"" << nidx << ":" << nd.hmm_state << ", " << m_text_units[nd.word_id] << "\"]" << endl;
         else if (nd.hmm_state != -1 && nd.word_id == -1)
             fstr << " [label=\"" << nidx << ":"<< nd.hmm_state << "\"]" << endl;
         else if (nd.hmm_state == -1 && nd.word_id >= 0)
-            fstr << " [label=\"" << nidx << ":"<< m_subwords[nd.word_id] << "\"]" << endl;
+            fstr << " [label=\"" << nidx << ":"<< m_text_units[nd.word_id] << "\"]" << endl;
         else if (nd.hmm_state == -1 && nd.word_id == -2)
             fstr << " [label=\"" << nidx << ":dummy/wb\"]" << endl;
         else

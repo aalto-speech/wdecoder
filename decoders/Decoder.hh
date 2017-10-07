@@ -80,7 +80,7 @@ public:
     class Lookahead {
     public:
         virtual float get_lookahead_score(int node_idx, int word_id) = 0;
-        void set_subword_id_la_ngram_symbol_mapping();
+        void set_text_unit_id_la_ngram_symbol_mapping();
         void get_reverse_arcs(std::vector<std::vector<Arc> > &reverse_arcs);
         void find_successor_words(int node_idx, std::vector<int> &word_ids);
         void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=true);
@@ -101,7 +101,7 @@ public:
 
         Decoder *decoder;
         Ngram m_la_lm;
-        std::vector<int> m_subword_id_to_la_ngram_symbol;
+        std::vector<int> m_text_unit_id_to_la_ngram_symbol;
     };
 
     Decoder();
@@ -145,7 +145,7 @@ public:
                             bool print_lm_probs=false);
 
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
-    void set_subword_id_ngram_symbol_mapping();
+    void set_text_unit_id_ngram_symbol_mapping();
 
     void prune_word_history();
     void clear_word_history();
@@ -153,10 +153,10 @@ public:
     void set_hmm_transition_probs();
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
 
-    // Subwords
-    std::vector<std::string> m_subwords;
+    // Words or subwords
+    std::vector<std::string> m_text_units;
     // Mapping from text units to indices
-    std::map<std::string, int> m_subword_map;
+    std::map<std::string, int> m_text_unit_map;
     // Vocabulary units as phone strings, FIXME: currently only one pronunciation
     std::map<std::string, std::vector<std::string> > m_lexicon;
     // Mapping from phones (triphones) to HMM indices.
@@ -168,7 +168,7 @@ public:
 
     // Language model
     Ngram m_lm;
-    std::vector<int> m_subword_id_to_ngram_symbol;
+    std::vector<int> m_text_unit_id_to_ngram_symbol;
 
     // Lookahead language model
     Lookahead *m_la;

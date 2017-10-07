@@ -36,7 +36,7 @@ read_config(Decoder &d, string cfgfname)
         else if (parameter == "word_boundary_symbol") {
             d.m_use_word_boundary_symbol = true;
             ss >> d.m_word_boundary_symbol;
-            d.m_word_boundary_symbol_idx = d.m_subword_map[d.m_word_boundary_symbol];
+            d.m_word_boundary_symbol_idx = d.m_text_unit_map[d.m_word_boundary_symbol];
         }
         else if (parameter == "stats") ss >> d.m_stats;
         else throw string("Unknown parameter: ") + parameter;
