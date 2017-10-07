@@ -21,7 +21,7 @@ The graphs are created by inserting the words to a prefix tree. The cross-word/c
 * Pruning and look-ahead
     * Hypothesis recombination always done using the n-gram model states
     * Combination of beam pruning, word end beam pruning, node beam pruning, histogram pruning. To start with good global beam settings, the nodes are sorted by the highest likelihood prior to propagating the tokens to the next frame.
-    * Inapproximate and precomputed unigram and bigram lookahead for all the graph types. With the subword n-grams, the bigram look-aheads give the best results. With unlimited vocabulary decoders use the setting `bigram-precomputed-full`, with constrained vocabulary `bigram-precomputed-hybrid`. For large vocabularies the bigram lookahead (`large-bigram`) is computationally quite heavy (long precomputation, high memory requirements and RTF in decoding) and mostly does not improve the results compared to the unigram look-ahead (0-1% percent relative so far) so `unigram` is recommended. This is computationally simple and gives reasonable results. For smaller vocabulary sizes like for English recognition the `bigram-precomputed-full` should be ok. Please note that the bigram look-ahead models have somewhat high memory consumption. The memory consumption for the full table bigram lookahead is the number of look-ahead states times the vocabulary size. The number of look-ahead states can be checked with the `lasc`executable.
+    * Inapproximate and precomputed unigram and bigram lookahead for all the graph types. With the subword n-grams, the bigram look-aheads give the best results. With unlimited vocabulary decoders use the setting `bigram-precomputed-full`, with constrained vocabulary `bigram-precomputed-hybrid`. For large vocabularies the bigram lookahead (`large-bigram`) is computationally quite heavy (long precomputation, high memory requirements and RTF in decoding) and mostly does not improve the results compared to the unigram look-ahead (0-1% percent relative so far) so `unigram` is recommended. This is computationally simple and gives reasonable results. For smaller vocabulary sizes like for English recognition the `bigram-precomputed-full` should be ok. Please note that the bigram look-ahead models have somewhat high memory consumption. The memory consumption for the full table bigram lookahead is the number of look-ahead states times the vocabulary size times the float size. The number of look-ahead states can be checked with the `lasc`executable.
 
 ### Notes
 
@@ -35,17 +35,13 @@ Only triphone models are supported.
 
 Graphs are created by a separate program which is given as input to the `decode` executable.
 
-### Branches
-
-* `master`, normal n-gram decoder for all the graph types
-* `class-only`, class n-gram decoder for word-based recognition and the unlimited vocabulary recognizers without `<w>` symbol
-* `class-ip`, interpolated n-gram and class n-gram decoder for word-based recognition and the unlimited vocabulary recognizers without `<w>` symbol
-* `wsw`, constrained vocabulary word based recognizer with a three-way model interpolation, word n-gram, class n-gram over words, subword n-gram
-
 ### Programs
 
 * `cleanlex`, removes words without proper triphones
-* `decode`, main decoder
+* `decode`, normal n-gram decoder for all the graph types
+* `class-decode`, class n-gram decoder for word-based recognition and the unlimited vocabulary recognizers without `<w>` symbol
+* `class-ip-decode`, interpolated n-gram and class n-gram decoder for word-based recognition and the unlimited vocabulary recognizers without `<w>` symbol
+* `wsw-decode`, constrained vocabulary word based recognizer with a three-way model interpolation, word n-gram, class n-gram over words, subword n-gram.
 * `lasc`, counts look-ahead states
 * `lastates`, precomputes `large-bigram` lookahead scores
 * `score`, scores utterances
@@ -53,12 +49,12 @@ Graphs are created by a separate program which is given as input to the `decode`
 * `swgraph`, normal `<w>` unlimited vocabulary graph
 * `swwgraph`, constrained vocabulary subword n-gram graph
 * `wgraph`, word graph
-* `lwbswgraph`, unlimited vocabulary graph with the left-most subword markers
-* `rwbswgraph`, unlimited vocabulary graph with the right-most subword markers
+* `lwbswgraph`, unlimited vocabulary graph with the word boundary marker in the left-most subword
+* `rwbswgraph`, unlimited vocabulary graph with the word boundary marker in the right-most subword
 
 ### Configuration
 
-Example configuration below. The lm scale, global beam, duration scale and transition scale values are similar to the earlier AaltoASR decoder.
+Example configuration below. The lm scale, global beam, word end beam, duration scale and transition scale values are similar to the earlier AaltoASR decoder.
 
 `lm_scale 32.0`  
 `token_limit 35000`  
@@ -75,4 +71,4 @@ If word boundary symbols are used, add the following
 
 `word_boundary_symbol <w>`
 
-Also if using interpolated models in the `class-ip` and `wsw` branches, the interpolation weights need to be configured.
+Also if using interpolated models with `class-decode`, `class-ip-decode` or `wsw-decode` decoders, the interpolation weights need to be configured.
