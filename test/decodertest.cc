@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest1)
     cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
-        for (int w=0; w<(int)d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
+        for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
             idx++;
             if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest2)
     cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
-        for (int w=0; w<(int)d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
+        for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
             idx++;
             if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest4)
 
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
-        for (int w=0; w<(int)d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
+        for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
             idx++;
             if (idx % eval_ratio != 0) continue;
             float ref = refla.get_lookahead_score(i, w);
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest5)
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         if (d.m_nodes[i].flags & NODE_BIGRAM_LA_TABLE) {
-            for (int w=0; w<(int)d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
+            for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
                 idx++;
                 if (idx % eval_ratio != 0) continue;
                 float ref = refla.get_lookahead_score(i, w);
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest6)
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         if (d.m_nodes[i].flags & NODE_BIGRAM_LA_TABLE) {
-            for (int w=0; w<(int)d.m_la->m_subword_id_to_la_ngram_symbol.size(); w++) {
+            for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
                 idx++;
                 float ref = refla.get_lookahead_score(i, w);
                 float hyp = d.m_la->get_lookahead_score(i, w);

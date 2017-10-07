@@ -1,7 +1,7 @@
 -include Makefile.local
 
 cxxflags = -O3 -DNDEBUG -std=gnu++0x -Wall -Wno-unused-function -I./util $(LOCAL_CXXFLAGS)
-#cxxflags = -O0 -g -std=gnu++0x -Wall -Wno-unused-function
+#cxxflags = -O0 -g -std=gnu++0x -Wall -Wno-unused-function -I./util $(LOCAL_CXXFLAGS)
 
 ##################################################
 
@@ -30,6 +30,7 @@ graph_progs = wgraph\
 decoder_srcs = decoders/Decoder.cc\
 	decoders/ClassDecoder.cc\
 	decoders/ClassIPDecoder.cc\
+	decoders/WordSubwordDecoder.cc\
 	decoders/Segmenter.cc\
 	decoders/Lookahead.cc
 decoder_objs = $(decoder_srcs:.cc=.o)
@@ -37,6 +38,7 @@ decoder_objs = $(decoder_srcs:.cc=.o)
 decoder_progs = decode\
 	class-decode\
 	class-ip-decode\
+	wsw-decode\
 	score\
 	segment\
 	lastates\
