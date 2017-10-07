@@ -118,7 +118,6 @@ public:
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
 
-    void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
     void set_subword_id_ngram_symbol_mapping();
 
     void prune_word_history();

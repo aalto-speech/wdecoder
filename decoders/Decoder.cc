@@ -357,12 +357,6 @@ Decoder::reset_frame_variables()
 }
 
 
-bool descending_node_sort(const pair<int, float> &i, const pair<int, float> &j)
-{
-    return (i.second > j.second);
-}
-
-
 void
 Decoder::active_nodes_sorted_by_best_lp(vector<int> &nodes)
 {

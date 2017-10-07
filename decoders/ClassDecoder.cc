@@ -244,12 +244,6 @@ ClassDecoder::reset_frame_variables()
 }
 
 
-bool descending_node_sort_2(const pair<int, float> &i, const pair<int, float> &j)
-{
-    return (i.second > j.second);
-}
-
-
 void
 ClassDecoder::active_nodes_sorted_by_best_lp(vector<int> &nodes)
 {
@@ -257,7 +251,7 @@ ClassDecoder::active_nodes_sorted_by_best_lp(vector<int> &nodes)
     vector<pair<int, float> > sorted_nodes;
     for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit)
         sorted_nodes.push_back(make_pair(*nit, m_best_node_scores[*nit]));
-    sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_sort_2);
+    sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_sort);
     for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
         nodes.push_back(snit->first);
 }
@@ -687,41 +681,3 @@ ClassDecoder::print_word_history(WordHistory *history,
     if (print_lm_probs) outf << endl << "total lm log: " << total_lp;
     outf << endl;
 }
-
-
-void
-ClassDecoder::print_dot_digraph(vector<Node> &nodes,
-                           ostream &fstr)
-{
-    fstr << "digraph {" << endl << endl;
-    fstr << "\tnode [shape=ellipse,fontsize=30,fixedsize=false,width=0.95];" << endl;
-    fstr << "\tedge [fontsize=12];" << endl;
-    fstr << "\trankdir=LR;" << endl << endl;
-
-    for (unsigned int nidx = 0; nidx < m_nodes.size(); ++nidx) {
-        Node &nd = m_nodes[nidx];
-        fstr << "\t" << nidx;
-        if (nidx == START_NODE) fstr << " [label=\"start\"]" << endl;
-        else if (nidx == END_NODE) fstr << " [label=\"end\"]" << endl;
-        else if (nd.hmm_state != -1 && nd.word_id >= 0)
-            fstr << " [label=\"" << nidx << ":" << nd.hmm_state << ", " << m_subwords[nd.word_id] << "\"]" << endl;
-        else if (nd.hmm_state != -1 && nd.word_id == -1)
-            fstr << " [label=\"" << nidx << ":"<< nd.hmm_state << "\"]" << endl;
-        else if (nd.hmm_state == -1 && nd.word_id >= 0)
-            fstr << " [label=\"" << nidx << ":"<< m_subwords[nd.word_id] << "\"]" << endl;
-        else if (nd.hmm_state == -1 && nd.word_id == -2)
-            fstr << " [label=\"" << nidx << ":dummy/wb\"]" << endl;
-        else
-            fstr << " [label=\"" << nidx << ":dummy\"]" << endl;
-    }
-
-    fstr << endl;
-    for (unsigned int nidx = 0; nidx < m_nodes.size(); ++nidx) {
-        Node &node = m_nodes[nidx];
-        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-            fstr << "\t" << nidx << " -> " << ait->target_node
-                 << "[label=\"" << ait->log_prob << "\"];" << endl;
-    }
-    fstr << "}" << endl;
-}
-
