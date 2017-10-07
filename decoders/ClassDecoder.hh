@@ -82,13 +82,8 @@ public:
     ClassDecoder();
     ~ClassDecoder();
 
-    void read_phone_model(std::string phnfname);
-    void read_duration_model(std::string durfname);
-    void read_noway_lexicon(std::string lexfname);
-    void read_lm(std::string lmfname);
     void read_class_lm(std::string ngramfname,
                        std::string wordpfname);
-    void read_dgraph(std::string graphfname);
 
     void recognize_lna_file(std::string lnafname,
                             std::ostream &outf=std::cout,
@@ -129,21 +124,7 @@ public:
     void prune_word_history();
     void clear_word_history();
 
-    void set_hmm_transition_probs();
     void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
-
-    // Subwords
-    std::vector<std::string> m_subwords;
-    // Mapping from text units to indices
-    std::map<std::string, int> m_subword_map;
-    // Vocabulary units as phone strings, FIXME: currently only one pronunciation
-    std::map<std::string, std::vector<std::string> > m_lexicon;
-    // Mapping from phones (triphones) to HMM indices.
-    std::map<std::string,int> m_hmm_map;
-    // The HMMs.
-    std::vector<Hmm> m_hmms;
-    // Hmm states
-    std::vector<HmmState> m_hmm_states;
 
     // Lookahead language model
     Lookahead *m_la;
