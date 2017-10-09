@@ -31,11 +31,6 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[2];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        cerr << "Number of prefix subwords: " << prefix_subwords.size() << endl;
-        cerr << "Number of stem subwords: " << stem_subwords.size() << endl;
-        cerr << "Number of suffix subwords: " << suffix_subwords.size() << endl;
-        cerr << "Number of word subwords: " << word_subwords.size() << endl;
-
         swg.create_graph(prefix_subwords, stem_subwords, suffix_subwords, word_subwords, true);
         swg.add_long_silence();
         swg.add_hmm_self_transitions();

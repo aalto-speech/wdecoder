@@ -30,6 +30,20 @@ public:
                       std::set<std::string> &stem_subwords,
                       std::set<std::string> &suffix_subwords,
                       std::set<std::string> &word_subwords);
+
+    void create_crossword_network(const std::set<std::string> &word_subwords,
+                                  std::vector<DecoderGraph::Node> &nodes,
+                                  std::map<std::string, int> &fanout,
+                                  std::map<std::string, int> &fanin);
+
+    void connect_one_phone_words_from_start_to_cw(const std::set<std::string> &word_subwords,
+                                                  std::vector<DecoderGraph::Node> &nodes,
+                                                  std::map<std::string, int> &fanout);
+
+    void connect_one_phone_words_from_cw_to_end(const std::set<std::string> &word_subwords,
+                                                std::vector<DecoderGraph::Node> &nodes,
+                                                std::map<std::string, int> &fanin);
+
 };
 
 #endif /* LRWB_SUBWORD_GRAPH_HH */
