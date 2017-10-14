@@ -45,7 +45,6 @@ ClassDecoder::ClassDecoder()
     m_token_count = 0;
     m_token_count_after_pruning = 0;
     m_word_boundary_symbol_idx = -1;
-    m_word_boundary_symbol_class_idx = -1;
     m_sentence_begin_symbol_idx = -1;
     m_sentence_end_symbol_idx = -1;
 
