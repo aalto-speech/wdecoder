@@ -38,6 +38,44 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest1)
 }
 
 
+// Prefix, suffix and complete word subwords
+// No stems or one phone subwords
+BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest2)
+{
+    cerr << endl;
+    LRWBSubwordGraph swg;
+    LRWBGraphTestUtils::read_fixtures(swg, "data/lrwb_2.lex");
+
+    swg.create_graph(lrwb_prefix_subwords,
+                     lrwb_stem_subwords,
+                     lrwb_suffix_subwords,
+                     lrwb_word_subwords);
+
+    BOOST_CHECK( swg.assert_words(lrwb_word_subwords) );
+    BOOST_CHECK( swg.assert_only_words(lrwb_word_subwords) );
+    BOOST_CHECK( swg.assert_word_pairs(lrwb_word_subwords, true, false) ); //short sil, wb symbol
+}
+
+
+// All subword types
+// One phone stem subword
+BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest3)
+{
+    cerr << endl;
+    LRWBSubwordGraph swg;
+    LRWBGraphTestUtils::read_fixtures(swg, "data/lrwb_3.lex");
+
+    swg.create_graph(lrwb_prefix_subwords,
+                     lrwb_stem_subwords,
+                     lrwb_suffix_subwords,
+                     lrwb_word_subwords);
+
+    BOOST_CHECK( swg.assert_words(lrwb_word_subwords) );
+    BOOST_CHECK( swg.assert_only_words(lrwb_word_subwords) );
+    BOOST_CHECK( swg.assert_word_pairs(lrwb_word_subwords, true, false) ); //short sil, wb symbol
+}
+
+
 //ofstream origoutf("acw.dot");
 //print_dot_digraph(dg, nodes, origoutf, true);
 //origoutf.close();
