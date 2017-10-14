@@ -19,6 +19,38 @@ namespace LRWBGraphTestUtils {
                          lrwb_suffix_subwords,
                          lrwb_word_subwords);
     }
+
+    void pre_suf_words(const set<string> &prefix_subwords,
+                       const set<string> &suffix_subwords,
+                       map<string, vector<string> > &word_segs) {
+        for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
+            for (auto sufit = suffix_subwords.begin(); sufit != suffix_subwords.end(); ++sufit) {
+                vector<string> word_seg;
+                word_seg.push_back(*prefit);
+                word_seg.push_back(*sufit);
+                string wrd = *prefit + *sufit;
+                word_segs[wrd] = word_seg;
+            }
+        }
+    }
+
+    void pre_stem_suf_words(const set<string> &prefix_subwords,
+                            const set<string> &stem_subwords,
+                            const set<string> &suffix_subwords,
+                            map<string, vector<string> > &word_segs) {
+        for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
+            for (auto stemit = stem_subwords.begin(); stemit != stem_subwords.end(); ++stemit) {
+                for (auto sufit = suffix_subwords.begin(); sufit != suffix_subwords.end(); ++sufit) {
+                    vector<string> word_seg;
+                    word_seg.push_back(*prefit);
+                    word_seg.push_back(*stemit);
+                    word_seg.push_back(*sufit);
+                    string wrd = *prefit + *stemit + *sufit;
+                    word_segs[wrd] = word_seg;
+                }
+            }
+        }
+    }
 };
 
 // Only complete word subwords
@@ -51,9 +83,13 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest2)
                      lrwb_suffix_subwords,
                      lrwb_word_subwords);
 
-    BOOST_CHECK( swg.assert_words(lrwb_word_subwords) );
-    BOOST_CHECK( swg.assert_only_words(lrwb_word_subwords) );
-    BOOST_CHECK( swg.assert_word_pairs(lrwb_word_subwords, true, false) ); //short sil, wb symbol
+    map<string, vector<string> > testWords;
+    LRWBGraphTestUtils::pre_suf_words(lrwb_prefix_subwords,
+                                      lrwb_suffix_subwords,
+                                      testWords);
+    cerr << "Number of words to verify: " << testWords.size() << endl;
+    BOOST_CHECK( swg.assert_words(testWords) );
+    BOOST_CHECK( swg.assert_word_pairs(testWords, true, false) ); //short sil, wb symbol
 }
 
 
@@ -70,9 +106,17 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest3)
                      lrwb_suffix_subwords,
                      lrwb_word_subwords);
 
-    BOOST_CHECK( swg.assert_words(lrwb_word_subwords) );
-    BOOST_CHECK( swg.assert_only_words(lrwb_word_subwords) );
-    BOOST_CHECK( swg.assert_word_pairs(lrwb_word_subwords, true, false) ); //short sil, wb symbol
+    map<string, vector<string> > testWords;
+    LRWBGraphTestUtils::pre_suf_words(lrwb_prefix_subwords,
+                                      lrwb_suffix_subwords,
+                                      testWords);
+    LRWBGraphTestUtils::pre_stem_suf_words(lrwb_prefix_subwords,
+                                           lrwb_stem_subwords,
+                                           lrwb_suffix_subwords,
+                                           testWords);
+    cerr << "Number of words to verify: " << testWords.size() << endl;
+    BOOST_CHECK( swg.assert_words(testWords) );
+    BOOST_CHECK( swg.assert_word_pairs(testWords, true, false) ); //short sil, wb symbol
 }
 
 
