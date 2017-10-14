@@ -20,8 +20,6 @@ class ClassDecoder : public Decoder {
 
 public:
 
-    class Token;
-
     class Token {
     public:
         int node_idx;
