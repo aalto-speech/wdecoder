@@ -12,8 +12,6 @@
 #include "LnaReaderCircular.hh"
 #include "Decoder.hh"
 
-#define HISTOGRAM_BIN_COUNT 100
-
 
 class NgramDecoder : public Decoder {
 
