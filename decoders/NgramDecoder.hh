@@ -1,7 +1,6 @@
-#ifndef WORD_SUBWORD_DECODER_HH
-#define WORD_SUBWORD_DECODER_HH
+#ifndef NGRAM_DECODER_HH
+#define NGRAM_DECODER_HH
 
-#include <array>
 #include <map>
 #include <fstream>
 #include <vector>
@@ -10,11 +9,11 @@
 #include "defs.hh"
 #include "Hmm.hh"
 #include "Ngram.hh"
-#include "Decoder.hh"
 #include "LnaReaderCircular.hh"
+#include "Decoder.hh"
 
 
-class WordSubwordDecoder : public Decoder {
+class NgramDecoder : public Decoder {
 
 public:
 
@@ -26,8 +25,6 @@ public:
         float lookahead_log_prob;
         float total_log_prob;
         int lm_node;
-        int class_lm_node;
-        int subword_lm_node;
         int last_word_id;
         WordHistory *history;
         unsigned short int dur;
@@ -41,8 +38,6 @@ public:
             lookahead_log_prob(0.0f),
             total_log_prob(-1e20),
             lm_node(0),
-            class_lm_node(0),
-            subword_lm_node(0),
             last_word_id(-1),
             history(nullptr),
             dur(0),
@@ -51,17 +46,11 @@ public:
         { }
     };
 
-    WordSubwordDecoder();
-    ~WordSubwordDecoder();
+    NgramDecoder();
+    ~NgramDecoder();
 
     void read_lm(std::string lmfname);
     void set_text_unit_id_ngram_symbol_mapping();
-    void read_class_lm(std::string ngramfname,
-                       std::string wordpfname);
-    int read_class_memberships(std::string fname,
-                               std::map<std::string, std::pair<int, float> > &class_memberships);
-    void read_subword_lm(std::string ngramfname,
-                         std::string segfname);
 
     void recognize_lna_file(std::string lnafname,
                             std::ostream &outf=std::cout,
@@ -80,42 +69,26 @@ public:
                             int node_idx,
                             float transition_score,
                             bool update_lookahead);
-    bool update_lm_prob(Token &token, int node_idx);
     void update_total_log_prob(Token &token);
     void advance_in_word_history(Token& token, int word_id);
     void apply_duration_model(Token &token, int node_idx);
     void update_lookahead_prob(Token &token, float lookahead_prob);
-    double class_lm_score(Token &token, int word_id);
     Token* get_best_token();
     Token* get_best_token(std::vector<Token> &tokens);
     Token* get_best_end_token(std::vector<Token> &tokens);
     void add_sentence_ends(std::vector<Token> &tokens);
+
     void print_best_word_history(std::ostream &outf=std::cout);
     void print_word_history(WordHistory *history,
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
 
     // Language model
-    LNNgram m_lm;
+    Ngram m_lm;
     std::vector<int> m_text_unit_id_to_ngram_symbol;
 
-    // Class n-gram language model
-    LNNgram m_class_lm;
-    std::map<std::string, std::pair<int, float> > m_class_memberships;
-    std::vector<std::pair<int, float> > m_class_membership_lookup;
-    std::vector<int> m_class_intmap;
-
-    // Subword language model
-    LNNgram m_subword_lm;
-    std::vector<std::vector<int> > m_word_id_to_subword_ngram_symbols;
-    int m_subword_lm_start_node;
-
-    double m_word_iw;
-    double m_class_iw;
-    double m_subword_iw;
-
     std::vector<Token> m_raw_tokens;
-    std::vector<std::map<std::pair<int, int>, Token> > m_recombined_tokens;
+    std::vector<std::map<int, Token> > m_recombined_tokens;
 };
 
-#endif /* WORD_SUBWORD_DECODER_HH */
+#endif /* NGRAM_DECODER_HH */

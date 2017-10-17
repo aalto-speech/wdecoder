@@ -1,5 +1,6 @@
 #include <sstream>
 
+#include "NgramDecoder.hh"
 #include "Lookahead.hh"
 #include "conf.hh"
 
@@ -7,7 +8,7 @@ using namespace std;
 
 
 void
-read_config(Decoder &d, string cfgfname)
+read_config(NgramDecoder &d, string cfgfname)
 {
     ifstream cfgf(cfgfname);
     if (!cfgf) throw string("Problem opening configuration file: ") + cfgfname;
@@ -45,7 +46,7 @@ read_config(Decoder &d, string cfgfname)
 
 
 void
-print_config(Decoder &d,
+print_config(NgramDecoder &d,
              conf::Config &config,
              ostream &outf)
 {
@@ -75,7 +76,7 @@ print_config(Decoder &d,
 
 
 void
-recognize_lnas(Decoder &d,
+recognize_lnas(NgramDecoder &d,
                conf::Config &config,
                string lnalistfname,
                ostream &resultf,
@@ -152,7 +153,7 @@ int main(int argc, char* argv[])
 
     try {
 
-        Decoder d;
+        NgramDecoder d;
 
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;

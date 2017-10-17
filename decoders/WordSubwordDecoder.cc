@@ -8,8 +8,64 @@
 using namespace std;
 
 
+WordSubwordDecoder::WordSubwordDecoder()
+{
+    m_class_iw = 0.0;
+    m_word_iw = 0.0;
+    m_subword_iw = 0.0;
+    m_subword_lm_start_node = -1;
+}
+
+
+WordSubwordDecoder::~WordSubwordDecoder()
+{
+}
+
+
+void
+WordSubwordDecoder::read_lm(string lmfname)
+{
+    m_lm.read_arpa(lmfname);
+    set_text_unit_id_ngram_symbol_mapping();
+}
+
+
+void
+WordSubwordDecoder::set_text_unit_id_ngram_symbol_mapping()
+{
+    m_text_unit_id_to_ngram_symbol.resize(m_text_units.size(), -1);
+    for (unsigned int i=0; i<m_text_units.size(); i++) {
+        string tmp(m_text_units[i]);
+        m_text_unit_id_to_ngram_symbol[i] = m_lm.vocabulary_lookup[tmp];
+    }
+}
+
+
+void
+WordSubwordDecoder::read_class_lm(string ngramfname,
+                       string classmfname)
+{
+    m_class_lm.read_arpa(ngramfname);
+    cerr << "Reading class membership probs.." << classmfname << endl;
+    int num_classes = read_class_memberships(classmfname, m_class_memberships);
+
+    m_class_membership_lookup.resize(m_text_units.size(), make_pair(-1,MIN_LOG_PROB));
+    for (auto wpit=m_class_memberships.begin(); wpit!= m_class_memberships.end(); ++wpit) {
+        if (wpit->first == "<unk>") continue;
+        if (m_text_unit_map.find(wpit->first) == m_text_unit_map.end()) continue;
+        int word_idx = m_text_unit_map.at(wpit->first);
+        m_class_membership_lookup[word_idx] = wpit->second;
+    }
+    m_class_membership_lookup[m_text_unit_map.at("</s>")] = m_class_membership_lookup[m_text_unit_map.at("<s>")];
+
+    m_class_intmap.resize(num_classes);
+    for (int i=0; i<(int)m_class_intmap.size(); i++)
+        m_class_intmap[i] = m_class_lm.vocabulary_lookup[int2str(i)];
+}
+
+
 int
-read_class_memberships_3(string fname,
+WordSubwordDecoder::read_class_memberships(string fname,
                        map<string, pair<int, float> > &class_memberships)
 {
     SimpleFileInput wcf(fname);
@@ -26,101 +82,6 @@ read_class_memberships_3(string fname,
         max_class = max(max_class, clss);
     }
     return max_class+1;
-}
-
-
-WordSubwordDecoder::WordSubwordDecoder()
-{
-    m_stats = 0;
-
-    m_total_token_count = 0;
-
-    m_duration_model_in_use = false;
-    m_use_word_boundary_symbol = false;
-    m_force_sentence_end = true;
-
-    m_lm_scale = 0.0;
-    m_duration_scale = 0.0;
-    m_transition_scale = 0.0;
-    m_token_count = 0;
-    m_token_count_after_pruning = 0;
-    m_word_boundary_symbol_idx = -1;
-    m_sentence_begin_symbol_idx = -1;
-    m_sentence_end_symbol_idx = -1;
-
-    m_dropped_count = 0;
-    m_global_beam_pruned_count = 0;
-    m_word_end_beam_pruned_count = 0;
-    m_node_beam_pruned_count = 0;
-    m_max_state_duration_pruned_count = 0;
-    m_histogram_pruned_count = 0;
-
-    m_acoustics = nullptr;
-
-    m_la = nullptr;
-
-    m_best_log_prob = -1e20;
-    m_best_word_end_prob = -1e20;
-    m_histogram_bin_limit = 0;
-
-    m_global_beam = 0.0;
-    m_word_end_beam = 0.0;
-    m_node_beam = 0.0;
-
-    m_token_limit = 500000;
-    m_active_node_limit = 50000;
-
-    m_history_root = nullptr;
-
-    m_history_clean_frame_interval = 10;
-
-    m_word_boundary_penalty = 0.0;
-    m_max_state_duration = 80;
-
-    m_ngram_state_sentence_begin = -1;
-    m_decode_start_node = -1;
-    m_frame_idx = -1;
-
-    m_last_sil_idx = -1;
-
-    m_class_lm_order = 0;
-    m_class_iw = 0.0;
-    m_word_iw = 0.0;
-    m_subword_iw = 0.0;
-    m_class_lm_start_node = -1;
-
-    m_subword_lm_start_node = -1;
-}
-
-
-WordSubwordDecoder::~WordSubwordDecoder()
-{
-}
-
-
-void
-WordSubwordDecoder::read_class_lm(string ngramfname,
-                       string classmfname)
-{
-    m_class_lm.read_arpa(ngramfname);
-    m_class_lm_order = m_class_lm.order();
-    cerr << "Reading class membership probs.." << classmfname << endl;
-    int num_classes = read_class_memberships_3(classmfname, m_class_memberships);
-
-    m_class_membership_lookup.resize(m_text_units.size(), make_pair(-1,MIN_LOG_PROB));
-    for (auto wpit=m_class_memberships.begin(); wpit!= m_class_memberships.end(); ++wpit) {
-        if (wpit->first == "<unk>") continue;
-        if (m_text_unit_map.find(wpit->first) == m_text_unit_map.end()) continue;
-        int word_idx = m_text_unit_map.at(wpit->first);
-        m_class_membership_lookup[word_idx] = wpit->second;
-    }
-    m_class_membership_lookup[m_text_unit_map.at("</s>")] = m_class_membership_lookup[m_text_unit_map.at("<s>")];
-
-    m_class_intmap.resize(num_classes);
-    for (int i=0; i<(int)m_class_intmap.size(); i++)
-        m_class_intmap[i] = m_class_lm.vocabulary_lookup[int2str(i)];
-
-    m_class_lm_start_node = m_class_lm.advance(m_class_lm.root_node, m_class_lm.vocabulary_lookup["<s>"]);
 }
 
 
@@ -179,47 +140,6 @@ WordSubwordDecoder::read_subword_lm(string ngramfname,
 
     m_subword_lm_start_node = m_subword_lm.advance(m_subword_lm.root_node, m_subword_lm.vocabulary_lookup["<s>"]);
     m_subword_lm_start_node = m_subword_lm.advance(m_subword_lm_start_node, m_subword_lm.vocabulary_lookup["<w>"]);
-}
-
-
-void
-WordSubwordDecoder::read_dgraph(string fname)
-{
-    SimpleFileInput ginf(fname);
-
-    int node_idx, node_count, arc_count;
-    string line;
-
-    ginf.getline(line);
-    stringstream ncl(line);
-    ncl >> node_count;
-    m_nodes.clear();
-    m_nodes.resize(node_count);
-
-    string ltype;
-    for (unsigned int i=0; i<m_nodes.size(); i++) {
-        ginf.getline(line);
-        stringstream nss(line);
-        nss >> ltype;
-        if (ltype != "n") throw string("Problem reading graph.");
-        Node &node = m_nodes[i];
-        nss >> node_idx >> node.hmm_state >> node.word_id >> arc_count >> node.flags;
-        if (node.flags & NODE_DECODE_START) m_decode_start_node = node_idx;
-        node.arcs.resize(arc_count);
-    }
-
-    vector<int> node_arc_counts;
-    node_arc_counts.resize(node_count, 0);
-    while (ginf.getline(line)) {
-        stringstream ass(line);
-        int src_node, tgt_node;
-        ass >> ltype >> src_node >> tgt_node;
-        if (ltype != "a") throw string("Problem reading graph.");
-        m_nodes[src_node].arcs[node_arc_counts[src_node]].target_node = tgt_node;
-        node_arc_counts[src_node]++;
-    }
-
-    set_hmm_transition_probs();
 }
 
 
@@ -323,7 +243,7 @@ WordSubwordDecoder::initialize()
     m_active_histories.clear();
     Token tok;
     tok.lm_node = m_lm.sentence_start_node;
-    tok.class_lm_node = m_class_lm_start_node;
+    tok.class_lm_node = m_class_lm.sentence_start_node;
     tok.subword_lm_node = m_subword_lm_start_node;
     tok.last_word_id = m_sentence_begin_symbol_idx;
     m_ngram_state_sentence_begin = tok.lm_node;
@@ -354,19 +274,6 @@ WordSubwordDecoder::reset_frame_variables()
     m_token_count_after_pruning = 0;
     m_active_histories.clear();
     fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
-}
-
-
-void
-WordSubwordDecoder::active_nodes_sorted_by_best_lp(vector<int> &nodes)
-{
-    nodes.clear();
-    vector<pair<int, float> > sorted_nodes;
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit)
-        sorted_nodes.push_back(make_pair(*nit, m_best_node_scores[*nit]));
-    sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_sort);
-    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
-        nodes.push_back(snit->first);
 }
 
 
@@ -559,7 +466,7 @@ WordSubwordDecoder::move_token_to_node(Token token,
 
         if (node.word_id == m_sentence_end_symbol_idx) {
             token.lm_node = m_ngram_state_sentence_begin;
-            token.class_lm_node = m_class_lm_start_node;
+            token.class_lm_node = m_class_lm.sentence_start_node;
             token.subword_lm_node = m_subword_lm_start_node;
             token.last_word_id = m_sentence_begin_symbol_idx;
         }
@@ -703,7 +610,7 @@ WordSubwordDecoder::class_lm_score(Token &token, int word_id)
         token.class_lm_node = m_class_lm.score(token.class_lm_node,
                                                m_class_lm.vocabulary_lookup["</s>"],
                                                ngram_score);
-        token.class_lm_node = m_class_lm_start_node;
+        token.class_lm_node = m_class_lm.sentence_start_node;
     }
     else
         token.class_lm_node = m_class_lm.score(token.class_lm_node,
@@ -726,62 +633,6 @@ WordSubwordDecoder::add_sentence_ends(vector<Token> &tokens)
         advance_in_word_history(token, m_sentence_end_symbol_idx);
         m_active_histories.insert(token.history);
     }
-}
-
-
-void
-WordSubwordDecoder::prune_word_history()
-{
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ) {
-        WordHistory *wh = *whlnit;
-        if (m_active_histories.find(wh) == m_active_histories.end()) {
-            m_word_history_leafs.erase(whlnit++);
-            while (true) {
-                WordHistory *tmp = wh;
-                wh = wh->previous;
-                wh->next.erase(tmp->word_id);
-                delete tmp;
-                if (wh == nullptr || wh->next.size() > 0) break;
-                if (m_active_histories.find(wh) != m_active_histories.end()) {
-                    m_word_history_leafs.insert(wh);
-                    break;
-                }
-            }
-        }
-        else ++whlnit;
-    }
-}
-
-
-void
-WordSubwordDecoder::clear_word_history()
-{
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ++whlnit) {
-        WordHistory *wh = *whlnit;
-        while (wh != nullptr) {
-            if (wh->next.size() > 0) break;
-            WordHistory *tmp = wh;
-            wh = wh->previous;
-            if (wh != nullptr) wh->next.erase(tmp->word_id);
-            delete tmp;
-        }
-    }
-    m_word_history_leafs.clear();
-    m_active_histories.clear();
-}
-
-
-void
-WordSubwordDecoder::print_certain_word_history(ostream &outf)
-{
-    WordHistory *hist = m_history_root;
-    while (true) {
-        if (hist->word_id >= 0)
-            outf << m_text_units[hist->word_id] << " ";
-        if (hist->next.size() > 1 || hist->next.size() == 0) break;
-        else hist = hist->next.begin()->second;
-    }
-    outf << endl;
 }
 
 

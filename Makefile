@@ -30,11 +30,13 @@ graph_progs = wgraph\
 	lrwbswgraph
 
 decoder_srcs = decoders/Decoder.cc\
+	decoders/Lookahead.cc\
+	decoders/NgramDecoder.cc\
 	decoders/ClassDecoder.cc\
 	decoders/ClassIPDecoder.cc\
 	decoders/WordSubwordDecoder.cc\
-	decoders/Segmenter.cc\
-	decoders/Lookahead.cc
+	decoders/Segmenter.cc
+
 decoder_objs = $(decoder_srcs:.cc=.o)
 
 decoder_progs = decode\

@@ -8,79 +8,8 @@
 using namespace std;
 
 
-int
-read_class_memberships(string fname,
-                       map<string, pair<int, float> > &class_memberships)
-{
-    SimpleFileInput wcf(fname);
-
-    string line;
-    int max_class = 0;
-    while (wcf.getline(line)) {
-        stringstream ss(line);
-        string word;
-        int clss;
-        double prob;
-        ss >> word >> clss >> prob;
-        class_memberships[word] = make_pair(clss, prob);
-        max_class = max(max_class, clss);
-    }
-    return max_class+1;
-}
-
-
 ClassDecoder::ClassDecoder()
 {
-    m_stats = 0;
-
-    m_total_token_count = 0;
-
-    m_duration_model_in_use = false;
-    m_use_word_boundary_symbol = false;
-    m_force_sentence_end = true;
-
-    m_lm_scale = 0.0;
-    m_duration_scale = 0.0;
-    m_transition_scale = 0.0;
-    m_token_count = 0;
-    m_token_count_after_pruning = 0;
-    m_word_boundary_symbol_idx = -1;
-    m_word_boundary_symbol_class_idx = -1;
-    m_sentence_begin_symbol_idx = -1;
-    m_sentence_end_symbol_idx = -1;
-
-    m_dropped_count = 0;
-    m_global_beam_pruned_count = 0;
-    m_word_end_beam_pruned_count = 0;
-    m_node_beam_pruned_count = 0;
-    m_max_state_duration_pruned_count = 0;
-    m_histogram_pruned_count = 0;
-
-    m_acoustics = nullptr;
-
-    m_la = nullptr;
-
-    m_best_log_prob = -1e20;
-    m_best_word_end_prob = -1e20;
-    m_histogram_bin_limit = 0;
-
-    m_global_beam = 0.0;
-    m_word_end_beam = 0.0;
-    m_node_beam = 0.0;
-
-    m_token_limit = 500000;
-
-    m_history_root = nullptr;
-
-    m_history_clean_frame_interval = 10;
-
-    m_max_state_duration = 80;
-
-    m_ngram_state_sentence_begin = -1;
-    m_decode_start_node = -1;
-    m_frame_idx = -1;
-
-    m_last_sil_idx = -1;
 }
 
 
@@ -110,6 +39,27 @@ ClassDecoder::read_class_lm(string ngramfname,
     m_class_intmap.resize(num_classes);
     for (int i=0; i<(int)m_class_intmap.size(); i++)
         m_class_intmap[i] = m_class_lm.vocabulary_lookup[int2str(i)];
+}
+
+
+int
+ClassDecoder::read_class_memberships(string fname,
+                       map<string, pair<int, float> > &class_memberships)
+{
+    SimpleFileInput wcf(fname);
+
+    string line;
+    int max_class = 0;
+    while (wcf.getline(line)) {
+        stringstream ss(line);
+        string word;
+        int clss;
+        double prob;
+        ss >> word >> clss >> prob;
+        class_memberships[word] = make_pair(clss, prob);
+        max_class = max(max_class, clss);
+    }
+    return max_class+1;
 }
 
 
@@ -241,19 +191,6 @@ ClassDecoder::reset_frame_variables()
     m_token_count_after_pruning = 0;
     m_active_histories.clear();
     fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
-}
-
-
-void
-ClassDecoder::active_nodes_sorted_by_best_lp(vector<int> &nodes)
-{
-    nodes.clear();
-    vector<pair<int, float> > sorted_nodes;
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit)
-        sorted_nodes.push_back(make_pair(*nit, m_best_node_scores[*nit]));
-    sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_sort);
-    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
-        nodes.push_back(snit->first);
 }
 
 
@@ -498,7 +435,7 @@ ClassDecoder::get_best_end_token(vector<Token> &tokens)
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         //if (tit->lm_node != m_ngram_state_sentence_begin) continue;
 
-        ClassDecoder::Node &node = m_nodes[tit->node_idx];
+        Node &node = m_nodes[tit->node_idx];
         if (node.flags & NODE_SILENCE) {
             if (best_token == nullptr)
                 best_token = &(*tit);
@@ -531,8 +468,8 @@ ClassDecoder::update_lm_prob(Token &token, int word_id)
 {
     double class_lm_prob = class_lm_score(token, word_id);
     if (class_lm_prob == MIN_LOG_PROB) return false;
-    token.lm_log_prob += class_lm_prob;
-
+    static double ln_to_log10 = 1.0/log(10.0);
+    token.lm_log_prob += ln_to_log10 * class_lm_prob;
     return true;
 }
 
@@ -598,62 +535,6 @@ ClassDecoder::add_sentence_ends(vector<Token> &tokens)
 
 
 void
-ClassDecoder::prune_word_history()
-{
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ) {
-        WordHistory *wh = *whlnit;
-        if (m_active_histories.find(wh) == m_active_histories.end()) {
-            m_word_history_leafs.erase(whlnit++);
-            while (true) {
-                WordHistory *tmp = wh;
-                wh = wh->previous;
-                wh->next.erase(tmp->word_id);
-                delete tmp;
-                if (wh == nullptr || wh->next.size() > 0) break;
-                if (m_active_histories.find(wh) != m_active_histories.end()) {
-                    m_word_history_leafs.insert(wh);
-                    break;
-                }
-            }
-        }
-        else ++whlnit;
-    }
-}
-
-
-void
-ClassDecoder::clear_word_history()
-{
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ++whlnit) {
-        WordHistory *wh = *whlnit;
-        while (wh != nullptr) {
-            if (wh->next.size() > 0) break;
-            WordHistory *tmp = wh;
-            wh = wh->previous;
-            if (wh != nullptr) wh->next.erase(tmp->word_id);
-            delete tmp;
-        }
-    }
-    m_word_history_leafs.clear();
-    m_active_histories.clear();
-}
-
-
-void
-ClassDecoder::print_certain_word_history(ostream &outf)
-{
-    WordHistory *hist = m_history_root;
-    while (true) {
-        if (hist->word_id >= 0)
-            outf << m_text_units[hist->word_id] << " ";
-        if (hist->next.size() > 1 || hist->next.size() == 0) break;
-        else hist = hist->next.begin()->second;
-    }
-    outf << endl;
-}
-
-
-void
 ClassDecoder::print_best_word_history(ostream &outf)
 {
     print_word_history(get_best_token()->history, outf);
@@ -665,15 +546,15 @@ ClassDecoder::print_word_history(WordHistory *history,
                             ostream &outf,
                             bool print_lm_probs)
 {
-    vector<int> text_units;
+    vector<int> subwords;
     while (true) {
-        text_units.push_back(history->word_id);
+        subwords.push_back(history->word_id);
         if (history->previous == nullptr) break;
         history = history->previous;
     }
 
     float total_lp = 0.0;
-    for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit) {
+    for (auto swit = subwords.rbegin(); swit != subwords.rend(); ++swit) {
         if (*swit >= 0)
             outf << " " << m_text_units[*swit];
     }
@@ -681,3 +562,4 @@ ClassDecoder::print_word_history(WordHistory *history,
     if (print_lm_probs) outf << endl << "total lm log: " << total_lp;
     outf << endl;
 }
+
