@@ -8,80 +8,8 @@
 using namespace std;
 
 
-int
-read_class_memberships_2(string fname,
-                         map<string, pair<int, float> > &class_memberships)
-{
-    SimpleFileInput wcf(fname);
-
-    string line;
-    int max_class = 0;
-    while (wcf.getline(line)) {
-        stringstream ss(line);
-        string word;
-        int clss;
-        float prob;
-        ss >> word >> clss >> prob;
-        class_memberships[word] = make_pair(clss, prob);
-        max_class = max(max_class, clss);
-    }
-    return max_class+1;
-}
-
-
 ClassIPDecoder::ClassIPDecoder()
 {
-    m_stats = 0;
-
-    m_total_token_count = 0;
-
-    m_duration_model_in_use = false;
-    m_use_word_boundary_symbol = false;
-    m_force_sentence_end = true;
-
-    m_lm_scale = 0.0;
-    m_duration_scale = 0.0;
-    m_transition_scale = 0.0;
-    m_token_count = 0;
-    m_token_count_after_pruning = 0;
-    m_word_boundary_symbol_idx = -1;
-    m_word_boundary_symbol_class_idx = -1;
-    m_sentence_begin_symbol_idx = -1;
-    m_sentence_end_symbol_idx = -1;
-
-    m_dropped_count = 0;
-    m_global_beam_pruned_count = 0;
-    m_word_end_beam_pruned_count = 0;
-    m_node_beam_pruned_count = 0;
-    m_max_state_duration_pruned_count = 0;
-    m_histogram_pruned_count = 0;
-
-    m_acoustics = nullptr;
-
-    m_la = nullptr;
-
-    m_best_log_prob = -1e20;
-    m_best_word_end_prob = -1e20;
-    m_histogram_bin_limit = 0;
-
-    m_global_beam = 0.0;
-    m_word_end_beam = 0.0;
-    m_node_beam = 0.0;
-
-    m_token_limit = 500000;
-
-    m_history_root = nullptr;
-
-    m_history_clean_frame_interval = 10;
-
-    m_max_state_duration = 80;
-
-    m_ngram_state_sentence_begin = -1;
-    m_decode_start_node = -1;
-    m_frame_idx = -1;
-
-    m_last_sil_idx = -1;
-
     m_iw = 0.0;
     m_class_iw = 0.0;
     m_word_iw = 0.0;
@@ -94,13 +22,32 @@ ClassIPDecoder::~ClassIPDecoder()
 
 
 void
+ClassIPDecoder::read_lm(string lmfname)
+{
+    m_lm.read_arpa(lmfname);
+    set_text_unit_id_ngram_symbol_mapping();
+}
+
+
+void
+ClassIPDecoder::set_text_unit_id_ngram_symbol_mapping()
+{
+    m_text_unit_id_to_ngram_symbol.resize(m_text_units.size(), -1);
+    for (unsigned int i=0; i<m_text_units.size(); i++) {
+        string tmp(m_text_units[i]);
+        m_text_unit_id_to_ngram_symbol[i] = m_lm.vocabulary_lookup[tmp];
+    }
+}
+
+
+void
 ClassIPDecoder::read_class_lm(string ngramfname,
                        string classmfname)
 {
     cerr << "Reading class n-gram: " << ngramfname << endl;
     m_class_lm.read_arpa(ngramfname);
     cerr << "Reading class membership probs.." << classmfname << endl;
-    int num_classes = read_class_memberships_2(classmfname, m_class_memberships);
+    int num_classes = read_class_memberships(classmfname, m_class_memberships);
 
     m_class_membership_lookup.resize(m_text_units.size(), make_pair(-1,MIN_LOG_PROB));
     for (auto wpit=m_class_memberships.begin(); wpit!= m_class_memberships.end(); ++wpit) {
@@ -119,6 +66,27 @@ ClassIPDecoder::read_class_lm(string ngramfname,
     cerr << "Weight for class n-gram: " << 1.0-m_iw << endl;
     m_word_iw = log(m_iw);
     m_class_iw = log(1.0-m_iw);
+}
+
+
+int
+ClassIPDecoder::read_class_memberships(string fname,
+                       map<string, pair<int, float> > &class_memberships)
+{
+    SimpleFileInput wcf(fname);
+
+    string line;
+    int max_class = 0;
+    while (wcf.getline(line)) {
+        stringstream ss(line);
+        string word;
+        int clss;
+        double prob;
+        ss >> word >> clss >> prob;
+        class_memberships[word] = make_pair(clss, prob);
+        max_class = max(max_class, clss);
+    }
+    return max_class+1;
 }
 
 
@@ -252,19 +220,6 @@ ClassIPDecoder::reset_frame_variables()
     m_token_count_after_pruning = 0;
     m_active_histories.clear();
     fill(m_best_node_scores.begin(), m_best_node_scores.end(), -1e20);
-}
-
-
-void
-ClassIPDecoder::active_nodes_sorted_by_best_lp(vector<int> &nodes)
-{
-    nodes.clear();
-    vector<pair<int, float> > sorted_nodes;
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit)
-        sorted_nodes.push_back(make_pair(*nit, m_best_node_scores[*nit]));
-    sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_sort);
-    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
-        nodes.push_back(snit->first);
 }
 
 
@@ -613,62 +568,6 @@ ClassIPDecoder::add_sentence_ends(vector<Token> &tokens)
         advance_in_word_history(token, m_sentence_end_symbol_idx);
         m_active_histories.insert(token.history);
     }
-}
-
-
-void
-ClassIPDecoder::prune_word_history()
-{
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ) {
-        WordHistory *wh = *whlnit;
-        if (m_active_histories.find(wh) == m_active_histories.end()) {
-            m_word_history_leafs.erase(whlnit++);
-            while (true) {
-                WordHistory *tmp = wh;
-                wh = wh->previous;
-                wh->next.erase(tmp->word_id);
-                delete tmp;
-                if (wh == nullptr || wh->next.size() > 0) break;
-                if (m_active_histories.find(wh) != m_active_histories.end()) {
-                    m_word_history_leafs.insert(wh);
-                    break;
-                }
-            }
-        }
-        else ++whlnit;
-    }
-}
-
-
-void
-ClassIPDecoder::clear_word_history()
-{
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ++whlnit) {
-        WordHistory *wh = *whlnit;
-        while (wh != nullptr) {
-            if (wh->next.size() > 0) break;
-            WordHistory *tmp = wh;
-            wh = wh->previous;
-            if (wh != nullptr) wh->next.erase(tmp->word_id);
-            delete tmp;
-        }
-    }
-    m_word_history_leafs.clear();
-    m_active_histories.clear();
-}
-
-
-void
-ClassIPDecoder::print_certain_word_history(ostream &outf)
-{
-    WordHistory *hist = m_history_root;
-    while (true) {
-        if (hist->word_id >= 0)
-            outf << m_text_units[hist->word_id] << " ";
-        if (hist->next.size() > 1 || hist->next.size() == 0) break;
-        else hist = hist->next.begin()->second;
-    }
-    outf << endl;
 }
 
 
