@@ -271,3 +271,39 @@ Decoder::print_certain_word_history(ostream &outf)
 }
 
 
+void
+Decoder::print_dot_digraph(vector<Node> &nodes,
+                           ostream &fstr)
+{
+    fstr << "digraph {" << endl << endl;
+    fstr << "\tnode [shape=ellipse,fontsize=30,fixedsize=false,width=0.95];" << endl;
+    fstr << "\tedge [fontsize=12];" << endl;
+    fstr << "\trankdir=LR;" << endl << endl;
+
+    for (unsigned int nidx = 0; nidx < m_nodes.size(); ++nidx) {
+        Node &nd = m_nodes[nidx];
+        fstr << "\t" << nidx;
+        if (nidx == START_NODE) fstr << " [label=\"start\"]" << endl;
+        else if (nidx == END_NODE) fstr << " [label=\"end\"]" << endl;
+        else if (nd.hmm_state != -1 && nd.word_id >= 0)
+            fstr << " [label=\"" << nidx << ":" << nd.hmm_state << ", " << m_text_units[nd.word_id] << "\"]" << endl;
+        else if (nd.hmm_state != -1 && nd.word_id == -1)
+            fstr << " [label=\"" << nidx << ":"<< nd.hmm_state << "\"]" << endl;
+        else if (nd.hmm_state == -1 && nd.word_id >= 0)
+            fstr << " [label=\"" << nidx << ":"<< m_text_units[nd.word_id] << "\"]" << endl;
+        else if (nd.hmm_state == -1 && nd.word_id == -2)
+            fstr << " [label=\"" << nidx << ":dummy/wb\"]" << endl;
+        else
+            fstr << " [label=\"" << nidx << ":dummy\"]" << endl;
+    }
+
+    fstr << endl;
+    for (unsigned int nidx = 0; nidx < m_nodes.size(); ++nidx) {
+        Node &node = m_nodes[nidx];
+        for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
+            fstr << "\t" << nidx << " -> " << ait->target_node
+                 << "[label=\"" << ait->log_prob << "\"];" << endl;
+    }
+    fstr << "}" << endl;
+}
+
