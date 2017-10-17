@@ -1,7 +1,7 @@
-#include "Decoder.hh"
+#include "NgramDecoder.hh"
 
 
-class Segmenter : public Decoder {
+class Segmenter : public NgramDecoder {
 public:
 
     Segmenter();
@@ -19,7 +19,7 @@ public:
         int end_frame;
     };
 
-    class SToken : public Token {
+    class SToken : public NgramDecoder::Token {
     public:
         std::vector<StateHistory> state_history;
         SToken() { };

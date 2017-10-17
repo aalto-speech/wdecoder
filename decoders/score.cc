@@ -2,14 +2,14 @@
 
 #include "SubwordGraph.hh"
 #include "LWBSubwordGraph.hh"
-#include "Decoder.hh"
+#include "NgramDecoder.hh"
 #include "conf.hh"
 
 using namespace std;
 
 
 void
-read_config(Decoder &d, string cfgfname)
+read_config(NgramDecoder &d, string cfgfname)
 {
     ifstream cfgf(cfgfname);
     if (!cfgf) throw string("Problem opening configuration file: ") + cfgfname;
@@ -47,7 +47,7 @@ read_config(Decoder &d, string cfgfname)
 
 
 void
-print_config(Decoder &d,
+print_config(NgramDecoder &d,
              conf::Config &config,
              ostream &outf)
 {
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
 
     try {
 
-        Decoder d;
+        NgramDecoder d;
 
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;

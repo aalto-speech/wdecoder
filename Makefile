@@ -32,20 +32,20 @@ decoder_srcs = decoders/Decoder.cc\
 	decoders/NgramDecoder.cc\
 	decoders/ClassDecoder.cc\
 	decoders/ClassIPDecoder.cc\
-	decoders/WordSubwordDecoder.cc
-#	decoders/Segmenter.cc\
+	decoders/WordSubwordDecoder.cc\
+	decoders/Segmenter.cc
 
 decoder_objs = $(decoder_srcs:.cc=.o)
 
 decoder_progs = decode\
 	class-decode\
 	class-ip-decode\
-	wsw-decode
-#	score\
-#	segment\
-#	lastates\
-#	cleanlex\
-#	lasc
+	wsw-decode\
+	score\
+	segment\
+	lastates\
+	cleanlex\
+	lasc
 
 test_srcs = test/wgraphtest.cc\
 	test/swgraphtest.cc\
