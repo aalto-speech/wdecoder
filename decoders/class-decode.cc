@@ -20,7 +20,6 @@ read_config(ClassDecoder &d, string cfgfname)
         stringstream ss(line);
         string parameter, val;
         ss >> parameter;
-        // Language model probs in ln
         if (parameter == "lm_scale") ss >> d.m_lm_scale;
         else if (parameter == "token_limit") ss >> d.m_token_limit;
         else if (parameter == "duration_scale") ss >> d.m_duration_scale;
