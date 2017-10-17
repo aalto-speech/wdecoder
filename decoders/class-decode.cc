@@ -52,8 +52,9 @@ print_config(ClassDecoder &d,
 {
     outf << "PH: " << config.arguments[0] << endl;
     outf << "LEXICON: " << config.arguments[1] << endl;
-    outf << "LM: " << config.arguments[2] << endl;
-    outf << "GRAPH: " << config.arguments[4] << endl;
+    outf << "CLASS N-GRAM: " << config.arguments[2] << endl;
+    outf << "CLASS MEMBERSHIPS: " << config.arguments[3] << endl;
+    outf << "GRAPH: " << config.arguments[5] << endl;
     if (config["lookahead-model"].specified) {
         string lalmfname = config["lookahead-model"].get_str();
         outf << "LOOKAHEAD LM: " << lalmfname << endl;
@@ -86,7 +87,6 @@ recognize_lnas(ClassDecoder &d,
     string line;
 
     print_config(d, config, logf);
-    d.m_lm_scale *= 1.0/(log(10.0)); // language model scores are in ln.
 
     int total_frames = 0;
     double total_time = 0.0;
@@ -104,7 +104,6 @@ recognize_lnas(ClassDecoder &d,
         double token_count;
         d.recognize_lna_file(line, resultf, &curr_frames, &curr_time,
                              &curr_lp, &curr_am_lp, &curr_lm_lp, &token_count);
-        curr_lm_lp *= 1.0/log(10.0);
         total_frames += curr_frames;
         total_time += curr_time;
         total_lp += curr_lp;

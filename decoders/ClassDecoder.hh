@@ -7,13 +7,11 @@
 #include <vector>
 #include <set>
 
-#include "Decoder.hh"
 #include "defs.hh"
 #include "Hmm.hh"
 #include "Ngram.hh"
 #include "LnaReaderCircular.hh"
-
-#define HISTOGRAM_BIN_COUNT 100
+#include "Decoder.hh"
 
 
 class ClassDecoder : public Decoder {
@@ -54,6 +52,8 @@ public:
 
     void read_class_lm(std::string ngramfname,
                        std::string wordpfname);
+    int read_class_memberships(std::string fname,
+                               std::map<std::string, std::pair<int, float> > &class_memberships);
 
     void recognize_lna_file(std::string lnafname,
                             std::ostream &outf=std::cout,
@@ -82,16 +82,10 @@ public:
     Token* get_best_token(std::vector<Token> &tokens);
     Token* get_best_end_token(std::vector<Token> &tokens);
     void add_sentence_ends(std::vector<Token> &tokens);
-    void print_certain_word_history(std::ostream &outf=std::cout);
     void print_best_word_history(std::ostream &outf=std::cout);
     void print_word_history(WordHistory *history,
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
-
-    void prune_word_history();
-    void clear_word_history();
-
-    void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
 
     // Class n-gram language model
     LNNgram m_class_lm;
@@ -100,9 +94,7 @@ public:
     std::vector<int> m_class_intmap;
 
     std::vector<Token> m_raw_tokens;
-    std::set<int> m_active_nodes;
     std::vector<std::map<int, Token> > m_recombined_tokens;
-    std::vector<float> m_best_node_scores;
 };
 
 #endif /* CLASS_DECODER_HH */
