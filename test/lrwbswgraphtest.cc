@@ -94,12 +94,39 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest2)
 
 
 // All subword types
-// One phone stem subword
+// No one phone subwords
 BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest3)
 {
     cerr << endl;
     LRWBSubwordGraph swg;
     LRWBGraphTestUtils::read_fixtures(swg, "data/lrwb_3.lex");
+
+    swg.create_graph(lrwb_prefix_subwords,
+                     lrwb_stem_subwords,
+                     lrwb_suffix_subwords,
+                     lrwb_word_subwords);
+
+    map<string, vector<string> > testWords;
+    LRWBGraphTestUtils::pre_suf_words(lrwb_prefix_subwords,
+                                      lrwb_suffix_subwords,
+                                      testWords);
+    LRWBGraphTestUtils::pre_stem_suf_words(lrwb_prefix_subwords,
+                                           lrwb_stem_subwords,
+                                           lrwb_suffix_subwords,
+                                           testWords);
+    cerr << "Number of words to verify: " << testWords.size() << endl;
+    BOOST_CHECK( swg.assert_words(testWords) );
+    BOOST_CHECK( swg.assert_word_pairs(testWords, true, false) ); //short sil, wb symbol
+}
+
+
+// All subword types
+// One phone stem subword
+BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest4)
+{
+    cerr << endl;
+    LRWBSubwordGraph swg;
+    LRWBGraphTestUtils::read_fixtures(swg, "data/lrwb_4.lex");
 
     swg.create_graph(lrwb_prefix_subwords,
                      lrwb_stem_subwords,

@@ -10,3 +10,4 @@ _on_(1.0) _-o+n o-n+_
 ssa_(1.0) _-s+s s-s+a s-a+_
 kin_(1.0) _-k+i k-i+n i-n+_
 ssa(1.0) _-s+s s-s+a s-a+_
+a(1.0) _-a+_
