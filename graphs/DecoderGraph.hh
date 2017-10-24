@@ -39,6 +39,8 @@ public:
         // Cross-word book-keeping used in construction
         std::set<std::string> from_fanin;
         std::set<std::string> to_fanout;
+        std::set<std::string> to_fanout_2;
+        // to_fanout_2 is for cases where suffix and non-suffix units in the same tree
 
         int find_next(int word_id, int hmm_state) {
             if (lookahead == nullptr) throw std::string("Lookahead not set.");
@@ -109,7 +111,8 @@ public:
                                   std::vector<DecoderGraph::Node> &nodes) const;
 
     void add_nodes_to_tree(std::vector<DecoderGraph::Node> &nodes,
-                           std::vector<DecoderGraph::Node> &new_nodes);
+                           std::vector<DecoderGraph::Node> &new_nodes,
+                           bool connect_to_end_node = true);
     void lookahead_to_arcs(std::vector<DecoderGraph::Node> &nodes);
 
     void get_hmm_states(const std::vector<std::string> &triphones,

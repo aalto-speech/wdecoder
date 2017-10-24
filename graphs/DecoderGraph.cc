@@ -346,7 +346,8 @@ DecoderGraph::triphones_to_state_chain(vector<TriphoneNode> &triphone_nodes,
 
 void
 DecoderGraph::add_nodes_to_tree(vector<DecoderGraph::Node> &nodes,
-                                vector<DecoderGraph::Node> &new_nodes)
+                                vector<DecoderGraph::Node> &new_nodes,
+                                bool connect_to_end_node)
 {
     int curr_node_idx = START_NODE;
     for (auto nnit=new_nodes.begin(); nnit != new_nodes.end(); ++nnit)
@@ -367,11 +368,14 @@ DecoderGraph::add_nodes_to_tree(vector<DecoderGraph::Node> &nodes,
         else curr_node_idx = next_node;
 
         nodes[curr_node_idx].to_fanout.insert(nnit->to_fanout.begin(), nnit->to_fanout.end());
+        nodes[curr_node_idx].to_fanout_2.insert(nnit->to_fanout_2.begin(), nnit->to_fanout_2.end());
         nodes[curr_node_idx].from_fanin.insert(nnit->from_fanin.begin(), nnit->from_fanin.end());
     }
 
-    DecoderGraph::Node &curr_node = nodes[curr_node_idx];
-    curr_node.arcs.insert(END_NODE);
+    if (connect_to_end_node) {
+        DecoderGraph::Node &curr_node = nodes[curr_node_idx];
+        curr_node.arcs.insert(END_NODE);
+    }
 }
 
 void

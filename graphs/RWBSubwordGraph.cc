@@ -331,7 +331,6 @@ RWBSubwordGraph::connect_crossword_network(vector<DecoderGraph::Node> &nodes,
         DecoderGraph::Node &nd = nodes[focit->first];
         nd.arcs.insert(fanout[focit->second]);
     }
-
 }
 
 

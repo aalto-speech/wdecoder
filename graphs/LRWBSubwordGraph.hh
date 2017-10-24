@@ -19,31 +19,46 @@ public:
                      const std::set<std::string> &word_subwords,
                      bool verbose=false);
 
-    void create_graph(const std::set<std::string> &prefix_subwords,
-                      const std::set<std::string> &stem_subwords,
-                      const std::set<std::string> &suffix_subwords,
-                      const std::set<std::string> &word_subwords,
-                      bool verbose=false);
-
     void read_lexicon(std::string lexfname,
                       std::set<std::string> &prefix_subwords,
                       std::set<std::string> &stem_subwords,
                       std::set<std::string> &suffix_subwords,
                       std::set<std::string> &word_subwords);
 
-    void create_crossword_network(const std::set<std::string> &word_subwords,
-                                  std::vector<DecoderGraph::Node> &nodes,
+    void create_crossunit_network(std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
+                                  std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
+                                  std::set<std::string> &one_phone_prefix_subwords,
+                                  std::set<std::string> &one_phone_suffix_subwords,
+                                  std::vector<DecoderGraph::Node> &cw_nodes,
                                   std::map<std::string, int> &fanout,
                                   std::map<std::string, int> &fanin);
 
-    void connect_one_phone_words_from_start_to_cw(const std::set<std::string> &word_subwords,
-                                                  std::vector<DecoderGraph::Node> &nodes,
-                                                  std::map<std::string, int> &fanout);
+    void create_crossword_network(std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
+                                  std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
+                                  std::set<std::string> &one_phone_prefix_subwords,
+                                  std::set<std::string> &one_phone_suffix_subwords,
+                                  std::vector<DecoderGraph::Node> &cw_nodes,
+                                  std::map<std::string, int> &fanout,
+                                  std::map<std::string, int> &fanin);
 
-    void connect_one_phone_words_from_cw_to_end(const std::set<std::string> &word_subwords,
-                                                std::vector<DecoderGraph::Node> &nodes,
-                                                std::map<std::string, int> &fanin);
+    void connect_crossword_network(std::vector<DecoderGraph::Node> &nodes,
+                                   std::vector<std::pair<unsigned int, std::string> > &fanout_connectors,
+                                   std::vector<std::pair<unsigned int, std::string> > &fanin_connectors,
+                                   std::vector<DecoderGraph::Node> &cw_nodes,
+                                   std::map<std::string, int> &fanout,
+                                   std::map<std::string, int> &fanin);
 
+    static void offset(std::vector<DecoderGraph::Node> &nodes,
+                       int offset);
+
+    static void offset(std::vector<std::pair<unsigned int, std::string> > &connectors,
+                       int offset);
+
+    void create_graph(const std::set<std::string> &prefix_subwords,
+                      const std::set<std::string> &stem_subwords,
+                      const std::set<std::string> &suffix_subwords,
+                      const std::set<std::string> &word_subwords,
+                      bool verbose=false);
 };
 
 #endif /* LRWB_SUBWORD_GRAPH_HH */
