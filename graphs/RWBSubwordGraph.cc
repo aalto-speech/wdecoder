@@ -394,7 +394,8 @@ RWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
         triphones_to_state_chain(subword_triphones, subword_nodes);
         subword_nodes[3].from_fanin.insert(m_lexicon[*swit][0]);
         subword_nodes[subword_nodes.size()-4].to_fanout.insert(m_lexicon[*swit].back());
-        add_nodes_to_tree(prefix_nodes, subword_nodes);
+        subword_nodes.resize(subword_nodes.size()-3);
+        add_nodes_to_tree(prefix_nodes, subword_nodes, false);
     }
     if (prefix_nodes.size() == 2) {
         cerr << "Warning, no subwords in the prefix/stem tree" << endl;
