@@ -198,7 +198,7 @@ print_dot_digraph(vector<Decoder::Node> &nodes,
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: segment [OPTION...] PH RECIPE\n")
+    config("usage: segment [OPTION...] PH RECIPE LEX\n")
     ('h', "help", "", "", "display help")
     ('t', "text-field", "", "", "Create alignment from text field containing phonetic text")
     ('l', "long-silence", "", "", "Enable breaking long silence path between words")
@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
     ('I', "bindex=INT", "arg", "0", "batch process index")
     ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 2) config.print_help(stderr, 1);
+    if (config.arguments.size() != 3) config.print_help(stderr, 1);
 
     try {
 
@@ -238,6 +238,10 @@ int main(int argc, char* argv[])
         get_recipe_lines(recipefname, config["batch"].get_int(), config["bindex"].get_int(), recipe_lines);
 
         ifstream recipef(recipefname);
+
+        string lexfname = config.arguments[2];
+        cerr << "Reading lexicon: " << lexfname << endl;
+        s.read_noway_lexicon(lexfname);
 
         DecoderGraph dg;
         dg.read_phone_model(phfname);
