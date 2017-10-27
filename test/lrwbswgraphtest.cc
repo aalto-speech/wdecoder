@@ -11,46 +11,52 @@ set<string> lrwb_suffix_subwords;
 set<string> lrwb_word_subwords;
 
 namespace LRWBGraphTestUtils {
-    void read_fixtures(LRWBSubwordGraph &swg, string lexfname) {
-        swg.read_phone_model(lrwb_amname + ".ph");
-        swg.read_lexicon(lexfname,
-                         lrwb_prefix_subwords,
-                         lrwb_stem_subwords,
-                         lrwb_suffix_subwords,
-                         lrwb_word_subwords);
-    }
+void read_fixtures(LRWBSubwordGraph &swg, string lexfname) {
+    swg.read_phone_model(lrwb_amname + ".ph");
+    swg.read_lexicon(lexfname,
+                     lrwb_prefix_subwords,
+                     lrwb_stem_subwords,
+                     lrwb_suffix_subwords,
+                     lrwb_word_subwords);
+}
 
-    void pre_suf_words(const set<string> &prefix_subwords,
-                       const set<string> &suffix_subwords,
-                       map<string, vector<string> > &word_segs) {
-        for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
+void word_subwords(const set<string> &word_subwords,
+                   map<string, vector<string> > &word_segs) {
+    for (auto wswit = word_subwords.begin(); wswit != word_subwords.end(); ++wswit)
+        word_segs[*wswit] = *wswit;
+}
+
+void pre_suf_words(const set<string> &prefix_subwords,
+                   const set<string> &suffix_subwords,
+                   map<string, vector<string> > &word_segs) {
+    for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
+        for (auto sufit = suffix_subwords.begin(); sufit != suffix_subwords.end(); ++sufit) {
+            vector<string> word_seg;
+            word_seg.push_back(*prefit);
+            word_seg.push_back(*sufit);
+            string wrd = *prefit + *sufit;
+            word_segs[wrd] = word_seg;
+        }
+    }
+}
+
+void pre_stem_suf_words(const set<string> &prefix_subwords,
+                        const set<string> &stem_subwords,
+                        const set<string> &suffix_subwords,
+                        map<string, vector<string> > &word_segs) {
+    for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
+        for (auto stemit = stem_subwords.begin(); stemit != stem_subwords.end(); ++stemit) {
             for (auto sufit = suffix_subwords.begin(); sufit != suffix_subwords.end(); ++sufit) {
                 vector<string> word_seg;
                 word_seg.push_back(*prefit);
+                word_seg.push_back(*stemit);
                 word_seg.push_back(*sufit);
-                string wrd = *prefit + *sufit;
+                string wrd = *prefit + *stemit + *sufit;
                 word_segs[wrd] = word_seg;
             }
         }
     }
-
-    void pre_stem_suf_words(const set<string> &prefix_subwords,
-                            const set<string> &stem_subwords,
-                            const set<string> &suffix_subwords,
-                            map<string, vector<string> > &word_segs) {
-        for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
-            for (auto stemit = stem_subwords.begin(); stemit != stem_subwords.end(); ++stemit) {
-                for (auto sufit = suffix_subwords.begin(); sufit != suffix_subwords.end(); ++sufit) {
-                    vector<string> word_seg;
-                    word_seg.push_back(*prefit);
-                    word_seg.push_back(*stemit);
-                    word_seg.push_back(*sufit);
-                    string wrd = *prefit + *stemit + *sufit;
-                    word_segs[wrd] = word_seg;
-                }
-            }
-        }
-    }
+}
 };
 
 // Only complete word subwords
@@ -84,6 +90,7 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest2)
                      lrwb_word_subwords);
 
     map<string, vector<string> > testWords;
+    LRWBGraphTestUtils::word_subwords(lrwb_word_subwords, testWords);
     LRWBGraphTestUtils::pre_suf_words(lrwb_prefix_subwords,
                                       lrwb_suffix_subwords,
                                       testWords);
@@ -107,6 +114,7 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest3)
                      lrwb_word_subwords);
 
     map<string, vector<string> > testWords;
+    LRWBGraphTestUtils::word_subwords(lrwb_word_subwords, testWords);
     LRWBGraphTestUtils::pre_suf_words(lrwb_prefix_subwords,
                                       lrwb_suffix_subwords,
                                       testWords);
@@ -134,6 +142,7 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest4)
                      lrwb_word_subwords);
 
     map<string, vector<string> > testWords;
+    LRWBGraphTestUtils::word_subwords(lrwb_word_subwords, testWords);
     LRWBGraphTestUtils::pre_suf_words(lrwb_prefix_subwords,
                                       lrwb_suffix_subwords,
                                       testWords);
