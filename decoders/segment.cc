@@ -17,27 +17,67 @@ create_forced_path(DecoderGraph &dg,
                    bool breaking_short_silence,
                    bool breaking_long_silence)
 {
-    vector<TriphoneNode> tnodes;
+    vector<string> triphones;
+    vector<int> wordIndices;
+    stringstream fls(sentstr);
+    string wrd;
+
+    while (fls >> wrd) {
+        if (dg.m_lexicon.find(wrd) != dg.m_lexicon.end()) {
+            vector<string> &wt = dg.m_lexicon.at(wrd);
+            if (wt.size() == 1) {
+                cerr << "error: one phone word " << wrd << endl;
+                exit(1);
+            }
+            if (triphones.size())
+                triphones.push_back("_");
+            for (int tr = 0; tr < wt.size(); tr++)
+                triphones.push_back(wt[tr]);
+            wordIndices.push_back(dg.m_subword_map.at(wrd));
+        }
+        else {
+            cerr << "error: " << wrd << " was not found in the lexicon" << endl;
+            exit(1);
+        }
+
+    }
+    for (int i=1; i<triphones.size()-1; i++) {
+        if (triphones[i] == "_") {
+            triphones[i-1][4] = triphones[i+1][2];
+            triphones[i+1][0] = triphones[i-1][2];
+        }
+    }
 
     // Create initial triphone graph only with crossword context
+    vector<TriphoneNode> tnodes;
+    int wordPosition = 0;
     tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
-    vector<string> triphones;
-    DecoderGraph::triphonize_phone_string(sentstr, triphones);
-    for (auto tit=triphones.begin(); tit != triphones.end(); ++tit)
+    for (auto tit=triphones.begin(); tit != triphones.end(); ++tit) {
+        if (*tit == "_")
+            tnodes.back().subword_id = wordIndices[wordPosition++];
         tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[*tit]));
+    }
+    tnodes.back().subword_id = wordIndices[wordPosition];
     tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
 
     nodes.clear(); nodes.resize(1);
     node_labels.clear();
     int idx = 0;
-    for (int t=0; t<(int)tnodes.size(); t++)
+    map<int, string> wordLabels;
+    for (int t=0; t<(int)tnodes.size(); t++) {
         idx = dg.connect_triphone(nodes, tnodes[t].hmm_id, idx, node_labels);
+        if (tnodes[t].subword_id != -1) {
+            wordLabels[idx] = dg.m_subwords[tnodes[t].subword_id];
+            node_labels[idx] += " " + dg.m_subwords[tnodes[t].subword_id];
+        }
+    }
     int end_idx = idx;
 
     if (breaking_short_silence || breaking_long_silence) {
         int nc = nodes.size();
         for (int i=0; i<nc; i++) {
-            if (node_labels.find(i) == node_labels.end() || node_labels[i] != "_.0") continue;
+            if (node_labels.find(i) == node_labels.end()
+                || node_labels[i] != "_.0") continue;
 
             string left_triphone = node_labels[i-1].substr(0, 5);
             left_triphone[4] = '_';
@@ -45,6 +85,8 @@ create_forced_path(DecoderGraph &dg,
             right_triphone[0] = '_';
 
             int left_idx = dg.connect_triphone(nodes, left_triphone, i-4, node_labels);
+            if (wordLabels.find(i-1) != wordLabels.end())
+                node_labels[left_idx] += " " + wordLabels[i-1];
 
             if (breaking_short_silence) {
                 int idx = dg.connect_triphone(nodes, "_", left_idx, node_labels);
@@ -239,12 +281,12 @@ int main(int argc, char* argv[])
 
         ifstream recipef(recipefname);
 
-        string lexfname = config.arguments[2];
-        cerr << "Reading lexicon: " << lexfname << endl;
-        s.read_noway_lexicon(lexfname);
-
         DecoderGraph dg;
         dg.read_phone_model(phfname);
+
+        string lexfname = config.arguments[2];
+        cerr << "Reading lexicon: " << lexfname << endl;
+        dg.read_noway_lexicon(lexfname);
 
         for (auto rlit = recipe_lines.begin(); rlit != recipe_lines.end(); ++rlit) {
 
