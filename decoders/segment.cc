@@ -31,7 +31,7 @@ create_forced_path(DecoderGraph &dg,
             }
             if (triphones.size())
                 triphones.push_back("_");
-            for (int tr = 0; tr < wt.size(); tr++)
+            for (int tr = 0; tr < (int)wt.size(); tr++)
                 triphones.push_back(wt[tr]);
             wordIndices.push_back(dg.m_subword_map.at(wrd));
         }
@@ -41,7 +41,7 @@ create_forced_path(DecoderGraph &dg,
         }
 
     }
-    for (int i=1; i<triphones.size()-1; i++) {
+    for (int i=1; i<(int)triphones.size()-1; i++) {
         if (triphones[i] == "_") {
             triphones[i-1][4] = triphones[i+1][2];
             triphones[i+1][0] = triphones[i-1][2];
@@ -240,9 +240,10 @@ print_dot_digraph(vector<Decoder::Node> &nodes,
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: segment [OPTION...] PH RECIPE LEX\n")
+    config("usage: segment [OPTION...] PH RECIPE\n")
     ('h', "help", "", "", "display help")
-    ('t', "text-field", "", "", "Create alignment from text field containing phonetic text")
+    ('t', "text-field", "", "", "Create alignment from text field, -x must be defined as well")
+    ('x', "lexicon=STRING", "arg", "", "Lexicon file to be used with -t")
     ('l', "long-silence", "", "", "Enable breaking long silence path between words")
     ('s', "short-silence", "", "", "Enable breaking short silence path between words")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
@@ -253,7 +254,7 @@ int main(int argc, char* argv[])
     ('I', "bindex=INT", "arg", "0", "batch process index")
     ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 3) config.print_help(stderr, 1);
+    if (config.arguments.size() != 2) config.print_help(stderr, 1);
 
     try {
 
@@ -264,6 +265,9 @@ int main(int argc, char* argv[])
         if (!config["text-field"].specified &&
             (config["long-silence"].specified || config["short-silence"].specified))
                throw string("Silence options are only usable with text-field switch");
+
+        if (config["text-field"].specified && !config["lexicon"].specified)
+            throw string("Lexicon needs to be set with -t option");
 
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
@@ -284,9 +288,11 @@ int main(int argc, char* argv[])
         DecoderGraph dg;
         dg.read_phone_model(phfname);
 
-        string lexfname = config.arguments[2];
-        cerr << "Reading lexicon: " << lexfname << endl;
-        dg.read_noway_lexicon(lexfname);
+        if (config["lexicon"].specified) {
+            string lexfname = config["lexicon"].get_str();
+            cerr << "Reading lexicon: " << lexfname << endl;
+            dg.read_noway_lexicon(lexfname);
+        }
 
         for (auto rlit = recipe_lines.begin(); rlit != recipe_lines.end(); ++rlit) {
 

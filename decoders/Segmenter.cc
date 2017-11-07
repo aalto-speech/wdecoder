@@ -21,11 +21,7 @@ Segmenter::initialize()
 {
     m_raw_tokens.clear();
     m_recombined_tokens.clear();
-    m_recombined_tokens.resize(m_nodes.size());
-    m_active_nodes.clear();
-    SToken tok;
-    m_ngram_state_sentence_begin = tok.lm_node;
-    tok.lm_node = m_lm.sentence_start_node;
+    Token tok;
     tok.node_idx = m_decode_start_node;
     m_active_nodes.insert(m_decode_start_node);
     m_recombined_tokens[m_decode_start_node] = tok;
@@ -33,7 +29,7 @@ Segmenter::initialize()
 
 
 void
-Segmenter::advance_in_state_history(SToken &token)
+Segmenter::advance_in_state_history(Token &token)
 {
     StateHistory sh(token.node_idx);
     sh.end_frame = m_frame_idx;
@@ -43,7 +39,7 @@ Segmenter::advance_in_state_history(SToken &token)
 
 
 void
-Segmenter::print_phn_segmentation(SToken &token,
+Segmenter::print_phn_segmentation(Token &token,
                                   ostream &outf)
 {
 
@@ -84,7 +80,7 @@ Segmenter::segment_lna_file(string lnafname,
         m_frame_idx++;
     }
 
-    SToken &best_token = m_recombined_tokens[m_decode_end_node];
+    Token &best_token = m_recombined_tokens[m_decode_end_node];
     if (best_token.node_idx == -1) {
         cerr << "warning, no segmentation found" << endl;
         return false;
@@ -99,34 +95,41 @@ Segmenter::segment_lna_file(string lnafname,
 
 
 void
-Segmenter::move_token_to_node(SToken token,
+Segmenter::apply_duration_model(Token &token, int node_idx)
+{
+    token.log_prob += m_duration_scale
+                         * m_hmm_states[m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
+}
+
+
+void
+Segmenter::move_token_to_node(Token token,
                               int node_idx,
                               float transition_score)
 {
-    token.am_log_prob += m_transition_scale * transition_score;
+    token.log_prob += m_transition_scale * transition_score;
 
     Node &node = m_nodes[node_idx];
 
-    if (node.hmm_state != -1) {
-        if (token.node_idx == node_idx) {
-            token.dur++;
-        }
-        else {
-            // Apply duration model for previous state if moved out from a hmm state
-            if (m_duration_model_in_use && m_nodes[token.node_idx].hmm_state != -1)
-                apply_duration_model(token, token.node_idx);
-            advance_in_state_history(token);
-            token.node_idx = node_idx;
-            token.dur = 1;
-        }
+    if (token.node_idx == node_idx) {
+        if (node.hmm_state != -1) token.dur++;
+    }
+    else {
+        // Apply duration model for previous state if moved out from a hmm state
+        if (m_duration_model_in_use && m_nodes[token.node_idx].hmm_state != -1)
+            apply_duration_model(token, token.node_idx);
+        advance_in_state_history(token);
+        token.node_idx = node_idx;
+        token.dur = 1;
+    }
 
-        token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
-        update_total_log_prob(token);
-        if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
+    if (node.hmm_state != -1) {
+        token.log_prob += m_acoustics->log_prob(node.hmm_state);
+        if (token.log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
         }
-        m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
+        m_best_log_prob = max(m_best_log_prob, token.log_prob);
         m_raw_tokens.push_back(token);
         return;
     }
@@ -136,39 +139,15 @@ Segmenter::move_token_to_node(SToken token,
 }
 
 
-bool descending_node_sort_5(const pair<int, float> &i, const pair<int, float> &j)
-{
-    return (i.second > j.second);
-}
-
-void
-Segmenter::active_nodes_sorted_by_lp(vector<int> &nodes)
-{
-    nodes.clear();
-    vector<pair<int, float> > sorted_nodes;
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit)
-        sorted_nodes.push_back(make_pair(*nit, m_recombined_tokens[*nit].total_log_prob));
-    sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_sort_5);
-    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
-        nodes.push_back(snit->first);
-}
-
-
 void
 Segmenter::propagate_tokens()
 {
-    vector<int> sorted_nodes;
-    active_nodes_sorted_by_lp(sorted_nodes);
-
-    for (int i=0; i<m_token_limit && i<(int)sorted_nodes.size(); i++) {
-        int node_idx = sorted_nodes[i];
-        Node &node = m_nodes[node_idx];
-        SToken &tok = m_recombined_tokens[node_idx];
+    for (auto rtit = m_recombined_tokens.begin(); rtit != m_recombined_tokens.end(); ++rtit)
+    {
+        Node &node = m_nodes[rtit->second.node_idx];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
-            move_token_to_node(tok, ait->target_node, ait->log_prob);
+            move_token_to_node(rtit->second, ait->target_node, ait->log_prob);
     }
-
-    m_active_nodes.clear();
 }
 
 
@@ -176,15 +155,20 @@ void
 Segmenter::recombine_tokens()
 {
     m_recombined_tokens.clear();
-    m_recombined_tokens.resize(m_nodes.size());
 
     for (auto tit = m_raw_tokens.begin(); tit != m_raw_tokens.end(); tit++) {
-        if (tit->total_log_prob > m_recombined_tokens[tit->node_idx].total_log_prob) {
+
+        if (tit->log_prob < (m_best_log_prob-m_global_beam)) {
+            m_global_beam_pruned_count++;
+            continue;
+        }
+
+        if (m_recombined_tokens.find(tit->node_idx) == m_recombined_tokens.end() ||
+            tit->log_prob > m_recombined_tokens[tit->node_idx].log_prob)
+        {
             m_recombined_tokens[tit->node_idx] = *tit;
-            m_active_nodes.insert(tit->node_idx);
         }
     }
 
     m_raw_tokens.clear();
 }
-
