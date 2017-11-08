@@ -23,7 +23,7 @@ void read_fixtures(LRWBSubwordGraph &swg, string lexfname) {
 void word_subwords(const set<string> &word_subwords,
                    map<string, vector<string> > &word_segs) {
     for (auto wswit = word_subwords.begin(); wswit != word_subwords.end(); ++wswit)
-        word_segs[*wswit] = *wswit;
+        word_segs[*wswit] = { *wswit };
 }
 
 void pre_suf_words(const set<string> &prefix_subwords,
