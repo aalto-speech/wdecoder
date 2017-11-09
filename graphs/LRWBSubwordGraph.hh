@@ -48,8 +48,22 @@ public:
                                    std::map<std::string, int> &fanout,
                                    std::map<std::string, int> &fanin);
 
-    void get_one_phone_stem_subwords(const std::set<std::string> &stemSubwords,
-                                     std::set<std::string> &onePhoneStemSubwords);
+    void connect_one_phone_subwords_from_start_to_cw(const std::set<std::string> &subwords,
+                                                     std::vector<DecoderGraph::Node> &nodes,
+                                                     std::map<std::string, int> &fanout);
+
+    void connect_one_phone_subwords_from_cw_to_end(const std::set<std::string> &subwords,
+                                                   std::vector<DecoderGraph::Node> &nodes,
+                                                   std::map<std::string, int> &fanin);
+
+    void get_one_phone_prefix_subwords(const std::set<std::string> &prefix_subwords,
+                                       std::set<std::string> &one_phone_prefix_subwords);
+
+    void get_one_phone_stem_subwords(const std::set<std::string> &stem_subwords,
+                                     std::set<std::string> &one_phone_stem_subwords);
+
+    void get_one_phone_suffix_subwords(const std::set<std::string> &suffix_subwords,
+                                       std::set<std::string> &one_phone_suffix_subwords);
 
     static void offset(std::vector<DecoderGraph::Node> &nodes,
                        int offset);
