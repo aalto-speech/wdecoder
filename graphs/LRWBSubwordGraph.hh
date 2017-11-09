@@ -48,6 +48,9 @@ public:
                                    std::map<std::string, int> &fanout,
                                    std::map<std::string, int> &fanin);
 
+    void get_one_phone_stem_subwords(const std::set<std::string> &stemSubwords,
+                                     std::set<std::string> &onePhoneStemSubwords);
+
     static void offset(std::vector<DecoderGraph::Node> &nodes,
                        int offset);
 

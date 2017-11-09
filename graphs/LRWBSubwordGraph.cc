@@ -372,6 +372,16 @@ LRWBSubwordGraph::connect_crossword_network(vector<DecoderGraph::Node> &nodes,
 
 
 void
+LRWBSubwordGraph::get_one_phone_stem_subwords(const set<string> &stem_subwords,
+                                              set<string> &one_phone_stem_subwords)
+{
+    for (auto swit = stem_subwords.begin(); swit != stem_subwords.end(); ++swit)
+        if (m_lexicon.at(*swit).size() == 1)
+            one_phone_stem_subwords.insert(*swit);
+}
+
+
+void
 LRWBSubwordGraph::offset(vector<DecoderGraph::Node> &nodes,
                          int offset)
 {
@@ -519,6 +529,9 @@ LRWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
             cw_fanout_connectors.push_back(make_pair(i, *foit));
     }
 
+    set<string> one_phone_stem_subwords;
+    get_one_phone_stem_subwords(stem_subwords, one_phone_stem_subwords);
+
     // Cross-unit network
     if (verbose) cerr << "creating cross-unit network" << endl;
     set<string> dummy_one_phones;
@@ -526,7 +539,7 @@ LRWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     map<string, int> cu_fanin;
     vector<DecoderGraph::Node> cu_nodes;
     create_crossunit_network(cu_fanout_connectors, wc_fanin_connectors,
-                             dummy_one_phones, dummy_one_phones,
+                             one_phone_stem_subwords, dummy_one_phones,
                              cu_nodes, cu_fanout, cu_fanin);
     minimize_crossword_network(cu_nodes, cu_fanout, cu_fanin);
     if (verbose) cerr << "tied cross-unit network size: " << cu_nodes.size() << endl;
