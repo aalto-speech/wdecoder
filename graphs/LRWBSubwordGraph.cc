@@ -413,7 +413,8 @@ void
 LRWBSubwordGraph::connect_one_phone_subwords_from_fanout_to_fanin(const set<string> &subwords,
                                                                   vector<DecoderGraph::Node> &nodes,
                                                                   map<string, int> &fanout,
-                                                                  map<string, int> &fanin)
+                                                                  map<string, int> &fanin,
+                                                                  bool short_sil_after_one_phone)
 {
     for (auto fofit = fanout.begin(); fofit != fanout.end(); ++fofit) {
         if (fofit->first[0] == '_') continue;
@@ -430,9 +431,12 @@ LRWBSubwordGraph::connect_one_phone_subwords_from_fanout_to_fanin(const set<stri
                 string triphone2 = construct_triphone(phone2,phone3,phone4);
                 string triphone3 = construct_triphone(phone3,phone4,phone5);
                 int idx = connect_triphone(nodes, triphone1, fofit->second);
+                if (!short_sil_after_one_phone)
+                    idx = connect_triphone(nodes, SHORT_SIL, idx);
                 idx = connect_triphone(nodes, triphone2, idx);
                 idx = connect_word(nodes, *swit, idx);
-                idx = connect_triphone(nodes, SHORT_SIL, idx);
+                if (short_sil_after_one_phone)
+                    idx = connect_triphone(nodes, SHORT_SIL, idx);
                 idx = connect_triphone(nodes, triphone3, idx);
                 nodes[idx].arcs.insert(fifit->second);
             }
@@ -663,7 +667,14 @@ LRWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     connect_one_phone_subwords_from_fanout_to_fanin(one_phone_suffix_subwords,
                                                     nodes,
                                                     cu_fanout,
-                                                    cw_fanin);
+                                                    cw_fanin,
+                                                    true);
+
+    connect_one_phone_subwords_from_fanout_to_fanin(one_phone_prefix_subwords,
+                                                    nodes,
+                                                    cw_fanout,
+                                                    cu_fanin,
+                                                    false);
 
     m_nodes.swap(nodes);
 
