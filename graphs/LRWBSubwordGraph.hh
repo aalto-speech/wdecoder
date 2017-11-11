@@ -56,6 +56,11 @@ public:
                                                    std::vector<DecoderGraph::Node> &nodes,
                                                    std::map<std::string, int> &fanin);
 
+    void connect_one_phone_subwords_from_fanout_to_fanin(const std::set<std::string> &subwords,
+                                                   std::vector<DecoderGraph::Node> &nodes,
+                                                   std::map<std::string, int> &fanout,
+                                                   std::map<std::string, int> &fanin);
+
     void get_one_phone_prefix_subwords(const std::set<std::string> &prefix_subwords,
                                        std::set<std::string> &one_phone_prefix_subwords);
 

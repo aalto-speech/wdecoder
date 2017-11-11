@@ -189,6 +189,39 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest5)
 }
 
 
+// Simplified problem case
+BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest6)
+{
+    cerr << endl;
+    LRWBSubwordGraph swg;
+    LRWBGraphTestUtils::read_fixtures(swg, "data/lrwb_6.lex");
+
+    swg.create_graph(lrwb_prefix_subwords,
+                     lrwb_stem_subwords,
+                     lrwb_suffix_subwords,
+                     lrwb_word_subwords);
+
+    /*
+    ofstream origoutf("acw.dot");
+    swg.print_dot_digraph(swg.m_nodes, origoutf, true);
+    origoutf.close();
+    */
+
+    map<string, vector<string> > testWords;
+    LRWBGraphTestUtils::word_subwords(lrwb_word_subwords, testWords);
+    LRWBGraphTestUtils::pre_suf_words(lrwb_prefix_subwords,
+                                      lrwb_suffix_subwords,
+                                      testWords);
+    LRWBGraphTestUtils::pre_stem_suf_words(lrwb_prefix_subwords,
+                                           lrwb_stem_subwords,
+                                           lrwb_suffix_subwords,
+                                           testWords);
+    cerr << "Number of words to verify: " << testWords.size() << endl;
+    BOOST_CHECK( swg.assert_words(testWords) );
+    BOOST_CHECK( swg.assert_word_pairs(testWords, true, false) ); //short sil, wb symbol
+}
+
+
 //ofstream origoutf("acw.dot");
 //print_dot_digraph(dg, nodes, origoutf, true);
 //origoutf.close();
