@@ -417,9 +417,7 @@ LRWBSubwordGraph::connect_one_phone_subwords_from_fanout_to_fanin(const set<stri
                                                                   bool short_sil_after_one_phone)
 {
     for (auto fofit = fanout.begin(); fofit != fanout.end(); ++fofit) {
-        if (fofit->first[0] == '_') continue;
         for (auto fifit = fanin.begin(); fifit != fanin.end(); ++fifit) {
-            if (fifit->first[4] == '_') continue;
             for (auto swit = subwords.begin(); swit != subwords.end(); ++swit) {
                 char phone1, phone2, phone3, phone4, phone5;
                 phone1 = fofit->first[0];
