@@ -26,9 +26,11 @@ void word_subwords(const set<string> &word_subwords,
         word_segs[*wswit] = { *wswit };
 }
 
-void pre_suf_words(const set<string> &prefix_subwords,
-                   const set<string> &suffix_subwords,
-                   map<string, vector<string> > &word_segs) {
+void pre_suf_words(
+    const set<string> &prefix_subwords,
+    const set<string> &suffix_subwords,
+    map<string, vector<string> > &word_segs)
+{
     for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
         for (auto sufit = suffix_subwords.begin(); sufit != suffix_subwords.end(); ++sufit) {
             vector<string> word_seg;
@@ -40,10 +42,12 @@ void pre_suf_words(const set<string> &prefix_subwords,
     }
 }
 
-void pre_stem_suf_words(const set<string> &prefix_subwords,
-                        const set<string> &stem_subwords,
-                        const set<string> &suffix_subwords,
-                        map<string, vector<string> > &word_segs) {
+void pre_stem_suf_words(
+    const set<string> &prefix_subwords,
+    const set<string> &stem_subwords,
+    const set<string> &suffix_subwords,
+    map<string, vector<string> > &word_segs)
+{
     for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
         for (auto stemit = stem_subwords.begin(); stemit != stem_subwords.end(); ++stemit) {
             for (auto sufit = suffix_subwords.begin(); sufit != suffix_subwords.end(); ++sufit) {
@@ -53,6 +57,29 @@ void pre_stem_suf_words(const set<string> &prefix_subwords,
                 word_seg.push_back(*sufit);
                 string wrd = *prefit + *stemit + *sufit;
                 word_segs[wrd] = word_seg;
+            }
+        }
+    }
+}
+
+void pre_stem_stem_suf_words(
+    const set<string> &prefix_subwords,
+    const set<string> &stem_subwords,
+    const set<string> &suffix_subwords,
+    map<string, vector<string> > &word_segs)
+{
+    for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
+        for (auto stemit = stem_subwords.begin(); stemit != stem_subwords.end(); ++stemit) {
+            for (auto stemit2 = stem_subwords.begin(); stemit2 != stem_subwords.end(); ++stemit2) {
+                for (auto sufit = suffix_subwords.begin(); sufit != suffix_subwords.end(); ++sufit) {
+                    vector<string> word_seg;
+                    word_seg.push_back(*prefit);
+                    word_seg.push_back(*stemit);
+                    word_seg.push_back(*stemit2);
+                    word_seg.push_back(*sufit);
+                    string wrd = *prefit + *stemit + *stemit2 + *sufit;
+                    word_segs[wrd] = word_seg;
+                }
             }
         }
     }
@@ -182,6 +209,38 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest5)
     BOOST_CHECK( swg.assert_words(testWords) );
     BOOST_CHECK( swg.assert_word_pairs(testWords, true, false) ); //short sil, wb symbol
 }
+
+
+// All subword types
+// One phone prefix, stem and suffix subwords
+// Test multiple stems for the test words
+BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest5b)
+{
+    cerr << endl;
+    LRWBSubwordGraph swg;
+    LRWBGraphTestUtils::read_fixtures(swg, "data/lrwb_5.lex");
+
+    swg.create_graph(lrwb_prefix_subwords,
+                     lrwb_stem_subwords,
+                     lrwb_suffix_subwords,
+                     lrwb_word_subwords);
+
+    map<string, vector<string> > testWords;
+    LRWBGraphTestUtils::word_subwords(lrwb_word_subwords, testWords);
+    LRWBGraphTestUtils::pre_suf_words(
+        lrwb_prefix_subwords,
+        lrwb_suffix_subwords,
+        testWords);
+    LRWBGraphTestUtils::pre_stem_stem_suf_words(
+        lrwb_prefix_subwords,
+        lrwb_stem_subwords,
+        lrwb_suffix_subwords,
+        testWords);
+    cerr << "Number of words to verify: " << testWords.size() << endl;
+    BOOST_CHECK( swg.assert_words(testWords) );
+    BOOST_CHECK( swg.assert_word_pairs(testWords, true, false) ); //short sil, wb symbol
+}
+
 
 
 // Simplified problem case
