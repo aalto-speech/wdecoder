@@ -81,23 +81,12 @@ LRWBSubwordGraph::create_crossunit_network(
         prefix_phones.insert(tphone(m_lexicon.at(*opswit)[0]));
     }
 
-    for (auto opswit = one_phone_stem_subwords.begin(); opswit != one_phone_stem_subwords.end(); ++opswit) {
-        fanout[m_lexicon.at(*opswit)[0]] = -1;
+    for (auto opswit = one_phone_stem_subwords.begin(); opswit != one_phone_stem_subwords.end(); ++opswit)
         stem_phones.insert(tphone(m_lexicon.at(*opswit)[0]));
-    }
 
     for (auto opswit = one_phone_suffix_subwords.begin(); opswit != one_phone_suffix_subwords.end(); ++opswit) {
         fanin[m_lexicon.at(*opswit)[0]] = -1;
         suffix_phones.insert(tphone(m_lexicon.at(*opswit)[0]));
-    }
-
-    // Fanout last triphone + phone from prefix one phone subwords, all combinations to fanout
-    for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
-        if (tlc(foit->first) == SIL_CTXT) continue;
-        for (auto phit = prefix_phones.begin(); phit != prefix_phones.end(); ++phit) {
-            string fanoutt = construct_triphone(tphone(foit->first), *phit, SIL_CTXT);
-            fanout[fanoutt] = -1;
-        }
     }
 
     // Fanout last triphone + phone from stem one phone subwords, all combinations to fanout
