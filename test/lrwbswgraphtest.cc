@@ -178,9 +178,6 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest5)
                                            lrwb_stem_subwords,
                                            lrwb_suffix_subwords,
                                            testWords);
-    testWords.erase("_aia_");
-    testWords.erase("_aie_");
-    //testWords.erase("_aitooppinen_");
     cerr << "Number of words to verify: " << testWords.size() << endl;
     BOOST_CHECK( swg.assert_words(testWords) );
     BOOST_CHECK( swg.assert_word_pairs(testWords, true, false) ); //short sil, wb symbol
