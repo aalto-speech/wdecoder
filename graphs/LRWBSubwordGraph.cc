@@ -99,9 +99,9 @@ LRWBSubwordGraph::create_crossunit_network(
     }
 
     // All prefix + stem one phone combinations to fanout
-    for (auto fphit = prefix_phones.begin(); fphit != prefix_phones.end(); ++fphit)
-        for (auto sphit = stem_phones.begin(); sphit != stem_phones.end(); ++sphit) {
-            string fanoutt = construct_triphone(*fphit, *sphit, SIL_CTXT);
+    for (auto ppit = prefix_phones.begin(); ppit != prefix_phones.end(); ++ppit)
+        for (auto stpit = stem_phones.begin(); stpit != stem_phones.end(); ++stpit) {
+            string fanoutt = construct_triphone(*ppit, *stpit, SIL_CTXT);
             fanout[fanoutt] = -1;
         }
 
@@ -113,11 +113,11 @@ LRWBSubwordGraph::create_crossunit_network(
         }
     }
 
-    for (auto fphit = suffix_phones.begin(); fphit != suffix_phones.end(); ++fphit) {
-        for (auto sphit = prefix_phones.begin(); sphit != prefix_phones.end(); ++sphit) {
-            string fanint = construct_triphone(SIL_CTXT, *fphit, *sphit);
+    for (auto spit = suffix_phones.begin(); spit != suffix_phones.end(); ++spit) {
+        for (auto ppit = prefix_phones.begin(); ppit != prefix_phones.end(); ++ppit) {
+            string fanint = construct_triphone(SIL_CTXT, *spit, *ppit);
             fanin[fanint] = -1;
-            string fanoutt = construct_triphone(*fphit, *sphit, SIL_CTXT);
+            string fanoutt = construct_triphone(*spit, *ppit, SIL_CTXT);
             fanout[fanoutt] = -1;
         }
     }
