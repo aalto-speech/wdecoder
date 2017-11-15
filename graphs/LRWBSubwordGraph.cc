@@ -93,11 +93,9 @@ LRWBSubwordGraph::create_crossunit_network(
 
     // Fanout last triphone + phone from prefix one phone subwords, all combinations to fanout
     for (auto foit = fanout.begin(); foit != fanout.end(); ++foit) {
-        cerr << "fanoutt original: " << foit->first << endl;
         if (tlc(foit->first) == SIL_CTXT) continue;
         for (auto phit = prefix_phones.begin(); phit != prefix_phones.end(); ++phit) {
             string fanoutt = construct_triphone(tphone(foit->first), *phit, SIL_CTXT);
-            cerr << "check: " << fanoutt << endl;
             fanout[fanoutt] = -1;
         }
     }
@@ -347,8 +345,7 @@ void
 LRWBSubwordGraph::connect_one_phone_subwords_from_fanout_to_fanin(const set<string> &subwords,
         vector<DecoderGraph::Node> &nodes,
         map<string, int> &fanout,
-        map<string, int> &fanin,
-        bool short_sil_after_one_phone)
+        map<string, int> &fanin)
 {
     for (auto fofit = fanout.begin(); fofit != fanout.end(); ++fofit) {
         for (auto fifit = fanin.begin(); fifit != fanin.end(); ++fifit) {
@@ -363,12 +360,9 @@ LRWBSubwordGraph::connect_one_phone_subwords_from_fanout_to_fanin(const set<stri
                 string triphone2 = construct_triphone(phone2,phone3,phone4);
                 string triphone3 = construct_triphone(phone3,phone4,phone5);
                 int idx = connect_triphone(nodes, triphone1, fofit->second);
-                if (!short_sil_after_one_phone)
-                    idx = connect_triphone(nodes, SHORT_SIL, idx);
                 idx = connect_triphone(nodes, triphone2, idx);
                 idx = connect_word(nodes, *swit, idx);
-                if (short_sil_after_one_phone)
-                    idx = connect_triphone(nodes, SHORT_SIL, idx);
+                idx = connect_triphone(nodes, SHORT_SIL, idx);
                 idx = connect_triphone(nodes, triphone3, idx);
                 nodes[idx].arcs.insert(fifit->second);
             }
@@ -385,14 +379,10 @@ LRWBSubwordGraph::connect_one_phone_prefix_subwords_to_fanout(
     map<string, int> &fanout)
 {
     for (auto focit = fanout_connectors.begin(); focit != fanout_connectors.end(); ++focit) {
-        cerr << focit->first << " " << focit->second << endl;
         for (auto swit = one_phone_prefix_subwords.begin(); swit != one_phone_prefix_subwords.end(); ++swit) {
-            string single_phone = m_lexicon[*swit][0];
             string triphone = focit->second;
-            triphone[4] = tphone(single_phone);
-            cerr << "triphone: " << triphone << endl;
+            triphone[4] = tphone(m_lexicon[*swit][0]);
             string target_fanout = construct_triphone(tphone(triphone), trc(triphone), SIL_CTXT);
-            cerr << "target fanout " << target_fanout << endl;
 
             int idx = connect_triphone(nodes, triphone, focit->first);
             idx = connect_triphone(nodes, SHORT_SIL, idx);
@@ -627,14 +617,7 @@ LRWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     connect_one_phone_subwords_from_fanout_to_fanin(one_phone_suffix_subwords,
             nodes,
             cu_fanout,
-            cw_fanin,
-            true);
-
-    connect_one_phone_subwords_from_fanout_to_fanin(one_phone_prefix_subwords,
-            nodes,
-            cw_fanout,
-            cu_fanin,
-            false);
+            cw_fanin);
 
     connect_one_phone_prefix_subwords_to_fanout(one_phone_prefix_subwords,
             nodes,

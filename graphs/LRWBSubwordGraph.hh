@@ -60,8 +60,7 @@ public:
     void connect_one_phone_subwords_from_fanout_to_fanin(const std::set<std::string> &subwords,
             std::vector<DecoderGraph::Node> &nodes,
             std::map<std::string, int> &fanout,
-            std::map<std::string, int> &fanin,
-            bool short_sil_after_one_phone = true);
+            std::map<std::string, int> &fanin);
 
     void connect_one_phone_prefix_subwords_to_fanout(const std::set<std::string> &subwords,
             std::vector<DecoderGraph::Node> &nodes,
