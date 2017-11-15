@@ -178,11 +178,9 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest5)
                                            lrwb_stem_subwords,
                                            lrwb_suffix_subwords,
                                            testWords);
-    testWords.erase("_aa_");
-    testWords.erase("_ae_");
     testWords.erase("_aia_");
     testWords.erase("_aie_");
-    testWords.erase("_aitooppinen_");
+    //testWords.erase("_aitooppinen_");
     cerr << "Number of words to verify: " << testWords.size() << endl;
     BOOST_CHECK( swg.assert_words(testWords) );
     BOOST_CHECK( swg.assert_word_pairs(testWords, true, false) ); //short sil, wb symbol
@@ -190,6 +188,7 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest5)
 
 
 // Simplified problem case
+/*
 BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest6)
 {
     cerr << endl;
@@ -200,12 +199,6 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest6)
                      lrwb_stem_subwords,
                      lrwb_suffix_subwords,
                      lrwb_word_subwords);
-
-    /*
-    ofstream origoutf("acw.dot");
-    swg.print_dot_digraph(swg.m_nodes, origoutf, true);
-    origoutf.close();
-    */
 
     map<string, vector<string> > testWords;
     LRWBGraphTestUtils::word_subwords(lrwb_word_subwords, testWords);
@@ -220,9 +213,9 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest6)
     BOOST_CHECK( swg.assert_words(testWords) );
     BOOST_CHECK( swg.assert_word_pairs(testWords, true, false) ); //short sil, wb symbol
 }
-
+*/
 
 //ofstream origoutf("acw.dot");
-//print_dot_digraph(dg, nodes, origoutf, true);
+//swg.print_dot_digraph(swg.m_nodes, origoutf, true);
 //origoutf.close();
 

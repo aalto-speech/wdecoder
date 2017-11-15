@@ -27,6 +27,7 @@ public:
 
     void create_crossunit_network(std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
                                   std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
+                                  std::vector<std::pair<unsigned int, std::string> > &cw_fanout_triphones,
                                   std::set<std::string> &one_phone_prefix_subwords,
                                   std::set<std::string> &one_phone_stem_subwords,
                                   std::set<std::string> &one_phone_suffix_subwords,
@@ -49,18 +50,23 @@ public:
                                    std::map<std::string, int> &fanin);
 
     void connect_one_phone_subwords_from_start_to_cw(const std::set<std::string> &subwords,
-                                                     std::vector<DecoderGraph::Node> &nodes,
-                                                     std::map<std::string, int> &fanout);
+            std::vector<DecoderGraph::Node> &nodes,
+            std::map<std::string, int> &fanout);
 
     void connect_one_phone_subwords_from_cw_to_end(const std::set<std::string> &subwords,
-                                                   std::vector<DecoderGraph::Node> &nodes,
-                                                   std::map<std::string, int> &fanin);
+            std::vector<DecoderGraph::Node> &nodes,
+            std::map<std::string, int> &fanin);
 
     void connect_one_phone_subwords_from_fanout_to_fanin(const std::set<std::string> &subwords,
-                                                   std::vector<DecoderGraph::Node> &nodes,
-                                                   std::map<std::string, int> &fanout,
-                                                   std::map<std::string, int> &fanin,
-                                                   bool short_sil_after_one_phone = true);
+            std::vector<DecoderGraph::Node> &nodes,
+            std::map<std::string, int> &fanout,
+            std::map<std::string, int> &fanin,
+            bool short_sil_after_one_phone = true);
+
+    void connect_one_phone_prefix_subwords_to_fanout(const std::set<std::string> &subwords,
+            std::vector<DecoderGraph::Node> &nodes,
+            std::vector<std::pair<unsigned int, std::string> > &fanout_connectors,
+            std::map<std::string, int> &fanout);
 
     void get_one_phone_prefix_subwords(const std::set<std::string> &prefix_subwords,
                                        std::set<std::string> &one_phone_prefix_subwords);
