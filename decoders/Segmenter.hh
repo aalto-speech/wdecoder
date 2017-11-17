@@ -1,7 +1,9 @@
-#include "NgramDecoder.hh"
+#include <map>
+
+#include "Decoder.hh"
 
 
-class Segmenter : public NgramDecoder {
+class Segmenter : public Decoder {
 public:
 
     Segmenter();
@@ -19,24 +21,31 @@ public:
         int end_frame;
     };
 
-    class SToken : public NgramDecoder::Token {
+    class Token {
     public:
         std::vector<StateHistory> state_history;
-        SToken() { };
+        int node_idx;
+        float log_prob;
+        unsigned short int dur;
+        int histogram_bin;
+
+        Token():
+            node_idx(-1),
+            log_prob(0.0),
+            dur(0),
+            histogram_bin(0)
+        { }
     };
 
     void initialize();
-
     bool segment_lna_file(std::string lnafname,
                           std::map<int, std::string> &node_labels,
                           std::ostream &outf=std::cout);
-
-    void print_phn_segmentation(SToken &token,
+    void apply_duration_model(Token &token, int node_idx);
+    void print_phn_segmentation(Token &token,
                                 std::ostream &outf=std::cout);
-
-    void advance_in_state_history(SToken& token);
-
-    void move_token_to_node(SToken token,
+    void advance_in_state_history(Token& token);
+    void move_token_to_node(Token token,
                             int node_idx,
                             float transition_score);
     void active_nodes_sorted_by_lp(std::vector<int> &nodes);
@@ -44,8 +53,8 @@ public:
     void recombine_tokens();
 
     std::map<int, std::string> m_state_history_labels;
-    std::vector<SToken> m_raw_tokens;
-    std::vector<SToken> m_recombined_tokens;
+    std::vector<Token> m_raw_tokens;
+    std::map<int, Token> m_recombined_tokens;
 
     int m_decode_end_node;
 };

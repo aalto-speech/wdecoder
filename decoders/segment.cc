@@ -17,27 +17,67 @@ create_forced_path(DecoderGraph &dg,
                    bool breaking_short_silence,
                    bool breaking_long_silence)
 {
-    vector<TriphoneNode> tnodes;
+    vector<string> triphones;
+    vector<int> wordIndices;
+    stringstream fls(sentstr);
+    string wrd;
+
+    while (fls >> wrd) {
+        if (dg.m_lexicon.find(wrd) != dg.m_lexicon.end()) {
+            vector<string> &wt = dg.m_lexicon.at(wrd);
+            if (wt.size() == 1) {
+                cerr << "error: one phone word " << wrd << endl;
+                exit(1);
+            }
+            if (triphones.size())
+                triphones.push_back("_");
+            for (int tr = 0; tr < (int)wt.size(); tr++)
+                triphones.push_back(wt[tr]);
+            wordIndices.push_back(dg.m_subword_map.at(wrd));
+        }
+        else {
+            cerr << "error: " << wrd << " was not found in the lexicon" << endl;
+            exit(1);
+        }
+
+    }
+    for (int i=1; i<(int)triphones.size()-1; i++) {
+        if (triphones[i] == "_") {
+            triphones[i-1][4] = triphones[i+1][2];
+            triphones[i+1][0] = triphones[i-1][2];
+        }
+    }
 
     // Create initial triphone graph only with crossword context
+    vector<TriphoneNode> tnodes;
+    int wordPosition = 0;
     tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
-    vector<string> triphones;
-    DecoderGraph::triphonize_phone_string(sentstr, triphones);
-    for (auto tit=triphones.begin(); tit != triphones.end(); ++tit)
+    for (auto tit=triphones.begin(); tit != triphones.end(); ++tit) {
+        if (*tit == "_")
+            tnodes.back().subword_id = wordIndices[wordPosition++];
         tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[*tit]));
+    }
+    tnodes.back().subword_id = wordIndices[wordPosition];
     tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
 
     nodes.clear(); nodes.resize(1);
     node_labels.clear();
     int idx = 0;
-    for (int t=0; t<(int)tnodes.size(); t++)
+    map<int, string> wordLabels;
+    for (int t=0; t<(int)tnodes.size(); t++) {
         idx = dg.connect_triphone(nodes, tnodes[t].hmm_id, idx, node_labels);
+        if (tnodes[t].subword_id != -1) {
+            wordLabels[idx] = dg.m_subwords[tnodes[t].subword_id];
+            node_labels[idx] += " " + dg.m_subwords[tnodes[t].subword_id];
+        }
+    }
     int end_idx = idx;
 
     if (breaking_short_silence || breaking_long_silence) {
         int nc = nodes.size();
         for (int i=0; i<nc; i++) {
-            if (node_labels.find(i) == node_labels.end() || node_labels[i] != "_.0") continue;
+            if (node_labels.find(i) == node_labels.end()
+                || node_labels[i] != "_.0") continue;
 
             string left_triphone = node_labels[i-1].substr(0, 5);
             left_triphone[4] = '_';
@@ -45,6 +85,8 @@ create_forced_path(DecoderGraph &dg,
             right_triphone[0] = '_';
 
             int left_idx = dg.connect_triphone(nodes, left_triphone, i-4, node_labels);
+            if (wordLabels.find(i-1) != wordLabels.end())
+                node_labels[left_idx] += " " + wordLabels[i-1];
 
             if (breaking_short_silence) {
                 int idx = dg.connect_triphone(nodes, "_", left_idx, node_labels);
@@ -200,7 +242,8 @@ int main(int argc, char* argv[])
     conf::Config config;
     config("usage: segment [OPTION...] PH RECIPE\n")
     ('h', "help", "", "", "display help")
-    ('t', "text-field", "", "", "Create alignment from text field containing phonetic text")
+    ('t', "text-field", "", "", "Create alignment from text field, -x must be defined as well")
+    ('x', "lexicon=STRING", "arg", "", "Lexicon file to be used with -t")
     ('l', "long-silence", "", "", "Enable breaking long silence path between words")
     ('s', "short-silence", "", "", "Enable breaking short silence path between words")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
@@ -223,6 +266,9 @@ int main(int argc, char* argv[])
             (config["long-silence"].specified || config["short-silence"].specified))
                throw string("Silence options are only usable with text-field switch");
 
+        if (config["text-field"].specified && !config["lexicon"].specified)
+            throw string("Lexicon needs to be set with -t option");
+
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
         s.read_phone_model(phfname);
@@ -241,6 +287,12 @@ int main(int argc, char* argv[])
 
         DecoderGraph dg;
         dg.read_phone_model(phfname);
+
+        if (config["lexicon"].specified) {
+            string lexfname = config["lexicon"].get_str();
+            cerr << "Reading lexicon: " << lexfname << endl;
+            dg.read_noway_lexicon(lexfname);
+        }
 
         for (auto rlit = recipe_lines.begin(); rlit != recipe_lines.end(); ++rlit) {
 
