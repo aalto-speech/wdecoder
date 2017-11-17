@@ -29,8 +29,10 @@ void word_subwords(const set<string> &word_subwords,
 void pre_suf_words(
     const set<string> &prefix_subwords,
     const set<string> &suffix_subwords,
-    map<string, vector<string> > &word_segs)
+    map<string, vector<string> > &word_segs,
+    int maxWords = 10000)
 {
+    int wc = 0;
     for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
         for (auto sufit = suffix_subwords.begin(); sufit != suffix_subwords.end(); ++sufit) {
             vector<string> word_seg;
@@ -38,6 +40,7 @@ void pre_suf_words(
             word_seg.push_back(*sufit);
             string wrd = *prefit + *sufit;
             word_segs[wrd] = word_seg;
+            if (++wc > maxWords) return;
         }
     }
 }
@@ -46,8 +49,10 @@ void pre_stem_suf_words(
     const set<string> &prefix_subwords,
     const set<string> &stem_subwords,
     const set<string> &suffix_subwords,
-    map<string, vector<string> > &word_segs)
+    map<string, vector<string> > &word_segs,
+    int maxWords = 10000)
 {
+    int wc = 0;
     for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
         for (auto stemit = stem_subwords.begin(); stemit != stem_subwords.end(); ++stemit) {
             for (auto sufit = suffix_subwords.begin(); sufit != suffix_subwords.end(); ++sufit) {
@@ -57,6 +62,7 @@ void pre_stem_suf_words(
                 word_seg.push_back(*sufit);
                 string wrd = *prefit + *stemit + *sufit;
                 word_segs[wrd] = word_seg;
+                if (++wc > maxWords) return;
             }
         }
     }
@@ -66,8 +72,10 @@ void pre_stem_stem_suf_words(
     const set<string> &prefix_subwords,
     const set<string> &stem_subwords,
     const set<string> &suffix_subwords,
-    map<string, vector<string> > &word_segs)
+    map<string, vector<string> > &word_segs,
+    int maxWords = 10000)
 {
+    int wc = 0;
     for (auto prefit = prefix_subwords.begin(); prefit != prefix_subwords.end(); ++prefit) {
         for (auto stemit = stem_subwords.begin(); stemit != stem_subwords.end(); ++stemit) {
             for (auto stemit2 = stem_subwords.begin(); stemit2 != stem_subwords.end(); ++stemit2) {
@@ -79,6 +87,7 @@ void pre_stem_stem_suf_words(
                     word_seg.push_back(*sufit);
                     string wrd = *prefit + *stemit + *stemit2 + *sufit;
                     word_segs[wrd] = word_seg;
+                    if (++wc > maxWords) return;
                 }
             }
         }
@@ -231,6 +240,11 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest5b)
         lrwb_prefix_subwords,
         lrwb_suffix_subwords,
         testWords);
+    LRWBGraphTestUtils::pre_stem_suf_words(
+        lrwb_prefix_subwords,
+        lrwb_stem_subwords,
+        lrwb_suffix_subwords,
+        testWords);
     LRWBGraphTestUtils::pre_stem_stem_suf_words(
         lrwb_prefix_subwords,
         lrwb_stem_subwords,
@@ -238,12 +252,49 @@ BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest5b)
         testWords);
     cerr << "Number of words to verify: " << testWords.size() << endl;
     BOOST_CHECK( swg.assert_words(testWords) );
-    BOOST_CHECK( swg.assert_word_pairs(testWords, true, false) ); //short sil, wb symbol
+    BOOST_CHECK( swg.assert_word_pairs(testWords, 10000, true, false) ); //short sil, wb symbol
 }
 
 
+// Larger normal subword lexicon
+BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest6)
+{
+    cerr << endl;
+    LRWBSubwordGraph swg;
+    LRWBGraphTestUtils::read_fixtures(swg, "data/lrwb_1k.lex");
 
-// Simplified problem case
+    cerr << "creating graph" << endl;
+    swg.create_graph(lrwb_prefix_subwords,
+                     lrwb_stem_subwords,
+                     lrwb_suffix_subwords,
+                     lrwb_word_subwords,
+                     true);
+
+    map<string, vector<string> > testWords;
+    LRWBGraphTestUtils::word_subwords(lrwb_word_subwords, testWords);
+    LRWBGraphTestUtils::pre_suf_words(
+        lrwb_prefix_subwords,
+        lrwb_suffix_subwords,
+        testWords,
+        1000);
+    LRWBGraphTestUtils::pre_stem_suf_words(
+        lrwb_prefix_subwords,
+        lrwb_stem_subwords,
+        lrwb_suffix_subwords,
+        testWords,
+        2000);
+    LRWBGraphTestUtils::pre_stem_stem_suf_words(
+        lrwb_prefix_subwords,
+        lrwb_stem_subwords,
+        lrwb_suffix_subwords,
+        testWords,
+        2000);
+    cerr << "Number of words to verify: " << testWords.size() << endl;
+    BOOST_CHECK( swg.assert_words(testWords) );
+    BOOST_CHECK( swg.assert_word_pairs(testWords, 5000, true, false) ); //short sil, wb symbol
+}
+
+// Problem case if the other cross-word network not constructed
 /*
 BOOST_AUTO_TEST_CASE(LRWBSubwordGraphTest6)
 {

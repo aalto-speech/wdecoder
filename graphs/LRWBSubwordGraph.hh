@@ -25,22 +25,25 @@ public:
                       std::set<std::string> &suffix_subwords,
                       std::set<std::string> &word_subwords);
 
-    void create_crossunit_network(std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
-                                  std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
-                                  std::vector<std::pair<unsigned int, std::string> > &cw_fanout_triphones,
-                                  std::set<std::string> &one_phone_prefix_subwords,
-                                  std::set<std::string> &one_phone_stem_subwords,
-                                  std::set<std::string> &one_phone_suffix_subwords,
-                                  std::vector<DecoderGraph::Node> &cw_nodes,
-                                  std::map<std::string, int> &fanout,
-                                  std::map<std::string, int> &fanin);
+    void create_crossunit_network(
+        std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
+        std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
+        std::vector<std::pair<unsigned int, std::string> > &cw_fanout_triphones,
+        std::set<std::string> &one_phone_prefix_subwords,
+        std::set<std::string> &one_phone_stem_subwords,
+        std::set<std::string> &one_phone_suffix_subwords,
+        std::vector<DecoderGraph::Node> &cw_nodes,
+        std::map<std::string, int> &fanout,
+        std::map<std::string, int> &fanin);
 
-    void create_crossword_network(std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
-                                  std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
-                                  std::set<std::string> &one_phone_suffix_subwords,
-                                  std::vector<DecoderGraph::Node> &cw_nodes,
-                                  std::map<std::string, int> &fanout,
-                                  std::map<std::string, int> &fanin);
+    void create_crossword_network(
+        std::vector<std::pair<unsigned int, std::string> > &fanout_triphones,
+        std::vector<std::pair<unsigned int, std::string> > &fanin_triphones,
+        std::vector<std::pair<unsigned int, std::string> > &cu_fanout_triphones,
+        std::set<std::string> &one_phone_suffix_subwords,
+        std::vector<DecoderGraph::Node> &cw_nodes,
+        std::map<std::string, int> &fanout,
+        std::map<std::string, int> &fanin);
 
     void connect_crossword_network(std::vector<DecoderGraph::Node> &nodes,
                                    std::vector<std::pair<unsigned int, std::string> > &fanout_connectors,
@@ -57,15 +60,23 @@ public:
             std::vector<DecoderGraph::Node> &nodes,
             std::map<std::string, int> &fanin);
 
-    void connect_one_phone_subwords_from_fanout_to_fanin(const std::set<std::string> &subwords,
-            std::vector<DecoderGraph::Node> &nodes,
-            std::map<std::string, int> &fanout,
-            std::map<std::string, int> &fanin);
+    void connect_one_phone_prefix_subwords_to_cu_fanout(
+        const std::set<std::string> &one_phone_prefix_subwords,
+        std::vector<DecoderGraph::Node> &nodes,
+        std::vector<std::pair<unsigned int, std::string> > &fanout_connectors,
+        std::map<std::string, int> &fanout);
 
-    void connect_one_phone_prefix_subwords_to_fanout(const std::set<std::string> &subwords,
-            std::vector<DecoderGraph::Node> &nodes,
-            std::vector<std::pair<unsigned int, std::string> > &fanout_connectors,
-            std::map<std::string, int> &fanout);
+    void connect_one_phone_suffix_subwords_to_cw_fanout(
+        const std::set<std::string> &one_phone_suffix_subwords,
+        std::vector<DecoderGraph::Node> &nodes,
+        std::vector<std::pair<unsigned int, std::string> > &fanout_connectors,
+        std::map<std::string, int> &fanout);
+
+    void connect_one_phone_suffix_subwords_from_cu_to_cw_fanout(
+        const std::set<std::string> &one_phone_suffix_subwords,
+        std::vector<DecoderGraph::Node> &nodes,
+        std::map<std::string, int> &cu_fanout,
+        std::map<std::string, int> &cw_fanout);
 
     void get_one_phone_prefix_subwords(const std::set<std::string> &prefix_subwords,
                                        std::set<std::string> &one_phone_prefix_subwords);
