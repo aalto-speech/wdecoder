@@ -73,9 +73,10 @@ class FullTableBigramLookahead : public LookaheadStateCount {
 public:
     FullTableBigramLookahead(Decoder &decoder,
                              std::string lafname,
-                             bool successor_lists=true);
+                             bool successor_lists=true,
+                             bool quantification=false);
     ~FullTableBigramLookahead() {};
-    float get_lookahead_score(int node_idx, int word_id);
+    virtual float get_lookahead_score(int node_idx, int word_id);
 
 protected:
     std::vector<std::vector<float> > m_bigram_la_scores;
@@ -85,9 +86,10 @@ protected:
 class PrecomputedFullTableBigramLookahead : public FullTableBigramLookahead {
 public:
     PrecomputedFullTableBigramLookahead(Decoder &decoder,
-                                        std::string lafname);
+                                        std::string lafname,
+                                        bool quantification=false);
     ~PrecomputedFullTableBigramLookahead() {};
-    float get_lookahead_score(int node_idx, int word_id);
+    virtual float get_lookahead_score(int node_idx, int word_id);
 
 private:
     void find_preceeding_la_states(int node_idx,
@@ -104,8 +106,12 @@ private:
                                     std::vector<std::pair<int, float> > &unigram_la_scores,
                                     bool start_node);
     void set_bigram_la_scores();
+    void set_lookahead_score(int la_state_idx, int word_id, float la_score);
 
-    bool m_precomputed;
+    bool m_quantification;
+    std::vector<float> m_quant_values;
+    std::vector<std::vector<unsigned short int> > m_quant_bigram_lookup;
+    double m_min_la_score;
 };
 
 
@@ -165,8 +171,6 @@ private:
                                     std::vector<std::pair<int, float> > &unigram_la_scores,
                                     bool start_node);
     void set_bigram_la_scores();
-
-    bool m_precomputed;
 };
 
 

@@ -138,6 +138,7 @@ int main(int argc, char* argv[])
     config("usage: decode [OPTION...] PH LEXICON LM CFGFILE GRAPH LNALIST\n")
     ('h', "help", "", "", "display help")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
+    ('q', "quantized-lookahead", "", "", "Two byte quantized look-ahead model")
     ('f', "result-file=STRING", "arg", "", "Base filename for results (.rec and .log)")
     ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
     ('t', "lookahead-type=STRING", "arg", "", "Lookahead type\n"
@@ -187,12 +188,13 @@ int main(int argc, char* argv[])
             string lalmfname = config["lookahead-model"].get_str();
             cerr << "Reading lookahead model: " << lalmfname << endl;
 
+            bool quantization = config["quantized-lookahead"].specified;
             if (la_type == "unigram")
                 d.m_la = new UnigramLookahead(d, lalmfname);
             else if (la_type == "bigram-full")
                 d.m_la = new FullTableBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-precomputed-full")
-                d.m_la = new PrecomputedFullTableBigramLookahead(d, lalmfname);
+                d.m_la = new PrecomputedFullTableBigramLookahead(d, lalmfname, quantization);
             else if (la_type == "bigram-hybrid")
                 d.m_la = new HybridBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-precomputed-hybrid")
