@@ -46,6 +46,32 @@ public:
         std::map<int, WordHistory*> next;
     };
 
+    class RecVariables {
+    public:
+        RecVariables();
+        WordHistory* m_history_root;
+        std::set<WordHistory*> m_word_history_leafs;
+        std::set<WordHistory*> m_active_histories;
+
+        std::set<int> m_active_nodes;
+        std::vector<float> m_best_node_scores;
+
+        int m_token_count;
+        int m_token_count_after_pruning;
+        float m_best_log_prob;
+        float m_best_word_end_prob;
+        int m_histogram_bin_limit;
+
+        double m_total_token_count;
+        int m_global_beam_pruned_count;
+        int m_word_end_beam_pruned_count;
+        int m_node_beam_pruned_count;
+        int m_max_state_duration_pruned_count;
+        int m_histogram_pruned_count;
+        int m_dropped_count;
+        int m_frame_idx;
+    };
+
     class Lookahead {
     public:
         virtual float get_lookahead_score(int node_idx, int word_id) = 0;
@@ -82,10 +108,12 @@ public:
     void read_dgraph(std::string graphfname);
     void set_hmm_transition_probs();
 
-    void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
-    void prune_word_history();
-    void clear_word_history();
-    void print_certain_word_history(std::ostream &outf=std::cout);
+    void active_nodes_sorted_by_best_lp(Decoder::RecVariables &rv,
+                                        std::vector<int> &nodes);
+    void prune_word_history(Decoder::RecVariables &rv);
+    void clear_word_history(Decoder::RecVariables &rv,);
+    void print_certain_word_history(Decoder::RecVariables &rv,
+                                    std::ostream &outf=std::cout);
 
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
 
@@ -111,23 +139,12 @@ public:
 
     std::vector<Node> m_nodes;
 
-    WordHistory* m_history_root;
-    std::set<WordHistory*> m_word_history_leafs;
-    std::set<WordHistory*> m_active_histories;
-
-    std::set<int> m_active_nodes;
-    std::vector<float> m_best_node_scores;
-
     int m_stats;
-
-    double m_total_token_count;
 
     float m_lm_scale;
     float m_duration_scale;
     float m_transition_scale;
     int m_token_limit;
-    int m_token_count;
-    int m_token_count_after_pruning;
     bool m_force_sentence_end;
     bool m_use_word_boundary_symbol;
     bool m_duration_model_in_use;
@@ -142,22 +159,8 @@ public:
     float m_node_beam;
     float m_word_end_beam;
 
-    float m_best_log_prob;
-    float m_best_word_end_prob;
-    int m_histogram_bin_limit;
-
-    int m_global_beam_pruned_count;
-    int m_word_end_beam_pruned_count;
-    int m_node_beam_pruned_count;
-    int m_max_state_duration_pruned_count;
-    int m_histogram_pruned_count;
-    int m_dropped_count;
-
     int m_history_clean_frame_interval;
-
     int m_decode_start_node;
-    int m_frame_idx;
-
     int m_last_sil_idx;
 };
 

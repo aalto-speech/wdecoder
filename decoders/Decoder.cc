@@ -8,56 +8,46 @@
 using namespace std;
 
 
-Decoder::Decoder()
-{
-    m_stats = 0;
-
+Decoder::RecVariables::RecVariables() {
     m_total_token_count = 0;
-
-    m_duration_model_in_use = false;
-    m_use_word_boundary_symbol = false;
-    m_force_sentence_end = true;
-
-    m_lm_scale = 0.0;
-    m_duration_scale = 0.0;
-    m_transition_scale = 0.0;
     m_token_count = 0;
     m_token_count_after_pruning = 0;
-    m_word_boundary_symbol_idx = -1;
-    m_sentence_begin_symbol_idx = -1;
-    m_sentence_end_symbol_idx = -1;
-
     m_dropped_count = 0;
     m_global_beam_pruned_count = 0;
     m_word_end_beam_pruned_count = 0;
     m_node_beam_pruned_count = 0;
     m_max_state_duration_pruned_count = 0;
     m_histogram_pruned_count = 0;
-
-    m_acoustics = nullptr;
-
-    m_la = nullptr;
-
     m_best_log_prob = -1e20;
     m_best_word_end_prob = -1e20;
     m_histogram_bin_limit = 0;
+    m_history_root = nullptr;
+    m_frame_idx = -1;
+}
 
+
+Decoder::Decoder()
+{
+    m_stats = 0;
+    m_duration_model_in_use = false;
+    m_use_word_boundary_symbol = false;
+    m_force_sentence_end = true;
+    m_lm_scale = 0.0;
+    m_duration_scale = 0.0;
+    m_transition_scale = 0.0;
+    m_word_boundary_symbol_idx = -1;
+    m_sentence_begin_symbol_idx = -1;
+    m_sentence_end_symbol_idx = -1;
+    m_acoustics = nullptr;
+    m_la = nullptr;
     m_global_beam = 0.0;
     m_word_end_beam = 0.0;
     m_node_beam = 0.0;
-
     m_token_limit = 500000;
-
-    m_history_root = nullptr;
-
     m_history_clean_frame_interval = 10;
-
     m_max_state_duration = 80;
-
     m_ngram_state_sentence_begin = -1;
     m_decode_start_node = -1;
-    m_frame_idx = -1;
-
     m_last_sil_idx = -1;
 }
 
@@ -203,12 +193,14 @@ Decoder::set_hmm_transition_probs()
 
 
 void
-Decoder::active_nodes_sorted_by_best_lp(vector<int> &nodes)
+Decoder::active_nodes_sorted_by_best_lp(
+        Decoder::RecVariables &rv,
+        vector<int> &nodes)
 {
     nodes.clear();
     vector<pair<int, float> > sorted_nodes;
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit)
-        sorted_nodes.push_back(make_pair(*nit, m_best_node_scores[*nit]));
+    for (auto nit = rv.m_active_nodes.begin(); nit != rv.m_active_nodes.end(); ++nit)
+        sorted_nodes.push_back(make_pair(*nit, rv.m_best_node_scores[*nit]));
     sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_sort);
     for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
         nodes.push_back(snit->first);
@@ -216,20 +208,20 @@ Decoder::active_nodes_sorted_by_best_lp(vector<int> &nodes)
 
 
 void
-Decoder::prune_word_history()
+Decoder::prune_word_history(Decoder::RecVariables &rv)
 {
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ) {
+    for (auto whlnit = rv.m_word_history_leafs.begin(); whlnit != rv.m_word_history_leafs.end(); ) {
         WordHistory *wh = *whlnit;
-        if (m_active_histories.find(wh) == m_active_histories.end()) {
-            m_word_history_leafs.erase(whlnit++);
+        if (rv.m_active_histories.find(wh) == rv.m_active_histories.end()) {
+            rv.m_word_history_leafs.erase(whlnit++);
             while (true) {
                 WordHistory *tmp = wh;
                 wh = wh->previous;
                 wh->next.erase(tmp->word_id);
                 delete tmp;
                 if (wh == nullptr || wh->next.size() > 0) break;
-                if (m_active_histories.find(wh) != m_active_histories.end()) {
-                    m_word_history_leafs.insert(wh);
+                if (rv.m_active_histories.find(wh) != rv.m_active_histories.end()) {
+                    rv.m_word_history_leafs.insert(wh);
                     break;
                 }
             }
@@ -240,9 +232,9 @@ Decoder::prune_word_history()
 
 
 void
-Decoder::clear_word_history()
+Decoder::clear_word_history(Decoder::RecVariables &rv)
 {
-    for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ++whlnit) {
+    for (auto whlnit = rv.m_word_history_leafs.begin(); whlnit != rv.m_word_history_leafs.end(); ++whlnit) {
         WordHistory *wh = *whlnit;
         while (wh != nullptr) {
             if (wh->next.size() > 0) break;
@@ -252,15 +244,17 @@ Decoder::clear_word_history()
             delete tmp;
         }
     }
-    m_word_history_leafs.clear();
-    m_active_histories.clear();
+    rv.m_word_history_leafs.clear();
+    rv.m_active_histories.clear();
 }
 
 
 void
-Decoder::print_certain_word_history(ostream &outf)
+Decoder::print_certain_word_history(
+        Decoder::RecVariables &rv,
+        ostream &outf)
 {
-    WordHistory *hist = m_history_root;
+    WordHistory *hist = rv.m_history_root;
     while (true) {
         if (hist->word_id >= 0)
             outf << m_text_units[hist->word_id] << " ";
