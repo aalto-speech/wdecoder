@@ -46,9 +46,17 @@ public:
         std::map<int, WordHistory*> next;
     };
 
-    class RecVariables {
+    class Recognition {
     public:
-        RecVariables();
+        Recognition(Decoder &decoder);
+        void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
+        void prune_word_history();
+        void clear_word_history();
+        void print_certain_word_history(std::ostream &outf=std::cout);
+
+        LnaReaderCircular m_lna_reader;
+        Acoustics *m_acoustics;
+
         WordHistory* m_history_root;
         std::set<WordHistory*> m_word_history_leafs;
         std::set<WordHistory*> m_active_histories;
@@ -56,12 +64,12 @@ public:
         std::set<int> m_active_nodes;
         std::vector<float> m_best_node_scores;
 
+        int m_stats;
         int m_token_count;
         int m_token_count_after_pruning;
         float m_best_log_prob;
         float m_best_word_end_prob;
         int m_histogram_bin_limit;
-
         double m_total_token_count;
         int m_global_beam_pruned_count;
         int m_word_end_beam_pruned_count;
@@ -70,6 +78,8 @@ public:
         int m_histogram_pruned_count;
         int m_dropped_count;
         int m_frame_idx;
+
+        std::vector<std::string> *m_text_units;
     };
 
     class Lookahead {
@@ -107,14 +117,6 @@ public:
     void read_noway_lexicon(std::string lexfname);
     void read_dgraph(std::string graphfname);
     void set_hmm_transition_probs();
-
-    void active_nodes_sorted_by_best_lp(Decoder::RecVariables &rv,
-                                        std::vector<int> &nodes);
-    void prune_word_history(Decoder::RecVariables &rv);
-    void clear_word_history(Decoder::RecVariables &rv,);
-    void print_certain_word_history(Decoder::RecVariables &rv,
-                                    std::ostream &outf=std::cout);
-
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
 
     // Words or subwords
@@ -133,10 +135,6 @@ public:
     // Lookahead language model
     Lookahead *m_la;
 
-    // Audio reader
-    LnaReaderCircular m_lna_reader;
-    Acoustics *m_acoustics;
-
     std::vector<Node> m_nodes;
 
     int m_stats;
@@ -146,14 +144,14 @@ public:
     float m_transition_scale;
     int m_token_limit;
     bool m_force_sentence_end;
-    bool m_use_word_boundary_symbol;
     bool m_duration_model_in_use;
+    int m_max_state_duration;
+
+    bool m_use_word_boundary_symbol;
     std::string m_word_boundary_symbol;
     int m_word_boundary_symbol_idx;
     int m_sentence_begin_symbol_idx;
     int m_sentence_end_symbol_idx;
-    int m_max_state_duration;
-    int m_ngram_state_sentence_begin;
 
     float m_global_beam;
     float m_node_beam;

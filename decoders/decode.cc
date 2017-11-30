@@ -35,7 +35,6 @@ read_config(NgramDecoder &d, string cfgfname)
         else if (parameter == "word_boundary_symbol") {
             d.m_use_word_boundary_symbol = true;
             ss >> d.m_word_boundary_symbol;
-            d.m_word_boundary_symbol_idx = d.m_text_unit_map[d.m_word_boundary_symbol];
         }
         else if (parameter == "stats") ss >> d.m_stats;
         else throw string("Unknown parameter: ") + parameter;
@@ -101,8 +100,9 @@ recognize_lnas(NgramDecoder &d,
         double curr_time;
         double curr_lp, curr_am_lp, curr_lm_lp;
         double token_count;
-        d.recognize_lna_file(line, resultf, &curr_frames, &curr_time,
-                             &curr_lp, &curr_am_lp, &curr_lm_lp, &token_count);
+        NgramDecoder::NgramRecognition rec(d);
+        rec.recognize_lna_file(line, resultf, &curr_frames, &curr_time,
+                               &curr_lp, &curr_am_lp, &curr_lm_lp, &token_count);
         total_frames += curr_frames;
         total_time += curr_time;
         total_lp += curr_lp;
@@ -156,6 +156,10 @@ int main(int argc, char* argv[])
 
         NgramDecoder d;
 
+        string cfgfname = config.arguments[3];
+        cerr << "Reading configuration: " << cfgfname << endl;
+        read_config(d, cfgfname);
+
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
         d.read_phone_model(phfname);
@@ -174,9 +178,6 @@ int main(int argc, char* argv[])
         cerr << "Reading language model: " << lmfname << endl;
         d.read_lm(lmfname);
 
-        string cfgfname = config.arguments[3];
-        cerr << "Reading configuration: " << cfgfname << endl;
-        read_config(d, cfgfname);
 
         string graphfname = config.arguments[4];
         cerr << "Reading graph: " << graphfname << endl;
