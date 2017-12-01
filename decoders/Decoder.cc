@@ -208,7 +208,7 @@ Decoder::print_dot_digraph(vector<Node> &nodes,
 }
 
 
-Decoder::Recognition::Recognition(Decoder &decoder) :
+Recognition::Recognition(Decoder &decoder) :
     m_stats(decoder.m_stats),
     m_lm_scale(decoder.m_lm_scale),
     m_duration_scale(decoder.m_duration_scale),
@@ -244,7 +244,7 @@ Decoder::Recognition::Recognition(Decoder &decoder) :
 
 
 void
-Decoder::Recognition::active_nodes_sorted_by_best_lp(vector<int> &nodes)
+Recognition::active_nodes_sorted_by_best_lp(vector<int> &nodes)
 {
     nodes.clear();
     vector<pair<int, float> > sorted_nodes;
@@ -257,7 +257,7 @@ Decoder::Recognition::active_nodes_sorted_by_best_lp(vector<int> &nodes)
 
 
 void
-Decoder::Recognition::prune_word_history()
+Recognition::prune_word_history()
 {
     for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ) {
         WordHistory *wh = *whlnit;
@@ -281,7 +281,7 @@ Decoder::Recognition::prune_word_history()
 
 
 void
-Decoder::Recognition::clear_word_history()
+Recognition::clear_word_history()
 {
     for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ++whlnit) {
         WordHistory *wh = *whlnit;
@@ -299,7 +299,7 @@ Decoder::Recognition::clear_word_history()
 
 
 void
-Decoder::Recognition::print_certain_word_history(ostream &outf)
+Recognition::print_certain_word_history(ostream &outf)
 {
     WordHistory *hist = m_history_root;
     while (true) {

@@ -100,7 +100,7 @@ recognize_lnas(NgramDecoder &d,
         double curr_time;
         double curr_lp, curr_am_lp, curr_lm_lp;
         double token_count;
-        NgramDecoder::NgramRecognition rec(d);
+        NgramRecognition rec(d);
         rec.recognize_lna_file(line, resultf, &curr_frames, &curr_time,
                                &curr_lp, &curr_am_lp, &curr_lm_lp, &token_count);
         total_frames += curr_frames;
