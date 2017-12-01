@@ -59,6 +59,9 @@ public:
                                 double *total_token_count=nullptr);
     private:
         void reset_frame_variables();
+        void update_total_log_prob(Token &token) const;
+        void apply_duration_model(Token &token, int node_idx) const;
+        void update_lookahead_prob(Token &token, float lookahead_prob) const;
         void propagate_tokens();
         void prune_tokens(bool collect_active_histories=false);
         void move_token_to_node(Token token,
@@ -83,11 +86,6 @@ public:
 
     NgramDecoder();
     ~NgramDecoder();
-
-    void update_total_log_prob(Token &token) const;
-    void apply_duration_model(Token &token, int node_idx) const;
-    void update_lookahead_prob(Token &token, float lookahead_prob) const;
-
     void read_lm(std::string lmfname);
     void set_text_unit_id_ngram_symbol_mapping();
 
