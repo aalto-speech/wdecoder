@@ -58,14 +58,13 @@ public:
     };
 
     NgramRecognition(NgramDecoder &decoder);
-    void recognize_lna_file(std::string lnafname,
-                            std::ostream &outf=std::cout,
-                            int *frame_count=nullptr,
-                            double *seconds=nullptr,
-                            double *log_prob=nullptr,
-                            double *am_prob=nullptr,
-                            double *lm_prob=nullptr,
-                            double *total_token_count=nullptr);
+    std::string recognize_lna_file(std::string lnafname,
+                                   int *frame_count=nullptr,
+                                   double *seconds=nullptr,
+                                   double *log_prob=nullptr,
+                                   double *am_prob=nullptr,
+                                   double *lm_prob=nullptr,
+                                   double *total_token_count=nullptr);
 private:
     void reset_frame_variables();
     void update_total_log_prob(Token &token) const;
@@ -82,10 +81,8 @@ private:
     Token* get_best_token(std::vector<Token> &tokens);
     Token* get_best_end_token(std::vector<Token> &tokens);
     void add_sentence_ends(std::vector<Token> &tokens);
-    void print_best_word_history(std::ostream &outf=std::cout);
-    void print_word_history(WordHistory *history,
-                            std::ostream &outf=std::cout,
-                            bool print_lm_probs=false);
+    std::string get_best_word_history();
+    std::string get_word_history(WordHistory *history);
 
     int m_ngram_state_sentence_begin;
     std::vector<Token> m_raw_tokens;

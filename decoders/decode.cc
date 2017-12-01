@@ -82,7 +82,7 @@ recognize_lnas(NgramDecoder &d,
                ostream &logf)
 {
     ifstream lnalistf(lnalistfname);
-    string line;
+    string lnafname;
 
     print_config(d, config, logf);
 
@@ -93,16 +93,20 @@ recognize_lnas(NgramDecoder &d,
     double total_lm_lp = 0.0;
     double total_token_count = 0.0;
     int file_count = 0;
-    while (getline(lnalistf, line)) {
-        if (!line.length()) continue;
-        logf << endl << "recognizing: " << line << endl;
+    while (getline(lnalistf, lnafname)) {
+        if (!lnafname.length()) continue;
+        logf << endl << "recognizing: " << lnafname << endl;
         int curr_frames;
         double curr_time;
         double curr_lp, curr_am_lp, curr_lm_lp;
         double token_count;
         NgramRecognition rec(d);
-        rec.recognize_lna_file(line, resultf, &curr_frames, &curr_time,
-                               &curr_lp, &curr_am_lp, &curr_lm_lp, &token_count);
+        string res =
+                rec.recognize_lna_file(lnafname, &curr_frames, &curr_time,
+                               &curr_lp, &curr_am_lp, &curr_lm_lp,
+                               &token_count);
+        resultf << lnafname << ":" << res << endl;
+
         total_frames += curr_frames;
         total_time += curr_time;
         total_lp += curr_lp;

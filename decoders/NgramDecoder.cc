@@ -80,10 +80,9 @@ NgramRecognition::NgramRecognition(NgramDecoder &decoder)
 }
 
 
-void
+string
 NgramRecognition::recognize_lna_file(
     string lnafname,
-    ostream &outf,
     int *frame_count,
     double *seconds,
     double *log_prob,
@@ -120,7 +119,7 @@ NgramRecognition::recognize_lna_file(
             cerr << "tokens pruned by max state duration: " << m_max_state_duration_pruned_count << endl;
             cerr << "best log probability: " << m_best_log_prob << endl;
             cerr << "number of active nodes: " << m_active_nodes.size() << endl;
-            print_best_word_history(cerr);
+            cerr << get_best_word_history() << endl;
         }
 
         m_total_token_count += double(m_token_count);
@@ -149,11 +148,6 @@ NgramRecognition::recognize_lna_file(
         if (d->m_force_sentence_end) add_sentence_ends(tokens);
         best_token = get_best_token(tokens);
     }
-    outf << lnafname << ":";
-    print_word_history(best_token->history, outf, false);
-
-    clear_word_history();
-    m_lna_reader.close();
 
     if (frame_count != nullptr) *frame_count = m_frame_idx;
     if (seconds != nullptr) *seconds = difftime(end_time, start_time);
@@ -161,6 +155,12 @@ NgramRecognition::recognize_lna_file(
     if (am_prob != nullptr) *am_prob = best_token->am_log_prob;
     if (lm_prob != nullptr) *lm_prob = best_token->lm_log_prob;
     if (total_token_count != nullptr) *total_token_count = m_total_token_count;
+
+    string res = get_word_history(best_token->history);
+    clear_word_history();
+    m_lna_reader.close();
+
+    return res;
 }
 
 
@@ -504,19 +504,17 @@ NgramRecognition::add_sentence_ends(vector<Token> &tokens)
 }
 
 
-void
-NgramRecognition::print_best_word_history(ostream &outf)
+string
+NgramRecognition::get_best_word_history()
 {
-    print_word_history(get_best_token()->history, outf);
+    return get_word_history(get_best_token()->history);
 }
 
 
-void
-NgramRecognition::print_word_history(
-    WordHistory *history,
-    ostream &outf,
-    bool print_lm_probs)
+string
+NgramRecognition::get_word_history(WordHistory *history)
 {
+    string result;
     vector<int> text_units;
     while (true) {
         text_units.push_back(history->word_id);
@@ -526,25 +524,12 @@ NgramRecognition::print_word_history(
 
     int lm_node = d->m_lm.root_node;
     float total_lp = 0.0;
-    if (d->m_use_word_boundary_symbol) {
-        for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit) {
-            outf << " " << m_text_units->at(*swit);
-            if (print_lm_probs) {
-                float lp = 0.0;
-                lm_node = d->m_lm.score(lm_node, d->m_text_unit_id_to_ngram_symbol[*swit], lp);
-                outf << "(" << lp << ")";
-                total_lp += lp;
-            }
-        }
-    }
-    else {
-        for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit) {
-            if (*swit >= 0)
-                outf << " " << m_text_units->at(*swit);
-        }
-    }
+    if (m_use_word_boundary_symbol)
+        for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit)
+            result += " " + m_text_units->at(*swit);
+    else
+        for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit)
+            if (*swit >= 0) result += " " + m_text_units->at(*swit);
 
-    if (print_lm_probs) outf << endl << "total lm log: " << total_lp;
-    outf << endl;
+    return result;
 }
-
