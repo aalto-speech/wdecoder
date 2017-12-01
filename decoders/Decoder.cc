@@ -311,3 +311,51 @@ Recognition::print_certain_word_history(ostream &outf)
     outf << endl;
 }
 
+
+RecognitionResult::RecognitionResult()
+{
+    total_frames = 0;
+    total_time = 0.0;
+    total_lp = 0.0;
+    total_am_lp = 0.0;
+    total_lm_lp = 0.0;
+    total_token_count = 0.0;
+}
+
+
+void
+RecognitionResult::print_file_stats(ostream &statsf)
+{
+    statsf << "\trecognized " << total_frames << " frames in "
+            << total_time << " seconds." << endl;
+    statsf << "\tRTF: " << total_time / ((double)total_frames/125.0) << endl;
+    statsf << "\tLog prob: " << total_lp << "\tAM: " << total_am_lp << "\tLM: " << total_lm_lp << endl;
+    statsf << "\tMean token count: " << total_token_count / (double)total_frames << endl;
+
+}
+
+
+void
+RecognitionResult::print_final_stats(ostream &statsf)
+{
+    statsf << "total recognition time: " << total_time << endl;
+    statsf << "total frame count: " << total_frames << endl;
+    statsf << "total RTF: " << total_time/ ((double)total_frames/125.0) << endl;
+    statsf << "total log likelihood: " << total_lp << endl;
+    statsf << "total LM likelihood: " << total_lm_lp << endl;
+    statsf << "total AM likelihood: " << total_am_lp << endl;
+    statsf << "total mean token count: " << total_token_count / (double)total_frames << endl;
+}
+
+
+void
+RecognitionResult::accumulate(RecognitionResult &acc)
+{
+    total_frames += acc.total_frames;
+    total_time += acc.total_time;
+    total_lp += acc.total_lp;
+    total_am_lp += acc.total_am_lp;
+    total_lm_lp += acc.total_lm_lp;
+    total_token_count += acc.total_token_count;
+}
+

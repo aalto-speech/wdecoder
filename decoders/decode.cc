@@ -83,40 +83,20 @@ recognize_lnas(NgramDecoder &d,
 {
     ifstream lnalistf(lnalistfname);
     string lnafname;
+    RecognitionResult total;
 
     print_config(d, config, logf);
 
-    int total_frames = 0;
-    double total_time = 0.0;
-    double total_lp = 0.0;
-    double total_am_lp = 0.0;
-    double total_lm_lp = 0.0;
-    double total_token_count = 0.0;
     int file_count = 0;
     while (getline(lnalistf, lnafname)) {
         if (!lnafname.length()) continue;
         logf << endl << "recognizing: " << lnafname << endl;
-        int curr_frames;
-        double curr_time;
-        double curr_lp, curr_am_lp, curr_lm_lp;
-        double token_count;
         NgramRecognition rec(d);
-        string res =
-                rec.recognize_lna_file(lnafname, &curr_frames, &curr_time,
-                               &curr_lp, &curr_am_lp, &curr_lm_lp,
-                               &token_count);
-        resultf << lnafname << ":" << res << endl;
-
-        total_frames += curr_frames;
-        total_time += curr_time;
-        total_lp += curr_lp;
-        total_am_lp += curr_am_lp;
-        total_lm_lp += curr_lm_lp;
-        total_token_count += token_count;
-        logf << "\trecognized " << curr_frames << " frames in " << curr_time << " seconds." << endl;
-        logf << "\tRTF: " << curr_time / ((double)curr_frames/125.0) << endl;
-        logf << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl;
-        logf << "\tMean token count: " << token_count / (double)curr_frames << endl;
+        RecognitionResult res;
+        rec.recognize_lna_file(lnafname, res);
+        resultf << lnafname << ":" << res.result << endl;
+        res.print_file_stats(logf);
+        total.accumulate(res);
         file_count++;
     }
     lnalistf.close();
@@ -124,16 +104,9 @@ recognize_lnas(NgramDecoder &d,
     if (file_count > 1) {
         logf << endl;
         logf << file_count << " files recognized" << endl;
-        logf << "total recognition time: " << total_time << endl;
-        logf << "total frame count: " << total_frames << endl;
-        logf << "total RTF: " << total_time/ ((double)total_frames/125.0) << endl;
-        logf << "total log likelihood: " << total_lp << endl;
-        logf << "total LM likelihood: " << total_lm_lp << endl;
-        logf << "total AM likelihood: " << total_am_lp << endl;
-        logf << "total mean token count: " << total_token_count / (double)total_frames << endl;
+        total.print_final_stats(logf);
     }
 }
-
 
 
 int main(int argc, char* argv[])

@@ -80,15 +80,10 @@ NgramRecognition::NgramRecognition(NgramDecoder &decoder)
 }
 
 
-string
+void
 NgramRecognition::recognize_lna_file(
     string lnafname,
-    int *frame_count,
-    double *seconds,
-    double *log_prob,
-    double *am_prob,
-    double *lm_prob,
-    double *total_token_count)
+    RecognitionResult &res)
 {
     m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
@@ -149,18 +144,16 @@ NgramRecognition::recognize_lna_file(
         best_token = get_best_token(tokens);
     }
 
-    if (frame_count != nullptr) *frame_count = m_frame_idx;
-    if (seconds != nullptr) *seconds = difftime(end_time, start_time);
-    if (log_prob != nullptr) *log_prob = best_token->total_log_prob;
-    if (am_prob != nullptr) *am_prob = best_token->am_log_prob;
-    if (lm_prob != nullptr) *lm_prob = best_token->lm_log_prob;
-    if (total_token_count != nullptr) *total_token_count = m_total_token_count;
+    res.total_frames = m_frame_idx;
+    res.total_time = difftime(end_time, start_time);
+    res.total_lp = best_token->total_log_prob;
+    res.total_am_lp = best_token->am_log_prob;
+    res.total_lm_lp = best_token->lm_log_prob;
+    res.total_token_count = m_total_token_count;
+    res.result.assign(get_word_history(best_token->history));
 
-    string res = get_word_history(best_token->history);
     clear_word_history();
     m_lna_reader.close();
-
-    return res;
 }
 
 
@@ -522,8 +515,6 @@ NgramRecognition::get_word_history(WordHistory *history)
         history = history->previous;
     }
 
-    int lm_node = d->m_lm.root_node;
-    float total_lp = 0.0;
     if (m_use_word_boundary_symbol)
         for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit)
             result += " " + m_text_units->at(*swit);

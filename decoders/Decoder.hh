@@ -176,4 +176,20 @@ public:
     std::vector<std::string> *m_text_units;
 };
 
+class RecognitionResult {
+public:
+    RecognitionResult();
+    void print_file_stats(std::ostream &statsf);
+    void print_final_stats(std::ostream &statsf);
+    void accumulate(RecognitionResult &res);
+
+    std::string result;
+    long long int total_frames;
+    double total_time;
+    double total_lp;
+    double total_am_lp;
+    double total_lm_lp;
+    double total_token_count;
+};
+
 #endif /* DECODER_HH */

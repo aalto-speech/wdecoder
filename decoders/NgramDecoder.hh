@@ -58,13 +58,8 @@ public:
     };
 
     NgramRecognition(NgramDecoder &decoder);
-    std::string recognize_lna_file(std::string lnafname,
-                                   int *frame_count=nullptr,
-                                   double *seconds=nullptr,
-                                   double *log_prob=nullptr,
-                                   double *am_prob=nullptr,
-                                   double *lm_prob=nullptr,
-                                   double *total_token_count=nullptr);
+    void recognize_lna_file(std::string lnafname,
+                            RecognitionResult &res);
 private:
     void reset_frame_variables();
     void update_total_log_prob(Token &token) const;
