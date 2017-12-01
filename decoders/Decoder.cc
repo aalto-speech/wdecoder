@@ -61,7 +61,6 @@ Decoder::read_duration_model(string durfname)
 {
     ifstream durf(durfname);
     if (!durf) throw string("Problem opening duration model.");
-
     NowayHmmReader::read_durations(durf, m_hmms, m_hmm_states);
     m_duration_model_in_use = true;
 }
@@ -210,7 +209,20 @@ Decoder::print_dot_digraph(vector<Node> &nodes,
 
 
 Decoder::Recognition::Recognition(Decoder &decoder) :
-    m_stats(decoder.m_stats)
+    m_stats(decoder.m_stats),
+    m_lm_scale(decoder.m_lm_scale),
+    m_duration_scale(decoder.m_duration_scale),
+    m_transition_scale(decoder.m_transition_scale),
+    m_global_beam(decoder.m_global_beam),
+    m_node_beam(decoder.m_node_beam),
+    m_word_end_beam(decoder.m_word_end_beam),
+    m_duration_model_in_use(decoder.m_duration_model_in_use),
+    m_max_state_duration(decoder.m_max_state_duration),
+    m_last_sil_idx(decoder.m_last_sil_idx),
+    m_use_word_boundary_symbol(decoder.m_use_word_boundary_symbol),
+    m_word_boundary_symbol_idx(decoder.m_word_boundary_symbol_idx),
+    m_sentence_begin_symbol_idx(decoder.m_sentence_begin_symbol_idx),
+    m_sentence_end_symbol_idx(decoder.m_sentence_end_symbol_idx)
 {
     m_acoustics = nullptr;
     m_total_token_count = 0;

@@ -64,7 +64,23 @@ public:
         std::set<int> m_active_nodes;
         std::vector<float> m_best_node_scores;
 
+        // Passed from Decoder
         int m_stats;
+        float m_lm_scale;
+        float m_duration_scale;
+        float m_transition_scale;
+        float m_global_beam;
+        float m_node_beam;
+        float m_word_end_beam;
+        bool m_duration_model_in_use;
+        int m_max_state_duration;
+        int m_last_sil_idx;
+        bool m_use_word_boundary_symbol;
+        int m_word_boundary_symbol_idx;
+        int m_sentence_begin_symbol_idx;
+        int m_sentence_end_symbol_idx;
+
+        // Only in recognition
         int m_token_count;
         int m_token_count_after_pruning;
         float m_best_log_prob;

@@ -75,6 +75,7 @@ public:
                                 std::ostream &outf=std::cout,
                                 bool print_lm_probs=false);
 
+        int m_ngram_state_sentence_begin;
         std::vector<Token> m_raw_tokens;
         std::vector<std::map<int, Token> > m_recombined_tokens;
         NgramDecoder *d;

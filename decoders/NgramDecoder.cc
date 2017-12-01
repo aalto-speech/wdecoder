@@ -47,7 +47,8 @@ NgramDecoder::set_text_unit_id_ngram_symbol_mapping()
 
 
 NgramDecoder::NgramRecognition::NgramRecognition(NgramDecoder &decoder)
-    : Decoder::Recognition::Recognition(decoder)
+    : Decoder::Recognition::Recognition(decoder),
+      m_ngram_state_sentence_begin(decoder.m_ngram_state_sentence_begin)
 {
     d = &decoder;
     m_histogram_bin_limit = 0;
@@ -60,17 +61,17 @@ NgramDecoder::NgramRecognition::NgramRecognition(NgramDecoder &decoder)
     m_active_nodes.clear();
     m_active_histories.clear();
     Token tok;
-    tok.lm_node = d->m_ngram_state_sentence_begin;
-    tok.last_word_id = d->m_sentence_begin_symbol_idx;
+    tok.lm_node = m_ngram_state_sentence_begin;
+    tok.last_word_id = m_sentence_begin_symbol_idx;
     tok.history = new WordHistory();
-    tok.history->word_id = d->m_sentence_begin_symbol_idx;
+    tok.history->word_id = m_sentence_begin_symbol_idx;
     m_history_root = tok.history;
     tok.node_idx = d->m_decode_start_node;
     m_active_nodes.insert(d->m_decode_start_node);
     m_word_history_leafs.insert(tok.history);
     if (d->m_use_word_boundary_symbol) {
-        advance_in_word_history(tok, d->m_word_boundary_symbol_idx);
-        tok.last_word_id = d->m_word_boundary_symbol_idx;
+        advance_in_word_history(tok, m_word_boundary_symbol_idx);
+        tok.last_word_id = m_word_boundary_symbol_idx;
     }
     m_active_histories.insert(tok.history);
     m_recombined_tokens[d->m_decode_start_node][tok.lm_node] = tok;
@@ -135,7 +136,7 @@ NgramDecoder::NgramRecognition::recognize_lna_file(
 
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         Token &tok = *tit;
-        if (d->m_duration_model_in_use && tok.dur > 1)
+        if (m_duration_model_in_use && tok.dur > 1)
             d->apply_duration_model(tok, tok.node_idx);
         d->update_lookahead_prob(tok, 0.0);
         d->update_total_log_prob(tok);
@@ -222,8 +223,8 @@ NgramDecoder::NgramRecognition::prune_tokens(bool collect_active_histories)
     // Global beam pruning
     // Node beam pruning
     // Word end beam pruning
-    float current_glob_beam = m_best_log_prob - d->m_global_beam;
-    float current_word_end_beam = m_best_word_end_prob - d->m_word_end_beam;
+    float current_glob_beam = m_best_log_prob - m_global_beam;
+    float current_word_end_beam = m_best_word_end_prob - m_word_end_beam;
     for (unsigned int i=0; i<m_raw_tokens.size(); i++) {
         Token &tok = m_raw_tokens[i];
 
@@ -232,20 +233,20 @@ NgramDecoder::NgramRecognition::prune_tokens(bool collect_active_histories)
             continue;
         }
 
-        if (tok.total_log_prob < (m_best_node_scores[tok.node_idx] - d->m_node_beam)) {
+        if (tok.total_log_prob < (m_best_node_scores[tok.node_idx] - m_node_beam)) {
             m_node_beam_pruned_count++;
             continue;
         }
 
         if (tok.word_end) {
-            float prob_wo_la = tok.total_log_prob - d->m_lm_scale * tok.lookahead_log_prob;
+            float prob_wo_la = tok.total_log_prob - m_lm_scale * tok.lookahead_log_prob;
             if (prob_wo_la < current_word_end_beam) {
                 m_word_end_beam_pruned_count++;
                 continue;
             }
         }
 
-        tok.histogram_bin = (int) round((float)(HISTOGRAM_BIN_COUNT-1) * (tok.total_log_prob-current_glob_beam)/d->m_global_beam);
+        tok.histogram_bin = (int) round((float)(HISTOGRAM_BIN_COUNT-1) * (tok.total_log_prob-current_glob_beam)/m_global_beam);
         pruned_tokens.push_back(tok);
     }
     m_raw_tokens.clear();
@@ -299,20 +300,20 @@ NgramDecoder::NgramRecognition::move_token_to_node(
         float transition_score,
         bool update_lookahead)
 {
-    token.am_log_prob += d->m_transition_scale * transition_score;
+    token.am_log_prob += m_transition_scale * transition_score;
 
     Node &node = d->m_nodes[node_idx];
 
     if (token.node_idx == node_idx) {
         token.dur++;
-        if (token.dur > d->m_max_state_duration && node.hmm_state > d->m_last_sil_idx) {
+        if (token.dur > m_max_state_duration && node.hmm_state > m_last_sil_idx) {
             m_max_state_duration_pruned_count++;
             return;
         }
     }
     else {
         // Apply duration model for previous state if moved out from a hmm state
-        if (d->m_duration_model_in_use && d->m_nodes[token.node_idx].hmm_state != -1)
+        if (m_duration_model_in_use && d->m_nodes[token.node_idx].hmm_state != -1)
             d->apply_duration_model(token, token.node_idx);
         token.node_idx = node_idx;
         token.dur = 1;
@@ -327,14 +328,14 @@ NgramDecoder::NgramRecognition::move_token_to_node(
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
 
         d->update_total_log_prob(token);
-        if (token.total_log_prob < (m_best_log_prob-d->m_global_beam)) {
+        if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
         }
 
         m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
         if (token.word_end) {
-            float lp_wo_la = token.total_log_prob - d->m_lm_scale * token.lookahead_log_prob;
+            float lp_wo_la = token.total_log_prob - m_lm_scale * token.lookahead_log_prob;
             m_best_word_end_prob = max(m_best_word_end_prob, lp_wo_la);
         }
         m_best_node_scores[node_idx] = max(m_best_node_scores[node_idx], token.total_log_prob);
@@ -350,18 +351,18 @@ NgramDecoder::NgramRecognition::move_token_to_node(
         token.last_word_id = node.word_id;
 
         if (update_lookahead) {
-            if ((node.word_id == d->m_sentence_end_symbol_idx) && d->m_use_word_boundary_symbol) {
-                d->update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, d->m_word_boundary_symbol_idx));
+            if ((node.word_id == m_sentence_end_symbol_idx) && m_use_word_boundary_symbol) {
+                d->update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, m_word_boundary_symbol_idx));
             }
-            else if (node.word_id == d->m_sentence_end_symbol_idx) {
-                d->update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, d->m_sentence_begin_symbol_idx));
+            else if (node.word_id == m_sentence_end_symbol_idx) {
+                d->update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, m_sentence_begin_symbol_idx));
             }
             else {
                 d->update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, token.last_word_id));
             }
         }
         d->update_total_log_prob(token);
-        if (token.total_log_prob < (m_best_log_prob-d->m_global_beam)) {
+        if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
         }
@@ -369,14 +370,14 @@ NgramDecoder::NgramRecognition::move_token_to_node(
         advance_in_word_history(token, node.word_id);
         token.word_end = true;
 
-        if (node.word_id == d->m_sentence_end_symbol_idx) {
-            token.lm_node = d->m_ngram_state_sentence_begin;
-            if (d->m_use_word_boundary_symbol) {
-                advance_in_word_history(token, d->m_word_boundary_symbol_idx);
-                token.last_word_id = d->m_word_boundary_symbol_idx;
+        if (node.word_id == m_sentence_end_symbol_idx) {
+            token.lm_node = m_ngram_state_sentence_begin;
+            if (m_use_word_boundary_symbol) {
+                advance_in_word_history(token, m_word_boundary_symbol_idx);
+                token.last_word_id = m_word_boundary_symbol_idx;
             }
             else {
-                token.last_word_id = d->m_sentence_begin_symbol_idx;
+                token.last_word_id = m_sentence_begin_symbol_idx;
             }
         }
     }
