@@ -32,22 +32,22 @@ graph_progs = wgraph\
 decoder_srcs = decoders/Decoder.cc\
 	decoders/Lookahead.cc\
 	decoders/NgramDecoder.cc\
-	decoders/ClassDecoder.cc\
-	decoders/ClassIPDecoder.cc\
-	decoders/WordSubwordDecoder.cc\
-	decoders/Segmenter.cc
+#	decoders/ClassDecoder.cc\
+#	decoders/ClassIPDecoder.cc\
+#	decoders/WordSubwordDecoder.cc\
+#	decoders/Segmenter.cc
 
 decoder_objs = $(decoder_srcs:.cc=.o)
 
 decoder_progs = decode\
-	class-decode\
-	class-ip-decode\
-	wsw-decode\
-	score\
-	segment\
-	lastates\
-	cleanlex\
-	lasc
+#	class-decode\
+#	class-ip-decode\
+#	wsw-decode\
+#	score\
+#	segment\
+#	lastates\
+#	cleanlex\
+#	lasc
 
 test_srcs = test/wgraphtest.cc\
 	test/swgraphtest.cc\
@@ -64,7 +64,8 @@ test_progs = runtests
 
 .SUFFIXES:
 
-all: $(graph_progs) $(decoder_progs) $(test_progs)
+#all: $(graph_progs) $(decoder_progs) $(test_progs)
+all: $(graph_progs) $(decoder_progs)
 
 %.o: %.cc
 	$(CXX) -c $(cxxflags) $< -o $@
@@ -74,7 +75,7 @@ $(graph_progs): $(util_objs) $(graph_objs)
 
 $(decoder_progs): $(util_objs) $(graph_objs) $(decoder_objs)
 	$(CXX) $(cxxflags) -o $@ decoders/$@.cc $(util_objs) $(graph_objs) $(decoder_objs)\
-	 -lz -I./graphs -I./decoders
+	 -lz -pthread -I./graphs -I./decoders
 
 $(test_objs): %.o: %.cc $(test_srcs) $(util_objs) $(graph_objs) $(decoder_objs)
 	$(CXX) -c $(cxxflags) $< -o $@ -I./graphs -I./decoders

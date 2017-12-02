@@ -1,4 +1,5 @@
 #include <sstream>
+#include <thread>
 
 #include "NgramDecoder.hh"
 #include "Lookahead.hh"
@@ -57,6 +58,7 @@ print_config(NgramDecoder &d,
         string lalmfname = config["lookahead-model"].get_str();
         outf << "LOOKAHEAD LM: " << lalmfname << endl;
     }
+    outf << "number of threads: " << config["num-threads"].get_int() << endl;
 
     outf << std::boolalpha;
     outf << "lm scale: " << d.m_lm_scale << endl;
@@ -74,6 +76,31 @@ print_config(NgramDecoder &d,
 }
 
 
+void join(vector<string> &lnafnames,
+          vector<NgramRecognition*> &recognitions,
+          vector<RecognitionResult*> &results,
+          vector<thread*> &threads,
+          RecognitionResult &total,
+          ostream &resultf,
+          ostream &logf)
+{
+    for (int i=0; i<(int)threads.size(); i += 1) {
+        threads[i]->join();
+        logf << endl << "recognizing: " << lnafnames[i] << endl;
+        resultf << lnafnames[i] << ":" << results[i]->result << endl;
+        results[i]->print_file_stats(logf);
+        total.accumulate(*results[i]);
+        delete recognitions[i];
+        delete results[i];
+        delete threads[i];
+    }
+    lnafnames.clear();
+    recognitions.clear();
+    results.clear();
+    threads.clear();
+}
+
+
 void
 recognize_lnas(NgramDecoder &d,
                conf::Config &config,
@@ -88,19 +115,32 @@ recognize_lnas(NgramDecoder &d,
     print_config(d, config, logf);
 
     int file_count = 0;
+    int num_threads = config["num-threads"].get_int();
+    vector<string> lna_fnames;
+    vector<NgramRecognition*> recognitions;
+    vector<RecognitionResult*> results;
+    vector<std::thread*> threads;
     while (getline(lnalistf, lnafname)) {
         if (!lnafname.length()) continue;
-        logf << endl << "recognizing: " << lnafname << endl;
-        NgramRecognition rec(d);
-        RecognitionResult res;
-        rec.recognize_lna_file(lnafname, res);
-        resultf << lnafname << ":" << res.result << endl;
-        res.print_file_stats(logf);
-        total.accumulate(res);
+
+        if ((int)recognitions.size() < num_threads) {
+            lna_fnames.push_back(lnafname);
+            recognitions.push_back(new NgramRecognition(d));
+            results.push_back(new RecognitionResult());
+            thread *thr = new thread(&NgramRecognition::recognize_lna_file,
+                                     recognitions.back(),
+                                     lnafname,
+                                     std::ref(*results.back()));
+            threads.push_back(thr);
+        }
+
+        if ((int)recognitions.size() == num_threads)
+            join(lna_fnames, recognitions, results, threads, total, resultf, logf);
+
         file_count++;
     }
     lnalistf.close();
-
+    join(lna_fnames, recognitions, results, threads, total, resultf, logf);
     if (file_count > 1) {
         logf << endl;
         logf << file_count << " files recognized" << endl;
@@ -116,6 +156,7 @@ int main(int argc, char* argv[])
     ('h', "help", "", "", "display help")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
     ('q', "quantized-lookahead", "", "", "Two byte quantized look-ahead model")
+    ('p', "num-threads", "arg", "1", "Number of threads")
     ('f', "result-file=STRING", "arg", "", "Base filename for results (.rec and .log)")
     ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
     ('t', "lookahead-type=STRING", "arg", "", "Lookahead type\n"
@@ -130,12 +171,7 @@ int main(int argc, char* argv[])
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
     try {
-
         NgramDecoder d;
-
-        string cfgfname = config.arguments[3];
-        cerr << "Reading configuration: " << cfgfname << endl;
-        read_config(d, cfgfname);
 
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
@@ -155,6 +191,9 @@ int main(int argc, char* argv[])
         cerr << "Reading language model: " << lmfname << endl;
         d.read_lm(lmfname);
 
+        string cfgfname = config.arguments[3];
+        cerr << "Reading configuration: " << cfgfname << endl;
+        read_config(d, cfgfname);
 
         string graphfname = config.arguments[4];
         cerr << "Reading graph: " << graphfname << endl;
