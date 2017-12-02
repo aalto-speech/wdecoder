@@ -32,7 +32,7 @@ graph_progs = wgraph\
 decoder_srcs = decoders/Decoder.cc\
 	decoders/Lookahead.cc\
 	decoders/NgramDecoder.cc\
-#	decoders/ClassDecoder.cc\
+	decoders/ClassDecoder.cc\
 #	decoders/ClassIPDecoder.cc\
 #	decoders/WordSubwordDecoder.cc\
 #	decoders/Segmenter.cc
@@ -40,7 +40,7 @@ decoder_srcs = decoders/Decoder.cc\
 decoder_objs = $(decoder_srcs:.cc=.o)
 
 decoder_progs = decode\
-#	class-decode\
+	class-decode\
 #	class-ip-decode\
 #	wsw-decode\
 #	score\
