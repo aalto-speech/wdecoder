@@ -659,19 +659,51 @@ LRWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     remove_nodes_with_no_arcs(m_nodes);
 
     if (verbose) cerr << "Tying nodes.." << endl;
+    if (verbose) cerr << "Pushing word ids right.." << endl;
     push_word_ids_right(m_nodes);
+    if (verbose) cerr << "Tying state prefixes.." << endl;
     tie_state_prefixes(m_nodes);
-    tie_word_id_prefixes(m_nodes);
-    tie_state_prefixes(m_nodes);
-    tie_word_id_prefixes(m_nodes);
-    tie_state_prefixes(m_nodes);
+    write_graph("graph.temp.1");
 
+    if (verbose) cerr << "Tying word id prefixes.." << endl;
+    tie_word_id_prefixes(m_nodes);
+    write_graph("graph.temp.2");
+
+    if (verbose) cerr << "Tying state prefixes.." << endl;
+    tie_state_prefixes(m_nodes);
+    write_graph("graph.temp.3");
+
+    if (verbose) cerr << "Tying word id prefixes.." << endl;
+    tie_word_id_prefixes(m_nodes);
+    write_graph("graph.temp.4");
+
+    if (verbose) cerr << "Tying state prefixes.." << endl;
+    tie_state_prefixes(m_nodes);
+    write_graph("graph.temp.5");
+
+    if (verbose) cerr << "Pushing word ids left.." << endl;
     push_word_ids_left(m_nodes);
+    write_graph("graph.temp.6");
+
+    if (verbose) cerr << "Tying state suffixes.." << endl;
     tie_state_suffixes(m_nodes);
+    write_graph("graph.temp.7");
+
+    if (verbose) cerr << "Tying word id suffixes.." << endl;
     tie_word_id_suffixes(m_nodes);
+    write_graph("graph.temp.8");
+
+    if (verbose) cerr << "Tying state suffixes.." << endl;
     tie_state_suffixes(m_nodes);
+    write_graph("graph.temp.9");
+
+    if (verbose) cerr << "Tying word id suffixes.." << endl;
     tie_word_id_suffixes(m_nodes);
+    write_graph("graph.temp.10");
+
+    if (verbose) cerr << "Tying state suffixes.." << endl;
     tie_state_suffixes(m_nodes);
+    write_graph("graph.temp.11");
 
     prune_unreachable_nodes(m_nodes);
 

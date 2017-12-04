@@ -31,7 +31,12 @@ int main(int argc, char* argv[])
         string graphfname = config.arguments[2];
         cerr << "Result graph file name: " << graphfname << endl;
 
-        swg.create_graph(prefix_subwords, stem_subwords, suffix_subwords, word_subwords, true);
+        swg.create_graph(
+                prefix_subwords,
+                stem_subwords,
+                suffix_subwords,
+                word_subwords,
+                true);
         swg.add_long_silence();
         swg.add_hmm_self_transitions();
         swg.write_graph(graphfname);
