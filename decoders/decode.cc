@@ -187,13 +187,15 @@ int main(int argc, char* argv[])
         cerr << "Reading lexicon: " << lexfname << endl;
         d.read_noway_lexicon(lexfname);
 
-        string lmfname = config.arguments[2];
-        cerr << "Reading language model: " << lmfname << endl;
-        d.read_lm(lmfname);
-
+        // Read before loading language model
+        // for possible word boundary symbol configuration
         string cfgfname = config.arguments[3];
         cerr << "Reading configuration: " << cfgfname << endl;
         read_config(d, cfgfname);
+
+        string lmfname = config.arguments[2];
+        cerr << "Reading language model: " << lmfname << endl;
+        d.read_lm(lmfname);
 
         string graphfname = config.arguments[4];
         cerr << "Reading graph: " << graphfname << endl;
