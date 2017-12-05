@@ -16,9 +16,32 @@
 
 
 class ClassIPDecoder : public Decoder {
-
 public:
+    ClassIPDecoder();
+    ~ClassIPDecoder();
+    void read_lm(std::string lmfname);
+    void set_text_unit_id_ngram_symbol_mapping();
+    void read_class_lm(std::string ngramfname,
+                       std::string wordpfname);
+    int read_class_memberships(std::string fname,
+                               std::map<std::string, std::pair<int, float> > &class_memberships);
 
+    // N-gram language model
+    LNNgram m_lm;
+    std::vector<int> m_text_unit_id_to_ngram_symbol;
+
+    // Class n-gram language model
+    LNNgram m_class_lm;
+    std::map<std::string, std::pair<int, float> > m_class_memberships;
+    std::vector<std::pair<int, float> > m_class_membership_lookup;
+    std::vector<int> m_class_intmap;
+    double m_iw;
+    double m_word_iw;
+    double m_class_iw;
+};
+
+class ClassIPRecognition : public Recognition {
+public:
     class Token {
     public:
         int node_idx;
@@ -50,26 +73,10 @@ public:
         { }
     };
 
-    ClassIPDecoder();
-    ~ClassIPDecoder();
-
-    void read_lm(std::string lmfname);
-    void set_text_unit_id_ngram_symbol_mapping();
-    void read_class_lm(std::string ngramfname,
-                       std::string wordpfname);
-    int read_class_memberships(std::string fname,
-                               std::map<std::string, std::pair<int, float> > &class_memberships);
-
+    ClassIPRecognition(ClassIPDecoder &decoder);
     void recognize_lna_file(std::string lnafname,
-                            std::ostream &outf=std::cout,
-                            int *frame_count=nullptr,
-                            double *seconds=nullptr,
-                            double *log_prob=nullptr,
-                            double *am_prob=nullptr,
-                            double *lm_prob=nullptr,
-                            double *total_token_count=nullptr);
+                            RecognitionResult &res);
 
-    void initialize();
     void reset_frame_variables();
     void propagate_tokens();
     void prune_tokens(bool collect_active_histories=false);
@@ -91,22 +98,12 @@ public:
     void print_word_history(WordHistory *history,
                             std::ostream &outf=std::cout,
                             bool print_lm_probs=false);
-
-    // N-gram language model
-    LNNgram m_lm;
-    std::vector<int> m_text_unit_id_to_ngram_symbol;
-
-    // Class n-gram language model
-    LNNgram m_class_lm;
-    std::map<std::string, std::pair<int, float> > m_class_memberships;
-    std::vector<std::pair<int, float> > m_class_membership_lookup;
-    std::vector<int> m_class_intmap;
-    double m_iw;
-    double m_word_iw;
-    double m_class_iw;
+    std::string get_best_word_history();
+    std::string get_word_history(WordHistory *history);
 
     std::vector<Token> m_raw_tokens;
     std::vector<std::map<std::pair<int, int>, Token> > m_recombined_tokens;
+    ClassIPDecoder *d;
 };
 
 #endif /* CLASS_INTERPOLATED_DECODER_HH */

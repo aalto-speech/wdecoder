@@ -41,8 +41,9 @@ ClassIPDecoder::set_text_unit_id_ngram_symbol_mapping()
 
 
 void
-ClassIPDecoder::read_class_lm(string ngramfname,
-                       string classmfname)
+ClassIPDecoder::read_class_lm(
+        string ngramfname,
+        string classmfname)
 {
     cerr << "Reading class n-gram: " << ngramfname << endl;
     m_class_lm.read_arpa(ngramfname);
@@ -70,8 +71,9 @@ ClassIPDecoder::read_class_lm(string ngramfname,
 
 
 int
-ClassIPDecoder::read_class_memberships(string fname,
-                       map<string, pair<int, float> > &class_memberships)
+ClassIPDecoder::read_class_memberships(
+        string fname,
+        map<string, pair<int, float> > &class_memberships)
 {
     SimpleFileInput wcf(fname);
 
@@ -90,19 +92,42 @@ ClassIPDecoder::read_class_memberships(string fname,
 }
 
 
+ClassIPRecognition::ClassIPRecognition(ClassIPDecoder &decoder)
+    : Recognition::Recognition(decoder)
+{
+    d=&decoder;
+    m_histogram_bin_limit = 0;
+    m_word_history_leafs.clear();
+    m_raw_tokens.clear();
+    m_raw_tokens.reserve(1000000);
+    m_recombined_tokens.clear();
+    m_recombined_tokens.resize(d->m_nodes.size());
+    m_best_node_scores.resize(d->m_nodes.size(), -1e20);
+    m_active_nodes.clear();
+    m_active_histories.clear();
+    Token tok;
+    tok.lm_node = d->m_lm.sentence_start_node;
+    tok.class_lm_node = d->m_class_lm.sentence_start_node;
+    tok.last_word_id = m_sentence_begin_symbol_idx;
+    tok.history = new WordHistory();
+    tok.history->word_id = m_sentence_begin_symbol_idx;
+    m_history_root = tok.history;
+    tok.node_idx = d->m_decode_start_node;
+    m_active_nodes.insert(d->m_decode_start_node);
+    m_word_history_leafs.insert(tok.history);
+    m_active_histories.insert(tok.history);
+    m_recombined_tokens[d->m_decode_start_node][make_pair(tok.lm_node, tok.class_lm_node)] = tok;
+    m_total_token_count = 0;
+}
+
+
 void
-ClassIPDecoder::recognize_lna_file(string lnafname,
-                            ostream &outf,
-                            int *frame_count,
-                            double *seconds,
-                            double *log_prob,
-                            double *am_prob,
-                            double *lm_prob,
-                            double *total_token_count)
+ClassIPRecognition::recognize_lna_file(
+    std::string lnafname,
+    RecognitionResult &res)
 {
     m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
-    initialize();
 
     time_t start_time, end_time;
     time(&start_time);
@@ -112,7 +137,7 @@ ClassIPDecoder::recognize_lna_file(string lnafname,
         reset_frame_variables();
         propagate_tokens();
 
-        if (m_frame_idx % m_history_clean_frame_interval == 0) {
+        if (m_frame_idx % d->m_history_clean_frame_interval == 0) {
             prune_tokens(true);
             prune_word_history();
             //print_certain_word_history();
@@ -121,7 +146,7 @@ ClassIPDecoder::recognize_lna_file(string lnafname,
 
         if (m_stats) {
             cerr << endl << "recognized frame: " << m_frame_idx << endl;
-            cerr << "current global beam: " << m_global_beam << endl;
+            cerr << "global beam: " << m_global_beam << endl;
             cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
             cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
             cerr << "tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
@@ -130,7 +155,7 @@ ClassIPDecoder::recognize_lna_file(string lnafname,
             cerr << "tokens pruned by max state duration: " << m_max_state_duration_pruned_count << endl;
             cerr << "best log probability: " << m_best_log_prob << endl;
             cerr << "number of active nodes: " << m_active_nodes.size() << endl;
-            print_best_word_history(cerr);
+            cerr << get_best_word_history() << endl;
         }
 
         m_total_token_count += double(m_token_count);
@@ -140,14 +165,15 @@ ClassIPDecoder::recognize_lna_file(string lnafname,
 
     vector<Token> tokens;
     for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
-        map<pair<int, int>, Token> &node_tokens = m_recombined_tokens[*nit];
+        map<std::pair<int,int>, Token> &node_tokens = m_recombined_tokens[*nit];
         for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit)
             tokens.push_back(tit->second);
     }
 
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         Token &tok = *tit;
-        if (m_duration_model_in_use && tok.dur > 1) apply_duration_model(tok, tok.node_idx);
+        if (m_duration_model_in_use && tok.dur > 1)
+            apply_duration_model(tok, tok.node_idx);
         update_lookahead_prob(tok, 0.0);
         update_total_log_prob(tok);
     }
@@ -155,58 +181,25 @@ ClassIPDecoder::recognize_lna_file(string lnafname,
     Token *best_token = nullptr;
     best_token = get_best_end_token(tokens);
     if (best_token == nullptr) {
-        if (m_force_sentence_end) add_sentence_ends(tokens);
+        if (d->m_force_sentence_end) add_sentence_ends(tokens);
         best_token = get_best_token(tokens);
     }
-    //add_sentence_ends(tokens);
-    //Token *best_token = get_best_token(tokens);
 
-    outf << lnafname << ":";
-    print_word_history(best_token->history, outf, false);
+    res.total_frames = m_frame_idx;
+    res.total_time = difftime(end_time, start_time);
+    res.total_lp = best_token->total_log_prob;
+    res.total_am_lp = best_token->am_log_prob;
+    res.total_lm_lp = best_token->lm_log_prob;
+    res.total_token_count = m_total_token_count;
+    res.result.assign(get_word_history(best_token->history));
 
     clear_word_history();
     m_lna_reader.close();
-
-    if (frame_count != nullptr) *frame_count = m_frame_idx;
-    if (seconds != nullptr) *seconds = difftime(end_time, start_time);
-    if (log_prob != nullptr) *log_prob = best_token->total_log_prob;
-    if (am_prob != nullptr) *am_prob = best_token->am_log_prob;
-    if (lm_prob != nullptr) *lm_prob = best_token->lm_log_prob;
-    if (total_token_count != nullptr) *total_token_count = m_total_token_count;
 }
 
 
 void
-ClassIPDecoder::initialize()
-{
-    m_histogram_bin_limit = 0;
-    m_word_history_leafs.clear();
-    m_raw_tokens.clear();
-    m_raw_tokens.reserve(1000000);
-    m_recombined_tokens.clear();
-    m_recombined_tokens.resize(m_nodes.size());
-    m_best_node_scores.resize(m_nodes.size(), -1e20);
-    m_active_nodes.clear();
-    m_active_histories.clear();
-    Token tok;
-    tok.lm_node = m_lm.sentence_start_node;
-    tok.class_lm_node = m_class_lm.sentence_start_node;
-    tok.last_word_id = m_sentence_begin_symbol_idx;
-    m_ngram_state_sentence_begin = tok.lm_node;
-    tok.history = new WordHistory();
-    tok.history->word_id = m_sentence_begin_symbol_idx;
-    m_history_root = tok.history;
-    tok.node_idx = m_decode_start_node;
-    m_active_nodes.insert(m_decode_start_node);
-    m_word_history_leafs.insert(tok.history);
-    m_active_histories.insert(tok.history);
-    m_recombined_tokens[m_decode_start_node][make_pair(tok.lm_node, tok.class_lm_node)] = tok;
-    m_total_token_count = 0;
-}
-
-
-void
-ClassIPDecoder::reset_frame_variables()
+ClassIPRecognition::reset_frame_variables()
 {
     m_token_count = 0;
     m_best_log_prob = -1e20;
@@ -224,14 +217,14 @@ ClassIPDecoder::reset_frame_variables()
 
 
 void
-ClassIPDecoder::propagate_tokens()
+ClassIPRecognition::propagate_tokens()
 {
     vector<int> sorted_active_nodes;
     active_nodes_sorted_by_best_lp(sorted_active_nodes);
 
     int node_count = 0;
     for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit) {
-        Node &node = m_nodes[*nit];
+        Decoder::Node &node = d->m_nodes[*nit];
         for (auto tit = m_recombined_tokens[*nit].begin(); tit != m_recombined_tokens[*nit].end(); ++tit) {
 
             if (tit->second.histogram_bin < m_histogram_bin_limit) {
@@ -257,7 +250,7 @@ ClassIPDecoder::propagate_tokens()
 
 
 void
-ClassIPDecoder::prune_tokens(bool collect_active_histories)
+ClassIPRecognition::prune_tokens(bool collect_active_histories)
 {
     vector<Token> pruned_tokens;
     pruned_tokens.reserve(50000);
@@ -324,7 +317,7 @@ ClassIPDecoder::prune_tokens(bool collect_active_histories)
     int histogram_tok_count = 0;
     for (int i=HISTOGRAM_BIN_COUNT-1; i>= 0; i--) {
         histogram_tok_count += histogram[i];
-        if (histogram_tok_count > m_token_limit) {
+        if (histogram_tok_count > d->m_token_limit) {
             m_histogram_bin_limit = i;
             break;
         }
@@ -336,14 +329,14 @@ ClassIPDecoder::prune_tokens(bool collect_active_histories)
 
 
 void
-ClassIPDecoder::move_token_to_node(Token token,
+ClassIPRecognition::move_token_to_node(Token token,
                             int node_idx,
                             float transition_score,
                             bool update_lookahead)
 {
     token.am_log_prob += m_transition_scale * transition_score;
 
-    Node &node = m_nodes[node_idx];
+    Decoder::Node &node = d->m_nodes[node_idx];
 
     if (token.node_idx == node_idx) {
         token.dur++;
@@ -354,7 +347,7 @@ ClassIPDecoder::move_token_to_node(Token token,
     }
     else {
         // Apply duration model for previous state if moved out from a hmm state
-        if (m_duration_model_in_use && m_nodes[token.node_idx].hmm_state != -1)
+        if (m_duration_model_in_use && d->m_nodes[token.node_idx].hmm_state != -1)
             apply_duration_model(token, token.node_idx);
         token.node_idx = node_idx;
         token.dur = 1;
@@ -364,7 +357,7 @@ ClassIPDecoder::move_token_to_node(Token token,
     if (node.hmm_state != -1) {
 
         if (update_lookahead)
-            update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
+            update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, token.last_word_id));
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
 
@@ -394,10 +387,10 @@ ClassIPDecoder::move_token_to_node(Token token,
 
         if (update_lookahead) {
             if (node.word_id == m_sentence_end_symbol_idx) {
-                update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, m_sentence_begin_symbol_idx));
+                update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, m_sentence_begin_symbol_idx));
             }
             else {
-                update_lookahead_prob(token, m_la->get_lookahead_score(node_idx, token.last_word_id));
+                update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, token.last_word_id));
             }
         }
 
@@ -411,8 +404,8 @@ ClassIPDecoder::move_token_to_node(Token token,
         token.word_end = true;
 
         if (node.word_id == m_sentence_end_symbol_idx) {
-            token.lm_node = m_lm.sentence_start_node;
-            token.class_lm_node = m_class_lm.sentence_start_node;
+            token.lm_node = d->m_lm.sentence_start_node;
+            token.class_lm_node = d->m_class_lm.sentence_start_node;
             token.last_word_id = m_sentence_begin_symbol_idx;
         }
     }
@@ -422,8 +415,8 @@ ClassIPDecoder::move_token_to_node(Token token,
 }
 
 
-ClassIPDecoder::Token*
-ClassIPDecoder::get_best_token()
+ClassIPRecognition::Token*
+ClassIPRecognition::get_best_token()
 {
     Token *best_token = nullptr;
 
@@ -441,8 +434,8 @@ ClassIPDecoder::get_best_token()
 }
 
 
-ClassIPDecoder::Token*
-ClassIPDecoder::get_best_token(vector<Token> &tokens)
+ClassIPRecognition::Token*
+ClassIPRecognition::get_best_token(vector<Token> &tokens)
 {
     Token *best_token = nullptr;
 
@@ -457,15 +450,15 @@ ClassIPDecoder::get_best_token(vector<Token> &tokens)
 }
 
 
-ClassIPDecoder::Token*
-ClassIPDecoder::get_best_end_token(vector<Token> &tokens)
+ClassIPRecognition::Token*
+ClassIPRecognition::get_best_end_token(vector<Token> &tokens)
 {
     Token *best_token = nullptr;
 
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         //if (tit->lm_node != m_ngram_state_sentence_begin) continue;
 
-        ClassIPDecoder::Node &node = m_nodes[tit->node_idx];
+        Decoder::Node &node = d->m_nodes[tit->node_idx];
         if (node.flags & NODE_SILENCE) {
             if (best_token == nullptr)
                 best_token = &(*tit);
@@ -479,7 +472,7 @@ ClassIPDecoder::get_best_end_token(vector<Token> &tokens)
 
 
 void
-ClassIPDecoder::advance_in_word_history(Token &token, int word_id)
+ClassIPRecognition::advance_in_word_history(Token &token, int word_id)
 {
     auto next_history = token.history->next.find(word_id);
     if (next_history != token.history->next.end())
@@ -494,15 +487,15 @@ ClassIPDecoder::advance_in_word_history(Token &token, int word_id)
 
 
 bool
-ClassIPDecoder::update_lm_prob(Token &token, int word_id)
+ClassIPRecognition::update_lm_prob(Token &token, int word_id)
 {
     double class_lm_prob = class_lm_score(token, word_id);
     if (class_lm_prob == MIN_LOG_PROB) return false;
-    class_lm_prob += m_class_iw;
+    class_lm_prob += d->m_class_iw;
 
     double word_lm_prob = 0.0;
-    token.lm_node = m_lm.score(token.lm_node, m_text_unit_id_to_ngram_symbol[word_id], word_lm_prob);
-    word_lm_prob += m_word_iw;
+    token.lm_node = d->m_lm.score(token.lm_node, d->m_text_unit_id_to_ngram_symbol[word_id], word_lm_prob);
+    word_lm_prob += d->m_word_iw;
 
     static double ln_to_log10 = 1.0/log(10.0);
     token.lm_log_prob += ln_to_log10 * add_log_domain_probs(word_lm_prob, class_lm_prob);
@@ -512,22 +505,22 @@ ClassIPDecoder::update_lm_prob(Token &token, int word_id)
 
 
 void
-ClassIPDecoder::update_total_log_prob(Token &token)
+ClassIPRecognition::update_total_log_prob(Token &token)
 {
     token.total_log_prob = token.am_log_prob + (m_lm_scale * token.lm_log_prob);
 }
 
 
 void
-ClassIPDecoder::apply_duration_model(Token &token, int node_idx)
+ClassIPRecognition::apply_duration_model(Token &token, int node_idx)
 {
     token.am_log_prob += m_duration_scale
-                         * m_hmm_states[m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
+            * d->m_hmm_states[d->m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
 }
 
 
 void
-ClassIPDecoder::update_lookahead_prob(Token &token, float new_lookahead_prob)
+ClassIPRecognition::update_lookahead_prob(Token &token, float new_lookahead_prob)
 {
     token.lm_log_prob -= token.lookahead_log_prob;
     token.lm_log_prob += new_lookahead_prob;
@@ -536,32 +529,34 @@ ClassIPDecoder::update_lookahead_prob(Token &token, float new_lookahead_prob)
 
 
 double
-ClassIPDecoder::class_lm_score(Token &token, int word_id)
+ClassIPRecognition::class_lm_score(Token &token, int word_id)
 {
-    if (m_class_membership_lookup[word_id].second == MIN_LOG_PROB) return MIN_LOG_PROB;
+    if (d->m_class_membership_lookup[word_id].second == MIN_LOG_PROB) return MIN_LOG_PROB;
 
-    double membership_prob = m_class_membership_lookup[word_id].second;
+    double membership_prob = d->m_class_membership_lookup[word_id].second;
     double ngram_prob = 0.0;
     if (word_id == m_sentence_end_symbol_idx) {
-        token.class_lm_node = m_class_lm.score(token.class_lm_node,
-                                               m_class_lm.sentence_end_symbol_idx,
-                                               ngram_prob);
+        token.class_lm_node =
+                d->m_class_lm.score(token.class_lm_node,
+                                    d->m_class_lm.sentence_end_symbol_idx,
+                                    ngram_prob);
     }
     else
-        token.class_lm_node = m_class_lm.score(token.class_lm_node,
-                                               m_class_intmap[m_class_membership_lookup[word_id].first],
-                                               ngram_prob);
+        token.class_lm_node =
+                d->m_class_lm.score(token.class_lm_node,
+                                    d->m_class_intmap[d->m_class_membership_lookup[word_id].first],
+                                    ngram_prob);
 
     return membership_prob + ngram_prob;
 }
 
 
 void
-ClassIPDecoder::add_sentence_ends(vector<Token> &tokens)
+ClassIPRecognition::add_sentence_ends(vector<Token> &tokens)
 {
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         Token &token = *tit;
-        if (token.lm_node == m_lm.sentence_start_node) continue;
+        if (token.lm_node == d->m_lm.sentence_start_node) continue;
         m_active_histories.erase(token.history);
         update_lm_prob(token, m_sentence_end_symbol_idx);
         update_total_log_prob(token);
@@ -571,18 +566,17 @@ ClassIPDecoder::add_sentence_ends(vector<Token> &tokens)
 }
 
 
-void
-ClassIPDecoder::print_best_word_history(ostream &outf)
+string
+ClassIPRecognition::get_best_word_history()
 {
-    print_word_history(get_best_token()->history, outf);
+    return get_word_history(get_best_token()->history);
 }
 
 
-void
-ClassIPDecoder::print_word_history(WordHistory *history,
-                            ostream &outf,
-                            bool print_lm_probs)
+string
+ClassIPRecognition::get_word_history(WordHistory *history)
 {
+    string result;
     vector<int> text_units;
     while (true) {
         text_units.push_back(history->word_id);
@@ -590,12 +584,8 @@ ClassIPDecoder::print_word_history(WordHistory *history,
         history = history->previous;
     }
 
-    float total_lp = 0.0;
-    for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit) {
-        if (*swit >= 0)
-            outf << " " << m_text_units[*swit];
-    }
+    for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit)
+        if (*swit >= 0) result += " " + m_text_units->at(*swit);
 
-    if (print_lm_probs) outf << endl << "total lm log: " << total_lp;
-    outf << endl;
+    return result;
 }

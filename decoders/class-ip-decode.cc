@@ -1,4 +1,5 @@
 #include <sstream>
+#include <thread>
 
 #include "ClassIPDecoder.hh"
 #include "Lookahead.hh"
@@ -57,6 +58,7 @@ print_config(ClassIPDecoder &d,
         string lalmfname = config["lookahead-model"].get_str();
         outf << "LOOKAHEAD LM: " << lalmfname << endl;
     }
+    outf << "number of threads: " << config["num-threads"].get_int() << endl;
 
     outf << std::boolalpha;
     outf << "lm scale: " << d.m_lm_scale << endl;
@@ -76,6 +78,32 @@ print_config(ClassIPDecoder &d,
 
 
 void
+join(vector<string> &lnafnames,
+     vector<ClassIPRecognition*> &recognitions,
+     vector<RecognitionResult*> &results,
+     vector<thread*> &threads,
+     RecognitionResult &total,
+     ostream &resultf,
+     ostream &logf)
+{
+    for (int i=0; i<(int)threads.size(); i += 1) {
+        threads[i]->join();
+        logf << endl << "recognizing: " << lnafnames[i] << endl;
+        resultf << lnafnames[i] << ":" << results[i]->result << endl;
+        results[i]->print_file_stats(logf);
+        total.accumulate(*results[i]);
+        delete recognitions[i];
+        delete results[i];
+        delete threads[i];
+    }
+    lnafnames.clear();
+    recognitions.clear();
+    results.clear();
+    threads.clear();
+}
+
+
+void
 recognize_lnas(ClassIPDecoder &d,
                conf::Config &config,
                string lnalistfname,
@@ -83,50 +111,42 @@ recognize_lnas(ClassIPDecoder &d,
                ostream &logf)
 {
     ifstream lnalistf(lnalistfname);
-    string line;
+    string lnafname;
+    RecognitionResult total;
 
     print_config(d, config, logf);
 
-    int total_frames = 0;
-    double total_time = 0.0;
-    double total_lp = 0.0;
-    double total_am_lp = 0.0;
-    double total_lm_lp = 0.0;
-    double total_token_count = 0.0;
     int file_count = 0;
-    while (getline(lnalistf, line)) {
-        if (!line.length()) continue;
-        logf << endl << "recognizing: " << line << endl;
-        int curr_frames;
-        double curr_time;
-        double curr_lp, curr_am_lp, curr_lm_lp;
-        double token_count;
-        d.recognize_lna_file(line, resultf, &curr_frames, &curr_time,
-                             &curr_lp, &curr_am_lp, &curr_lm_lp, &token_count);
-        total_frames += curr_frames;
-        total_time += curr_time;
-        total_lp += curr_lp;
-        total_am_lp += curr_am_lp;
-        total_lm_lp += curr_lm_lp;
-        total_token_count += token_count;
-        logf << "\trecognized " << curr_frames << " frames in " << curr_time << " seconds." << endl;
-        logf << "\tRTF: " << curr_time / ((double)curr_frames/125.0) << endl;
-        logf << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl;
-        logf << "\tMean token count: " << token_count / (double)curr_frames << endl;
+    int num_threads = config["num-threads"].get_int();
+    vector<string> lna_fnames;
+    vector<ClassIPRecognition*> recognitions;
+    vector<RecognitionResult*> results;
+    vector<std::thread*> threads;
+    while (getline(lnalistf, lnafname)) {
+        if (!lnafname.length()) continue;
+
+        if ((int)recognitions.size() < num_threads) {
+            lna_fnames.push_back(lnafname);
+            recognitions.push_back(new ClassIPRecognition(d));
+            results.push_back(new RecognitionResult());
+            thread *thr = new thread(&ClassIPRecognition::recognize_lna_file,
+                                     recognitions.back(),
+                                     lnafname,
+                                     std::ref(*results.back()));
+            threads.push_back(thr);
+        }
+
+        if ((int)recognitions.size() == num_threads)
+            join(lna_fnames, recognitions, results, threads, total, resultf, logf);
+
         file_count++;
     }
     lnalistf.close();
-
+    join(lna_fnames, recognitions, results, threads, total, resultf, logf);
     if (file_count > 1) {
         logf << endl;
         logf << file_count << " files recognized" << endl;
-        logf << "total recognition time: " << total_time << endl;
-        logf << "total frame count: " << total_frames << endl;
-        logf << "total RTF: " << total_time/ ((double)total_frames/125.0) << endl;
-        logf << "total log likelihood: " << total_lp << endl;
-        logf << "total LM likelihood: " << total_lm_lp << endl;
-        logf << "total AM likelihood: " << total_am_lp << endl;
-        logf << "total mean token count: " << total_token_count / (double)total_frames << endl;
+        total.print_final_stats(logf);
     }
 }
 
@@ -137,6 +157,8 @@ int main(int argc, char* argv[])
     config("usage: class-ip-decode [OPTION...] PH LEXICON LM CLASS_ARPA CMEMPROBS CFGFILE GRAPH LNALIST\n")
     ('h', "help", "", "", "display help")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
+    ('q', "quantized-lookahead", "", "", "Two byte quantized look-ahead model")
+    ('p', "num-threads", "arg", "1", "Number of threads")
     ('f', "result-file=STRING", "arg", "", "Base filename for results (.rec and .log)")
     ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
     ('t', "lookahead-type=STRING", "arg", "", "Lookahead type\n"
@@ -192,12 +214,13 @@ int main(int argc, char* argv[])
             string lalmfname = config["lookahead-model"].get_str();
             cerr << "Reading lookahead model: " << lalmfname << endl;
 
+            bool quantization = config["quantized-lookahead"].specified;
             if (la_type == "unigram")
                 d.m_la = new UnigramLookahead(d, lalmfname);
             else if (la_type == "bigram-full")
                 d.m_la = new FullTableBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-precomputed-full")
-                d.m_la = new PrecomputedFullTableBigramLookahead(d, lalmfname);
+                d.m_la = new PrecomputedFullTableBigramLookahead(d, lalmfname, quantization);
             else if (la_type == "bigram-hybrid")
                 d.m_la = new HybridBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-precomputed-hybrid")
