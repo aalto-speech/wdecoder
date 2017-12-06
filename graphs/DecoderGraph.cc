@@ -970,7 +970,7 @@ DecoderGraph::tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
                                  bool stop_propagation,
                                  node_idx_t node_idx)
 {
-    set<node_idx_t> processed_nodes;
+    vector<bool> processed_nodes(nodes.size(), false);
     set_reverse_arcs_also_from_unreachable(nodes);
     tie_state_prefixes(nodes, processed_nodes, stop_propagation, node_idx);
     prune_unreachable_nodes(nodes);
@@ -982,7 +982,7 @@ DecoderGraph::tie_state_prefixes_cw(vector<DecoderGraph::Node> &nodes,
                                     map<string, int> &fanin,
                                     bool stop_propagation)
 {
-    set<node_idx_t> processed_nodes;
+    vector<bool> processed_nodes(nodes.size(), false);
     set_reverse_arcs_also_from_unreachable(nodes);
 
     set<node_idx_t> start_nodes;
@@ -997,13 +997,12 @@ DecoderGraph::tie_state_prefixes_cw(vector<DecoderGraph::Node> &nodes,
 
 void
 DecoderGraph::tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
-                                 set<node_idx_t> &processed_nodes,
+                                 vector<bool> &processed_nodes,
                                  bool stop_propagation,
                                  node_idx_t node_idx)
 {
-    if (processed_nodes.find(node_idx) != processed_nodes.end())
-        return;
-    processed_nodes.insert(node_idx);
+    if (processed_nodes[node_idx]) return;
+    processed_nodes[node_idx] = true;
     DecoderGraph::Node &nd = nodes[node_idx];
 
     map<pair<int, set<unsigned int> >, vector<unsigned int> > targets;
@@ -1042,7 +1041,7 @@ DecoderGraph::tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
                                    bool stop_propagation,
                                    node_idx_t node_idx)
 {
-    set<node_idx_t> processed_nodes;
+    vector<bool> processed_nodes(nodes.size(), false);
     set_reverse_arcs_also_from_unreachable(nodes);
     tie_word_id_prefixes(nodes, processed_nodes, stop_propagation, node_idx);
     prune_unreachable_nodes(nodes);
@@ -1054,7 +1053,7 @@ DecoderGraph::tie_word_id_prefixes_cw(vector<DecoderGraph::Node> &nodes,
                                       map<string, int> &fanin,
                                       bool stop_propagation)
 {
-    set<node_idx_t> processed_nodes;
+    vector<bool> processed_nodes(nodes.size(), false);
     set_reverse_arcs_also_from_unreachable(nodes);
 
     set<node_idx_t> start_nodes;
@@ -1070,13 +1069,13 @@ DecoderGraph::tie_word_id_prefixes_cw(vector<DecoderGraph::Node> &nodes,
 
 void
 DecoderGraph::tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
-                                   set<node_idx_t> &processed_nodes,
+                                   vector<bool> &processed_nodes,
                                    bool stop_propagation,
                                    node_idx_t node_idx)
 {
-    if (processed_nodes.find(node_idx) != processed_nodes.end())
-        return;
-    processed_nodes.insert(node_idx);
+    if (processed_nodes[node_idx]) return;
+    processed_nodes[node_idx] = true;
+
     DecoderGraph::Node &nd = nodes[node_idx];
     set<unsigned int> temp_arcs = nd.arcs;
 
@@ -1115,7 +1114,7 @@ DecoderGraph::tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
                                  bool stop_propagation,
                                  node_idx_t node_idx)
 {
-    set<node_idx_t> processed_nodes;
+    vector<bool> processed_nodes(nodes.size(), false);
     set_reverse_arcs_also_from_unreachable(nodes);
     tie_state_suffixes(nodes, processed_nodes, stop_propagation, node_idx);
     prune_unreachable_nodes(nodes);
@@ -1127,7 +1126,7 @@ DecoderGraph::tie_state_suffixes_cw(vector<DecoderGraph::Node> &nodes,
                                     map<string, int> &fanin,
                                     bool stop_propagation)
 {
-    set<node_idx_t> processed_nodes;
+    vector<bool> processed_nodes(nodes.size(), false);
     set_reverse_arcs_also_from_unreachable(nodes);
 
     set<node_idx_t> start_nodes;
@@ -1145,13 +1144,12 @@ DecoderGraph::tie_state_suffixes_cw(vector<DecoderGraph::Node> &nodes,
 
 void
 DecoderGraph::tie_state_suffixes(vector<DecoderGraph::Node> &nodes,
-                                 set<node_idx_t> &processed_nodes,
+                                 vector<bool> &processed_nodes,
                                  bool stop_propagation,
                                  node_idx_t node_idx)
 {
-    if (processed_nodes.find(node_idx) != processed_nodes.end())
-        return;
-    processed_nodes.insert(node_idx);
+    if (processed_nodes[node_idx]) return;
+    processed_nodes[node_idx] = true;
     DecoderGraph::Node &nd = nodes[node_idx];
 
     map<pair<int, set<unsigned int> >, vector<unsigned int> > targets;
@@ -1190,7 +1188,7 @@ DecoderGraph::tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
                                    bool stop_propagation,
                                    node_idx_t node_idx)
 {
-    set<node_idx_t> processed_nodes;
+    vector<bool> processed_nodes(nodes.size(), false);
     set_reverse_arcs_also_from_unreachable(nodes);
     tie_word_id_suffixes(nodes, processed_nodes, stop_propagation, node_idx);
     prune_unreachable_nodes(nodes);
@@ -1202,7 +1200,7 @@ DecoderGraph::tie_word_id_suffixes_cw(vector<DecoderGraph::Node> &nodes,
                                       map<string, int> &fanin,
                                       bool stop_propagation)
 {
-    set<node_idx_t> processed_nodes;
+    vector<bool> processed_nodes(nodes.size(), false);
     set_reverse_arcs_also_from_unreachable(nodes);
 
     set<node_idx_t> start_nodes;
@@ -1220,13 +1218,12 @@ DecoderGraph::tie_word_id_suffixes_cw(vector<DecoderGraph::Node> &nodes,
 
 void
 DecoderGraph::tie_word_id_suffixes(vector<DecoderGraph::Node> &nodes,
-                                   set<node_idx_t> &processed_nodes,
+                                   vector<bool> &processed_nodes,
                                    bool stop_propagation,
                                    node_idx_t node_idx)
 {
-    if (processed_nodes.find(node_idx) != processed_nodes.end())
-        return;
-    processed_nodes.insert(node_idx);
+    if (processed_nodes[node_idx]) return;
+    processed_nodes[node_idx] = true;
     DecoderGraph::Node &nd = nodes[node_idx];
     set<unsigned int> temp_arcs = nd.reverse_arcs;
 

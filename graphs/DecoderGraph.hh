@@ -195,7 +195,7 @@ public:
                                       std::map<std::string, int> &fanin,
                                       bool stop_propagation=false);
     static void tie_state_prefixes(std::vector<DecoderGraph::Node> &nodes,
-                                   std::set<node_idx_t> &processed_nodes,
+                                   std::vector<bool> &processed_nodes,
                                    bool stop_propagation=false,
                                    node_idx_t node_idx=START_NODE);
 
@@ -207,7 +207,7 @@ public:
                                       std::map<std::string, int> &fanin,
                                       bool stop_propagation=false);
     static void tie_state_suffixes(std::vector<DecoderGraph::Node> &nodes,
-                                   std::set<node_idx_t> &processed_nodes,
+                                   std::vector<bool> &processed_nodes,
                                    bool stop_propagation=false,
                                    node_idx_t node_idx=END_NODE);
 
@@ -219,7 +219,7 @@ public:
                                         std::map<std::string, int> &fanin,
                                         bool stop_propagation=false);
     static void tie_word_id_prefixes(std::vector<DecoderGraph::Node> &nodes,
-                                     std::set<node_idx_t> &processed_nodes,
+                                     std::vector<bool> &processed_nodes,
                                      bool stop_propagation=false,
                                      node_idx_t node_idx=START_NODE);
 
@@ -231,7 +231,7 @@ public:
                                         std::map<std::string, int> &fanin,
                                         bool stop_propagation=false);
     static void tie_word_id_suffixes(std::vector<DecoderGraph::Node> &nodes,
-                                     std::set<node_idx_t> &processed_nodes,
+                                     std::vector<bool> &processed_nodes,
                                      bool stop_propagation=false,
                                      node_idx_t node_idx=END_NODE);
 
