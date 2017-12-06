@@ -995,6 +995,7 @@ DecoderGraph::tie_state_prefixes_cw(vector<DecoderGraph::Node> &nodes,
     prune_unreachable_nodes_cw(nodes, start_nodes, fanout, fanin);
 }
 
+
 void
 DecoderGraph::tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
                                  vector<bool> &processed_nodes,
@@ -1005,26 +1006,31 @@ DecoderGraph::tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
     processed_nodes[node_idx] = true;
     DecoderGraph::Node &nd = nodes[node_idx];
 
-    map<pair<int, set<unsigned int> >, vector<unsigned int> > targets;
+    // Map HMM state targets to the list of target node indexes
+    map<int, vector<unsigned int> > hmm_targets;
     for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
-        int target_hmm = nodes[*ait].hmm_state;
-        if (target_hmm != -1)
-            targets[make_pair(target_hmm, nodes[*ait].reverse_arcs)].push_back(*ait);
+        int ahmm = nodes[*ait].hmm_state;
+        if (ahmm != -1) hmm_targets[ahmm].push_back(*ait);
     }
 
     bool arcs_removed = false;
-    for (auto tit = targets.begin(); tit != targets.end(); ++tit) {
-        if (tit->second.size() == 1)
-            continue;
+    for (auto hmmit = hmm_targets.begin(); hmmit != hmm_targets.end(); ++hmmit) {
+        if (hmmit->second.size() == 1) continue;
+        map<set<unsigned int>, vector<int> > to_merge;
+        for (auto tit = hmmit->second.begin(); tit != hmmit->second.end(); ++tit)
+            to_merge[nodes[*tit].reverse_arcs].push_back(*tit);
 
-        auto nit = tit->second.begin();
-        int tied_node_idx = *nit;
-        nit++;
-        while (nit != tit->second.end()) {
-            int curr_node_idx = *nit;
-            tied_node_idx = merge_nodes(nodes, tied_node_idx, curr_node_idx);
-            arcs_removed = true;
+        for (auto tmit = to_merge.begin(); tmit != to_merge.end(); ++tmit) {
+            if (tmit->second.size() == 1) continue;
+            auto nit = tmit->second.begin();
+            int tied_node_idx = *nit;
             nit++;
+            while (nit != tmit->second.end()) {
+                int curr_node_idx = *nit;
+                tied_node_idx = merge_nodes(nodes, tied_node_idx, curr_node_idx);
+                arcs_removed = true;
+                nit++;
+            }
         }
     }
 
@@ -1035,6 +1041,7 @@ DecoderGraph::tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
     for (auto arcit = temp_arcs.begin(); arcit != temp_arcs.end(); ++arcit)
         tie_state_prefixes(nodes, processed_nodes, stop_propagation, *arcit);
 }
+
 
 void
 DecoderGraph::tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
