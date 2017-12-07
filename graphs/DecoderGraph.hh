@@ -1,6 +1,7 @@
 #ifndef DECODERGRAPH_HH
 #define DECODERGRAPH_HH
 
+#include <list>
 #include <map>
 #include <deque>
 #include <fstream>
@@ -195,9 +196,8 @@ public:
                                       std::map<std::string, int> &fanin,
                                       bool stop_propagation=false);
     static void tie_state_prefixes(std::vector<DecoderGraph::Node> &nodes,
-                                   std::vector<bool> &processed_nodes,
-                                   bool stop_propagation=false,
-                                   node_idx_t node_idx=START_NODE);
+                                   std::list<node_idx_t> nodes_to_process,
+                                   bool stop_propagation=false);
 
     static void tie_state_suffixes(std::vector<DecoderGraph::Node> &nodes,
                                    bool stop_propagation=false,

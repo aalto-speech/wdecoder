@@ -970,9 +970,9 @@ DecoderGraph::tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
                                  bool stop_propagation,
                                  node_idx_t node_idx)
 {
-    vector<bool> processed_nodes(nodes.size(), false);
+    list<node_idx_t> nodes_to_process = { node_idx };
     set_reverse_arcs_also_from_unreachable(nodes);
-    tie_state_prefixes(nodes, processed_nodes, stop_propagation, node_idx);
+    tie_state_prefixes(nodes, nodes_to_process, stop_propagation);
     prune_unreachable_nodes(nodes);
 }
 
@@ -990,56 +990,64 @@ DecoderGraph::tie_state_prefixes_cw(vector<DecoderGraph::Node> &nodes,
         if (nodes[i].flags & NODE_FAN_OUT_DUMMY)
             start_nodes.insert(i);
 
+    list<node_idx_t> nodes_to_process;
     for (auto snit = start_nodes.begin(); snit != start_nodes.end(); ++snit)
-        tie_state_prefixes(nodes, processed_nodes, stop_propagation, *snit);
+        nodes_to_process.push_back(*snit);
+    tie_state_prefixes(nodes, nodes_to_process, stop_propagation);
     prune_unreachable_nodes_cw(nodes, start_nodes, fanout, fanin);
 }
 
 
 void
 DecoderGraph::tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
-                                 vector<bool> &processed_nodes,
-                                 bool stop_propagation,
-                                 node_idx_t node_idx)
+                                 list<node_idx_t> nodes_to_process,
+                                 bool stop_propagation)
 {
-    if (processed_nodes[node_idx]) return;
-    processed_nodes[node_idx] = true;
-    DecoderGraph::Node &nd = nodes[node_idx];
+    vector<bool> processed_nodes(nodes.size(), false);
+    int num_processed_nodes = 0;
+    while (nodes_to_process.size()) {
+        node_idx_t node_idx = nodes_to_process.front();
+        nodes_to_process.pop_front();
+        processed_nodes[node_idx] = true;
+        DecoderGraph::Node &nd = nodes[node_idx];
 
-    // Map HMM state targets to the list of target node indexes
-    map<int, vector<unsigned int> > hmm_targets;
-    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
-        int ahmm = nodes[*ait].hmm_state;
-        if (ahmm != -1) hmm_targets[ahmm].push_back(*ait);
-    }
+        if (++num_processed_nodes % 50000 == 0)
+            cerr << "number of tied nodes: " << num_processed_nodes << endl;
 
-    bool arcs_removed = false;
-    for (auto hmmit = hmm_targets.begin(); hmmit != hmm_targets.end(); ++hmmit) {
-        if (hmmit->second.size() == 1) continue;
-        map<set<unsigned int>, vector<int> > to_merge;
-        for (auto tit = hmmit->second.begin(); tit != hmmit->second.end(); ++tit)
-            to_merge[nodes[*tit].reverse_arcs].push_back(*tit);
+        // Map HMM state targets to the list of target node indexes
+        map<int, vector<unsigned int> > hmm_targets;
+        for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
+            int ahmm = nodes[*ait].hmm_state;
+            if (ahmm != -1) hmm_targets[ahmm].push_back(*ait);
+        }
 
-        for (auto tmit = to_merge.begin(); tmit != to_merge.end(); ++tmit) {
-            if (tmit->second.size() == 1) continue;
-            auto nit = tmit->second.begin();
-            int tied_node_idx = *nit;
-            nit++;
-            while (nit != tmit->second.end()) {
-                int curr_node_idx = *nit;
-                tied_node_idx = merge_nodes(nodes, tied_node_idx, curr_node_idx);
-                arcs_removed = true;
+        bool arcs_removed = false;
+        for (auto hmmit = hmm_targets.begin(); hmmit != hmm_targets.end(); ++hmmit) {
+            if (hmmit->second.size() == 1) continue;
+            map<set<unsigned int>, vector<int> > to_merge;
+            for (auto tit = hmmit->second.begin(); tit != hmmit->second.end(); ++tit)
+                to_merge[nodes[*tit].reverse_arcs].push_back(*tit);
+
+            for (auto tmit = to_merge.begin(); tmit != to_merge.end(); ++tmit) {
+                if (tmit->second.size() == 1) continue;
+                auto nit = tmit->second.begin();
+                int tied_node_idx = *nit;
                 nit++;
+                while (nit != tmit->second.end()) {
+                    int curr_node_idx = *nit;
+                    tied_node_idx = merge_nodes(nodes, tied_node_idx, curr_node_idx);
+                    arcs_removed = true;
+                    nit++;
+                }
             }
         }
+
+        if (stop_propagation && !arcs_removed)
+            continue;
+
+        for (auto arcit = nd.arcs.begin(); arcit != nd.arcs.end(); ++arcit)
+            if (!processed_nodes[*arcit]) nodes_to_process.push_back(*arcit);
     }
-
-    if (stop_propagation && !arcs_removed)
-        return;
-
-    set<unsigned int> temp_arcs = nd.arcs;
-    for (auto arcit = temp_arcs.begin(); arcit != temp_arcs.end(); ++arcit)
-        tie_state_prefixes(nodes, processed_nodes, stop_propagation, *arcit);
 }
 
 
