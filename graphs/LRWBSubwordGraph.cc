@@ -668,50 +668,39 @@ LRWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     tie_state_prefixes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
     int tmpIdx = 1;
-    write_graph("graph.temp" + to_string(tmpIdx++));
 
     if (verbose) cerr << "Tying word id prefixes.." << endl;
     tie_word_id_prefixes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
-    write_graph("graph.temp" + to_string(tmpIdx++));
 
     if (verbose) cerr << "Tying state prefixes.." << endl;
     tie_state_prefixes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
-    write_graph("graph.temp" + to_string(tmpIdx++));
 
     if (verbose) cerr << "Pushing word ids left.." << endl;
     push_word_ids_left(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
-    write_graph("graph.temp" + to_string(tmpIdx++));
 
     if (verbose) cerr << "Tying state suffixes.." << endl;
     tie_state_suffixes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
-    write_graph("graph.temp" + to_string(tmpIdx++));
 
     if (verbose) cerr << "Tying word id suffixes.." << endl;
     tie_word_id_suffixes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
-    write_graph("graph.temp" + to_string(tmpIdx++));
 
     if (verbose) cerr << "Tying state suffixes.." << endl;
     tie_state_suffixes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
-    write_graph("graph.temp" + to_string(tmpIdx++));
 
     if (verbose) cerr << "Tying word id suffixes.." << endl;
     tie_word_id_suffixes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
-    write_graph("graph.temp" + to_string(tmpIdx++));
 
     if (verbose) cerr << "Tying state suffixes.." << endl;
     tie_state_suffixes(m_nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
-    write_graph("graph.temp" + to_string(tmpIdx++));
 
     prune_unreachable_nodes(m_nodes);
 
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 }
-

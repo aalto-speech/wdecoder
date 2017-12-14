@@ -1011,9 +1011,6 @@ DecoderGraph::tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
         processed_nodes[node_idx] = true;
         DecoderGraph::Node &nd = nodes[node_idx];
 
-        if (++num_processed_nodes % 50000 == 0)
-            cerr << "number of tied nodes: " << num_processed_nodes << endl;
-
         // Map HMM state targets to the list of target node indexes
         map<int, vector<unsigned int> > hmm_targets;
         for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
