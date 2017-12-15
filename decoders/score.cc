@@ -93,15 +93,13 @@ void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: score [OPTION...] PH LEXICON LM CFGFILE LNALIST RESLIST\n")
+    config("usage: score [OPTION...] PH LEXICON SUBWORD_LM CFGFILE LNALIST RESLIST\n")
     ('h', "help", "", "", "display help")
-    ('n', "no-word-boundary", "", "", "Subword model without a word boundary")
     ('d', "duration-model=STRING", "arg", "", "Duration model");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
     try {
-
         NgramDecoder d;
 
         string phfname = config.arguments[0];
@@ -118,41 +116,36 @@ int main(int argc, char* argv[])
         cerr << "Reading lexicon: " << lexfname << endl;
         d.read_noway_lexicon(lexfname);
 
-        string lmfname = config.arguments[2];
-        cerr << "Reading language model: " << lmfname << endl;
-        d.read_lm(lmfname);
-
         string cfgfname = config.arguments[3];
         cerr << "Reading configuration: " << cfgfname << endl;
         read_config(d, cfgfname);
+
+        string lmfname = config.arguments[2];
+        cerr << "Reading language model: " << lmfname << endl;
+        d.read_lm(lmfname);
 
         cerr << endl;
         print_config(d, config, cerr);
 
         string lnalistfname = config.arguments[4];
         ifstream lnalistf(lnalistfname);
-        string line;
+        string lnafname;
 
         string reslistfname = config.arguments[5];
         ifstream reslistf(reslistfname);
         string resline;
 
-        int total_frames = 0;
-        double total_lp = 0.0;
-        double total_am_lp = 0.0;
-        double total_lm_lp = 0.0;
         int file_count = 0;
 
-        DecoderGraph *dg;
-        if (config["no-word-boundary"].specified) dg = new LWBSubwordGraph();
-        else dg = new SubwordGraph();
+        DecoderGraph *dg = new SubwordGraph();
         dg->read_phone_model(phfname);
         dg->read_noway_lexicon(lexfname);
 
-        while (getline(lnalistf, line)) {
+        RecognitionResult total;
+        while (getline(lnalistf, lnafname)) {
             getline(reslistf, resline);
-            if (!line.length()) continue;
-            cerr << endl << "scoring: " << line << endl;
+            if (!lnafname.length()) continue;
+            cerr << endl << "scoring: " << lnafname << endl;
 
             vector<string> reswordstrs;
             stringstream ress(resline);
@@ -169,29 +162,18 @@ int main(int argc, char* argv[])
             d.set_hmm_transition_probs();
             d.m_decode_start_node = 0;
 
-            int curr_frames;
-            double curr_time, curr_lp, curr_am_lp, curr_lm_lp;
-            d.recognize_lna_file(line, cout, &curr_frames, &curr_time,
-                                 &curr_lp, &curr_am_lp, &curr_lm_lp);
-
-            cerr << "\tframes: " << curr_frames << endl << endl;
-            cerr << "\tLog prob: " << curr_lp << "\tAM: " << curr_am_lp << "\tLM: " << curr_lm_lp << endl << endl;
-
-            total_frames += curr_frames;
-            total_lp += curr_lp;
-            total_am_lp += curr_am_lp;
-            total_lm_lp += curr_lm_lp;
+            NgramRecognition recognition(d);
+            RecognitionResult result;
+            recognition.recognize_lna_file(lnafname, result);
+            result.print_file_stats(cerr);
+            total.accumulate(result);
             file_count++;
         }
         lnalistf.close();
 
         cerr << endl;
         cerr << file_count << " files scored" << endl;
-        cerr << "total frame count: " << total_frames << endl;
-        cerr << "total log likelihood: " << total_lp << endl;
-        cerr << "total LM likelihood: " << total_lm_lp << endl;
-        cerr << "total AM likelihood: " << total_am_lp << endl;
-
+        total.print_final_stats(cerr);
     } catch (string &e) {
         cerr << e << endl;
     }

@@ -9,7 +9,6 @@ using namespace std;
 Segmenter::Segmenter()
 {
     m_best_log_prob = -1e20;
-    m_best_word_end_prob = -1e20;
     m_transition_scale = 1.0;
     m_duration_scale = 3.0;
     m_decode_end_node = -1;

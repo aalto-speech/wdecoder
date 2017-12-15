@@ -55,6 +55,13 @@ public:
     std::map<int, std::string> m_state_history_labels;
     std::vector<Token> m_raw_tokens;
     std::map<int, Token> m_recombined_tokens;
+    std::set<int> m_active_nodes;
 
     int m_decode_end_node;
+    int m_frame_idx;
+    int m_global_beam_pruned_count;
+    float m_best_log_prob;
+    LnaReaderCircular m_lna_reader;
+    Acoustics *m_acoustics;
+
 };
