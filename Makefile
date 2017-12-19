@@ -28,6 +28,7 @@ graph_progs = wgraph\
 	lwbswgraph\
 	rwbswgraph\
 	lrwbswgraph
+graph_progs_srcs = $(addsuffix .cc,$(addprefix graphs/,$(graph_progs)))
 
 decoder_srcs = decoders/Decoder.cc\
 	decoders/Lookahead.cc\
@@ -48,6 +49,7 @@ decoder_progs = decode\
 	lastates\
 	cleanlex\
 	lasc
+decoder_progs_srcs = $(addsuffix .cc,$(addprefix decoders/,$(decoder_progs)))
 
 test_srcs = test/wgraphtest.cc\
 	test/swgraphtest.cc\
@@ -70,10 +72,10 @@ all: $(graph_progs) $(decoder_progs)
 %.o: %.cc
 	$(CXX) -c $(cxxflags) $< -o $@
 
-$(graph_progs): $(util_objs) $(graph_objs)
+$(graph_progs): $(graph_progs_srcs) $(util_objs) $(graph_objs)
 	$(CXX) $(cxxflags) -o $@ graphs/$@.cc $(util_objs) $(graph_objs) -lz -I./graphs
 
-$(decoder_progs): $(util_objs) $(graph_objs) $(decoder_objs)
+$(decoder_progs): $(decoder_progs_srcs) $(util_objs) $(graph_objs) $(decoder_objs)
 	$(CXX) $(cxxflags) -o $@ decoders/$@.cc $(util_objs) $(graph_objs) $(decoder_objs)\
 	 -lz -pthread -I./graphs -I./decoders
 
