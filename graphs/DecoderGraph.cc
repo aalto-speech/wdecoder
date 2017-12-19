@@ -982,7 +982,6 @@ DecoderGraph::tie_state_prefixes_cw(vector<DecoderGraph::Node> &nodes,
                                     map<string, int> &fanin,
                                     bool stop_propagation)
 {
-    vector<bool> processed_nodes(nodes.size(), false);
     set_reverse_arcs_also_from_unreachable(nodes);
 
     set<node_idx_t> start_nodes;
@@ -1004,7 +1003,6 @@ DecoderGraph::tie_state_prefixes(vector<DecoderGraph::Node> &nodes,
                                  bool stop_propagation)
 {
     vector<bool> processed_nodes(nodes.size(), false);
-    int num_processed_nodes = 0;
     while (nodes_to_process.size()) {
         node_idx_t node_idx = nodes_to_process.front();
         nodes_to_process.pop_front();
@@ -1053,11 +1051,12 @@ DecoderGraph::tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
                                    bool stop_propagation,
                                    node_idx_t node_idx)
 {
-    vector<bool> processed_nodes(nodes.size(), false);
+    list<node_idx_t> nodes_to_process = { node_idx };
     set_reverse_arcs_also_from_unreachable(nodes);
-    tie_word_id_prefixes(nodes, processed_nodes, stop_propagation, node_idx);
+    tie_word_id_prefixes(nodes, nodes_to_process, stop_propagation);
     prune_unreachable_nodes(nodes);
 }
+
 
 void
 DecoderGraph::tie_word_id_prefixes_cw(vector<DecoderGraph::Node> &nodes,
@@ -1065,7 +1064,6 @@ DecoderGraph::tie_word_id_prefixes_cw(vector<DecoderGraph::Node> &nodes,
                                       map<string, int> &fanin,
                                       bool stop_propagation)
 {
-    vector<bool> processed_nodes(nodes.size(), false);
     set_reverse_arcs_also_from_unreachable(nodes);
 
     set<node_idx_t> start_nodes;
@@ -1073,53 +1071,62 @@ DecoderGraph::tie_word_id_prefixes_cw(vector<DecoderGraph::Node> &nodes,
         if (nodes[i].flags & NODE_FAN_OUT_DUMMY)
             start_nodes.insert(i);
 
+    list<node_idx_t> nodes_to_process;
     for (auto snit = start_nodes.begin(); snit != start_nodes.end(); ++snit)
-        tie_word_id_prefixes(nodes, processed_nodes, stop_propagation, *snit);
+        nodes_to_process.push_back(*snit);
+    tie_word_id_prefixes(nodes, nodes_to_process, stop_propagation);
     prune_unreachable_nodes_cw(nodes, start_nodes, fanout, fanin);
 }
 
 
 void
 DecoderGraph::tie_word_id_prefixes(vector<DecoderGraph::Node> &nodes,
-                                   vector<bool> &processed_nodes,
-                                   bool stop_propagation,
-                                   node_idx_t node_idx)
+                                   list<node_idx_t> nodes_to_process,
+                                   bool stop_propagation)
 {
-    if (processed_nodes[node_idx]) return;
-    processed_nodes[node_idx] = true;
+    vector<bool> processed_nodes(nodes.size(), false);
+    while (nodes_to_process.size()) {
+        node_idx_t node_idx = nodes_to_process.front();
+        nodes_to_process.pop_front();
+        processed_nodes[node_idx] = true;
+        DecoderGraph::Node &nd = nodes[node_idx];
 
-    DecoderGraph::Node &nd = nodes[node_idx];
-    set<unsigned int> temp_arcs = nd.arcs;
+        // Map word id targets to the list of target node indexes
+        map<int, vector<unsigned int> > word_targets;
+        for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
+            int aword = nodes[*ait].word_id;
+            if (aword != -1) word_targets[aword].push_back(*ait);
+        }
 
-    map<pair<int, set<unsigned int> >, set<unsigned int> > targets;
-    for (auto ait = nd.arcs.begin(); ait != nd.arcs.end(); ++ait) {
-        int word_id = nodes[*ait].word_id;
-        if (word_id != -1)
-            targets[make_pair(word_id, nodes[*ait].reverse_arcs)].insert(*ait);
-    }
+        bool arcs_removed = false;
+        for (auto wit = word_targets.begin(); wit != word_targets.end(); ++wit) {
+            if (wit->second.size() == 1) continue;
+            map<set<unsigned int>, vector<int> > to_merge;
+            for (auto tit = wit->second.begin(); tit != wit->second.end(); ++tit)
+                to_merge[nodes[*tit].reverse_arcs].push_back(*tit);
 
-    bool arcs_removed = false;
-    for (auto tit = targets.begin(); tit != targets.end(); ++tit) {
-        if (tit->second.size() == 1)
+            for (auto tmit = to_merge.begin(); tmit != to_merge.end(); ++tmit) {
+                if (tmit->second.size() == 1) continue;
+                auto nit = tmit->second.begin();
+                int tied_node_idx = *nit;
+                nit++;
+                while (nit != tmit->second.end()) {
+                    int curr_node_idx = *nit;
+                    tied_node_idx = merge_nodes(nodes, tied_node_idx, curr_node_idx);
+                    arcs_removed = true;
+                    nit++;
+                }
+            }
+        }
+
+        if (stop_propagation && !arcs_removed)
             continue;
 
-        auto nit = tit->second.begin();
-        int tied_node_idx = *nit;
-        nit++;
-        while (nit != tit->second.end()) {
-            int curr_node_idx = *nit;
-            tied_node_idx = merge_nodes(nodes, tied_node_idx, curr_node_idx);
-            arcs_removed = true;
-            nit++;
-        }
+        for (auto arcit = nd.arcs.begin(); arcit != nd.arcs.end(); ++arcit)
+            if (!processed_nodes[*arcit]) nodes_to_process.push_back(*arcit);
     }
-
-    if (stop_propagation && !arcs_removed)
-        return;
-
-    for (auto arcit = temp_arcs.begin(); arcit != temp_arcs.end(); ++arcit)
-        tie_word_id_prefixes(nodes, processed_nodes, stop_propagation, *arcit);
 }
+
 
 void
 DecoderGraph::tie_state_suffixes(vector<DecoderGraph::Node> &nodes,

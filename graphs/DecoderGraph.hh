@@ -199,6 +199,17 @@ public:
                                    std::list<node_idx_t> nodes_to_process,
                                    bool stop_propagation=false);
 
+    static void tie_word_id_prefixes(std::vector<DecoderGraph::Node> &nodes,
+                                     bool stop_propagation=false,
+                                     node_idx_t node_idx=START_NODE);
+    static void tie_word_id_prefixes_cw(std::vector<DecoderGraph::Node> &cw_nodes,
+                                        std::map<std::string, int> &fanout,
+                                        std::map<std::string, int> &fanin,
+                                        bool stop_propagation=false);
+    static void tie_word_id_prefixes(std::vector<DecoderGraph::Node> &nodes,
+                                     std::list<node_idx_t> nodes_to_process,
+                                     bool stop_propagation=false);
+
     static void tie_state_suffixes(std::vector<DecoderGraph::Node> &nodes,
                                    bool stop_propagation=false,
                                    node_idx_t node_idx=END_NODE);
@@ -210,18 +221,6 @@ public:
                                    std::vector<bool> &processed_nodes,
                                    bool stop_propagation=false,
                                    node_idx_t node_idx=END_NODE);
-
-    static void tie_word_id_prefixes(std::vector<DecoderGraph::Node> &nodes,
-                                     bool stop_propagation=false,
-                                     node_idx_t node_idx=START_NODE);
-    static void tie_word_id_prefixes_cw(std::vector<DecoderGraph::Node> &cw_nodes,
-                                        std::map<std::string, int> &fanout,
-                                        std::map<std::string, int> &fanin,
-                                        bool stop_propagation=false);
-    static void tie_word_id_prefixes(std::vector<DecoderGraph::Node> &nodes,
-                                     std::vector<bool> &processed_nodes,
-                                     bool stop_propagation=false,
-                                     node_idx_t node_idx=START_NODE);
 
     static void tie_word_id_suffixes(std::vector<DecoderGraph::Node> &nodes,
                                      bool stop_propagation=false,
