@@ -127,7 +127,6 @@ public:
     };
 
     Recognition(Decoder &decoder);
-    void active_nodes_sorted_by_best_lp(std::vector<int> &nodes);
     void prune_word_history();
     void clear_word_history();
     void print_certain_word_history(std::ostream &outf=std::cout);

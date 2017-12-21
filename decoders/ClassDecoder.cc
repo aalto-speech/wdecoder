@@ -191,11 +191,8 @@ ClassRecognition::reset_frame_variables()
 void
 ClassRecognition::propagate_tokens()
 {
-    vector<int> sorted_active_nodes;
-    active_nodes_sorted_by_best_lp(sorted_active_nodes);
-
     int node_count = 0;
-    for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit) {
+    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
         Decoder::Node &node = d->m_nodes[*nit];
         for (auto tit = m_recombined_tokens[*nit].begin(); tit != m_recombined_tokens[*nit].end(); ++tit) {
 
@@ -213,7 +210,7 @@ ClassRecognition::propagate_tokens()
         node_count++;
     }
 
-    for (auto nit = sorted_active_nodes.begin(); nit != sorted_active_nodes.end(); ++nit)
+    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit)
         m_recombined_tokens[*nit].clear();
 
     if (m_stats)

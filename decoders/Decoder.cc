@@ -244,19 +244,6 @@ Recognition::Recognition(Decoder &decoder) :
 
 
 void
-Recognition::active_nodes_sorted_by_best_lp(vector<int> &nodes)
-{
-    nodes.clear();
-    vector<pair<int, float> > sorted_nodes;
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit)
-        sorted_nodes.push_back(make_pair(*nit, m_best_node_scores[*nit]));
-    sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_sort);
-    for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
-        nodes.push_back(snit->first);
-}
-
-
-void
 Recognition::prune_word_history()
 {
     for (auto whlnit = m_word_history_leafs.begin(); whlnit != m_word_history_leafs.end(); ) {
