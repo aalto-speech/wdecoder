@@ -126,6 +126,38 @@ public:
         std::map<int, WordHistory*> next;
     };
 
+    class Token {
+    public:
+        int node_idx;
+        float am_log_prob;
+        float lm_log_prob;
+        float lookahead_log_prob;
+        float total_log_prob;
+        int last_word_id;
+        WordHistory *history;
+        unsigned short int dur;
+        bool word_end;
+        int histogram_bin;
+        Decoder *d;
+
+        Token():
+            node_idx(-1),
+            am_log_prob(0.0f),
+            lm_log_prob(0.0f),
+            lookahead_log_prob(0.0f),
+            total_log_prob(-1e20),
+            last_word_id(-1),
+            history(nullptr),
+            dur(0),
+            word_end(false),
+            histogram_bin(0),
+            d(nullptr)
+        { }
+        void update_total_log_prob();
+        void apply_duration_model();
+        void update_lookahead_prob(float lookahead_prob);
+    };
+
     Recognition(Decoder &decoder);
     void prune_word_history();
     void clear_word_history();
@@ -143,8 +175,6 @@ public:
 
     // Passed from Decoder
     int m_stats;
-    float m_lm_scale;
-    float m_duration_scale;
     float m_transition_scale;
     float m_global_beam;
     float m_node_beam;
@@ -173,6 +203,7 @@ public:
     int m_frame_idx;
 
     std::vector<std::string> *m_text_units;
+    Decoder *d;
 };
 
 class RecognitionResult {

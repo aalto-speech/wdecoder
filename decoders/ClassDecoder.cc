@@ -68,7 +68,7 @@ ClassDecoder::read_class_memberships(
 ClassRecognition::ClassRecognition(ClassDecoder &decoder)
     : Recognition::Recognition(decoder)
 {
-    d=&decoder;
+    cld = static_cast<ClassDecoder*>(d);
     m_histogram_bin_limit = 0;
     m_word_history_leafs.clear();
     m_raw_tokens.clear();
@@ -78,8 +78,9 @@ ClassRecognition::ClassRecognition(ClassDecoder &decoder)
     m_best_node_scores.resize(d->m_nodes.size(), -1e20);
     m_active_nodes.clear();
     m_active_histories.clear();
-    Token tok;
-    tok.class_lm_node = d->m_class_lm.sentence_start_node;
+    ClassToken tok;
+    tok.d = &decoder;
+    tok.class_lm_node = cld->m_class_lm.sentence_start_node;
     tok.last_word_id = m_sentence_begin_symbol_idx;
     tok.history = new WordHistory();
     tok.history->word_id = m_sentence_begin_symbol_idx;
@@ -135,22 +136,22 @@ ClassRecognition::recognize_lna_file(
     }
     time(&end_time);
 
-    vector<Token> tokens;
+    vector<ClassToken> tokens;
     for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
-        map<int, Token> &node_tokens = m_recombined_tokens[*nit];
+        map<int, ClassToken> &node_tokens = m_recombined_tokens[*nit];
         for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit)
             tokens.push_back(tit->second);
     }
 
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        Token &tok = *tit;
+        ClassToken &tok = *tit;
         if (m_duration_model_in_use && tok.dur > 1)
-            apply_duration_model(tok, tok.node_idx);
-        update_lookahead_prob(tok, 0.0);
-        update_total_log_prob(tok);
+            tok.apply_duration_model();
+        tok.update_lookahead_prob(0.0);
+        tok.update_total_log_prob();
     }
 
-    Token *best_token = nullptr;
+    ClassToken *best_token = nullptr;
     best_token = get_best_end_token(tokens);
     if (best_token == nullptr) {
         if (d->m_force_sentence_end) add_sentence_ends(tokens);
@@ -221,7 +222,7 @@ ClassRecognition::propagate_tokens()
 void
 ClassRecognition::prune_tokens(bool collect_active_histories)
 {
-    vector<Token> pruned_tokens;
+    vector<ClassToken> pruned_tokens;
     pruned_tokens.reserve(50000);
 
     // Global beam pruning
@@ -230,7 +231,7 @@ ClassRecognition::prune_tokens(bool collect_active_histories)
     float current_glob_beam = m_best_log_prob - m_global_beam;
     float current_word_end_beam = m_best_word_end_prob - m_word_end_beam;
     for (unsigned int i=0; i<m_raw_tokens.size(); i++) {
-        Token &tok = m_raw_tokens[i];
+        ClassToken &tok = m_raw_tokens[i];
 
         if (tok.total_log_prob < current_glob_beam) {
             m_global_beam_pruned_count++;
@@ -243,7 +244,7 @@ ClassRecognition::prune_tokens(bool collect_active_histories)
         }
 
         if (tok.word_end) {
-            float prob_wo_la = tok.total_log_prob - m_lm_scale * tok.lookahead_log_prob;
+            float prob_wo_la = tok.total_log_prob - d->m_lm_scale * tok.lookahead_log_prob;
             if (prob_wo_la < current_word_end_beam) {
                 m_word_end_beam_pruned_count++;
                 continue;
@@ -259,7 +260,7 @@ ClassRecognition::prune_tokens(bool collect_active_histories)
     m_active_nodes.clear();
     vector<int> histogram(HISTOGRAM_BIN_COUNT, 0);
     for (auto tit = pruned_tokens.begin(); tit != pruned_tokens.end(); tit++) {
-        map<int, Token> &node_tokens = m_recombined_tokens[tit->node_idx];
+        map<int, ClassToken> &node_tokens = m_recombined_tokens[tit->node_idx];
         auto bntit = node_tokens.find(tit->class_lm_node);
         if (bntit != node_tokens.end()) {
             if (tit->total_log_prob > bntit->second.total_log_prob) {
@@ -298,7 +299,7 @@ ClassRecognition::prune_tokens(bool collect_active_histories)
 
 
 void
-ClassRecognition::move_token_to_node(Token token,
+ClassRecognition::move_token_to_node(ClassToken token,
                             int node_idx,
                             float transition_score,
                             bool update_lookahead)
@@ -317,7 +318,7 @@ ClassRecognition::move_token_to_node(Token token,
     else {
         // Apply duration model for previous state if moved out from a hmm state
         if (m_duration_model_in_use && d->m_nodes[token.node_idx].hmm_state != -1)
-            apply_duration_model(token, token.node_idx);
+            token.apply_duration_model();
         token.node_idx = node_idx;
         token.dur = 1;
     }
@@ -326,11 +327,11 @@ ClassRecognition::move_token_to_node(Token token,
     if (node.hmm_state != -1) {
 
         if (update_lookahead)
-            update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, token.last_word_id));
+            token.update_lookahead_prob(d->m_la->get_lookahead_score(node_idx, token.last_word_id));
 
         token.am_log_prob += m_acoustics->log_prob(node.hmm_state);
 
-        update_total_log_prob(token);
+        token.update_total_log_prob();
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
@@ -338,7 +339,7 @@ ClassRecognition::move_token_to_node(Token token,
 
         m_best_log_prob = max(m_best_log_prob, token.total_log_prob);
         if (token.word_end) {
-            float lp_wo_la = token.total_log_prob - m_lm_scale * token.lookahead_log_prob;
+            float lp_wo_la = token.total_log_prob - d->m_lm_scale * token.lookahead_log_prob;
             m_best_word_end_prob = max(m_best_word_end_prob, lp_wo_la);
         }
         m_best_node_scores[node_idx] = max(m_best_node_scores[node_idx], token.total_log_prob);
@@ -356,14 +357,14 @@ ClassRecognition::move_token_to_node(Token token,
 
         if (update_lookahead) {
             if (node.word_id == m_sentence_end_symbol_idx) {
-                update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, m_sentence_begin_symbol_idx));
+                token.update_lookahead_prob(d->m_la->get_lookahead_score(node_idx, m_sentence_begin_symbol_idx));
             }
             else {
-                update_lookahead_prob(token, d->m_la->get_lookahead_score(node_idx, token.last_word_id));
+                token.update_lookahead_prob(d->m_la->get_lookahead_score(node_idx, token.last_word_id));
             }
         }
 
-        update_total_log_prob(token);
+        token.update_total_log_prob();
         if (token.total_log_prob < (m_best_log_prob-m_global_beam)) {
             m_global_beam_pruned_count++;
             return;
@@ -373,7 +374,7 @@ ClassRecognition::move_token_to_node(Token token,
         token.word_end = true;
 
         if (node.word_id == m_sentence_end_symbol_idx) {
-            token.class_lm_node = d->m_class_lm.sentence_start_node;
+            token.class_lm_node = cld->m_class_lm.sentence_start_node;
             token.last_word_id = m_sentence_begin_symbol_idx;
         }
     }
@@ -383,13 +384,13 @@ ClassRecognition::move_token_to_node(Token token,
 }
 
 
-ClassRecognition::Token*
+ClassRecognition::ClassToken*
 ClassRecognition::get_best_token()
 {
-    Token *best_token = nullptr;
+    ClassToken *best_token = nullptr;
 
     for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
-        map<int, Token> & node_tokens = m_recombined_tokens[*nit];
+        map<int, ClassToken> & node_tokens = m_recombined_tokens[*nit];
         for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit) {
             if (best_token == nullptr)
                 best_token = &(tit->second);
@@ -402,10 +403,10 @@ ClassRecognition::get_best_token()
 }
 
 
-ClassRecognition::Token*
-ClassRecognition::get_best_token(vector<Token> &tokens)
+ClassRecognition::ClassToken*
+ClassRecognition::get_best_token(vector<ClassToken> &tokens)
 {
-    Token *best_token = nullptr;
+    ClassToken *best_token = nullptr;
 
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         if (best_token == nullptr)
@@ -418,10 +419,10 @@ ClassRecognition::get_best_token(vector<Token> &tokens)
 }
 
 
-ClassRecognition::Token*
-ClassRecognition::get_best_end_token(vector<Token> &tokens)
+ClassRecognition::ClassToken*
+ClassRecognition::get_best_end_token(vector<ClassToken> &tokens)
 {
-    Token *best_token = nullptr;
+    ClassToken *best_token = nullptr;
 
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         //if (tit->lm_node != m_ngram_state_sentence_begin) continue;
@@ -440,7 +441,7 @@ ClassRecognition::get_best_end_token(vector<Token> &tokens)
 
 
 void
-ClassRecognition::advance_in_word_history(Token &token, int word_id)
+ClassRecognition::advance_in_word_history(ClassToken &token, int word_id)
 {
     auto next_history = token.history->next.find(word_id);
     if (next_history != token.history->next.end())
@@ -455,7 +456,7 @@ ClassRecognition::advance_in_word_history(Token &token, int word_id)
 
 
 bool
-ClassRecognition::update_lm_prob(Token &token, int word_id)
+ClassRecognition::update_lm_prob(ClassToken &token, int word_id)
 {
     double class_lm_prob = class_lm_score(token, word_id);
     if (class_lm_prob == MIN_LOG_PROB) return false;
@@ -465,47 +466,23 @@ ClassRecognition::update_lm_prob(Token &token, int word_id)
 }
 
 
-void
-ClassRecognition::update_total_log_prob(Token &token)
-{
-    token.total_log_prob = token.am_log_prob + (m_lm_scale * token.lm_log_prob);
-}
-
-
-void
-ClassRecognition::apply_duration_model(Token &token, int node_idx)
-{
-    token.am_log_prob += m_duration_scale
-                         * d->m_hmm_states[d->m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
-}
-
-
-void
-ClassRecognition::update_lookahead_prob(Token &token, float new_lookahead_prob)
-{
-    token.lm_log_prob -= token.lookahead_log_prob;
-    token.lm_log_prob += new_lookahead_prob;
-    token.lookahead_log_prob = new_lookahead_prob;
-}
-
-
 double
-ClassRecognition::class_lm_score(Token &token, int word_id)
+ClassRecognition::class_lm_score(ClassToken &token, int word_id)
 {
-    if (d->m_class_membership_lookup[word_id].second == MIN_LOG_PROB) return MIN_LOG_PROB;
+    if (cld->m_class_membership_lookup[word_id].second == MIN_LOG_PROB) return MIN_LOG_PROB;
 
-    double membership_prob = d->m_class_membership_lookup[word_id].second;
+    double membership_prob = cld->m_class_membership_lookup[word_id].second;
     double ngram_prob = 0.0;
     if (word_id == m_sentence_end_symbol_idx) {
-        token.class_lm_node = d->m_class_lm.score(
+        token.class_lm_node = cld->m_class_lm.score(
                 token.class_lm_node,
-                d->m_class_lm.sentence_end_symbol_idx,
+                cld->m_class_lm.sentence_end_symbol_idx,
                 ngram_prob);
     }
     else
-        token.class_lm_node = d->m_class_lm.score(
+        token.class_lm_node = cld->m_class_lm.score(
                 token.class_lm_node,
-                d->m_class_intmap[d->m_class_membership_lookup[word_id].first],
+                cld->m_class_intmap[cld->m_class_membership_lookup[word_id].first],
                 ngram_prob);
 
     return membership_prob + ngram_prob;
@@ -513,14 +490,14 @@ ClassRecognition::class_lm_score(Token &token, int word_id)
 
 
 void
-ClassRecognition::add_sentence_ends(vector<Token> &tokens)
+ClassRecognition::add_sentence_ends(vector<ClassToken> &tokens)
 {
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        Token &token = *tit;
-        if (token.class_lm_node == d->m_class_lm.sentence_start_node) continue;
+        ClassToken &token = *tit;
+        if (token.class_lm_node == cld->m_class_lm.sentence_start_node) continue;
         m_active_histories.erase(token.history);
         update_lm_prob(token, m_sentence_end_symbol_idx);
-        update_total_log_prob(token);
+        token.update_total_log_prob();
         advance_in_word_history(token, m_sentence_end_symbol_idx);
         m_active_histories.insert(token.history);
     }

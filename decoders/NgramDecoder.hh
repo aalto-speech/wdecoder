@@ -28,33 +28,10 @@ public:
 
 class NgramRecognition : public Recognition {
 public:
-    class Token {
+    class NgramToken : public Token {
     public:
-        int node_idx;
-        float am_log_prob;
-        float lm_log_prob;
-        float lookahead_log_prob;
-        float total_log_prob;
         int lm_node;
-        int last_word_id;
-        WordHistory *history;
-        unsigned short int dur;
-        bool word_end;
-        int histogram_bin;
-
-        Token():
-            node_idx(-1),
-            am_log_prob(0.0f),
-            lm_log_prob(0.0f),
-            lookahead_log_prob(0.0f),
-            total_log_prob(-1e20),
-            lm_node(0),
-            last_word_id(-1),
-            history(nullptr),
-            dur(0),
-            word_end(false),
-            histogram_bin(0)
-        { }
+        NgramToken(): lm_node(0) { };
     };
 
     NgramRecognition(NgramDecoder &decoder);
@@ -62,27 +39,24 @@ public:
                             RecognitionResult &res);
 private:
     void reset_frame_variables();
-    void update_total_log_prob(Token &token) const;
-    void apply_duration_model(Token &token, int node_idx) const;
-    void update_lookahead_prob(Token &token, float lookahead_prob) const;
     void propagate_tokens();
     void prune_tokens(bool collect_active_histories=false);
-    void move_token_to_node(Token token,
+    void move_token_to_node(NgramToken token,
                             int node_idx,
                             float transition_score,
                             bool update_lookahead);
-    void advance_in_word_history(Token& token, int word_id);
-    Token* get_best_token();
-    Token* get_best_token(std::vector<Token> &tokens);
-    Token* get_best_end_token(std::vector<Token> &tokens);
-    void add_sentence_ends(std::vector<Token> &tokens);
+    void advance_in_word_history(NgramToken& token, int word_id);
+    NgramToken* get_best_token();
+    NgramToken* get_best_token(std::vector<NgramToken> &tokens);
+    NgramToken* get_best_end_token(std::vector<NgramToken> &tokens);
+    void add_sentence_ends(std::vector<NgramToken> &tokens);
     std::string get_best_word_history();
     std::string get_word_history(WordHistory *history);
 
     int m_ngram_state_sentence_begin;
-    std::vector<Token> m_raw_tokens;
-    std::vector<std::map<int, Token> > m_recombined_tokens;
-    NgramDecoder *d;
+    std::vector<NgramToken> m_raw_tokens;
+    std::vector<std::map<int, NgramToken> > m_recombined_tokens;
+    NgramDecoder *ngd;
 };
 
 #endif /* NGRAM_DECODER_HH */

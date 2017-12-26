@@ -208,10 +208,32 @@ Decoder::print_dot_digraph(vector<Node> &nodes,
 }
 
 
+void
+Recognition::Token::update_total_log_prob()
+{
+    total_log_prob = am_log_prob + (d->m_lm_scale * lm_log_prob);
+}
+
+
+void
+Recognition::Token::apply_duration_model()
+{
+    am_log_prob += d->m_duration_scale
+        * d->m_hmm_states[d->m_nodes[node_idx].hmm_state].duration.get_log_prob(dur);
+}
+
+
+void
+Recognition::Token::update_lookahead_prob(float new_lookahead_prob)
+{
+    lm_log_prob -= lookahead_log_prob;
+    lm_log_prob += new_lookahead_prob;
+    lookahead_log_prob = new_lookahead_prob;
+}
+
+
 Recognition::Recognition(Decoder &decoder) :
     m_stats(decoder.m_stats),
-    m_lm_scale(decoder.m_lm_scale),
-    m_duration_scale(decoder.m_duration_scale),
     m_transition_scale(decoder.m_transition_scale),
     m_global_beam(decoder.m_global_beam),
     m_node_beam(decoder.m_node_beam),
@@ -240,6 +262,7 @@ Recognition::Recognition(Decoder &decoder) :
     m_history_root = nullptr;
     m_frame_idx = -1;
     m_text_units = &decoder.m_text_units;
+    d = &decoder;
 }
 
 
