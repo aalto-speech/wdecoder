@@ -34,21 +34,21 @@ decoder_srcs = decoders/Decoder.cc\
 	decoders/Lookahead.cc\
 	decoders/NgramDecoder.cc\
 	decoders/ClassDecoder.cc\
-	decoders/ClassIPDecoder.cc
-#	decoders/WordSubwordDecoder.cc\
-#	decoders/Segmenter.cc
+	decoders/ClassIPDecoder.cc\
+	decoders/WordSubwordDecoder.cc\
+	decoders/Segmenter.cc
 
 decoder_objs = $(decoder_srcs:.cc=.o)
 
 decoder_progs = decode\
 	class-decode\
-	class-ip-decode
-#	wsw-decode\
-#	score\
-#	segment\
-#	lastates\
-#	cleanlex\
-#	lasc
+	class-ip-decode\
+	wsw-decode\
+	score\
+	segment\
+	lastates\
+	cleanlex\
+	lasc
 decoder_progs_srcs = $(addsuffix .cc,$(addprefix decoders/,$(decoder_progs)))
 
 test_srcs = test/wgraphtest.cc\
