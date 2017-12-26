@@ -667,7 +667,6 @@ LRWBSubwordGraph::create_graph(const set<string> &prefix_subwords,
     if (verbose) cerr << "Tying state prefixes.." << endl;
     tie_state_prefixes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
-    int tmpIdx = 1;
 
     if (verbose) cerr << "Tying word id prefixes.." << endl;
     tie_word_id_prefixes(m_nodes);
