@@ -451,7 +451,7 @@ WordSubwordRecognition::move_token_to_node(WSWToken token,
             return;
         }
 
-        advance_in_word_history(token, node.word_id);
+        advance_in_word_history(&token, node.word_id);
         token.word_end = true;
 
         if (node.word_id == m_sentence_end_symbol_idx) {
@@ -523,21 +523,6 @@ WordSubwordRecognition::get_best_end_token(vector<WSWToken> &tokens)
 }
 
 
-void
-WordSubwordRecognition::advance_in_word_history(WSWToken &token, int word_id)
-{
-    auto next_history = token.history->next.find(word_id);
-    if (next_history != token.history->next.end())
-        token.history = next_history->second;
-    else {
-        token.history = new WordHistory(word_id, token.history);
-        token.history->previous->next[word_id] = token.history;
-        m_word_history_leafs.erase(token.history->previous);
-        m_word_history_leafs.insert(token.history);
-    }
-}
-
-
 bool
 WordSubwordRecognition::update_lm_prob(WSWToken &token, int word_id)
 {
@@ -598,7 +583,7 @@ WordSubwordRecognition::add_sentence_ends(vector<WSWToken> &tokens)
         m_active_histories.erase(token.history);
         update_lm_prob(token, m_sentence_end_symbol_idx);
         token.update_total_log_prob();
-        advance_in_word_history(token, m_sentence_end_symbol_idx);
+        advance_in_word_history(&token, m_sentence_end_symbol_idx);
         m_active_histories.insert(token.history);
     }
 }

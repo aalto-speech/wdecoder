@@ -232,6 +232,21 @@ Recognition::Token::update_lookahead_prob(float new_lookahead_prob)
 }
 
 
+void
+Recognition::advance_in_word_history(Token *token, int word_id)
+{
+    auto next_history = token->history->next.find(word_id);
+    if (next_history != token->history->next.end())
+        token->history = next_history->second;
+    else {
+        token->history = new WordHistory(word_id, token->history);
+        token->history->previous->next[word_id] = token->history;
+        m_word_history_leafs.erase(token->history->previous);
+        m_word_history_leafs.insert(token->history);
+    }
+}
+
+
 Recognition::Recognition(Decoder &decoder) :
     m_stats(decoder.m_stats),
     m_transition_scale(decoder.m_transition_scale),

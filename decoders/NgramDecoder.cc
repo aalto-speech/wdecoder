@@ -69,7 +69,7 @@ NgramRecognition::NgramRecognition(NgramDecoder &decoder)
     m_active_nodes.insert(d->m_decode_start_node);
     m_word_history_leafs.insert(tok.history);
     if (m_use_word_boundary_symbol) {
-        advance_in_word_history(tok, m_word_boundary_symbol_idx);
+        advance_in_word_history(&tok, m_word_boundary_symbol_idx);
         tok.last_word_id = m_word_boundary_symbol_idx;
     }
     m_active_histories.insert(tok.history);
@@ -358,13 +358,13 @@ NgramRecognition::move_token_to_node(
             return;
         }
 
-        advance_in_word_history(token, node.word_id);
+        advance_in_word_history(&token, node.word_id);
         token.word_end = true;
 
         if (node.word_id == m_sentence_end_symbol_idx) {
             token.lm_node = m_ngram_state_sentence_begin;
             if (m_use_word_boundary_symbol) {
-                advance_in_word_history(token, m_word_boundary_symbol_idx);
+                advance_in_word_history(&token, m_word_boundary_symbol_idx);
                 token.last_word_id = m_word_boundary_symbol_idx;
             }
             else {
@@ -435,21 +435,6 @@ NgramRecognition::get_best_end_token(vector<NgramToken> &tokens)
 
 
 void
-NgramRecognition::advance_in_word_history(NgramToken &token, int word_id)
-{
-    auto next_history = token.history->next.find(word_id);
-    if (next_history != token.history->next.end())
-        token.history = next_history->second;
-    else {
-        token.history = new WordHistory(word_id, token.history);
-        token.history->previous->next[word_id] = token.history;
-        m_word_history_leafs.erase(token.history->previous);
-        m_word_history_leafs.insert(token.history);
-    }
-}
-
-
-void
 NgramRecognition::add_sentence_ends(vector<NgramToken> &tokens)
 {
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
@@ -461,13 +446,13 @@ NgramRecognition::add_sentence_ends(vector<NgramToken> &tokens)
                 token.lm_node,
                 ngd->m_text_unit_id_to_ngram_symbol[d->m_word_boundary_symbol_idx], token.lm_log_prob);
             token.update_total_log_prob();
-            advance_in_word_history(token, d->m_text_unit_map[d->m_word_boundary_symbol]);
+            advance_in_word_history(&token, d->m_text_unit_map[d->m_word_boundary_symbol]);
         }
         token.lm_node = ngd->m_lm.score(
             token.lm_node,
             ngd->m_text_unit_id_to_ngram_symbol[d->m_sentence_end_symbol_idx], token.lm_log_prob);
         token.update_total_log_prob();
-        advance_in_word_history(token, m_sentence_end_symbol_idx);
+        advance_in_word_history(&token, m_sentence_end_symbol_idx);
         m_active_histories.insert(token.history);
     }
 }

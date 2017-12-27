@@ -63,7 +63,6 @@ public:
                             float transition_score,
                             bool update_lookahead);
     bool update_lm_prob(ClassIPToken &token, int node_idx);
-    void advance_in_word_history(ClassIPToken& token, int word_id);
     double class_lm_score(ClassIPToken &token, int word_id);
     ClassIPToken* get_best_token();
     ClassIPToken* get_best_token(std::vector<ClassIPToken> &tokens);

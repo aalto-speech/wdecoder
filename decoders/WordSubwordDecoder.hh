@@ -77,7 +77,6 @@ public:
                             float transition_score,
                             bool update_lookahead);
     bool update_lm_prob(WSWToken &token, int node_idx);
-    void advance_in_word_history(WSWToken& token, int word_id);
     double class_lm_score(WSWToken &token, int word_id);
     WSWToken* get_best_token();
     WSWToken* get_best_token(std::vector<WSWToken> &tokens);

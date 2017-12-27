@@ -162,6 +162,7 @@ public:
     void prune_word_history();
     void clear_word_history();
     void print_certain_word_history(std::ostream &outf=std::cout);
+    void advance_in_word_history(Token *token, int word_id);
 
     LnaReaderCircular m_lna_reader;
     Acoustics *m_acoustics;

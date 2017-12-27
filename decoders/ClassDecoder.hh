@@ -52,7 +52,6 @@ public:
                             float transition_score,
                             bool update_lookahead);
     bool update_lm_prob(ClassToken &token, int node_idx);
-    void advance_in_word_history(ClassToken& token, int word_id);
     double class_lm_score(ClassToken &token, int word_id);
     ClassToken* get_best_token();
     ClassToken* get_best_token(std::vector<ClassToken> &tokens);
