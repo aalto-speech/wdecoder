@@ -120,22 +120,17 @@ NgramRecognition::recognize_lna_file(
     }
     time(&end_time);
 
-    vector<NgramToken> tokens;
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
-        map<int, NgramToken> &node_tokens = m_recombined_tokens[*nit];
-        for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit)
-            tokens.push_back(tit->second);
-    }
-
+    vector<Token*> tokens;
+    get_tokens(tokens);
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        NgramToken &tok = *tit;
-        if (m_duration_model_in_use && tok.dur > 1)
-            tok.apply_duration_model();
-        tok.update_lookahead_prob(0.0);
-        tok.update_total_log_prob();
+        Token *tok = *tit;
+        if (m_duration_model_in_use && tok->dur > 1)
+            tok->apply_duration_model();
+        tok->update_lookahead_prob(0.0);
+        tok->update_total_log_prob();
     }
 
-    NgramToken *best_token = nullptr;
+    Token *best_token = nullptr;
     best_token = get_best_end_token(tokens);
     if (best_token == nullptr) {
         if (d->m_force_sentence_end) add_sentence_ends(tokens);
@@ -378,82 +373,38 @@ NgramRecognition::move_token_to_node(
 }
 
 
-NgramRecognition::NgramToken*
-NgramRecognition::get_best_token()
+void
+NgramRecognition::get_tokens(vector<Token*> &tokens)
 {
-    NgramToken *best_token = nullptr;
-
+    tokens.clear();
     for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
         map<int, NgramToken> & node_tokens = m_recombined_tokens[*nit];
-        for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit) {
-            if (best_token == nullptr)
-                best_token = &(tit->second);
-            else if (tit->second.total_log_prob > best_token->total_log_prob)
-                best_token = &(tit->second);
-        }
+        for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit)
+            tokens.push_back(&(tit->second));
     }
-
-    return best_token;
-}
-
-
-NgramRecognition::NgramToken*
-NgramRecognition::get_best_token(vector<NgramToken> &tokens)
-{
-    NgramToken *best_token = nullptr;
-
-    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        if (best_token == nullptr)
-            best_token = &(*tit);
-        else if (tit->total_log_prob > best_token->total_log_prob)
-            best_token = &(*tit);
-    }
-
-    return best_token;
-}
-
-
-NgramRecognition::NgramToken*
-NgramRecognition::get_best_end_token(vector<NgramToken> &tokens)
-{
-    NgramToken *best_token = nullptr;
-
-    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        //if (tit->lm_node != m_ngram_state_sentence_begin) continue;
-
-        NgramDecoder::Node &node = d->m_nodes[tit->node_idx];
-        if (node.flags & NODE_SILENCE) {
-            if (best_token == nullptr)
-                best_token = &(*tit);
-            else if (tit->total_log_prob > best_token->total_log_prob)
-                best_token = &(*tit);
-        }
-    }
-
-    return best_token;
 }
 
 
 void
-NgramRecognition::add_sentence_ends(vector<NgramToken> &tokens)
+NgramRecognition::add_sentence_ends(vector<Token*> &tokens)
 {
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        NgramToken &token = *tit;
-        if (token.lm_node == ngd->m_ngram_state_sentence_begin) continue;
-        m_active_histories.erase(token.history);
-        if (m_use_word_boundary_symbol && token.history->word_id != d->m_word_boundary_symbol_idx) {
-            token.lm_node = ngd->m_lm.score(
-                token.lm_node,
-                ngd->m_text_unit_id_to_ngram_symbol[d->m_word_boundary_symbol_idx], token.lm_log_prob);
-            token.update_total_log_prob();
-            advance_in_word_history(&token, d->m_text_unit_map[d->m_word_boundary_symbol]);
+        NgramToken *token = static_cast<NgramToken*>(*tit);
+        if (token->lm_node == ngd->m_ngram_state_sentence_begin) continue;
+        m_active_histories.erase(token->history);
+        if (m_use_word_boundary_symbol && token->history->word_id != d->m_word_boundary_symbol_idx) {
+            token->lm_node = ngd->m_lm.score(
+                token->lm_node,
+                ngd->m_text_unit_id_to_ngram_symbol[d->m_word_boundary_symbol_idx], token->lm_log_prob);
+            token->update_total_log_prob();
+            advance_in_word_history(token, d->m_text_unit_map[d->m_word_boundary_symbol]);
         }
-        token.lm_node = ngd->m_lm.score(
-            token.lm_node,
-            ngd->m_text_unit_id_to_ngram_symbol[d->m_sentence_end_symbol_idx], token.lm_log_prob);
-        token.update_total_log_prob();
-        advance_in_word_history(&token, m_sentence_end_symbol_idx);
-        m_active_histories.insert(token.history);
+        token->lm_node = ngd->m_lm.score(
+            token->lm_node,
+            ngd->m_text_unit_id_to_ngram_symbol[d->m_sentence_end_symbol_idx], token->lm_log_prob);
+        token->update_total_log_prob();
+        advance_in_word_history(token, m_sentence_end_symbol_idx);
+        m_active_histories.insert(token->history);
     }
 }
 
@@ -461,7 +412,9 @@ NgramRecognition::add_sentence_ends(vector<NgramToken> &tokens)
 string
 NgramRecognition::get_best_word_history()
 {
-    return get_word_history(get_best_token()->history);
+    vector<Token*> tokens;
+    get_tokens(tokens);
+    return get_word_history(get_best_token(tokens)->history);
 }
 
 

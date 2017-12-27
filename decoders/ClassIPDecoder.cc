@@ -164,22 +164,17 @@ ClassIPRecognition::recognize_lna_file(
     }
     time(&end_time);
 
-    vector<ClassIPToken> tokens;
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
-        map<std::pair<int,int>, ClassIPToken> &node_tokens = m_recombined_tokens[*nit];
-        for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit)
-            tokens.push_back(tit->second);
-    }
-
+    vector<Token*> tokens;
+    get_tokens(tokens);
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        ClassIPToken &tok = *tit;
-        if (m_duration_model_in_use && tok.dur > 1)
-            tok.apply_duration_model();
-        tok.update_lookahead_prob(0.0);
-        tok.update_total_log_prob();
+        Token *tok = *tit;
+        if (m_duration_model_in_use && tok->dur > 1)
+            tok->apply_duration_model();
+        tok->update_lookahead_prob(0.0);
+        tok->update_total_log_prob();
     }
 
-    ClassIPToken *best_token = nullptr;
+    Token *best_token = nullptr;
     best_token = get_best_end_token(tokens);
     if (best_token == nullptr) {
         if (d->m_force_sentence_end) add_sentence_ends(tokens);
@@ -411,62 +406,6 @@ ClassIPRecognition::move_token_to_node(ClassIPToken token,
 }
 
 
-ClassIPRecognition::ClassIPToken*
-ClassIPRecognition::get_best_token()
-{
-    ClassIPToken *best_token = nullptr;
-
-    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
-        map<pair<int, int>, ClassIPToken> & node_tokens = m_recombined_tokens[*nit];
-        for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit) {
-            if (best_token == nullptr)
-                best_token = &(tit->second);
-            else if (tit->second.total_log_prob > best_token->total_log_prob)
-                best_token = &(tit->second);
-        }
-    }
-
-    return best_token;
-}
-
-
-ClassIPRecognition::ClassIPToken*
-ClassIPRecognition::get_best_token(vector<ClassIPToken> &tokens)
-{
-    ClassIPToken *best_token = nullptr;
-
-    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        if (best_token == nullptr)
-            best_token = &(*tit);
-        else if (tit->total_log_prob > best_token->total_log_prob)
-            best_token = &(*tit);
-    }
-
-    return best_token;
-}
-
-
-ClassIPRecognition::ClassIPToken*
-ClassIPRecognition::get_best_end_token(vector<ClassIPToken> &tokens)
-{
-    ClassIPToken *best_token = nullptr;
-
-    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        //if (tit->lm_node != m_ngram_state_sentence_begin) continue;
-
-        Decoder::Node &node = d->m_nodes[tit->node_idx];
-        if (node.flags & NODE_SILENCE) {
-            if (best_token == nullptr)
-                best_token = &(*tit);
-            else if (tit->total_log_prob > best_token->total_log_prob)
-                best_token = &(*tit);
-        }
-    }
-
-    return best_token;
-}
-
-
 bool
 ClassIPRecognition::update_lm_prob(ClassIPToken &token, int word_id)
 {
@@ -509,16 +448,28 @@ ClassIPRecognition::class_lm_score(ClassIPToken &token, int word_id)
 
 
 void
-ClassIPRecognition::add_sentence_ends(vector<ClassIPToken> &tokens)
+ClassIPRecognition::get_tokens(vector<Token*> &tokens)
+{
+    tokens.clear();
+    for (auto nit = m_active_nodes.begin(); nit != m_active_nodes.end(); ++nit) {
+        map<pair<int,int>, ClassIPToken> &node_tokens = m_recombined_tokens[*nit];
+        for (auto tit = node_tokens.begin(); tit != node_tokens.end(); ++tit)
+            tokens.push_back(&(tit->second));
+    }
+}
+
+
+void
+ClassIPRecognition::add_sentence_ends(vector<Token*> &tokens)
 {
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        ClassIPToken &token = *tit;
-        if (token.lm_node == cid->m_lm.sentence_start_node) continue;
-        m_active_histories.erase(token.history);
-        update_lm_prob(token, m_sentence_end_symbol_idx);
-        token.update_total_log_prob();
-        advance_in_word_history(&token, m_sentence_end_symbol_idx);
-        m_active_histories.insert(token.history);
+        ClassIPToken *token = static_cast<ClassIPToken*>(*tit);
+        if (token->lm_node == cid->m_lm.sentence_start_node) continue;
+        m_active_histories.erase(token->history);
+        update_lm_prob(*token, m_sentence_end_symbol_idx);
+        token->update_total_log_prob();
+        advance_in_word_history(token, m_sentence_end_symbol_idx);
+        m_active_histories.insert(token->history);
     }
 }
 
@@ -526,7 +477,9 @@ ClassIPRecognition::add_sentence_ends(vector<ClassIPToken> &tokens)
 string
 ClassIPRecognition::get_best_word_history()
 {
-    return get_word_history(get_best_token()->history);
+    vector<Token*> tokens;
+    get_tokens(tokens);
+    return get_word_history(get_best_token(tokens)->history);
 }
 
 

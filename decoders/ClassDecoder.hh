@@ -53,10 +53,8 @@ public:
                             bool update_lookahead);
     bool update_lm_prob(ClassToken &token, int node_idx);
     double class_lm_score(ClassToken &token, int word_id);
-    ClassToken* get_best_token();
-    ClassToken* get_best_token(std::vector<ClassToken> &tokens);
-    ClassToken* get_best_end_token(std::vector<ClassToken> &tokens);
-    void add_sentence_ends(std::vector<ClassToken> &tokens);
+    virtual void get_tokens(std::vector<Token*> &tokens);
+    virtual void add_sentence_ends(std::vector<Token*> &tokens);
     std::string get_best_word_history();
     std::string get_word_history(WordHistory *history);
 

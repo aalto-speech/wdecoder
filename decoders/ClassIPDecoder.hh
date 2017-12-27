@@ -64,14 +64,8 @@ public:
                             bool update_lookahead);
     bool update_lm_prob(ClassIPToken &token, int node_idx);
     double class_lm_score(ClassIPToken &token, int word_id);
-    ClassIPToken* get_best_token();
-    ClassIPToken* get_best_token(std::vector<ClassIPToken> &tokens);
-    ClassIPToken* get_best_end_token(std::vector<ClassIPToken> &tokens);
-    void add_sentence_ends(std::vector<ClassIPToken> &tokens);
-    void print_best_word_history(std::ostream &outf=std::cout);
-    void print_word_history(WordHistory *history,
-                            std::ostream &outf=std::cout,
-                            bool print_lm_probs=false);
+    virtual void get_tokens(std::vector<Token*> &tokens);
+    virtual void add_sentence_ends(std::vector<Token*> &tokens);
     std::string get_best_word_history();
     std::string get_word_history(WordHistory *history);
 

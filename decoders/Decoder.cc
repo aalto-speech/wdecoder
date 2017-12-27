@@ -232,21 +232,6 @@ Recognition::Token::update_lookahead_prob(float new_lookahead_prob)
 }
 
 
-void
-Recognition::advance_in_word_history(Token *token, int word_id)
-{
-    auto next_history = token->history->next.find(word_id);
-    if (next_history != token->history->next.end())
-        token->history = next_history->second;
-    else {
-        token->history = new WordHistory(word_id, token->history);
-        token->history->previous->next[word_id] = token->history;
-        m_word_history_leafs.erase(token->history->previous);
-        m_word_history_leafs.insert(token->history);
-    }
-}
-
-
 Recognition::Recognition(Decoder &decoder) :
     m_stats(decoder.m_stats),
     m_transition_scale(decoder.m_transition_scale),
@@ -334,6 +319,53 @@ Recognition::print_certain_word_history(ostream &outf)
         else hist = hist->next.begin()->second;
     }
     outf << endl;
+}
+
+
+void
+Recognition::advance_in_word_history(Token *token, int word_id)
+{
+    auto next_history = token->history->next.find(word_id);
+    if (next_history != token->history->next.end())
+        token->history = next_history->second;
+    else {
+        token->history = new WordHistory(word_id, token->history);
+        token->history->previous->next[word_id] = token->history;
+        m_word_history_leafs.erase(token->history->previous);
+        m_word_history_leafs.insert(token->history);
+    }
+}
+
+
+Recognition::Token*
+Recognition::get_best_token(vector<Token*> &tokens)
+{
+    Token *best_token = nullptr;
+    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
+        if (best_token == nullptr)
+            best_token = *tit;
+        else if ((*tit)->total_log_prob > best_token->total_log_prob)
+            best_token = *tit;
+    }
+    return best_token;
+}
+
+
+Recognition::Token*
+Recognition::get_best_end_token(vector<Token*> &tokens)
+{
+    Token *best_token = nullptr;
+    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
+        //if (tit->lm_node != m_ngram_state_sentence_begin) continue;
+        Decoder::Node &node = d->m_nodes[(*tit)->node_idx];
+        if (node.flags & NODE_SILENCE) {
+            if (best_token == nullptr)
+                best_token = *tit;
+            else if ((*tit)->total_log_prob > best_token->total_log_prob)
+                best_token = *tit;
+        }
+    }
+    return best_token;
 }
 
 

@@ -159,10 +159,15 @@ public:
     };
 
     Recognition(Decoder &decoder);
+    virtual ~Recognition() { };
     void prune_word_history();
     void clear_word_history();
     void print_certain_word_history(std::ostream &outf=std::cout);
     void advance_in_word_history(Token *token, int word_id);
+    virtual void get_tokens(std::vector<Token*> &tokens) = 0;
+    virtual void add_sentence_ends(std::vector<Token*> &tokens) = 0;
+    Token* get_best_token(std::vector<Token*> &tokens);
+    Token* get_best_end_token(std::vector<Token*> &tokens);
 
     LnaReaderCircular m_lna_reader;
     Acoustics *m_acoustics;

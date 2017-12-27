@@ -78,10 +78,8 @@ public:
                             bool update_lookahead);
     bool update_lm_prob(WSWToken &token, int node_idx);
     double class_lm_score(WSWToken &token, int word_id);
-    WSWToken* get_best_token();
-    WSWToken* get_best_token(std::vector<WSWToken> &tokens);
-    WSWToken* get_best_end_token(std::vector<WSWToken> &tokens);
-    void add_sentence_ends(std::vector<WSWToken> &tokens);
+    virtual void get_tokens(std::vector<Token*> &tokens);
+    virtual void add_sentence_ends(std::vector<Token*> &tokens);
     std::string get_best_word_history();
     std::string get_word_history(WordHistory *history);
 

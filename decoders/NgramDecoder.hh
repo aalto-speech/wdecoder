@@ -45,10 +45,8 @@ private:
                             int node_idx,
                             float transition_score,
                             bool update_lookahead);
-    NgramToken* get_best_token();
-    NgramToken* get_best_token(std::vector<NgramToken> &tokens);
-    NgramToken* get_best_end_token(std::vector<NgramToken> &tokens);
-    void add_sentence_ends(std::vector<NgramToken> &tokens);
+    virtual void get_tokens(std::vector<Token*> &tokens);
+    virtual void add_sentence_ends(std::vector<Token*> &tokens);
     std::string get_best_word_history();
     std::string get_word_history(WordHistory *history);
 
