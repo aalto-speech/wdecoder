@@ -1560,3 +1560,37 @@ LargeBigramLookahead::read(string ifname)
         }
     }
 }
+
+
+DummyClassBigramLookahead::DummyClassBigramLookahead(Decoder &decoder,
+                                                     string carpafname,
+                                                     string cmempfname)
+    : m_class_ngram(carpafname,
+                    cmempfname,
+                    decoder.m_text_units,
+                    decoder.m_text_unit_map)
+{
+    this->decoder = &decoder;
+    //m_la_lm.read_arpa(lafname);
+    //set_text_unit_id_la_ngram_symbol_mapping();
+}
+
+
+float
+DummyClassBigramLookahead::get_lookahead_score(int node_idx, int word_id)
+{
+    vector<int> successor_words;
+    find_successor_words(node_idx, successor_words);
+
+    float la_prob = -1e20;
+    int la_node = m_la_lm.advance(m_la_lm.root_node, m_text_unit_id_to_la_ngram_symbol[word_id]);
+    for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
+    {
+        float curr_prob = 0.0;
+        m_la_lm.score(la_node, m_text_unit_id_to_la_ngram_symbol[*swit], curr_prob);
+        la_prob = max(la_prob, curr_prob);
+    }
+
+    return la_prob;
+}
+

@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Decoder.hh"
+#include "ClassNgram.hh"
 
 
 class UnigramLookahead : public Decoder::Lookahead {
@@ -226,5 +227,16 @@ private:
     std::vector<LookaheadState> m_lookahead_states;
 };
 
+
+class DummyClassBigramLookahead : public Decoder::Lookahead {
+public:
+    DummyClassBigramLookahead(Decoder &decoder,
+                              std::string ngramfname,
+                              std::string classmfname);
+    ~DummyClassBigramLookahead() {};
+    float get_lookahead_score(int node_idx, int word_id);
+
+    ClassNgram m_class_ngram;
+};
 
 #endif /* LOOKAHEAD_HH */

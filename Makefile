@@ -10,6 +10,7 @@ util_srcs = util/conf.cc\
 	util/Hmm.cc\
 	util/LnaReaderCircular.cc\
 	util/Ngram.cc\
+	util/ClassNgram.cc\
 	util/NowayHmmReader.cc
 util_objs = $(util_srcs:.cc=.o)
 
