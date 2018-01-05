@@ -222,8 +222,11 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
     d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
     d.read_noway_lexicon("data/1k.words.lex");
     d.read_dgraph("data/1k.words.graph");
-    DummyClassBigramLookahead refcla(d, "data/1k.words.2gram.arpa");
-    d.m_la = new FullTableBigramLookahead(d, "data/1k.words.2gram.arpa");
+    DummyClassBigramLookahead refcla(
+            d,
+            "data/1k.words.exchange.2g.arpa.gz",
+            "data/1k.words.exchange.cmemprobs.gz");
+    //d.m_la = new FullTableBigramLookahead(d, "data/1k.words.2gram.arpa");
 
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
@@ -232,9 +235,10 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
         for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
             idx++;
             if (idx % eval_ratio != 0) continue;
-            float ref = refla.get_lookahead_score(i, w);
-            float hyp = d.m_la->get_lookahead_score(i, w);
-            BOOST_CHECK_CLOSE( ref, hyp, tolerance );
+            float ref = refcla.get_lookahead_score(i, w);
+            cerr << ref << endl;
+            //float hyp = d.m_la->get_lookahead_score(i, w);
+            //BOOST_CHECK_CLOSE( ref, hyp, tolerance );
         }
     }
 }

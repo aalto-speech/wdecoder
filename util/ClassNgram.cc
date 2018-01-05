@@ -22,17 +22,24 @@ ClassNgram::ClassNgram(
     read_class_memberships(cmempfname);
 
     m_class_membership_lookup.resize(text_units.size(), make_pair(-1,MIN_LOG_PROB));
-    for (auto wpit=m_class_memberships.begin(); wpit!= m_class_memberships.end(); ++wpit) {
-        if (wpit->first == "<unk>") continue;
-        if (text_unit_map.find(wpit->first) == text_unit_map.end()) continue;
+    m_sentence_end_symbol_idx = text_unit_map.at("</s>");
+
+    vector<bool> m_lex_word_in_class_model(text_units.size(), false);
+    for (auto wpit = m_class_memberships.begin(); wpit != m_class_memberships.end(); ++wpit) {
+        if (text_unit_map.find(wpit->first) == text_unit_map.end()) {
+            cerr << "warning, class model word not found in the decoder lexicon: "
+                 << wpit->first << endl;
+            continue;
+        }
         int word_idx = text_unit_map.at(wpit->first);
         m_class_membership_lookup[word_idx] = wpit->second;
+        m_lex_word_in_class_model[word_idx] = true;
     }
-    if (text_unit_map.find("</s>") == text_unit_map.end()) {
-        cerr << "sentence end symbol not found in the text units" << endl;
-        exit(1);
-    }
-    m_sentence_end_symbol_idx = text_unit_map.at("</s>");
+
+    for (int i=0; i<(int)m_lex_word_in_class_model.size(); i++)
+        if (!m_lex_word_in_class_model[i])
+            cerr << "warning, lexicon word not found in the class model: "
+                 << text_units[i] << endl;
 
     m_class_intmap.resize(m_num_classes);
     for (int i=0; i<(int)m_class_intmap.size(); i++)
@@ -67,61 +74,63 @@ ClassNgram::read_class_memberships(string cmempfname)
 int
 ClassNgram::score(int node_idx, int word_id, double &score) const
 {
-    if (word_id >= (int)m_class_membership_lookup.size()
-        || m_class_membership_lookup[word_id].second == MIN_LOG_PROB) {
+    if ((word_id != m_sentence_end_symbol_idx) &&
+        (word_id >= (int)m_class_membership_lookup.size()
+        || m_class_membership_lookup[word_id].second == MIN_LOG_PROB))
+    {
         cerr << "word with id " << word_id << " not initialized" << endl;
         exit(1);
     }
 
-    double membership_prob = m_class_membership_lookup[word_id].second;
     double ngram_prob = 0.0;
-    int new_node_idx;
     if (word_id == m_sentence_end_symbol_idx) {
-        new_node_idx = m_class_ngram.score(
+        m_class_ngram.score(
             node_idx,
             m_class_ngram.sentence_end_symbol_idx,
             ngram_prob);
         score = ngram_prob;
+        return m_class_ngram.sentence_start_node;
     }
     else {
-        new_node_idx = m_class_ngram.score(
+        double membership_prob = m_class_membership_lookup[word_id].second;
+        int new_node_idx = m_class_ngram.score(
             node_idx,
             m_class_intmap[m_class_membership_lookup[word_id].first],
             ngram_prob);
         score = membership_prob + ngram_prob;
+        return new_node_idx;
     }
-
-    return new_node_idx;
 }
 
 
 int
 ClassNgram::score(int node_idx, int word_id, float &score) const
 {
-    if (word_id >= (int)m_class_membership_lookup.size()
-        || m_class_membership_lookup[word_id].second == MIN_LOG_PROB) {
+    if ((word_id != m_sentence_end_symbol_idx) &&
+        (word_id >= (int)m_class_membership_lookup.size()
+        || m_class_membership_lookup[word_id].second == MIN_LOG_PROB))
+    {
         cerr << "word with id " << word_id << " not initialized" << endl;
         exit(1);
     }
 
-    double membership_prob = m_class_membership_lookup[word_id].second;
     double ngram_prob = 0.0;
-    int new_node_idx;
     if (word_id == m_sentence_end_symbol_idx) {
-        new_node_idx = m_class_ngram.score(
+        m_class_ngram.score(
             node_idx,
             m_class_ngram.sentence_end_symbol_idx,
             ngram_prob);
         score = ngram_prob;
+        return m_class_ngram.sentence_start_node;
     }
     else {
-        new_node_idx = m_class_ngram.score(
+        double membership_prob = m_class_membership_lookup[word_id].second;
+        int new_node_idx = m_class_ngram.score(
             node_idx,
             m_class_intmap[m_class_membership_lookup[word_id].first],
             ngram_prob);
         score = membership_prob + ngram_prob;
+        return new_node_idx;
     }
-
-    return new_node_idx;
 }
 

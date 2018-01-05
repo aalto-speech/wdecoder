@@ -231,12 +231,12 @@ private:
 class DummyClassBigramLookahead : public Decoder::Lookahead {
 public:
     DummyClassBigramLookahead(Decoder &decoder,
-                              std::string ngramfname,
+                              std::string carpafname,
                               std::string classmfname);
     ~DummyClassBigramLookahead() {};
     float get_lookahead_score(int node_idx, int word_id);
 
-    ClassNgram m_class_ngram;
+    ClassNgram m_class_la;
 };
 
 #endif /* LOOKAHEAD_HH */
