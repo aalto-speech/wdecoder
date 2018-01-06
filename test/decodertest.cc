@@ -232,14 +232,14 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
     cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
-        for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
-            idx++;
-            if (idx % eval_ratio != 0) continue;
+        for (int w=0; w<(int)d.m_text_units.size(); w++) {
+            if (++idx % eval_ratio != 0) continue;
             float ref = refcla.get_lookahead_score(i, w);
-            cerr << ref << endl;
+            cerr << "node: " << i << "\t"
+                 << "word: " << w << "/" << d.m_text_units[w] << "\t"
+                 << "ref lp: " << ref << endl;
             //float hyp = d.m_la->get_lookahead_score(i, w);
             //BOOST_CHECK_CLOSE( ref, hyp, tolerance );
         }
     }
 }
-
