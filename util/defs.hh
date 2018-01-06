@@ -30,7 +30,8 @@ typedef unsigned int node_idx_t;
 #define NODE_LM_RIGHT_LIMIT             0x0100
 #define NODE_TAIL                       0x0200
 
-#define MIN_LOG_PROB    -1000
+#define TINY_FLOAT    -1e20
+#define MIN_LOG_PROB  -1000
 
 // Return log(X+Y) where a=log(X) b=log(Y)
 static float add_log_domain_probs(float a, float b) {

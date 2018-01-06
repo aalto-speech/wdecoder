@@ -16,7 +16,7 @@ public:
     float get_lookahead_score(int node_idx, int word_id);
 
 private:
-    int set_unigram_la_scores();
+    void set_unigram_la_scores();
     void propagate_unigram_la_score(int node_idx,
                                     float score,
                                     std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
@@ -234,6 +234,17 @@ public:
                               std::string carpafname,
                               std::string classmfname);
     ~DummyClassBigramLookahead() {};
+    float get_lookahead_score(int node_idx, int word_id);
+
+    ClassNgram m_class_la;
+};
+
+class ClassBigramLookahead : public Decoder::Lookahead {
+public:
+    ClassBigramLookahead(Decoder &decoder,
+                              std::string carpafname,
+                              std::string classmfname);
+    ~ClassBigramLookahead() {};
     float get_lookahead_score(int node_idx, int word_id);
 
     ClassNgram m_class_la;
