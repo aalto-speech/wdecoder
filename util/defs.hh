@@ -68,6 +68,13 @@ static std::string int2str(int a)
     return temp.str();
 }
 
+static std::string double2str(int a)
+{
+    std::ostringstream temp;
+    temp<<a;
+    return temp.str();
+}
+
 static bool descending_node_sort(const std::pair<int, float> &i, const std::pair<int, float> &j)
 {
     return (i.second > j.second);
