@@ -6,6 +6,7 @@
 
 #include "Decoder.hh"
 #include "ClassNgram.hh"
+#include "QuantizedLogProb.hh"
 
 
 class UnigramLookahead : public Decoder::Lookahead {
@@ -110,7 +111,7 @@ private:
     void set_lookahead_score(int la_state_idx, int word_id, float la_score);
 
     bool m_quantification;
-    std::vector<float> m_quant_values;
+    QuantizedLogProb m_quant_log_probs;
     std::vector<std::vector<unsigned short int> > m_quant_bigram_lookup;
     double m_min_la_score;
 };

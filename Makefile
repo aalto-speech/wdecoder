@@ -11,7 +11,9 @@ util_srcs = util/conf.cc\
 	util/LnaReaderCircular.cc\
 	util/Ngram.cc\
 	util/ClassNgram.cc\
-	util/NowayHmmReader.cc
+	util/NowayHmmReader.cc\
+	util/DynamicBitset.cc\
+	util/QuantizedLogProb.cc
 util_objs = $(util_srcs:.cc=.o)
 
 graph_srcs = graphs/DecoderGraph.cc\
@@ -58,7 +60,9 @@ test_srcs = test/wgraphtest.cc\
 	test/lwbswgraphtest.cc\
 	test/rwbswgraphtest.cc\
 	test/lrwbswgraphtest.cc\
-	test/decodertest.cc
+	test/decodertest.cc\
+	test/bitsettest.cc\
+	test/quantizedlptest.cc
 test_objs = $(test_srcs:.cc=.o)
 
 test_progs = runtests
@@ -67,8 +71,8 @@ test_progs = runtests
 
 .SUFFIXES:
 
-#all: $(graph_progs) $(decoder_progs) $(test_progs)
-all: $(graph_progs) $(decoder_progs)
+all: $(graph_progs) $(decoder_progs) $(test_progs)
+#all: $(graph_progs) $(decoder_progs)
 
 %.o: %.cc
 	$(CXX) -c $(cxxflags) $< -o $@

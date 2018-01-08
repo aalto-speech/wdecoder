@@ -527,13 +527,10 @@ PrecomputedFullTableBigramLookahead
             min_root_word_prob = std::min(min_root_word_prob, target_prob);
         }
         m_min_la_score = min_backoff_prob + min_root_word_prob;
-
-        m_quant_values.resize(USHRT_MAX);
-        for (int i=0; i<(int)m_quant_values.size(); i++)
-            m_quant_values[i] = float(i) / float(USHRT_MAX-1) * m_min_la_score;
+        m_quant_log_probs.setMinLogProb(m_min_la_score);
         m_quant_bigram_lookup.resize(m_la_state_count);
         for (auto blsit = m_quant_bigram_lookup.begin(); blsit != m_quant_bigram_lookup.end(); ++blsit)
-            (*blsit).resize(decoder.m_text_units.size(), USHRT_MAX-1);
+            (*blsit).resize(decoder.m_text_units.size(), USHRT_MAX);
     }
 
     set_word_id_la_states();
@@ -547,7 +544,7 @@ PrecomputedFullTableBigramLookahead::get_lookahead_score(int node_idx, int word_
 {
     int la_state_idx = m_node_la_states[node_idx];
     if (m_quantification) {
-        return m_quant_values[m_quant_bigram_lookup[la_state_idx][word_id]];
+        return m_quant_log_probs.getQuantizedLogProb(m_quant_bigram_lookup[la_state_idx][word_id]);
     } else {
         return m_bigram_la_scores[la_state_idx][word_id];
     }
@@ -565,9 +562,8 @@ PrecomputedFullTableBigramLookahead::set_lookahead_score(
             cerr << "look-ahead score was smaller than m_min_la_score" << endl;
             exit(1);
         }
-        unsigned short int idx = round(la_score / m_min_la_score * float(USHRT_MAX-1));
-        if (la_score > m_quant_values[m_quant_bigram_lookup[la_state_idx][word_id]])
-            m_quant_bigram_lookup[la_state_idx][word_id] = idx;
+        if (la_score > m_quant_log_probs.getQuantizedLogProb(m_quant_bigram_lookup[la_state_idx][word_id]))
+            m_quant_bigram_lookup[la_state_idx][word_id] = m_quant_log_probs.getQuantIndex(la_score);
     } else {
         if (la_score > m_bigram_la_scores[la_state_idx][word_id])
             m_bigram_la_scores[la_state_idx][word_id] = la_score;
