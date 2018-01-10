@@ -6,6 +6,7 @@
 
 #include "Decoder.hh"
 #include "ClassNgram.hh"
+#include "DynamicBitset.hh"
 #include "QuantizedLogProb.hh"
 
 
@@ -243,12 +244,38 @@ public:
 class ClassBigramLookahead : public Decoder::Lookahead {
 public:
     ClassBigramLookahead(Decoder &decoder,
-                              std::string carpafname,
-                              std::string classmfname);
+                         std::string carpafname,
+                         std::string classmfname);
     ~ClassBigramLookahead() {};
     float get_lookahead_score(int node_idx, int word_id);
 
     ClassNgram m_class_la;
+private:
+    class PropWordInfo {
+    public:
+        PropWordInfo(int nodeIdx, int wordId, int classIdx, double cmemp) {
+            m_nodeIdx = nodeIdx;
+            m_wordId = wordId;
+            m_classIdx = classIdx;
+            m_cmemp = cmemp;
+        }
+        int m_nodeIdx;
+        int m_wordId;
+        int m_classIdx;
+        double m_cmemp;
+    };
+
+    int set_la_state_indices_to_nodes();
+    void propagate_la_state_idx(int node_idx,
+                                PropWordInfo &propInfo,
+                                std::map<int, int> &la_state_changes,
+                                long long int &max_state_idx,
+                                std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
+                                bool first_node=true);
+    float set_arc_la_updates();
+    std::vector<int> m_node_la_states;
+    std::vector<DynamicBitset> m_class_propagated;
+    int m_la_state_count;
 };
 
 #endif /* LOOKAHEAD_HH */

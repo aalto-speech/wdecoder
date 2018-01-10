@@ -215,7 +215,25 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest6)
 }
 
 
+// Check that the la states are set
 BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
+{
+    cerr << endl;
+    Decoder d;
+    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    d.read_noway_lexicon("data/1k.words.lex");
+    d.read_dgraph("data/1k.words.graph");
+    ClassBigramLookahead hypocla(
+        d,
+        "data/1k.words.exchange.2g.arpa.gz",
+        "data/1k.words.exchange.cmemprobs.gz");
+    BOOST_CHECK_EQUAL(hypocla.m_la_state_count, 350);
+    for (int i=0; i<hypocla.m_node_la_states.size(); i++)
+        BOOST_CHECK(hypocla.m_node_la_states[i] >= 0);
+}
+
+
+BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
 {
     cerr << endl;
     Decoder d;
@@ -226,8 +244,13 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
             d,
             "data/1k.words.exchange.2g.arpa.gz",
             "data/1k.words.exchange.cmemprobs.gz");
-    //d.m_la = new FullTableBigramLookahead(d, "data/1k.words.2gram.arpa");
 
+    ClassBigramLookahead hypocla(
+            d,
+            "data/1k.words.exchange.2g.arpa.gz",
+            "data/1k.words.exchange.cmemprobs.gz");
+
+    /*
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
     int idx=0;
@@ -242,4 +265,5 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
             //BOOST_CHECK_CLOSE( ref, hyp, tolerance );
         }
     }
+    */
 }

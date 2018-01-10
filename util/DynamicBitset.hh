@@ -5,13 +5,15 @@
 
 class DynamicBitset {
 public:
-    DynamicBitset(int numBits, bool initValue = false);
+    DynamicBitset(int numBits = 0, bool initValue = false);
+    void resize(int numBits, bool initValue = false);
+    int size() { return m_numBits; }
     bool getBit(int idx);
     void setBit(int idx, bool bitValue);
 
 private:
-    int numBits;
-    std::vector<unsigned char> data;
+    int m_numBits;
+    std::vector<unsigned char> m_data;
 };
 
 #endif
