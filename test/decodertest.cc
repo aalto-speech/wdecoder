@@ -233,6 +233,21 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
 }
 
 
+// Check that the la states are set
+BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTestBigYle)
+{
+    cerr << endl;
+    Decoder d;
+    d.read_phone_model("data/cbgla/speecon_mfcc_20.3.2012_20.ph");
+    d.read_noway_lexicon("data/cbgla/lex");
+    d.read_dgraph("data/cbgla/words.graph");
+    ClassBigramLookahead hypocla(
+        d,
+        "data/cbgla/exchange.vkn.2g.D002_E004.arpa.gz",
+        "data/cbgla/exchange.cmemprobs.gz");
+}
+
+
 BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
 {
     cerr << endl;

@@ -1619,6 +1619,16 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
 
+    set<int> wordIdPredecessorNodes;
+    for (int i=0; i<(int)decoder->m_nodes.size(); i++) {
+        if (decoder->m_nodes[i].word_id == -1) continue;
+        for (auto rait=reverse_arcs[i].begin(); rait!=reverse_arcs[i].end(); ++rait)
+            if (rait->target_node != i)
+                wordIdPredecessorNodes.insert(rait->target_node);
+    }
+    cerr << "number of nodes preceeding word identifiers: " << wordIdPredecessorNodes.size() << endl;
+    wordIdPredecessorNodes.clear();
+
     multimap<float, PropWordInfo> words;
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         Decoder::Node &nd = decoder->m_nodes[i];
@@ -1634,7 +1644,25 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
 
     m_class_propagated.resize(decoder->m_nodes.size());
     long long int max_state_idx = 0;
+    int wrdi = 0;
     for (auto wit = words.rbegin(); wit != words.rend(); ++wit) {
+        if (++wrdi % 100 == 0) {
+            set<int> distLaStates;
+            for (int i=0; i<m_node_la_states.size(); i++)
+                distLaStates.insert(m_node_la_states[i]);
+            cerr << wrdi << "/" << words.size() << "\t" << distLaStates.size() << endl;
+        }
+
+        if (wit->second.m_classIdx == -1
+            || m_class_la.m_class_membership_lookup.at(wit->second.m_wordId).first == -1
+            || wit->second.m_cmemp < -30.0)
+        {
+            cerr << "warning, word: " << decoder->m_text_units[wit->second.m_wordId] << endl;
+            cerr << "class idx: " << wit->second.m_classIdx << endl;
+            cerr << "cmemp: " << wit->second.m_cmemp << endl;
+            cerr << "node idx: " << wit->second.m_nodeIdx << endl;
+            cerr << "word id: " << wit->second.m_wordId << endl;
+        }
         //cerr << wit->first << "\t"
         //     << decoder->m_text_units[wit->second.m_wordId] << "\t"
         //     << "classIdx: " << wit->second.m_classIdx << endl;
@@ -1675,26 +1703,26 @@ ClassBigramLookahead::propagate_la_state_idx(
     if (node_idx == START_NODE) return;
     Decoder::Node &nd = decoder->m_nodes[node_idx];
 
-    if (m_class_propagated[node_idx].size() == 0)
-        m_class_propagated[node_idx].resize(m_class_la.m_num_classes, false);
-    if (m_class_propagated[node_idx].getBit(propInfo.m_classIdx)) return;
-    m_class_propagated[node_idx].setBit(propInfo.m_classIdx, true);
-
     if (!first_node) {
+        if (m_class_propagated[node_idx].size() == 0)
+            m_class_propagated[node_idx].resize(m_class_la.m_num_classes, false);
+        if (m_class_propagated[node_idx].getBit(propInfo.m_classIdx)) return;
+        m_class_propagated[node_idx].setBit(propInfo.m_classIdx, true);
+
         int curr_la_state = m_node_la_states[node_idx];
-        if (la_state_changes.find(curr_la_state) != la_state_changes.end()) {
-            m_node_la_states[node_idx] = la_state_changes[curr_la_state];
-        }
-        else {
+        if (la_state_changes.find(curr_la_state) == la_state_changes.end()) {
             la_state_changes[curr_la_state] = ++max_state_idx;
             m_node_la_states[node_idx] = max_state_idx;
-        }
+        } else
+            m_node_la_states[node_idx] = la_state_changes[curr_la_state];
         if (nd.word_id != -1) return;
     }
 
-    for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait)
+    for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait) {
+        if (rait->target_node == node_idx) continue;
         propagate_la_state_idx(rait->target_node, propInfo, la_state_changes,
                 max_state_idx, reverse_arcs, false);
+    }
 }
 
 
