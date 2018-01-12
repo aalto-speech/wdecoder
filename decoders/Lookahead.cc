@@ -1599,17 +1599,20 @@ ClassBigramLookahead::ClassBigramLookahead(
 {
     this->decoder = &decoder;
 
-    cerr << "Setting lookahead state indices" << endl;
+    cerr << "Setting look-ahead state indices" << endl;
     m_node_la_states.resize(decoder.m_nodes.size(), -1);
     m_la_state_count = set_la_state_indices_to_nodes();
-    cerr << "Number of lookahead states: " << m_la_state_count << endl;
+    cerr << "Number of look-ahead states: " << m_la_state_count << endl;
+    cerr << "Setting look-ahead scores" << endl;
+    set_la_scores();
 }
 
 
 float
 ClassBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
-    return 0.0;
+    int word_class = m_class_la.m_class_membership_lookup[word_id].first;
+    return m_la_scores[node_idx][word_class];
 }
 
 
@@ -1648,7 +1651,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
     for (auto wit = words.rbegin(); wit != words.rend(); ++wit) {
         if (++wrdi % 100 == 0) {
             set<int> distLaStates;
-            for (int i=0; i<m_node_la_states.size(); i++)
+            for (int i=0; i<(int)m_node_la_states.size(); i++)
                 distLaStates.insert(m_node_la_states[i]);
             cerr << wrdi << "/" << words.size() << "\t" << distLaStates.size() << endl;
         }
@@ -1751,3 +1754,31 @@ ClassBigramLookahead::set_arc_la_updates()
     }
     return update_count / (update_count + no_update_count);
 }
+
+
+void
+ClassBigramLookahead::set_la_scores()
+{
+    map<int,int> la_state_nodes;
+    for (int i=0; i<m_node_la_states.size(); i++)
+        la_state_nodes[m_node_la_states[i]] = i;
+
+    m_la_scores.resize(m_la_state_count);
+    for (int i=0; i<(int)m_la_scores.size(); i++) {
+        m_la_scores[i].resize(m_class_la.m_num_classes, MIN_LOG_PROB);
+        int node_idx = la_state_nodes[i];
+        vector<int> successor_words;
+        find_successor_words(node_idx, successor_words);
+        for (int c=0; c<m_class_la.m_num_classes; c++) {
+            int cng_node = m_class_la.m_class_ngram.advance(
+                m_class_la.m_class_ngram.root_node, c);
+            for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
+            {
+                float curr_prob = 0.0;
+                m_class_la.score(cng_node, *swit, curr_prob);
+                m_la_scores[i][c] = max(m_la_scores[i][c], curr_prob);
+            }
+        }
+    }
+}
+

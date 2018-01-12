@@ -265,7 +265,6 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
             "data/1k.words.exchange.2g.arpa.gz",
             "data/1k.words.exchange.cmemprobs.gz");
 
-    /*
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
     int idx=0;
@@ -276,9 +275,8 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
             cerr << "node: " << i << "\t"
                  << "word: " << w << "/" << d.m_text_units[w] << "\t"
                  << "ref lp: " << ref << endl;
-            //float hyp = d.m_la->get_lookahead_score(i, w);
-            //BOOST_CHECK_CLOSE( ref, hyp, tolerance );
+            float hyp = d.m_la->get_lookahead_score(i, w);
+            BOOST_CHECK_CLOSE( ref, hyp, tolerance );
         }
     }
-    */
 }

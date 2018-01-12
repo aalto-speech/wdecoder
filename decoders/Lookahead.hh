@@ -273,9 +273,12 @@ private:
                                 std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
                                 bool first_node=true);
     float set_arc_la_updates();
+    void set_la_scores();
     std::vector<int> m_node_la_states;
     std::vector<DynamicBitset> m_class_propagated;
     int m_la_state_count;
+
+    std::vector<std::vector<float> > m_la_scores;
 };
 
 #endif /* LOOKAHEAD_HH */
