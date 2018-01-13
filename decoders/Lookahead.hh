@@ -253,16 +253,14 @@ public:
 private:
     class PropWordInfo {
     public:
-        PropWordInfo(int nodeIdx, int wordId, int classIdx, double cmemp) {
+        PropWordInfo(int nodeIdx, int wordId, int classIdx) {
             m_nodeIdx = nodeIdx;
             m_wordId = wordId;
             m_classIdx = classIdx;
-            m_cmemp = cmemp;
         }
         int m_nodeIdx;
         int m_wordId;
         int m_classIdx;
-        double m_cmemp;
     };
 
     int set_la_state_indices_to_nodes();

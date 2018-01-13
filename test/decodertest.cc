@@ -227,8 +227,8 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
         d,
         "data/1k.words.exchange.2g.arpa.gz",
         "data/1k.words.exchange.cmemprobs.gz");
-    BOOST_CHECK_EQUAL(hypocla.m_la_state_count, 350);
-    for (int i=0; i<hypocla.m_node_la_states.size(); i++)
+    BOOST_CHECK_EQUAL(hypocla.m_la_state_count, 896);
+    for (unsigned int i=0; i<hypocla.m_node_la_states.size(); i++)
         BOOST_CHECK(hypocla.m_node_la_states[i] >= 0);
 }
 
@@ -272,11 +272,14 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
         for (int w=0; w<(int)d.m_text_units.size(); w++) {
             if (++idx % eval_ratio != 0) continue;
             float ref = refcla.get_lookahead_score(i, w);
-            cerr << "node: " << i << "\t"
-                 << "word: " << w << "/" << d.m_text_units[w] << "\t"
-                 << "ref lp: " << ref << endl;
-            float hyp = d.m_la->get_lookahead_score(i, w);
+            float hyp = hypocla.get_lookahead_score(i, w);
             BOOST_CHECK_CLOSE( ref, hyp, tolerance );
+            if (ref != hyp) {
+                cerr << "node: " << i << "\t"
+                     << "word: " << w << "/" << d.m_text_units[w] << "\t"
+                     << "ref lp: " << ref << endl;
+            }
+            BOOST_ASSERT( ref == hyp );
         }
     }
 }

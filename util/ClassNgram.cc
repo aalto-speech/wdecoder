@@ -67,6 +67,7 @@ ClassNgram::read_class_memberships(string cmempfname)
         m_class_memberships[word] = make_pair(class_idx, prob);
         max_class_idx = max(max_class_idx, class_idx);
     }
+    m_class_memberships["</s>"] = make_pair(++max_class_idx, 0.0);
     m_num_classes = max_class_idx + 1;
 }
 

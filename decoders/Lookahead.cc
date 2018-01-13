@@ -27,10 +27,10 @@ Decoder::Lookahead::find_successor_words(int node_idx,
 {
     set<int> successor_words;
     find_successor_words(node_idx, successor_words);
-    word_ids.resize(successor_words.size());
-    int i = 0;
+    word_ids.clear();
+    word_ids.reserve(successor_words.size());
     for (auto wit = successor_words.begin(); wit != successor_words.end(); ++wit)
-        word_ids[i++] = *wit;
+        word_ids.push_back(*wit);
 }
 
 
@@ -47,9 +47,8 @@ Decoder::Lookahead::find_successor_words(int node_idx,
     }
 
     for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        int target_node = ait->target_node;
-        if (target_node == node_idx) continue;
-        find_successor_words(target_node, word_ids, false);
+        if (ait->target_node == node_idx) continue;
+        find_successor_words(ait->target_node, word_ids, false);
     }
 }
 
@@ -1611,8 +1610,9 @@ ClassBigramLookahead::ClassBigramLookahead(
 float
 ClassBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
+    string word = decoder->m_text_units[word_id];
     int word_class = m_class_la.m_class_membership_lookup[word_id].first;
-    return m_la_scores[node_idx][word_class];
+    return m_la_scores[m_node_la_states[node_idx]][word_class];
 }
 
 
@@ -1622,25 +1622,17 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
     vector<vector<Decoder::Arc> > reverse_arcs;
     get_reverse_arcs(reverse_arcs);
 
-    set<int> wordIdPredecessorNodes;
-    for (int i=0; i<(int)decoder->m_nodes.size(); i++) {
-        if (decoder->m_nodes[i].word_id == -1) continue;
-        for (auto rait=reverse_arcs[i].begin(); rait!=reverse_arcs[i].end(); ++rait)
-            if (rait->target_node != i)
-                wordIdPredecessorNodes.insert(rait->target_node);
-    }
-    cerr << "number of nodes preceeding word identifiers: " << wordIdPredecessorNodes.size() << endl;
-    wordIdPredecessorNodes.clear();
-
     multimap<float, PropWordInfo> words;
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         Decoder::Node &nd = decoder->m_nodes[i];
-        // no need to propagate sentence end here
-        // as the tail nodes can be set to the same look-ahead state
-        if (nd.word_id != -1 && nd.word_id != m_class_la.m_sentence_end_symbol_idx) {
+        // propagate also sentence end here
+        if (nd.word_id != -1
+            && m_class_la.m_class_memberships.find(decoder->m_text_units[nd.word_id])
+                != m_class_la.m_class_memberships.end())
+        {
             int classIdx = m_class_la.m_class_membership_lookup[nd.word_id].first;
             float cmemp = m_class_la.m_class_membership_lookup[nd.word_id].second;
-            PropWordInfo pwi(i, nd.word_id, classIdx, cmemp);
+            PropWordInfo pwi(i, nd.word_id, classIdx);
             words.insert(make_pair(cmemp, pwi));
         }
     }
@@ -1656,19 +1648,6 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
             cerr << wrdi << "/" << words.size() << "\t" << distLaStates.size() << endl;
         }
 
-        if (wit->second.m_classIdx == -1
-            || m_class_la.m_class_membership_lookup.at(wit->second.m_wordId).first == -1
-            || wit->second.m_cmemp < -30.0)
-        {
-            cerr << "warning, word: " << decoder->m_text_units[wit->second.m_wordId] << endl;
-            cerr << "class idx: " << wit->second.m_classIdx << endl;
-            cerr << "cmemp: " << wit->second.m_cmemp << endl;
-            cerr << "node idx: " << wit->second.m_nodeIdx << endl;
-            cerr << "word id: " << wit->second.m_wordId << endl;
-        }
-        //cerr << wit->first << "\t"
-        //     << decoder->m_text_units[wit->second.m_wordId] << "\t"
-        //     << "classIdx: " << wit->second.m_classIdx << endl;
         map<int, int> la_state_changes;
         propagate_la_state_idx(
             wit->second.m_nodeIdx,
@@ -1703,7 +1682,6 @@ ClassBigramLookahead::propagate_la_state_idx(
     vector<vector<Decoder::Arc> > &reverse_arcs,
     bool first_node)
 {
-    if (node_idx == START_NODE) return;
     Decoder::Node &nd = decoder->m_nodes[node_idx];
 
     if (!first_node) {
@@ -1719,6 +1697,8 @@ ClassBigramLookahead::propagate_la_state_idx(
         } else
             m_node_la_states[node_idx] = la_state_changes[curr_la_state];
         if (nd.word_id != -1) return;
+        if (propInfo.m_wordId != decoder->m_sentence_end_symbol_idx
+            && node_idx == END_NODE) return;
     }
 
     for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait) {
@@ -1760,7 +1740,7 @@ void
 ClassBigramLookahead::set_la_scores()
 {
     map<int,int> la_state_nodes;
-    for (int i=0; i<m_node_la_states.size(); i++)
+    for (int i=0; i<(int)m_node_la_states.size(); i++)
         la_state_nodes[m_node_la_states[i]] = i;
 
     m_la_scores.resize(m_la_state_count);
@@ -1769,15 +1749,24 @@ ClassBigramLookahead::set_la_scores()
         int node_idx = la_state_nodes[i];
         vector<int> successor_words;
         find_successor_words(node_idx, successor_words);
-        for (int c=0; c<m_class_la.m_num_classes; c++) {
+
+        for (int c=0; c<m_class_la.m_num_classes-1; c++) {
             int cng_node = m_class_la.m_class_ngram.advance(
-                m_class_la.m_class_ngram.root_node, c);
+                m_class_la.m_class_ngram.root_node, m_class_la.m_class_intmap[c]);
             for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
             {
                 float curr_prob = 0.0;
                 m_class_la.score(cng_node, *swit, curr_prob);
                 m_la_scores[i][c] = max(m_la_scores[i][c], curr_prob);
             }
+        }
+
+        // handle </s> as the context word
+        for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
+            float curr_prob = 0.0;
+            m_class_la.score(m_class_la.m_class_ngram.sentence_start_node, *swit, curr_prob);
+            m_la_scores[i][m_class_la.m_num_classes-1]
+                           = max(m_la_scores[i][m_class_la.m_num_classes-1], curr_prob);
         }
     }
 }
