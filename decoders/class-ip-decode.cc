@@ -4,6 +4,7 @@
 #include "ClassIPDecoder.hh"
 #include "Lookahead.hh"
 #include "conf.hh"
+#include "str.hh"
 
 using namespace std;
 
@@ -163,6 +164,7 @@ int main(int argc, char* argv[])
     ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
     ('t', "lookahead-type=STRING", "arg", "", "Lookahead type\n"
             "\tunigram\n"
+            "\tclass-bigram\n"
             "\tbigram-full\n"
             "\tbigram-precomputed-full\n"
             "\tbigram-hybrid\n"
@@ -217,6 +219,10 @@ int main(int argc, char* argv[])
             bool quantization = config["quantized-lookahead"].specified;
             if (la_type == "unigram")
                 d.m_la = new UnigramLookahead(d, lalmfname);
+            else if (la_type == "class-bigram") {
+                vector<string> class_la_model = str::split(lalmfname, ",", false);
+                d.m_la = new ClassBigramLookahead(d, class_la_model[0], class_la_model[1], true);
+            }
             else if (la_type == "bigram-full")
                 d.m_la = new FullTableBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-precomputed-full")
