@@ -302,6 +302,39 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2Quant)
 }
 
 
+// Some words in the graph and lexicon not in the class n-gram look-ahead model
+BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest3)
+{
+    cerr << endl;
+    Decoder d;
+    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    d.read_noway_lexicon("data/1k.words.lex");
+    d.read_dgraph("data/1k.words.graph");
+    DummyClassBigramLookahead refcla(
+            d,
+            "data/1k.words.exchange.2g.arpa.gz",
+            "data/1k.words.exchange.cmemprobs.words_missing.gz");
+
+    ClassBigramLookahead hypocla(
+            d,
+            "data/1k.words.exchange.2g.arpa.gz",
+            "data/1k.words.exchange.cmemprobs.words_missing.gz");
+
+    cerr << "node count: " << d.m_nodes.size() << endl;
+    cerr << "evaluating.." << endl;
+    int idx=0;
+    for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        for (int w=0; w<(int)d.m_text_units.size(); w++) {
+            if (refcla.m_class_la.m_class_membership_lookup[w].first == -1) continue;
+            if (++idx % eval_ratio != 0) continue;
+            float ref = refcla.get_lookahead_score(i, w);
+            float hyp = hypocla.get_lookahead_score(i, w);
+            BOOST_CHECK_CLOSE( ref, hyp, 0.05 );
+        }
+    }
+}
+
+
 // Check that the la states are set
 BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTestBigYle)
 {

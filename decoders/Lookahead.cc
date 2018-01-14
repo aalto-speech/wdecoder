@@ -1573,10 +1573,11 @@ DummyClassBigramLookahead::get_lookahead_score(
     vector<int> successor_words;
     find_successor_words(node_idx, successor_words);
 
-    float la_prob = TINY_FLOAT;
+    float la_prob = MIN_LOG_PROB;
     int la_node = m_class_la.advance(m_class_la.m_class_ngram.root_node, word_id);
     for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
     {
+        if (m_class_la.m_class_membership_lookup[*swit].first == -1) continue;
         float curr_prob = 0.0;
         m_class_la.score(la_node, *swit, curr_prob);
         la_prob = max(la_prob, curr_prob);
@@ -1815,6 +1816,7 @@ ClassBigramLookahead::set_la_scores()
             float best_la_prob = MIN_LOG_PROB;
             for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
             {
+                if (m_class_la.m_class_membership_lookup[*swit].first == -1) continue;
                 float curr_prob = 0.0;
                 m_class_la.score(cng_node, *swit, curr_prob);
                 best_la_prob = max(best_la_prob, curr_prob);
@@ -1825,6 +1827,7 @@ ClassBigramLookahead::set_la_scores()
         // handle </s> as the context word
         float best_la_prob = MIN_LOG_PROB;
         for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
+            if (m_class_la.m_class_membership_lookup[*swit].first == -1) continue;
             float curr_prob = 0.0;
             m_class_la.score(m_class_la.m_class_ngram.sentence_start_node, *swit, curr_prob);
             best_la_prob = max(best_la_prob, curr_prob);

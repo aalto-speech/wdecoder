@@ -79,8 +79,7 @@ ClassNgram::score(int node_idx, int word_id, double &score) const
         (word_id >= (int)m_class_membership_lookup.size()
         || m_class_membership_lookup[word_id].second == MIN_LOG_PROB))
     {
-        cerr << "word with id " << word_id << " not initialized" << endl;
-        exit(1);
+        return MIN_LOG_PROB;
     }
 
     double ngram_prob = 0.0;
@@ -111,8 +110,7 @@ ClassNgram::score(int node_idx, int word_id, float &score) const
         (word_id >= (int)m_class_membership_lookup.size()
         || m_class_membership_lookup[word_id].second == MIN_LOG_PROB))
     {
-        cerr << "word with id " << word_id << " not initialized" << endl;
-        exit(1);
+        return MIN_LOG_PROB;
     }
 
     double ngram_prob = 0.0;
