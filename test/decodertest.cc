@@ -233,21 +233,6 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
 }
 
 
-// Check that the la states are set
-BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTestBigYle)
-{
-    cerr << endl;
-    Decoder d;
-    d.read_phone_model("data/cbgla/speecon_mfcc_20.3.2012_20.ph");
-    d.read_noway_lexicon("data/cbgla/lex");
-    d.read_dgraph("data/cbgla/words.graph");
-    ClassBigramLookahead hypocla(
-        d,
-        "data/cbgla/exchange.vkn.2g.D002_E004.arpa.gz",
-        "data/cbgla/exchange.cmemprobs.gz");
-}
-
-
 BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
 {
     cerr << endl;
@@ -283,3 +268,51 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
         }
     }
 }
+
+
+BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2Quant)
+{
+    cerr << endl;
+    Decoder d;
+    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    d.read_noway_lexicon("data/1k.words.lex");
+    d.read_dgraph("data/1k.words.graph");
+    DummyClassBigramLookahead refcla(
+            d,
+            "data/1k.words.exchange.2g.arpa.gz",
+            "data/1k.words.exchange.cmemprobs.gz");
+
+    ClassBigramLookahead hypocla(
+            d,
+            "data/1k.words.exchange.2g.arpa.gz",
+            "data/1k.words.exchange.cmemprobs.gz",
+            true);
+
+    cerr << "node count: " << d.m_nodes.size() << endl;
+    cerr << "evaluating.." << endl;
+    int idx=0;
+    for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        for (int w=0; w<(int)d.m_text_units.size(); w++) {
+            if (++idx % eval_ratio != 0) continue;
+            float ref = refcla.get_lookahead_score(i, w);
+            float hyp = hypocla.get_lookahead_score(i, w);
+            BOOST_CHECK_CLOSE( ref, hyp, 0.05 );
+        }
+    }
+}
+
+
+// Check that the la states are set
+BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTestBigYle)
+{
+    cerr << endl;
+    Decoder d;
+    d.read_phone_model("data/cbgla/speecon_mfcc_20.3.2012_20.ph");
+    d.read_noway_lexicon("data/cbgla/lex");
+    d.read_dgraph("data/cbgla/words.graph");
+    ClassBigramLookahead hypocla(
+        d,
+        "data/cbgla/exchange.vkn.2g.D002_E004.arpa.gz",
+        "data/cbgla/exchange.cmemprobs.gz");
+}
+

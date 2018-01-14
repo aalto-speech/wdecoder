@@ -77,7 +77,7 @@ public:
     FullTableBigramLookahead(Decoder &decoder,
                              std::string lafname,
                              bool successor_lists=true,
-                             bool quantification=false);
+                             bool quantization=false);
     ~FullTableBigramLookahead() {};
     virtual float get_lookahead_score(int node_idx, int word_id);
 
@@ -90,7 +90,7 @@ class PrecomputedFullTableBigramLookahead : public FullTableBigramLookahead {
 public:
     PrecomputedFullTableBigramLookahead(Decoder &decoder,
                                         std::string lafname,
-                                        bool quantification=false);
+                                        bool quantization=false);
     ~PrecomputedFullTableBigramLookahead() {};
     virtual float get_lookahead_score(int node_idx, int word_id);
 
@@ -111,7 +111,7 @@ private:
     void set_bigram_la_scores();
     void set_lookahead_score(int la_state_idx, int word_id, float la_score);
 
-    bool m_quantification;
+    bool m_quantization;
     QuantizedLogProb m_quant_log_probs;
     std::vector<std::vector<unsigned short int> > m_quant_bigram_lookup;
     double m_min_la_score;
@@ -245,7 +245,8 @@ class ClassBigramLookahead : public Decoder::Lookahead {
 public:
     ClassBigramLookahead(Decoder &decoder,
                          std::string carpafname,
-                         std::string classmfname);
+                         std::string classmfname,
+                         bool quantization=false);
     ~ClassBigramLookahead() {};
     float get_lookahead_score(int node_idx, int word_id);
 
@@ -271,12 +272,22 @@ private:
                                 std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
                                 bool first_node=true);
     float set_arc_la_updates();
+    void init_la_scores();
+    void set_la_score(int la_state, int class_idx, float la_prob);
     void set_la_scores();
     std::vector<int> m_node_la_states;
     std::vector<DynamicBitset> m_class_propagated;
     int m_la_state_count;
 
+    bool m_quantization;
+
+    // Normal look-ahead scores
     std::vector<std::vector<float> > m_la_scores;
+
+    // Quantized look-ahead scores
+    QuantizedLogProb m_quant_log_probs;
+    std::vector<std::vector<unsigned short int> > m_quant_bigram_lookup;
+    double m_min_la_score;
 };
 
 #endif /* LOOKAHEAD_HH */

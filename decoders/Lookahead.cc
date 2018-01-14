@@ -470,14 +470,14 @@ LookaheadStateCount::set_arc_la_updates()
 FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
                                                    string lafname,
                                                    bool successor_lists,
-                                                   bool quantification)
+                                                   bool quantization)
     : LookaheadStateCount(decoder,
                           successor_lists)
 {
     m_la_lm.read_arpa(lafname);
     set_text_unit_id_la_ngram_symbol_mapping();
 
-    if (!quantification) {
+    if (!quantization) {
         m_bigram_la_scores.resize(m_la_state_count);
         for (auto blsit = m_bigram_la_scores.begin(); blsit != m_bigram_la_scores.end(); ++blsit)
             (*blsit).resize(decoder.m_text_units.size(), TINY_FLOAT);
@@ -510,11 +510,11 @@ PrecomputedFullTableBigramLookahead
 ::PrecomputedFullTableBigramLookahead(
         Decoder &decoder,
         string lafname,
-        bool quantification)
-    : FullTableBigramLookahead(decoder, lafname, false, quantification)
+        bool quantization)
+    : FullTableBigramLookahead(decoder, lafname, false, quantization)
 {
-    m_quantification = quantification;
-    if (quantification) {
+    m_quantization = quantization;
+    if (quantization) {
         double min_backoff_prob = 0.0;
         for (int i=0; i<(int)m_la_lm.nodes.size(); i++)
             min_backoff_prob = std::min(min_backoff_prob, m_la_lm.nodes[i].backoff_prob);
@@ -543,7 +543,7 @@ float
 PrecomputedFullTableBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
     int la_state_idx = m_node_la_states[node_idx];
-    if (m_quantification) {
+    if (m_quantization) {
         return m_quant_log_probs.getQuantizedLogProb(m_quant_bigram_lookup[la_state_idx][word_id]);
     } else {
         return m_bigram_la_scores[la_state_idx][word_id];
@@ -557,7 +557,7 @@ PrecomputedFullTableBigramLookahead::set_lookahead_score(
         int word_id,
         float la_score)
 {
-    if (m_quantification) {
+    if (m_quantization) {
         if (la_score < m_min_la_score) {
             cerr << "look-ahead score was smaller than m_min_la_score" << endl;
             exit(1);
@@ -1589,12 +1589,14 @@ DummyClassBigramLookahead::get_lookahead_score(
 ClassBigramLookahead::ClassBigramLookahead(
     Decoder &decoder,
     string carpafname,
-    string cmempfname)
+    string cmempfname,
+    bool quantization)
     : m_class_la(carpafname,
                  cmempfname,
                  decoder.m_text_units,
                  decoder.m_text_unit_map),
-      m_la_state_count(0)
+      m_la_state_count(0),
+      m_quantization(quantization)
 {
     this->decoder = &decoder;
 
@@ -1610,9 +1612,13 @@ ClassBigramLookahead::ClassBigramLookahead(
 float
 ClassBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
-    string word = decoder->m_text_units[word_id];
     int word_class = m_class_la.m_class_membership_lookup[word_id].first;
-    return m_la_scores[m_node_la_states[node_idx]][word_class];
+    if (m_quantization) {
+        unsigned short int qIdx = m_quant_bigram_lookup[m_node_la_states[node_idx]][word_class];
+        return m_quant_log_probs.getQuantizedLogProb(qIdx);
+    } else {
+        return m_la_scores[m_node_la_states[node_idx]][word_class];
+    }
 }
 
 
@@ -1691,14 +1697,15 @@ ClassBigramLookahead::propagate_la_state_idx(
         m_class_propagated[node_idx].setBit(propInfo.m_classIdx, true);
 
         int curr_la_state = m_node_la_states[node_idx];
-        if (la_state_changes.find(curr_la_state) == la_state_changes.end()) {
+        auto la_state_change = la_state_changes.find(curr_la_state);
+        if (la_state_change == la_state_changes.end()) {
             la_state_changes[curr_la_state] = ++max_state_idx;
             m_node_la_states[node_idx] = max_state_idx;
         } else
-            m_node_la_states[node_idx] = la_state_changes[curr_la_state];
+            m_node_la_states[node_idx] = la_state_change->second;
         if (nd.word_id != -1) return;
         if (propInfo.m_wordId != decoder->m_sentence_end_symbol_idx
-            && node_idx == END_NODE) return;
+            && node_idx == START_NODE) return;
     }
 
     for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait) {
@@ -1737,15 +1744,64 @@ ClassBigramLookahead::set_arc_la_updates()
 
 
 void
+ClassBigramLookahead::init_la_scores()
+{
+    if (m_quantization) {
+        LNNgram &ngram = m_class_la.m_class_ngram;
+        double min_backoff_prob = 0.0;
+        for (int i=0; i<(int)ngram.nodes.size(); i++)
+            min_backoff_prob = std::min(min_backoff_prob, ngram.nodes[i].backoff_prob);
+        int first_root_arc = ngram.nodes[ngram.root_node].first_arc;
+        int last_root_arc = ngram.nodes[ngram.root_node].last_arc;
+        double min_root_word_prob = 0.0;
+        for (int i=first_root_arc; i<=last_root_arc; i++) {
+            int target_node = ngram.arc_target_nodes[i];
+            double target_prob = ngram.nodes[target_node].prob;
+            min_root_word_prob = std::min(min_root_word_prob, target_prob);
+        }
+        m_min_la_score = min_backoff_prob + min_root_word_prob;
+
+        float min_cmemp = 0.0;
+        for (auto wit = m_class_la.m_class_memberships.begin(); wit != m_class_la.m_class_memberships.end(); ++wit)
+            min_cmemp = std::min(min_cmemp, wit->second.second);
+        m_min_la_score += min_cmemp;
+
+        m_quant_log_probs.setMinLogProb(m_min_la_score);
+
+        m_quant_bigram_lookup.resize(m_la_state_count);
+        for (auto blsit = m_quant_bigram_lookup.begin(); blsit != m_quant_bigram_lookup.end(); ++blsit)
+            (*blsit).resize(m_class_la.m_num_classes, USHRT_MAX);
+    } else {
+        m_la_scores.resize(m_la_state_count);
+        for (int i=0; i<(int)m_la_scores.size(); i++)
+            m_la_scores[i].resize(m_class_la.m_num_classes, MIN_LOG_PROB);
+    }
+}
+
+
+void
+ClassBigramLookahead::set_la_score(
+    int la_state,
+    int class_idx,
+    float la_prob)
+{
+    if (m_quantization)
+        m_quant_bigram_lookup[la_state][class_idx] = m_quant_log_probs.getQuantIndex(la_prob);
+    else
+        m_la_scores[la_state][class_idx] = la_prob;
+}
+
+
+void
 ClassBigramLookahead::set_la_scores()
 {
     map<int,int> la_state_nodes;
     for (int i=0; i<(int)m_node_la_states.size(); i++)
         la_state_nodes[m_node_la_states[i]] = i;
 
-    m_la_scores.resize(m_la_state_count);
-    for (int i=0; i<(int)m_la_scores.size(); i++) {
-        m_la_scores[i].resize(m_class_la.m_num_classes, MIN_LOG_PROB);
+    init_la_scores();
+
+    for (int i=0; i<m_la_state_count; i++) {
         int node_idx = la_state_nodes[i];
         vector<int> successor_words;
         find_successor_words(node_idx, successor_words);
@@ -1753,21 +1809,24 @@ ClassBigramLookahead::set_la_scores()
         for (int c=0; c<m_class_la.m_num_classes-1; c++) {
             int cng_node = m_class_la.m_class_ngram.advance(
                 m_class_la.m_class_ngram.root_node, m_class_la.m_class_intmap[c]);
+            float best_la_prob = MIN_LOG_PROB;
             for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
             {
                 float curr_prob = 0.0;
                 m_class_la.score(cng_node, *swit, curr_prob);
-                m_la_scores[i][c] = max(m_la_scores[i][c], curr_prob);
+                best_la_prob = max(best_la_prob, curr_prob);
             }
+            set_la_score(i, c, best_la_prob);
         }
 
         // handle </s> as the context word
+        float best_la_prob = MIN_LOG_PROB;
         for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
             float curr_prob = 0.0;
             m_class_la.score(m_class_la.m_class_ngram.sentence_start_node, *swit, curr_prob);
-            m_la_scores[i][m_class_la.m_num_classes-1]
-                           = max(m_la_scores[i][m_class_la.m_num_classes-1], curr_prob);
+            best_la_prob = max(best_la_prob, curr_prob);
         }
+        set_la_score(i, m_class_la.m_num_classes-1, best_la_prob);
     }
 }
 
