@@ -1582,7 +1582,8 @@ DummyClassBigramLookahead::get_lookahead_score(
         la_prob = max(la_prob, curr_prob);
     }
 
-    return la_prob;
+    static float ln_to_log10 = 1.0 / log(10.0);
+    return ln_to_log10 * la_prob;
 }
 
 
@@ -1606,18 +1607,20 @@ ClassBigramLookahead::ClassBigramLookahead(
     cerr << "Number of look-ahead states: " << m_la_state_count << endl;
     cerr << "Setting look-ahead scores" << endl;
     set_la_scores();
+    set_arc_la_updates();
 }
 
 
 float
 ClassBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
+    static float ln_to_log10 = 1.0 / log(10.0);
     int word_class = m_class_la.m_class_membership_lookup[word_id].first;
     if (m_quantization) {
         unsigned short int qIdx = m_quant_bigram_lookup[m_node_la_states[node_idx]][word_class];
-        return m_quant_log_probs.getQuantizedLogProb(qIdx);
+        return ln_to_log10 * m_quant_log_probs.getQuantizedLogProb(qIdx);
     } else {
-        return m_la_scores[m_node_la_states[node_idx]][word_class];
+        return ln_to_log10 * m_la_scores[m_node_la_states[node_idx]][word_class];
     }
 }
 
