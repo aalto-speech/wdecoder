@@ -252,25 +252,12 @@ public:
 
     ClassNgram m_class_la;
 private:
-    class PropWordInfo {
-    public:
-        PropWordInfo(int nodeIdx, int wordId, int classIdx) {
-            m_nodeIdx = nodeIdx;
-            m_wordId = wordId;
-            m_classIdx = classIdx;
-        }
-        int m_nodeIdx;
-        int m_wordId;
-        int m_classIdx;
-    };
-
     int set_la_state_indices_to_nodes();
     float set_arc_la_updates();
     void init_la_scores();
     void set_la_score(int la_state, int class_idx, float la_prob);
     void set_la_scores();
     std::vector<int> m_node_la_states;
-    std::vector<DynamicBitset> m_class_propagated;
     int m_la_state_count;
 
     bool m_quantization;
