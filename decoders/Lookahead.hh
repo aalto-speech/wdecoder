@@ -265,12 +265,6 @@ private:
     };
 
     int set_la_state_indices_to_nodes();
-    void propagate_la_state_idx(int node_idx,
-                                PropWordInfo &propInfo,
-                                std::map<int, int> &la_state_changes,
-                                long long int &max_state_idx,
-                                std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
-                                bool first_node=true);
     float set_arc_la_updates();
     void init_la_scores();
     void set_la_score(int la_state, int class_idx, float la_prob);

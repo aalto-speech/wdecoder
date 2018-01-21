@@ -2,6 +2,7 @@
 #include <cassert>
 #include <climits>
 #include <algorithm>
+#include <list>
 #include <sstream>
 #include <map>
 
@@ -1651,6 +1652,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
     long long int max_state_idx = 0;
     int wrdi = 0;
     for (auto wit = words.rbegin(); wit != words.rend(); ++wit) {
+        PropWordInfo pwi = wit->second;
         if (++wrdi % 100 == 0) {
             set<int> distLaStates;
             for (int i=0; i<(int)m_node_la_states.size(); i++)
@@ -1659,13 +1661,41 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
         }
 
         map<int, int> la_state_changes;
-        propagate_la_state_idx(
-            wit->second.m_nodeIdx,
-            wit->second,
-            la_state_changes,
-            max_state_idx,
-            reverse_arcs,
-            true);
+        vector<bool> processed_nodes(decoder->m_nodes.size(), false);
+        list<int> nodes_to_process;
+        for (auto rait=reverse_arcs[pwi.m_nodeIdx].begin(); rait!=reverse_arcs[pwi.m_nodeIdx].end(); ++rait) {
+            if (rait->target_node == pwi.m_nodeIdx) continue;
+            nodes_to_process.push_back(rait->target_node);
+        }
+
+        while(nodes_to_process.size()) {
+            int node_idx = nodes_to_process.front();
+            nodes_to_process.pop_front();
+            processed_nodes[node_idx] = true;
+            Decoder::Node &nd = decoder->m_nodes[node_idx];
+
+            if (m_class_propagated[node_idx].size() == 0)
+                m_class_propagated[node_idx].resize(m_class_la.m_num_classes, false);
+            if (m_class_propagated[node_idx].getBit(pwi.m_classIdx)) continue;
+            m_class_propagated[node_idx].setBit(pwi.m_classIdx, true);
+
+            int curr_la_state = m_node_la_states[node_idx];
+            auto la_state_change = la_state_changes.find(curr_la_state);
+            if (la_state_change == la_state_changes.end()) {
+                la_state_changes[curr_la_state] = ++max_state_idx;
+                m_node_la_states[node_idx] = max_state_idx;
+            } else
+                m_node_la_states[node_idx] = la_state_change->second;
+            if (nd.word_id != -1) continue;
+            if (pwi.m_wordId != decoder->m_sentence_end_symbol_idx
+                && node_idx == START_NODE) continue;
+
+            for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait) {
+                if (rait->target_node == node_idx) continue;
+                if (processed_nodes[rait->target_node]) continue;
+                nodes_to_process.push_back(rait->target_node);
+            }
+        }
     }
     m_class_propagated.clear();
 
@@ -1680,43 +1710,6 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
         m_node_la_states[i] = la_state_remapping[m_node_la_states[i]];
 
     return la_state_remapping.size();
-}
-
-
-void
-ClassBigramLookahead::propagate_la_state_idx(
-    int node_idx,
-    PropWordInfo &propInfo,
-    map<int, int> &la_state_changes,
-    long long int &max_state_idx,
-    vector<vector<Decoder::Arc> > &reverse_arcs,
-    bool first_node)
-{
-    Decoder::Node &nd = decoder->m_nodes[node_idx];
-
-    if (!first_node) {
-        if (m_class_propagated[node_idx].size() == 0)
-            m_class_propagated[node_idx].resize(m_class_la.m_num_classes, false);
-        if (m_class_propagated[node_idx].getBit(propInfo.m_classIdx)) return;
-        m_class_propagated[node_idx].setBit(propInfo.m_classIdx, true);
-
-        int curr_la_state = m_node_la_states[node_idx];
-        auto la_state_change = la_state_changes.find(curr_la_state);
-        if (la_state_change == la_state_changes.end()) {
-            la_state_changes[curr_la_state] = ++max_state_idx;
-            m_node_la_states[node_idx] = max_state_idx;
-        } else
-            m_node_la_states[node_idx] = la_state_change->second;
-        if (nd.word_id != -1) return;
-        if (propInfo.m_wordId != decoder->m_sentence_end_symbol_idx
-            && node_idx == START_NODE) return;
-    }
-
-    for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait) {
-        if (rait->target_node == node_idx) continue;
-        propagate_la_state_idx(rait->target_node, propInfo, la_state_changes,
-                max_state_idx, reverse_arcs, false);
-    }
 }
 
 
