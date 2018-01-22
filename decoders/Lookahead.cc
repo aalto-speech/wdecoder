@@ -1635,6 +1635,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
 
     vector<multimap<float, int> > words;
     words.resize(m_class_la.m_num_classes);
+    int word_count = 0;
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         Decoder::Node &nd = decoder->m_nodes[i];
         // propagate also sentence end here
@@ -1645,6 +1646,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
             int classIdx = m_class_la.m_class_membership_lookup[nd.word_id].first;
             float cmemp = m_class_la.m_class_membership_lookup[nd.word_id].second;
             words[classIdx].insert(make_pair(cmemp, i));
+            word_count++;
         }
     }
 
@@ -1661,7 +1663,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
                 set<int> distLaStates;
                 for (int i=0; i<(int)m_node_la_states.size(); i++)
                     distLaStates.insert(m_node_la_states[i]);
-                cerr << wrdi << "/" << words.size() << "\t" << distLaStates.size() << endl;
+                cerr << wrdi << "/" << word_count << "\t" << distLaStates.size() << endl;
             }
 
             map<int, int> la_state_changes;
