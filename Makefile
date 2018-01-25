@@ -35,6 +35,7 @@ graph_progs_srcs = $(addsuffix .cc,$(addprefix graphs/,$(graph_progs)))
 
 decoder_srcs = decoders/Decoder.cc\
 	decoders/Lookahead.cc\
+	decoders/ClassLookahead.cc\
 	decoders/NgramDecoder.cc\
 	decoders/ClassDecoder.cc\
 	decoders/ClassIPDecoder.cc\
@@ -60,7 +61,8 @@ test_srcs = test/wgraphtest.cc\
 	test/lwbswgraphtest.cc\
 	test/rwbswgraphtest.cc\
 	test/lrwbswgraphtest.cc\
-	test/decodertest.cc\
+	test/lookaheadtest.cc\
+	test/classlatest.cc\
 	test/bitsettest.cc\
 	test/quantizedlptest.cc
 test_objs = $(test_srcs:.cc=.o)

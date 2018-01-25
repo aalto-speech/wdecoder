@@ -3,6 +3,7 @@
 
 #include "ClassIPDecoder.hh"
 #include "Lookahead.hh"
+#include "ClassLookahead.hh"
 #include "conf.hh"
 #include "str.hh"
 
