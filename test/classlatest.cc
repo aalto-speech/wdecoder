@@ -8,7 +8,6 @@
 using namespace std;
 
 int _eval_ratio = 50;
-float _tolerance = 0.0001;
 
 // Check that the la states are set
 BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
@@ -53,13 +52,7 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
             if (++idx % _eval_ratio != 0) continue;
             float ref = refcla.get_lookahead_score(i, w);
             float hyp = hypocla.get_lookahead_score(i, w);
-            BOOST_CHECK_CLOSE( ref, hyp, _tolerance );
-            if (ref != hyp) {
-                cerr << "node: " << i << "\t"
-                     << "word: " << w << "/" << d.m_text_units[w] << "\t"
-                     << "ref lp: " << ref << endl;
-            }
-            BOOST_ASSERT( ref == hyp );
+            BOOST_CHECK_CLOSE( ref, hyp, 0.001 );
         }
     }
 }

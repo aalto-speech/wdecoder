@@ -252,14 +252,28 @@ ClassBigramLookahead::set_la_score(
 {
     if (m_quantization)
         m_quant_bigram_lookup[la_state][class_idx] = m_quant_log_probs.getQuantIndex(la_prob);
-    else
-        m_la_scores[la_state][class_idx] = la_prob;
+    else {
+        m_la_scores[la_state][class_idx] = max(m_la_scores[la_state][class_idx], la_prob);
+    }
 }
 
 
 void
 ClassBigramLookahead::set_la_scores()
 {
+    vector<vector<float> > cbgProbs;
+    cbgProbs.resize(m_class_la.m_num_classes-1);
+    for (int i=0; i<(int)cbgProbs.size(); i++) {
+        cbgProbs[i].resize(m_class_la.m_num_classes, 0.0);
+        int cng_node = m_class_la.m_class_ngram.advance(
+                m_class_la.m_class_ngram.root_node, m_class_la.m_class_intmap[i]);
+        for (int j=0; j<(int)cbgProbs[i].size()-1; j++)
+            m_class_la.m_class_ngram.score(cng_node, m_class_la.m_class_intmap[j],
+                    cbgProbs[i][j]);
+        m_class_la.m_class_ngram.score(cng_node, m_class_la.m_class_ngram.sentence_end_symbol_idx,
+                cbgProbs[i][cbgProbs[i].size()-1]);
+    }
+
     map<int,int> la_state_nodes;
     for (int i=0; i<(int)m_node_la_states.size(); i++)
         la_state_nodes[m_node_la_states[i]] = i;
@@ -272,14 +286,12 @@ ClassBigramLookahead::set_la_scores()
         find_successor_words(node_idx, successor_words);
 
         for (int c=0; c<m_class_la.m_num_classes-1; c++) {
-            int cng_node = m_class_la.m_class_ngram.advance(
-                m_class_la.m_class_ngram.root_node, m_class_la.m_class_intmap[c]);
             float best_la_prob = MIN_LOG_PROB;
             for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
             {
-                if (m_class_la.m_class_membership_lookup[*swit].first == -1) continue;
-                float curr_prob = 0.0;
-                m_class_la.score(cng_node, *swit, curr_prob);
+                pair<int, float> wordClassInfo = m_class_la.m_class_membership_lookup[*swit];
+                if (wordClassInfo.first == -1) continue;
+                float curr_prob = cbgProbs[c][wordClassInfo.first] + wordClassInfo.second;
                 best_la_prob = max(best_la_prob, curr_prob);
             }
             set_la_score(i, c, best_la_prob);
