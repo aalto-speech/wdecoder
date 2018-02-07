@@ -57,7 +57,6 @@ ClassIPDecoder::read_class_lm(
         int word_idx = m_text_unit_map.at(wpit->first);
         m_class_membership_lookup[word_idx] = wpit->second;
     }
-    m_class_membership_lookup[m_text_unit_map.at("</s>")] = m_class_membership_lookup[m_text_unit_map.at("<s>")];
 
     m_class_intmap.resize(num_classes);
     for (int i=0; i<(int)m_class_intmap.size(); i++)
@@ -427,23 +426,24 @@ ClassIPRecognition::update_lm_prob(ClassIPToken &token, int word_id)
 double
 ClassIPRecognition::class_lm_score(ClassIPToken &token, int word_id)
 {
-    if (cid->m_class_membership_lookup[word_id].second == MIN_LOG_PROB) return MIN_LOG_PROB;
-
-    double membership_prob = cid->m_class_membership_lookup[word_id].second;
     double ngram_prob = 0.0;
     if (word_id == m_sentence_end_symbol_idx) {
         token.class_lm_node =
                 cid->m_class_lm.score(token.class_lm_node,
                                       cid->m_class_lm.sentence_end_symbol_idx,
                                       ngram_prob);
+        return ngram_prob;
     }
-    else
+    else {
+        if (cid->m_class_membership_lookup[word_id].second == MIN_LOG_PROB) return MIN_LOG_PROB;
+        double membership_prob = cid->m_class_membership_lookup[word_id].second;
         token.class_lm_node =
                 cid->m_class_lm.score(token.class_lm_node,
                                       cid->m_class_intmap[cid->m_class_membership_lookup[word_id].first],
                                       ngram_prob);
+        return membership_prob + ngram_prob;
+    }
 
-    return membership_prob + ngram_prob;
 }
 
 
