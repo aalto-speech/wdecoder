@@ -22,6 +22,17 @@ ClassNgram::ClassNgram(
     read_class_memberships(cmempfname);
 
     m_class_membership_lookup.resize(text_units.size(), make_pair(-1,MIN_LOG_PROB));
+
+    if (text_unit_map.find("<s>") == text_unit_map.end()) {
+        cerr << "sentence begin symbol <s> not found in the text units" << endl;
+        exit(1);
+    }
+    m_sentence_begin_symbol_idx = text_unit_map.at("<s>");
+
+    if (text_unit_map.find("</s>") == text_unit_map.end()) {
+        cerr << "sentence begin symbol <s> not found in the text units" << endl;
+        exit(1);
+    }
     m_sentence_end_symbol_idx = text_unit_map.at("</s>");
 
     vector<bool> m_lex_word_in_class_model(text_units.size(), false);
@@ -76,10 +87,11 @@ int
 ClassNgram::score(int node_idx, int word_id, double &score) const
 {
     if ((word_id != m_sentence_end_symbol_idx) &&
+        (word_id != m_sentence_begin_symbol_idx) &&
         (word_id >= (int)m_class_membership_lookup.size()
         || m_class_membership_lookup[word_id].second == MIN_LOG_PROB))
     {
-        return MIN_LOG_PROB;
+        return -1;
     }
 
     double ngram_prob = 0.0;
@@ -90,8 +102,14 @@ ClassNgram::score(int node_idx, int word_id, double &score) const
             ngram_prob);
         score = ngram_prob;
         return m_class_ngram.sentence_start_node;
-    }
-    else {
+    } else if (word_id == m_sentence_begin_symbol_idx) {
+        m_class_ngram.score(
+            node_idx,
+            m_class_ngram.sentence_start_symbol_idx,
+            ngram_prob);
+        score = ngram_prob;
+        return m_class_ngram.sentence_start_node;
+    } else {
         double membership_prob = m_class_membership_lookup[word_id].second;
         int new_node_idx = m_class_ngram.score(
             node_idx,
@@ -107,10 +125,11 @@ int
 ClassNgram::score(int node_idx, int word_id, float &score) const
 {
     if ((word_id != m_sentence_end_symbol_idx) &&
+        (word_id != m_sentence_begin_symbol_idx) &&
         (word_id >= (int)m_class_membership_lookup.size()
         || m_class_membership_lookup[word_id].second == MIN_LOG_PROB))
     {
-        return MIN_LOG_PROB;
+        return -1;
     }
 
     double ngram_prob = 0.0;
@@ -121,8 +140,14 @@ ClassNgram::score(int node_idx, int word_id, float &score) const
             ngram_prob);
         score = ngram_prob;
         return m_class_ngram.sentence_start_node;
-    }
-    else {
+    } else if (word_id == m_sentence_begin_symbol_idx) {
+        m_class_ngram.score(
+            node_idx,
+            m_class_ngram.sentence_start_symbol_idx,
+            ngram_prob);
+        score = ngram_prob;
+        return m_class_ngram.sentence_start_node;
+    } else {
         double membership_prob = m_class_membership_lookup[word_id].second;
         int new_node_idx = m_class_ngram.score(
             node_idx,
@@ -132,4 +157,3 @@ ClassNgram::score(int node_idx, int word_id, float &score) const
         return new_node_idx;
     }
 }
-

@@ -27,6 +27,7 @@ public:
     std::vector<int> m_class_intmap;
     int m_num_classes;
     int m_sentence_end_symbol_idx;
+    int m_sentence_begin_symbol_idx;
 };
 
 #endif
