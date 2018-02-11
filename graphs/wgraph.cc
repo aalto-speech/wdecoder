@@ -11,10 +11,12 @@ int main(int argc, char* argv[])
     conf::Config config;
     config("usage: wgraph [OPTION...] PH LEXICON WORDS GRAPH\n")
     ('l', "word-labels", "", "", "Write word labels instead of indices")
+    ('o', "omit-sentence-end-symbol", "", "", "No sentence end symbol in the silence loop")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
     bool word_labels = config["word-labels"].specified;
+    bool sentence_end_symbol = !(config["omit-sentence-end-symbol"].specified);
 
     WordGraph wg;
 
@@ -38,7 +40,7 @@ int main(int argc, char* argv[])
         wg.create_graph(words, true);
         wg.tie_graph(true);
 
-        wg.add_long_silence();
+        wg.add_silence_loop(sentence_end_symbol);
         wg.add_hmm_self_transitions();
 
         wg.write_graph(graphfname, word_labels);

@@ -298,27 +298,3 @@ SubwordGraph::create_graph(const set<string> &subwords,
     prune_unreachable_nodes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 }
-
-
-// Subword graph with word boundaries as below
-// <s> sw sw <w> sw sw <w> sw sw sw </s>
-void
-SubwordGraph::add_long_silence_no_start_end_wb()
-{
-    m_nodes[END_NODE].arcs.clear();
-
-    int ls_len = m_hmms[m_hmm_map[LONG_SIL]].states.size() - 2;
-
-    node_idx_t node_idx = END_NODE;
-    node_idx = connect_triphone(m_nodes, LONG_SIL, node_idx, NODE_SILENCE);
-    node_idx = connect_word(m_nodes, "</s>", node_idx);
-    node_idx = connect_triphone(m_nodes, LONG_SIL, node_idx, NODE_SILENCE);
-    m_nodes[node_idx].arcs.insert(START_NODE);
-    m_nodes[node_idx-ls_len].arcs.insert(START_NODE);
-    m_nodes[node_idx-(ls_len-1)].flags |= NODE_DECODE_START;
-
-    node_idx = END_NODE;
-    node_idx = connect_triphone(m_nodes, SHORT_SIL, node_idx, NODE_SILENCE);
-    node_idx = connect_word(m_nodes, "<w>", node_idx);
-    m_nodes[node_idx].arcs.insert(START_NODE);
-}

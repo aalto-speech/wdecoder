@@ -8,9 +8,11 @@ int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: lrwbswgraph [OPTION...] PH LEXICON GRAPH\n")
+    ('o', "omit-sentence-end-symbol", "", "", "No sentence end symbol in the silence loop")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 3) config.print_help(stderr, 1);
+    bool sentence_end_symbol = !(config["omit-sentence-end-symbol"].specified);
 
     LRWBSubwordGraph swg;
 
@@ -37,7 +39,7 @@ int main(int argc, char* argv[])
                 suffix_subwords,
                 word_subwords,
                 true);
-        swg.add_long_silence();
+        swg.add_silence_loop(sentence_end_symbol);
         swg.add_hmm_self_transitions();
         swg.write_graph(graphfname);
 

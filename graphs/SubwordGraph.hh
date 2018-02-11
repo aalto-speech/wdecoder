@@ -39,8 +39,6 @@ public:
     virtual void create_forced_path(std::vector<DecoderGraph::Node> &nodes,
                                     std::vector<std::string> &sentence,
                                     std::map<int, std::string> &node_labels);
-
-    void add_long_silence_no_start_end_wb();
 };
 
 #endif /* SUBWORD_GRAPH_HH */

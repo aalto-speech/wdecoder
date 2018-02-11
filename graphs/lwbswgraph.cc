@@ -8,9 +8,11 @@ int main(int argc, char* argv[])
 {
     conf::Config config;
     config("usage: lwbswgraph [OPTION...] PH LEXICON GRAPH\n")
+    ('o', "omit-sentence-end-symbol", "", "", "No sentence end symbol in the silence loop")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 3) config.print_help(stderr, 1);
+    bool sentence_end_symbol = !(config["omit-sentence-end-symbol"].specified);
 
     LWBSubwordGraph swg;
 
@@ -36,7 +38,7 @@ int main(int argc, char* argv[])
         cerr << "Number of stem/suffix subwords: " << suffix_subwords.size() << endl;
 
         swg.create_graph(prefix_subwords, suffix_subwords, true);
-        swg.add_long_silence();
+        swg.add_silence_loop(sentence_end_symbol);
         swg.add_hmm_self_transitions();
         swg.write_graph(graphfname);
 

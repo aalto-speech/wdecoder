@@ -10,11 +10,13 @@ int main(int argc, char* argv[])
     config("usage: swwgraph [OPTION...] PH LEXICON WSEGS GRAPH\n")
     ('b', "word-boundary", "", "", "Use word boundary symbol (<w>)")
     ('n', "no-push", "", "", "Don't move subword identifiers in the graph")
+    ('o', "omit-sentence-end-symbol", "", "", "No sentence end symbol in the silence loop")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
     bool wb_symbol = config["word-boundary"].specified;
     bool no_push = config["no-push"].specified;
+    bool sentence_end_symbol = !(config["omit-sentence-end-symbol"].specified);
 
     SWWGraph swwg;
 
@@ -40,7 +42,7 @@ int main(int argc, char* argv[])
         swwg.tie_graph(no_push, true);
 
         if (wb_symbol) swwg.m_nodes[END_NODE].word_id = swwg.m_subword_map["<w>"];
-        swwg.add_long_silence();
+        swwg.add_silence_loop(sentence_end_symbol);
         swwg.add_hmm_self_transitions();
 
         swwg.write_graph(graphfname);

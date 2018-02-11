@@ -1888,14 +1888,14 @@ DecoderGraph::num_triphones(vector<TriphoneNode> &nodes)
 
 // All graph styles
 void
-DecoderGraph::add_long_silence()
+DecoderGraph::add_silence_loop(bool sentence_end_symbol)
 {
     m_nodes[END_NODE].arcs.clear();
 
     int ls_len = m_hmms[m_hmm_map["__"]].states.size() - 2;
 
     node_idx_t node_idx = END_NODE;
-    node_idx = connect_word(m_nodes, "</s>", node_idx);
+    if (sentence_end_symbol) node_idx = connect_word(m_nodes, "</s>", node_idx);
     node_idx = connect_triphone(m_nodes, "__", node_idx, NODE_SILENCE);
     m_nodes[node_idx].arcs.insert(START_NODE);
     m_nodes[node_idx-(ls_len-1)].flags |= NODE_DECODE_START;
