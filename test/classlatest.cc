@@ -67,6 +67,49 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
 }
 
 
+// Graph without the sentence end symbol
+BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2NoSentenceEnd)
+{
+    cerr << endl;
+    Decoder d;
+    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    d.read_noway_lexicon("data/1k.words.lex");
+    d.read_dgraph("data/1k.words.nose.graph");
+    DummyClassBigramLookahead refcla(
+            d,
+            "data/1k.words.exchange.2g.arpa.gz",
+            "data/1k.words.exchange.cmemprobs.gz");
+
+    ClassBigramLookahead hypocla(
+            d,
+            "data/1k.words.exchange.2g.arpa.gz",
+            "data/1k.words.exchange.cmemprobs.gz");
+
+    int sentence_begin_symbol_idx = -1, sentence_end_symbol_idx = -1;
+    for (int w=0; w<(int)d.m_text_units.size(); w++) {
+        string wrd = d.m_text_units[w];
+        if (wrd == "<s>")
+            sentence_begin_symbol_idx = w;
+        else if (wrd == "</s>")
+            sentence_end_symbol_idx = w;
+    }
+
+    cerr << "node count: " << d.m_nodes.size() << endl;
+    cerr << "evaluating.." << endl;
+    int idx=0;
+    for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : 20;
+        for (int w=0; w<(int)d.m_text_units.size(); w++) {
+            if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+            if (w == sentence_end_symbol_idx) continue;
+            float ref = refcla.get_lookahead_score(i, w);
+            float hyp = hypocla.get_lookahead_score(i, w);
+            BOOST_CHECK_CLOSE( ref, hyp, 0.001 );
+        }
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2Quant)
 {
     cerr << endl;

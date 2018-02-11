@@ -391,8 +391,7 @@ NgramRecognition::add_sentence_ends(vector<Token*> &tokens)
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         NgramToken *token = static_cast<NgramToken*>(*tit);
         if (token->lm_node == ngd->m_ngram_state_sentence_begin) continue;
-        m_active_histories.erase(token->history);
-        if (m_use_word_boundary_symbol && token->history->word_id != d->m_word_boundary_symbol_idx) {
+        if (m_use_word_boundary_symbol && token->last_word_id != d->m_word_boundary_symbol_idx) {
             token->lm_node = ngd->m_lm.score(
                 token->lm_node,
                 ngd->m_text_unit_id_to_ngram_symbol[d->m_word_boundary_symbol_idx], token->lm_log_prob);
@@ -404,7 +403,6 @@ NgramRecognition::add_sentence_ends(vector<Token*> &tokens)
             ngd->m_text_unit_id_to_ngram_symbol[d->m_sentence_end_symbol_idx], token->lm_log_prob);
         token->update_total_log_prob();
         advance_in_word_history(token, m_sentence_end_symbol_idx);
-        m_active_histories.insert(token->history);
     }
 }
 

@@ -465,11 +465,9 @@ ClassIPRecognition::add_sentence_ends(vector<Token*> &tokens)
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         ClassIPToken *token = static_cast<ClassIPToken*>(*tit);
         if (token->lm_node == cid->m_lm.sentence_start_node) continue;
-        m_active_histories.erase(token->history);
         update_lm_prob(*token, m_sentence_end_symbol_idx);
         token->update_total_log_prob();
         advance_in_word_history(token, m_sentence_end_symbol_idx);
-        m_active_histories.insert(token->history);
     }
 }
 
