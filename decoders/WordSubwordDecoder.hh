@@ -66,12 +66,10 @@ public:
     };
 
     WordSubwordRecognition(WordSubwordDecoder &decoder);
-    void recognize_lna_file(std::string lnafname,
-                            RecognitionResult &res);
 
-    void reset_frame_variables();
-    void propagate_tokens();
-    void prune_tokens(bool collect_active_histories=false);
+    virtual void reset_frame_variables();
+    virtual void propagate_tokens();
+    virtual void prune_tokens(bool collect_active_histories=false);
     void move_token_to_node(WSWToken token,
                             int node_idx,
                             float transition_score,
@@ -80,8 +78,8 @@ public:
     double class_lm_score(WSWToken &token, int word_id);
     virtual void get_tokens(std::vector<Token*> &tokens);
     virtual void add_sentence_ends(std::vector<Token*> &tokens);
-    std::string get_best_word_history();
-    std::string get_word_history(WordHistory *history);
+    virtual std::string get_best_word_history();
+    virtual std::string get_word_history(WordHistory *history);
 
     std::vector<WSWToken> m_raw_tokens;
     std::vector<std::map<std::pair<int, int>, WSWToken> > m_recombined_tokens;

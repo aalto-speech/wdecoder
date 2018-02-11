@@ -34,10 +34,8 @@ void
 WordSubwordDecoder::set_text_unit_id_ngram_symbol_mapping()
 {
     m_text_unit_id_to_ngram_symbol.resize(m_text_units.size(), -1);
-    for (unsigned int i=0; i<m_text_units.size(); i++) {
-        string tmp(m_text_units[i]);
-        m_text_unit_id_to_ngram_symbol[i] = m_lm.vocabulary_lookup[tmp];
-    }
+    for (unsigned int i=0; i<m_text_units.size(); i++)
+        m_text_unit_id_to_ngram_symbol[i] = m_lm.vocabulary_lookup[m_text_units[i]];
 }
 
 
@@ -174,78 +172,6 @@ WordSubwordRecognition::WordSubwordRecognition(WordSubwordDecoder &decoder)
     m_active_histories.insert(tok.history);
     m_recombined_tokens[d->m_decode_start_node][make_pair(tok.lm_node, tok.class_lm_node)] = tok;
     m_total_token_count = 0;
-}
-
-
-void
-WordSubwordRecognition::recognize_lna_file(
-    string lnafname,
-    RecognitionResult &res)
-{
-    m_lna_reader.open_file(lnafname, 1024);
-    m_acoustics = &m_lna_reader;
-
-    time_t start_time, end_time;
-    time(&start_time);
-    m_frame_idx = 0;
-    while (m_lna_reader.go_to(m_frame_idx)) {
-
-        reset_frame_variables();
-        propagate_tokens();
-
-        if (m_frame_idx % d->m_history_clean_frame_interval == 0) {
-            prune_tokens(true);
-            prune_word_history();
-            //print_certain_word_history();
-        }
-        else prune_tokens(false);
-
-        if (m_stats) {
-            cerr << endl << "recognized frame: " << m_frame_idx << endl;
-            cerr << "global beam: " << m_global_beam << endl;
-            cerr << "tokens pruned by global beam: " << m_global_beam_pruned_count << endl;
-            cerr << "tokens dropped by max assumption: " << m_dropped_count << endl;
-            cerr << "tokens pruned by word end beam: " << m_word_end_beam_pruned_count << endl;
-            cerr << "tokens pruned by node beam: " << m_node_beam_pruned_count << endl;
-            cerr << "tokens pruned by histogram token limit: " << m_histogram_pruned_count << endl;
-            cerr << "tokens pruned by max state duration: " << m_max_state_duration_pruned_count << endl;
-            cerr << "best log probability: " << m_best_log_prob << endl;
-            cerr << "number of active nodes: " << m_active_nodes.size() << endl;
-            cerr << get_best_word_history() << endl;
-        }
-
-        m_total_token_count += double(m_token_count);
-        m_frame_idx++;
-    }
-    time(&end_time);
-
-    vector<Token*> tokens;
-    get_tokens(tokens);
-    for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
-        Token *tok = *tit;
-        if (m_duration_model_in_use && tok->dur > 1)
-            tok->apply_duration_model();
-        tok->update_lookahead_prob(0.0);
-        tok->update_total_log_prob();
-    }
-
-    Token *best_token = nullptr;
-    best_token = get_best_end_token(tokens);
-    if (best_token == nullptr) {
-        if (d->m_force_sentence_end) add_sentence_ends(tokens);
-        best_token = get_best_token(tokens);
-    }
-
-    res.total_frames = m_frame_idx;
-    res.total_time = difftime(end_time, start_time);
-    res.total_lp = best_token->total_log_prob;
-    res.total_am_lp = best_token->am_log_prob;
-    res.total_lm_lp = best_token->lm_log_prob;
-    res.total_token_count = m_total_token_count;
-    res.result.assign(get_word_history(best_token->history));
-
-    clear_word_history();
-    m_lna_reader.close();
 }
 
 

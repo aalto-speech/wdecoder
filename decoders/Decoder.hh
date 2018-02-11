@@ -113,6 +113,22 @@ public:
     int m_last_sil_idx;
 };
 
+class RecognitionResult {
+public:
+    RecognitionResult();
+    void print_file_stats(std::ostream &statsf);
+    void print_final_stats(std::ostream &statsf);
+    void accumulate(RecognitionResult &res);
+
+    std::string result;
+    long long int total_frames;
+    double total_time;
+    double total_lp;
+    double total_am_lp;
+    double total_lm_lp;
+    double total_token_count;
+};
+
 class Recognition {
 public:
     class WordHistory {
@@ -160,6 +176,8 @@ public:
 
     Recognition(Decoder &decoder);
     virtual ~Recognition() { };
+    void recognize_lna_file(std::string lnafname,
+                            RecognitionResult &res);
     void prune_word_history();
     void clear_word_history();
     void print_certain_word_history(std::ostream &outf=std::cout);
@@ -168,6 +186,13 @@ public:
     virtual void add_sentence_ends(std::vector<Token*> &tokens) = 0;
     Token* get_best_token(std::vector<Token*> &tokens);
     Token* get_best_end_token(std::vector<Token*> &tokens);
+
+protected:
+    virtual void reset_frame_variables() = 0;
+    virtual void propagate_tokens() = 0;
+    virtual std::string get_best_word_history() = 0;
+    virtual std::string get_word_history(WordHistory *history) = 0;
+    virtual void prune_tokens(bool collect_active_histories=false) = 0;
 
     LnaReaderCircular m_lna_reader;
     Acoustics *m_acoustics;
@@ -210,22 +235,6 @@ public:
 
     std::vector<std::string> *m_text_units;
     Decoder *d;
-};
-
-class RecognitionResult {
-public:
-    RecognitionResult();
-    void print_file_stats(std::ostream &statsf);
-    void print_final_stats(std::ostream &statsf);
-    void accumulate(RecognitionResult &res);
-
-    std::string result;
-    long long int total_frames;
-    double total_time;
-    double total_lp;
-    double total_am_lp;
-    double total_lm_lp;
-    double total_token_count;
 };
 
 #endif /* DECODER_HH */
