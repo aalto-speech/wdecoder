@@ -7,8 +7,6 @@
 
 using namespace std;
 
-int _eval_ratio = 50;
-
 // Check that the la states are set
 BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest1)
 {
@@ -44,12 +42,23 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
             "data/1k.words.exchange.2g.arpa.gz",
             "data/1k.words.exchange.cmemprobs.gz");
 
+    int sentence_begin_symbol_idx = -1, sentence_end_symbol_idx = -1;
+    for (int w=0; w<(int)d.m_text_units.size(); w++) {
+        string wrd = d.m_text_units[w];
+        if (wrd == "<s>")
+            sentence_begin_symbol_idx = w;
+        else if (wrd == "</s>")
+            sentence_end_symbol_idx = w;
+    }
+
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : 20;
         for (int w=0; w<(int)d.m_text_units.size(); w++) {
-            if (++idx % _eval_ratio != 0) continue;
+            if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+            if (w == sentence_end_symbol_idx) continue;
             float ref = refcla.get_lookahead_score(i, w);
             float hyp = hypocla.get_lookahead_score(i, w);
             BOOST_CHECK_CLOSE( ref, hyp, 0.001 );
@@ -76,15 +85,26 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2Quant)
             "data/1k.words.exchange.cmemprobs.gz",
             true);
 
+    int sentence_begin_symbol_idx = -1, sentence_end_symbol_idx = -1;
+    for (int w=0; w<(int)d.m_text_units.size(); w++) {
+        string wrd = d.m_text_units[w];
+        if (wrd == "<s>")
+            sentence_begin_symbol_idx = w;
+        else if (wrd == "</s>")
+            sentence_end_symbol_idx = w;
+    }
+
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : 20;
         for (int w=0; w<(int)d.m_text_units.size(); w++) {
-            if (++idx % _eval_ratio != 0) continue;
+            if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+            if (w == sentence_end_symbol_idx) continue;
             float ref = refcla.get_lookahead_score(i, w);
             float hyp = hypocla.get_lookahead_score(i, w);
-            BOOST_CHECK_CLOSE( ref, hyp, 0.05 );
+            BOOST_CHECK_CLOSE( ref, hyp, 0.15 );
         }
     }
 }
@@ -108,13 +128,25 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest3)
             "data/1k.words.exchange.2g.arpa.gz",
             "data/1k.words.exchange.cmemprobs.words_missing.gz");
 
+    int sentence_begin_symbol_idx = -1, sentence_end_symbol_idx = -1;
+    for (int w=0; w<(int)d.m_text_units.size(); w++) {
+        string wrd = d.m_text_units[w];
+        if (wrd == "<s>")
+            sentence_begin_symbol_idx = w;
+        else if (wrd == "</s>")
+            sentence_end_symbol_idx = w;
+    }
+
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : 20;
         for (int w=0; w<(int)d.m_text_units.size(); w++) {
+            if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+            if (w == sentence_end_symbol_idx) continue;
             if (refcla.m_class_la.m_class_membership_lookup[w].first == -1) continue;
-            if (++idx % _eval_ratio != 0) continue;
+            if (++idx % curr_eval_ratio != 0) continue;
             float ref = refcla.get_lookahead_score(i, w);
             float hyp = hypocla.get_lookahead_score(i, w);
             BOOST_CHECK_CLOSE( ref, hyp, 0.05 );

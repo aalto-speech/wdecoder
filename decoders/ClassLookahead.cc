@@ -33,9 +33,9 @@ DummyClassBigramLookahead::get_lookahead_score(
 
     float la_prob = MIN_LOG_PROB;
     int la_node = m_class_la.advance(m_class_la.m_class_ngram.root_node, word_id);
-    for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
-    {
-        if (m_class_la.m_class_membership_lookup[*swit].first == -1) continue;
+    for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
+        if ((*swit != decoder->m_sentence_end_symbol_idx)
+            && (m_class_la.m_class_membership_lookup[*swit].first == -1)) continue;
         float curr_prob = 0.0;
         m_class_la.score(la_node, *swit, curr_prob);
         la_prob = max(la_prob, curr_prob);
@@ -97,7 +97,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
     get_reverse_arcs(reverse_arcs);
 
     vector<multimap<float, int> > words;
-    words.resize(m_class_la.m_num_classes);
+    words.resize(m_class_la.m_num_classes+2);
     int word_count = 0;
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         Decoder::Node &nd = decoder->m_nodes[i];
@@ -235,11 +235,11 @@ ClassBigramLookahead::init_la_scores()
 
         m_quant_bigram_lookup.resize(m_la_state_count);
         for (auto blsit = m_quant_bigram_lookup.begin(); blsit != m_quant_bigram_lookup.end(); ++blsit)
-            (*blsit).resize(m_class_la.m_num_classes, USHRT_MAX);
+            (*blsit).resize(m_class_la.m_num_classes+1, USHRT_MAX);
     } else {
         m_la_scores.resize(m_la_state_count);
         for (int i=0; i<(int)m_la_scores.size(); i++)
-            m_la_scores[i].resize(m_class_la.m_num_classes, MIN_LOG_PROB);
+            m_la_scores[i].resize(m_class_la.m_num_classes+1, MIN_LOG_PROB);
     }
 }
 
@@ -262,9 +262,9 @@ void
 ClassBigramLookahead::set_la_scores()
 {
     vector<vector<float> > cbgProbs;
-    cbgProbs.resize(m_class_la.m_num_classes-1);
+    cbgProbs.resize(m_class_la.m_num_classes);
     for (int i=0; i<(int)cbgProbs.size(); i++) {
-        cbgProbs[i].resize(m_class_la.m_num_classes, 0.0);
+        cbgProbs[i].resize(m_class_la.m_num_classes+1, 0.0);
         int cng_node = m_class_la.m_class_ngram.advance(
                 m_class_la.m_class_ngram.root_node, m_class_la.m_class_intmap[i]);
         for (int j=0; j<(int)cbgProbs[i].size()-1; j++)
@@ -285,19 +285,24 @@ ClassBigramLookahead::set_la_scores()
         vector<int> successor_words;
         find_successor_words(node_idx, successor_words);
 
-        for (int c=0; c<m_class_la.m_num_classes-1; c++) {
+        for (int c=0; c<m_class_la.m_num_classes; c++) {
             float best_la_prob = MIN_LOG_PROB;
             for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
             {
-                pair<int, float> wordClassInfo = m_class_la.m_class_membership_lookup[*swit];
-                if (wordClassInfo.first == -1) continue;
-                float curr_prob = cbgProbs[c][wordClassInfo.first] + wordClassInfo.second;
-                best_la_prob = max(best_la_prob, curr_prob);
+                if (*swit == decoder->m_sentence_end_symbol_idx) {
+                    float curr_prob = cbgProbs[c].back();
+                    best_la_prob = max(best_la_prob, curr_prob);
+                } else {
+                    pair<int, float> wordClassInfo = m_class_la.m_class_membership_lookup[*swit];
+                    if (wordClassInfo.first == -1) continue;
+                    float curr_prob = cbgProbs[c][wordClassInfo.first] + wordClassInfo.second;
+                    best_la_prob = max(best_la_prob, curr_prob);
+                }
             }
             set_la_score(i, c, best_la_prob);
         }
 
-        // handle </s> as the context word
+        // handle <s> as the context word
         float best_la_prob = MIN_LOG_PROB;
         for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
             if (m_class_la.m_class_membership_lookup[*swit].first == -1) continue;
@@ -305,6 +310,6 @@ ClassBigramLookahead::set_la_scores()
             m_class_la.score(m_class_la.m_class_ngram.sentence_start_node, *swit, curr_prob);
             best_la_prob = max(best_la_prob, curr_prob);
         }
-        set_la_score(i, m_class_la.m_num_classes-1, best_la_prob);
+        set_la_score(i, m_class_la.m_num_classes, best_la_prob);
     }
 }
