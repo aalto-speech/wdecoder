@@ -55,23 +55,6 @@ Decoder::Lookahead::find_successor_words(int node_idx,
 
 
 void
-Decoder::Lookahead::get_reverse_arcs(vector<vector<Decoder::Arc> > &reverse_arcs)
-{
-    reverse_arcs.clear();
-    reverse_arcs.resize(decoder->m_nodes.size());
-
-    for (int ni = 0; ni < (int)(decoder->m_nodes.size()); ni++) {
-        for (auto ait = decoder->m_nodes[ni].arcs.begin(); ait != decoder->m_nodes[ni].arcs.end(); ++ait) {
-            if (ni == ait->target_node) continue;
-            reverse_arcs[ait->target_node].resize(reverse_arcs[ait->target_node].size()+1);
-            reverse_arcs[ait->target_node].back().target_node = ni;
-            reverse_arcs[ait->target_node].back().update_lookahead = ait->update_lookahead;
-        }
-    }
-}
-
-
-void
 Decoder::Lookahead::find_predecessor_words(int node_idx,
                                            set<int> &word_ids,
                                            const std::vector<std::vector<Decoder::Arc> > &reverse_arcs)
@@ -115,47 +98,6 @@ Decoder::Lookahead::detect_one_predecessor_node(int node_idx,
 }
 
 
-void
-Decoder::Lookahead::mark_initial_nodes(int max_depth,
-                                       int curr_depth,
-                                       int node_idx)
-{
-    Decoder::Node &node = decoder->m_nodes[node_idx];
-
-    if (node_idx != START_NODE) {
-        if (node.word_id != -1) return;
-        node.flags |= NODE_INITIAL;
-    }
-    if (curr_depth == max_depth) return;
-
-    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
-        if (ait->target_node == node_idx) continue;
-        mark_initial_nodes(max_depth, curr_depth+1, ait->target_node);
-    }
-}
-
-
-void
-Decoder::Lookahead::mark_tail_nodes(int max_depth,
-                                    vector<vector<Decoder::Arc> > &reverse_arcs,
-                                    int curr_depth,
-                                    int node_idx)
-{
-    Decoder::Node &node = decoder->m_nodes[node_idx];
-
-    if (node_idx != END_NODE) {
-        node.flags |= NODE_TAIL;
-        if (node.word_id != -1) return;
-    }
-    if (curr_depth == max_depth) return;
-
-    for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
-        if (ait->target_node == node_idx) continue;
-        mark_tail_nodes(max_depth, reverse_arcs, curr_depth+1, ait->target_node);
-    }
-}
-
-
 UnigramLookahead::UnigramLookahead(Decoder &decoder,
                                    string lafname)
 {
@@ -194,7 +136,7 @@ UnigramLookahead::set_unigram_la_scores()
 
     sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_unigram_la_lp_sort);
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
 
     int score_set_count = 0;
     propagate_unigram_la_score(START_NODE, best_lp, reverse_arcs, score_set_count, true);
@@ -366,7 +308,7 @@ int
 LookaheadStateCount::set_la_state_indices_to_nodes()
 {
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
 
     map<int, vector<int> > words;
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
@@ -646,7 +588,7 @@ PrecomputedFullTableBigramLookahead::set_unigram_la_scores()
 
     // Sort LM nodes in descending order and propagate unigram scores from each
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
     sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_unigram_la_lp_sort_5);
     for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
         propagate_unigram_la_score(snit->first, snit->second.second, snit->second.first,
@@ -671,7 +613,7 @@ PrecomputedFullTableBigramLookahead::set_bigram_la_scores()
     convert_reverse_bigram_idxs(reverse_bigrams);
 
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
 
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         int word_id = decoder->m_nodes[i].word_id;
@@ -701,7 +643,7 @@ HybridBigramLookahead::HybridBigramLookahead(Decoder &decoder,
     this->decoder = &decoder;
     set_text_unit_id_la_ngram_symbol_mapping();
 
-    mark_initial_nodes(1000);
+    decoder.mark_initial_nodes(1000);
     m_node_la_states.resize(decoder.m_nodes.size(), -1);
     int la_state_count = set_la_state_indices_to_nodes();
     cerr << "Number of lookahead states: " << la_state_count << endl;
@@ -784,7 +726,7 @@ int
 HybridBigramLookahead::set_bigram_la_maps()
 {
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
 
     int map_count = 0;
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
@@ -1038,7 +980,7 @@ PrecomputedHybridBigramLookahead::set_unigram_la_scores()
 
     // Sort LM nodes in descending order and propagate unigram scores from each
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
     sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_unigram_la_lp_sort_5);
     for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
         propagate_unigram_la_score(snit->first, snit->second.second, snit->second.first,
@@ -1063,7 +1005,7 @@ PrecomputedHybridBigramLookahead::set_bigram_la_scores()
     convert_reverse_bigram_idxs(reverse_bigrams);
 
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
 
     set<int> lm_nodes;
     find_first_lm_nodes(lm_nodes);
@@ -1100,9 +1042,9 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
     set_text_unit_id_la_ngram_symbol_mapping();
 
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
-    mark_initial_nodes(1000);
-    mark_tail_nodes(1000, reverse_arcs);
+    decoder.get_reverse_arcs(reverse_arcs);
+    decoder.mark_initial_nodes(1000);
+    decoder.mark_tail_nodes(1000, reverse_arcs);
 
     int tail_count = 0;
     int initial_count = 0;
@@ -1328,7 +1270,7 @@ LargeBigramLookahead::set_unigram_la_scores()
     }
 
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
     sort(sorted_nodes.begin(), sorted_nodes.end(), descending_node_unigram_la_lp_sort_2);
     for (auto snit = sorted_nodes.begin(); snit != sorted_nodes.end(); ++snit)
         propagate_unigram_la_score(snit->first, snit->second.second, snit->second.first,
@@ -1344,7 +1286,7 @@ LargeBigramLookahead::set_bigram_la_scores()
     convert_reverse_bigram_idxs(reverse_bigrams);
 
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
 
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
 
@@ -1447,7 +1389,7 @@ LargeBigramLookahead::set_bigram_la_scores_2()
     convert_reverse_bigram_idxs(reverse_bigrams);
 
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
 
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
 

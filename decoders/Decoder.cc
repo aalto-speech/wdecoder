@@ -172,6 +172,63 @@ Decoder::set_hmm_transition_probs()
 
 
 void
+Decoder::get_reverse_arcs(vector<vector<Decoder::Arc> > &reverse_arcs)
+{
+    reverse_arcs.clear();
+    reverse_arcs.resize(m_nodes.size());
+
+    for (int ni = 0; ni < (int)(m_nodes.size()); ni++)
+        for (auto ait = m_nodes[ni].arcs.begin(); ait != m_nodes[ni].arcs.end(); ++ait) {
+            if (ni == ait->target_node) continue;
+            reverse_arcs[ait->target_node].resize(reverse_arcs[ait->target_node].size()+1);
+            reverse_arcs[ait->target_node].back().target_node = ni;
+            reverse_arcs[ait->target_node].back().update_lookahead = ait->update_lookahead;
+        }
+}
+
+
+void
+Decoder::mark_initial_nodes(int max_depth,
+                            int curr_depth,
+                            int node_idx)
+{
+    Decoder::Node &node = m_nodes[node_idx];
+
+    if (node_idx != START_NODE) {
+        if (node.word_id != -1) return;
+        node.flags |= NODE_INITIAL;
+    }
+    if (curr_depth == max_depth) return;
+
+    for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait) {
+        if (ait->target_node == node_idx) continue;
+        mark_initial_nodes(max_depth, curr_depth+1, ait->target_node);
+    }
+}
+
+
+void
+Decoder::mark_tail_nodes(int max_depth,
+                         vector<vector<Decoder::Arc> > &reverse_arcs,
+                         int curr_depth,
+                         int node_idx)
+{
+    Decoder::Node &node = m_nodes[node_idx];
+
+    if (node_idx != END_NODE) {
+        node.flags |= NODE_TAIL;
+        if (node.word_id != -1) return;
+    }
+    if (curr_depth == max_depth) return;
+
+    for (auto ait = reverse_arcs[node_idx].begin(); ait != reverse_arcs[node_idx].end(); ++ait) {
+        if (ait->target_node == node_idx) continue;
+        mark_tail_nodes(max_depth, reverse_arcs, curr_depth+1, ait->target_node);
+    }
+}
+
+
+void
 Decoder::print_dot_digraph(vector<Node> &nodes,
                            ostream &fstr)
 {

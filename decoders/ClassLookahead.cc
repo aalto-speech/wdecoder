@@ -94,7 +94,7 @@ int
 ClassBigramLookahead::set_la_state_indices_to_nodes()
 {
     vector<vector<Decoder::Arc> > reverse_arcs;
-    get_reverse_arcs(reverse_arcs);
+    decoder->get_reverse_arcs(reverse_arcs);
 
     vector<multimap<float, int> > words;
     words.resize(m_class_la.m_num_classes+2);

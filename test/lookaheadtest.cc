@@ -146,8 +146,8 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest5)
 
     // Table nodes
     int idx=0;
-    for (int i=0; i<(int)d.m_nodes.size(); i++) {
-        if (d.m_nodes[i].flags & NODE_BIGRAM_LA_TABLE) {
+    for (int i=0; i<(int)d.m_nodes.size(); i++)
+        if (d.m_nodes[i].flags & NODE_BIGRAM_LA_TABLE)
             for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
                 idx++;
                 if (idx % eval_ratio != 0) continue;
@@ -155,12 +155,10 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest5)
                 float hyp = d.m_la->get_lookahead_score(i, w);
                 BOOST_CHECK_CLOSE( ref, hyp, tolerance );
             }
-        }
-    }
 
     // Dictionary nodes
     vector<vector<Decoder::Arc> > reverse_arcs;
-    refla.get_reverse_arcs(reverse_arcs);
+    d.get_reverse_arcs(reverse_arcs);
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         if (!(d.m_nodes[i].flags & NODE_BIGRAM_LA_TABLE)) {
             set<int> pred_word_ids;
@@ -200,7 +198,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest6)
 
     // Dictionary nodes
     vector<vector<Decoder::Arc> > reverse_arcs;
-    refla.get_reverse_arcs(reverse_arcs);
+    d.get_reverse_arcs(reverse_arcs);
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         if (!(d.m_nodes[i].flags & NODE_BIGRAM_LA_TABLE)) {
             set<int> pred_word_ids;

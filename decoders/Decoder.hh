@@ -37,7 +37,6 @@ public:
     public:
         virtual float get_lookahead_score(int node_idx, int word_id) = 0;
         void set_text_unit_id_la_ngram_symbol_mapping();
-        void get_reverse_arcs(std::vector<std::vector<Arc> > &reverse_arcs);
         void find_successor_words(int node_idx, std::vector<int> &word_ids);
         void find_successor_words(int node_idx, std::set<int> &word_ids, bool start_node=true);
         void find_predecessor_words(int node_idx,
@@ -46,11 +45,6 @@ public:
         bool detect_one_predecessor_node(int node_idx,
                                          int &predecessor_count,
                                          const std::vector<std::vector<Arc> > &reverse_arcs);
-        void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
-        void mark_tail_nodes(int max_depth,
-                             std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
-                             int curr_depth=0,
-                             int node=END_NODE);
         virtual ~Lookahead() {};
         virtual void write(std::string ofname) { };
         virtual void read(std::string ifname) { };
@@ -68,6 +62,12 @@ public:
     void read_noway_lexicon(std::string lexfname);
     void read_dgraph(std::string graphfname);
     void set_hmm_transition_probs();
+    void get_reverse_arcs(std::vector<std::vector<Arc> > &reverse_arcs);
+    void mark_initial_nodes(int max_depth, int curr_depth=0, int node=START_NODE);
+    void mark_tail_nodes(int max_depth,
+                         std::vector<std::vector<Decoder::Arc> > &reverse_arcs,
+                         int curr_depth=0,
+                         int node=END_NODE);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
 
     // Words or subwords
