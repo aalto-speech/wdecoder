@@ -172,7 +172,8 @@ WordGraph::create_graph(const set<string> &words,
 
 
 void
-WordGraph::tie_graph(bool verbose)
+WordGraph::tie_graph(bool verbose,
+                     bool remove_cw_markers)
 {
     if (verbose) cerr << "number of hmm state nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
@@ -190,18 +191,20 @@ WordGraph::tie_graph(bool verbose)
     tie_state_suffixes(m_nodes);
     if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
-    //cerr << endl;
-    //cerr << "Removing cw dummies.." << endl;
-    //remove_cw_dummies(nodes);
-    //cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+    if (remove_cw_markers) {
+        cerr << endl;
+        cerr << "Removing cw dummies.." << endl;
+        remove_cw_dummies(m_nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
-    if (verbose) cerr << endl;
-    if (verbose) cerr << "Tying state suffixes.." << endl;
-    tie_state_suffixes(m_nodes);
-    if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
+        if (verbose) cerr << endl;
+        if (verbose) cerr << "Tying state suffixes.." << endl;
+        tie_state_suffixes(m_nodes);
+        if (verbose) cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
 
-    //cerr << "Tying state prefixes.." << endl;
-    //tie_state_prefixes(nodes);
-    //cerr << "number of nodes: " << reachable_graph_nodes(nodes) << endl;
+        cerr << "Tying state prefixes.." << endl;
+        tie_state_prefixes(m_nodes);
+        cerr << "number of nodes: " << reachable_graph_nodes(m_nodes) << endl;
+    }
 }
 

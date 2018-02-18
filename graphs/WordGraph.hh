@@ -35,7 +35,8 @@ public:
                                                 std::vector<DecoderGraph::Node> &nodes,
                                                 std::map<std::string, int> &fanin);
 
-    void tie_graph(bool verbose=false);
+    void tie_graph(bool verbose=false,
+                   bool remove_cw_markers=false);
 
 };
 
