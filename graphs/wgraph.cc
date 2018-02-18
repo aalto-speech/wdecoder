@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     ('l', "word-labels", "", "", "Write word labels instead of indices")
     ('o', "omit-sentence-end-symbol", "", "", "No sentence end symbol in the silence loop")
     ('n', "no-tying", "", "", "Only cross-word network tied, main graph kept as a lexical prefix tree")
-    ('r', "remove-cw-markers", "", "", "delete the cross-word markers for the most compact pruning")
+    ('r', "remove-cw-markers", "", "", "Remove the cross-word markers for the most compact tying")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
