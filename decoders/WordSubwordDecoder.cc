@@ -44,6 +44,7 @@ WordSubwordDecoder::read_class_lm(
     string ngramfname,
     string classmfname)
 {
+    cerr << "Reading class n-gram: " << ngramfname << endl;
     m_class_lm.read_arpa(ngramfname);
     cerr << "Reading class membership probs.." << classmfname << endl;
     int num_classes = read_class_memberships(classmfname, m_class_memberships);
@@ -55,7 +56,6 @@ WordSubwordDecoder::read_class_lm(
         int word_idx = m_text_unit_map.at(wpit->first);
         m_class_membership_lookup[word_idx] = wpit->second;
     }
-    m_class_membership_lookup[m_text_unit_map.at("</s>")] = m_class_membership_lookup[m_text_unit_map.at("<s>")];
 
     m_class_intmap.resize(num_classes);
     for (int i=0; i<(int)m_class_intmap.size(); i++)
@@ -418,24 +418,23 @@ WordSubwordRecognition::update_lm_prob(WSWToken &token, int word_id)
 double
 WordSubwordRecognition::class_lm_score(WSWToken &token, int word_id)
 {
-    if (wswd->m_class_membership_lookup[word_id].second == MIN_LOG_PROB) return MIN_LOG_PROB;
-
-    double ll = wswd->m_class_membership_lookup[word_id].second;
-    double ngram_score = 0.0;
+    double ngram_prob = 0.0;
     if (word_id == m_sentence_end_symbol_idx) {
         token.class_lm_node =
             wswd->m_class_lm.score(token.class_lm_node,
                                    wswd->m_class_lm.sentence_end_symbol_idx,
-                                   ngram_score);
-        token.class_lm_node = wswd->m_class_lm.sentence_start_node;
+                                   ngram_prob);
+        return ngram_prob;
     }
-    else
+    else {
+        if (wswd->m_class_membership_lookup[word_id].second == MIN_LOG_PROB) return MIN_LOG_PROB;
+        double membership_prob = wswd->m_class_membership_lookup[word_id].second;
         token.class_lm_node =
             wswd->m_class_lm.score(token.class_lm_node,
                                    wswd->m_class_intmap[wswd->m_class_membership_lookup[word_id].first],
-                                   ngram_score);
-
-    return ll + ngram_score;
+                                   ngram_prob);
+        return membership_prob + ngram_prob;
+    }
 }
 
 
@@ -457,11 +456,9 @@ WordSubwordRecognition::add_sentence_ends(vector<Token*> &tokens)
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         WSWToken *token = static_cast<WSWToken*>(*tit);
         if (token->lm_node == wswd->m_lm.sentence_start_node) continue;
-        m_active_histories.erase(token->history);
         update_lm_prob(*token, m_sentence_end_symbol_idx);
         token->update_total_log_prob();
         advance_in_word_history(token, m_sentence_end_symbol_idx);
-        m_active_histories.insert(token->history);
     }
 }
 

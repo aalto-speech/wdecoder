@@ -56,15 +56,15 @@ decoder_progs = decode\
 decoder_progs_srcs = $(addsuffix .cc,$(addprefix decoders/,$(decoder_progs)))
 
 test_srcs = test/wgraphtest.cc\
-	test/swgraphtest.cc\
-	test/swwgraphtest.cc\
-	test/lwbswgraphtest.cc\
-	test/rwbswgraphtest.cc\
-	test/lrwbswgraphtest.cc\
-	test/lookaheadtest.cc\
-	test/classlatest.cc\
-	test/bitsettest.cc\
-	test/quantizedlptest.cc
+#	test/swgraphtest.cc\
+#	test/swwgraphtest.cc\
+#	test/lwbswgraphtest.cc\
+#	test/rwbswgraphtest.cc\
+#	test/lrwbswgraphtest.cc\
+#	test/lookaheadtest.cc\
+#	test/classlatest.cc\
+#	test/bitsettest.cc\
+#	test/quantizedlptest.cc
 test_objs = $(test_srcs:.cc=.o)
 
 test_progs = runtests
