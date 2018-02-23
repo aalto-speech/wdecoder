@@ -27,7 +27,7 @@ create_forced_path(DecoderGraph &dg,
             vector<string> &wt = dg.m_lexicon.at(wrd);
             if (wt.size() == 1) {
                 cerr << "error: one phone word " << wrd << endl;
-                exit(1);
+                return -1;
             }
             if (triphones.size())
                 triphones.push_back("_");
@@ -37,10 +37,11 @@ create_forced_path(DecoderGraph &dg,
         }
         else {
             cerr << "error: " << wrd << " was not found in the lexicon" << endl;
-            exit(1);
+            return -1;
         }
-
     }
+    if (wordIndices.size() == 0) return -1;
+
     for (int i=1; i<(int)triphones.size()-1; i++) {
         if (triphones[i] == "_") {
             triphones[i-1][4] = triphones[i+1][2];
@@ -332,6 +333,7 @@ int main(int argc, char* argv[])
                 end_node_idx = create_forced_path(dg, nodes, resline, node_labels,
                                                   config["short-silence"].specified,
                                                   config["long-silence"].specified);
+                if (end_node_idx == -1) continue;
             }
             else {
                 end_node_idx = parse_transcript_phn(dg, nodes,
