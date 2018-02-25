@@ -118,6 +118,8 @@ WordSubwordDecoder::read_subword_lm(
         linei++;
     }
 
+    bool wb_symbol_in_use =
+            (m_subword_lm.vocabulary_lookup.find("<w>") != m_subword_lm.vocabulary_lookup.end());
     m_word_id_to_subword_ngram_symbols.resize(m_text_units.size());
     for (unsigned int i=0; i<m_text_units.size(); i++) {
         string wrd(m_text_units[i]);
@@ -132,15 +134,18 @@ WordSubwordDecoder::read_subword_lm(
                 throw "Segmentation not found for word: " + wrd;
             for (auto swit = swsegit->second.begin(); swit != swsegit->second.end(); ++swit)
                 sw_symbols.push_back(m_subword_lm.vocabulary_lookup[*swit]);
-            sw_symbols.push_back(m_subword_lm.vocabulary_lookup["<w>"]);
+            if (wb_symbol_in_use)
+                sw_symbols.push_back(m_subword_lm.vocabulary_lookup["<w>"]);
         }
         m_word_id_to_subword_ngram_symbols[i] = sw_symbols;
     }
 
     word_segs.clear();
 
-    m_subword_lm_start_node = m_subword_lm.advance(m_subword_lm.root_node, m_subword_lm.vocabulary_lookup["<s>"]);
-    m_subword_lm_start_node = m_subword_lm.advance(m_subword_lm_start_node, m_subword_lm.vocabulary_lookup["<w>"]);
+    m_subword_lm_start_node = m_subword_lm.sentence_start_node;
+    if (wb_symbol_in_use)
+        m_subword_lm_start_node
+            = m_subword_lm.advance(m_subword_lm_start_node, m_subword_lm.vocabulary_lookup["<w>"]);
 }
 
 
