@@ -112,8 +112,8 @@ WordSubwordDecoder::read_subword_lm(
             sw_tokens.push_back(subword);
             concatenated += subword;
         }
-        if (concatenated != word || sw_tokens.size() == 0)
-            throw "Erroneous segmentation: " + concatenated;
+        //if (concatenated != word || sw_tokens.size() == 0)
+        //    throw "Erroneous segmentation: " + concatenated;
         word_segs[word] = sw_tokens;
         linei++;
     }
