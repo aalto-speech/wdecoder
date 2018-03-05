@@ -37,6 +37,7 @@ decoder_srcs = decoders/Decoder.cc\
 	decoders/Lookahead.cc\
 	decoders/ClassLookahead.cc\
 	decoders/NgramDecoder.cc\
+	decoders/NgramDecoderRT.cc\
 	decoders/ClassDecoder.cc\
 	decoders/ClassIPDecoder.cc\
 	decoders/WordSubwordDecoder.cc\
@@ -45,6 +46,7 @@ decoder_srcs = decoders/Decoder.cc\
 decoder_objs = $(decoder_srcs:.cc=.o)
 
 decoder_progs = decode\
+	decode-rt\
 	class-decode\
 	class-ip-decode\
 	wsw-decode\
