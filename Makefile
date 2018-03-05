@@ -40,6 +40,7 @@ decoder_srcs = decoders/Decoder.cc\
 	decoders/NgramDecoderRT.cc\
 	decoders/ClassDecoder.cc\
 	decoders/ClassIPDecoder.cc\
+	decoders/ClassIPDecoderRT.cc\
 	decoders/WordSubwordDecoder.cc\
 	decoders/Segmenter.cc
 
@@ -49,6 +50,7 @@ decoder_progs = decode\
 	decode-rt\
 	class-decode\
 	class-ip-decode\
+	class-ip-decode-rt\
 	wsw-decode\
 	score\
 	segment\
