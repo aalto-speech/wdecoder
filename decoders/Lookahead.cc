@@ -235,10 +235,9 @@ void
 BigramLookahead::set_word_id_la_states()
 {
     m_word_id_la_state_lookup.resize(m_text_unit_id_to_la_ngram_symbol.size());
-    for (int i=0; i<(int)m_word_id_la_state_lookup.size(); i++) {
-        int nd = m_la_lm.advance(m_la_lm.root_node, m_text_unit_id_to_la_ngram_symbol[i]);
-        m_word_id_la_state_lookup[i] = nd;
-    }
+    for (int i=0; i<(int)m_word_id_la_state_lookup.size(); i++)
+        m_word_id_la_state_lookup[i]
+            = m_la_lm.advance(m_la_lm.root_node, m_text_unit_id_to_la_ngram_symbol[i]);
 }
 
 
@@ -1103,10 +1102,8 @@ LargeBigramLookahead::set_la_state_indices_to_nodes()
     }
 
     int idx = 0;
-    for (auto rmit = remap.begin(); rmit != remap.end(); ++rmit) {
-        rmit->second = idx;
-        idx++;
-    }
+    for (auto rmit = remap.begin(); rmit != remap.end(); ++rmit)
+        rmit->second = idx++;
 
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++)
         m_node_la_states[i] = remap[m_node_la_states[i]];
@@ -1343,9 +1340,8 @@ LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
             float unigram_prob = 0.0;
             m_la_lm.score(nd, m_text_unit_id_to_la_ngram_symbol[best_unigram_word_id], unigram_prob);
 
-            if (unigram_prob > la_prob) {
+            if (unigram_prob > la_prob)
                 pwit = predecessor_words.erase(pwit);
-            }
             else {
                 map<int, float> &la_scores = m_lookahead_states[la_state].m_scores;
                 if (la_scores.find(*pwit) == la_scores.end()) {
@@ -1353,9 +1349,8 @@ LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
                     ++pwit;
                 }
                 else {
-                    if (la_scores[*pwit] > la_prob) {
+                    if (la_scores[*pwit] > la_prob)
                         pwit = predecessor_words.erase(pwit);
-                    }
                     else {
                         la_scores[*pwit] = la_prob;
                         ++pwit;
@@ -1401,11 +1396,10 @@ LargeBigramLookahead::set_bigram_la_scores_2()
                  << ", bigram scores: " << bsc << endl;
         }
 
-        if (decoder->m_nodes[i].word_id == -1) continue;
+        int word_id = decoder->m_nodes[i].word_id;
+        if (word_id == -1) continue;
         set<int> la_states;
         find_preceeding_la_states(i, la_states, reverse_arcs);
-
-        int word_id = decoder->m_nodes[i].word_id;
 
         vector<int> &pred_words = reverse_bigrams[word_id];
 
