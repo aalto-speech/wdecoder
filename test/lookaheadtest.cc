@@ -7,7 +7,7 @@
 
 using namespace std;
 
-int eval_ratio = 50;
+int _ratio = 50;
 float tolerance = 0.0001;
 
 
@@ -21,13 +21,17 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest1)
     DummyBigramLookahead refla(d, "data/1k.words.2gram.arpa");
     d.m_la = new FullTableBigramLookahead(d, "data/1k.words.2gram.arpa");
 
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
+
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : _ratio;
         for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
-            idx++;
-            if (idx % eval_ratio != 0) continue;
+            if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+            if (w == sentence_end_symbol_idx) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
             BOOST_CHECK_CLOSE( ref, hyp, tolerance );
@@ -46,13 +50,17 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest2)
     DummyBigramLookahead refla(d, "data/1k.words.2gram.arpa");
     d.m_la = new PrecomputedFullTableBigramLookahead(d, "data/1k.words.2gram.arpa");
 
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
+
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : _ratio;
         for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
-            idx++;
-            if (idx % eval_ratio != 0) continue;
+            if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+            if (w == sentence_end_symbol_idx) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
             BOOST_CHECK_CLOSE( ref, hyp, tolerance );
@@ -71,16 +79,20 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest2Quant)
     DummyBigramLookahead refla(d, "data/1k.words.2gram.arpa");
     d.m_la = new PrecomputedFullTableBigramLookahead(d, "data/1k.words.2gram.arpa", true);
 
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
+
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : _ratio;
         for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
-            idx++;
-            if (idx % eval_ratio != 0) continue;
+            if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+            if (w == sentence_end_symbol_idx) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
-            BOOST_CHECK_CLOSE( ref, hyp, 0.05 );
+            BOOST_CHECK_CLOSE( ref, hyp, 0.20 );
         }
     }
 }
@@ -121,11 +133,15 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest4)
     DummyBigramLookahead refla(d, "data/1k.words.2gram.arpa");
     d.m_la = new LargeBigramLookahead(d, "data/1k.words.2gram.arpa");
 
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
+
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : _ratio;
         for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
-            idx++;
-            if (idx % eval_ratio != 0) continue;
+            if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+            if (w == sentence_end_symbol_idx) continue;
             float ref = refla.get_lookahead_score(i, w);
             float hyp = d.m_la->get_lookahead_score(i, w);
             BOOST_CHECK_CLOSE( ref, hyp, tolerance );
@@ -144,17 +160,22 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest5)
     DummyBigramLookahead refla(d, "data/1k.subwords.2g.arpa");
     d.m_la = new HybridBigramLookahead(d, "data/1k.subwords.2g.arpa");
 
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
+
     // Table nodes
     int idx=0;
-    for (int i=0; i<(int)d.m_nodes.size(); i++)
+    for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : _ratio;
         if (d.m_nodes[i].flags & NODE_BIGRAM_LA_TABLE)
             for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
-                idx++;
-                if (idx % eval_ratio != 0) continue;
+                if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+                if (w == sentence_end_symbol_idx) continue;
                 float ref = refla.get_lookahead_score(i, w);
                 float hyp = d.m_la->get_lookahead_score(i, w);
                 BOOST_CHECK_CLOSE( ref, hyp, tolerance );
             }
+    }
 
     // Dictionary nodes
     vector<vector<Decoder::Arc> > reverse_arcs;
@@ -184,11 +205,9 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest6)
     d.m_la = new PrecomputedHybridBigramLookahead(d, "data/1k.subwords.2g.arpa");
 
     // Table nodes
-    int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         if (d.m_nodes[i].flags & NODE_BIGRAM_LA_TABLE) {
             for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
-                idx++;
                 float ref = refla.get_lookahead_score(i, w);
                 float hyp = d.m_la->get_lookahead_score(i, w);
                 BOOST_CHECK_CLOSE( ref, hyp, tolerance );
