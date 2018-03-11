@@ -130,7 +130,6 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
             }
 
             map<int, int> la_state_changes;
-            vector<bool> processed_nodes(decoder->m_nodes.size(), false);
             list<int> nodes_to_process;
             for (auto rait=reverse_arcs[nodeIdx].begin(); rait!=reverse_arcs[nodeIdx].end(); ++rait) {
                 if (rait->target_node == nodeIdx) continue;
@@ -141,7 +140,6 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
             while(nodes_to_process.size()) {
                 int node_idx = nodes_to_process.front();
                 nodes_to_process.pop_front();
-                processed_nodes[node_idx] = true;
                 if (class_propagated[node_idx]) continue;
                 class_propagated[node_idx] = true;
                 Decoder::Node &nd = decoder->m_nodes[node_idx];
@@ -159,7 +157,6 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
 
                 for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait) {
                     if (rait->target_node == node_idx) continue;
-                    if (processed_nodes[rait->target_node]) continue;
                     if (class_propagated[rait->target_node]) continue;
                     nodes_to_process.push_back(rait->target_node);
                 }
