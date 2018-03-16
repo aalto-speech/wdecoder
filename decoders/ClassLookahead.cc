@@ -86,11 +86,15 @@ float
 ClassBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
     int word_class = m_class_la.m_class_membership_lookup[word_id].first;
+    unsigned short int qIdx = m_quant_bigram_lookup[m_node_la_states[node_idx]][word_class];
+    return m_quant_log_probs.getQuantizedLogProb(qIdx);
+    /*
     if (m_quantization) {
         unsigned short int qIdx = m_quant_bigram_lookup[m_node_la_states[node_idx]][word_class];
         return m_quant_log_probs.getQuantizedLogProb(qIdx);
     } else
         return m_la_scores[m_node_la_states[node_idx]][word_class];
+    */
 }
 
 
