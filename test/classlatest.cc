@@ -42,14 +42,8 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2)
             "data/1k.words.exchange.2g.arpa.gz",
             "data/1k.words.exchange.cmemprobs.gz");
 
-    int sentence_begin_symbol_idx = -1, sentence_end_symbol_idx = -1;
-    for (int w=0; w<(int)d.m_text_units.size(); w++) {
-        string wrd = d.m_text_units[w];
-        if (wrd == "<s>")
-            sentence_begin_symbol_idx = w;
-        else if (wrd == "</s>")
-            sentence_end_symbol_idx = w;
-    }
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
 
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
@@ -85,14 +79,8 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2NoSentenceEnd)
             "data/1k.words.exchange.2g.arpa.gz",
             "data/1k.words.exchange.cmemprobs.gz");
 
-    int sentence_begin_symbol_idx = -1, sentence_end_symbol_idx = -1;
-    for (int w=0; w<(int)d.m_text_units.size(); w++) {
-        string wrd = d.m_text_units[w];
-        if (wrd == "<s>")
-            sentence_begin_symbol_idx = w;
-        else if (wrd == "</s>")
-            sentence_end_symbol_idx = w;
-    }
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
 
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
@@ -128,14 +116,8 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest2Quant)
             "data/1k.words.exchange.cmemprobs.gz",
             true);
 
-    int sentence_begin_symbol_idx = -1, sentence_end_symbol_idx = -1;
-    for (int w=0; w<(int)d.m_text_units.size(); w++) {
-        string wrd = d.m_text_units[w];
-        if (wrd == "<s>")
-            sentence_begin_symbol_idx = w;
-        else if (wrd == "</s>")
-            sentence_end_symbol_idx = w;
-    }
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
 
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;
@@ -171,14 +153,8 @@ BOOST_AUTO_TEST_CASE(ClassBigramLookaheadTest3)
             "data/1k.words.exchange.2g.arpa.gz",
             "data/1k.words.exchange.cmemprobs.words_missing.gz");
 
-    int sentence_begin_symbol_idx = -1, sentence_end_symbol_idx = -1;
-    for (int w=0; w<(int)d.m_text_units.size(); w++) {
-        string wrd = d.m_text_units[w];
-        if (wrd == "<s>")
-            sentence_begin_symbol_idx = w;
-        else if (wrd == "</s>")
-            sentence_end_symbol_idx = w;
-    }
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
 
     cerr << "node count: " << d.m_nodes.size() << endl;
     cerr << "evaluating.." << endl;

@@ -10,6 +10,7 @@
 
 using namespace std;
 
+static float ln_to_log10 = 1.0 / log(10.0);
 
 DummyClassBigramLookahead::DummyClassBigramLookahead(Decoder &decoder,
                                                      string carpafname,
@@ -41,7 +42,6 @@ DummyClassBigramLookahead::get_lookahead_score(
         la_prob = max(la_prob, curr_prob);
     }
 
-    static float ln_to_log10 = 1.0 / log(10.0);
     return ln_to_log10 * la_prob;
 }
 
@@ -50,7 +50,8 @@ ClassBigramLookahead::ClassBigramLookahead(
     Decoder &decoder,
     string carpafname,
     string cmempfname,
-    bool quantization)
+    bool quantization,
+    string stateFile)
     : m_class_la(carpafname,
                  cmempfname,
                  decoder.m_text_units,
@@ -60,18 +61,23 @@ ClassBigramLookahead::ClassBigramLookahead(
 {
     this->decoder = &decoder;
 
-    time_t t1,t2,t3;
+    time_t t1,t2;
+    if (stateFile.length() > 0) {
+        readStates(stateFile);
+    } else {
+        t1 = time(0);
+        cerr << "Setting look-ahead state indices" << endl;
+        m_node_la_states.resize(decoder.m_nodes.size(), -1);
+        m_la_state_count = set_la_state_indices_to_nodes();
+        t2 = time(0);
+        cerr << "elapsed time for setting indices: " << (t2-t1) << endl;
+        cerr << "Number of look-ahead states: " << m_la_state_count << endl;
+    }
     t1 = time(0);
-    cerr << "Setting look-ahead state indices" << endl;
-    m_node_la_states.resize(decoder.m_nodes.size(), -1);
-    m_la_state_count = set_la_state_indices_to_nodes();
-    t2 = time(0);
-    cerr << "elapsed time for setting indices: " << (t2-t1) << endl;
-    cerr << "Number of look-ahead states: " << m_la_state_count << endl;
     cerr << "Setting look-ahead scores" << endl;
     set_la_scores();
-    t3 = time(0);
-    cerr << "elapsed time for setting scores: " << (t3-t2) << endl;
+    t2 = time(0);
+    cerr << "elapsed time for setting scores: " << (t2-t1) << endl;
     set_arc_la_updates();
 }
 
@@ -79,14 +85,12 @@ ClassBigramLookahead::ClassBigramLookahead(
 float
 ClassBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
-    static float ln_to_log10 = 1.0 / log(10.0);
     int word_class = m_class_la.m_class_membership_lookup[word_id].first;
     if (m_quantization) {
         unsigned short int qIdx = m_quant_bigram_lookup[m_node_la_states[node_idx]][word_class];
-        return ln_to_log10 * m_quant_log_probs.getQuantizedLogProb(qIdx);
-    } else {
-        return ln_to_log10 * m_la_scores[m_node_la_states[node_idx]][word_class];
-    }
+        return m_quant_log_probs.getQuantizedLogProb(qIdx);
+    } else
+        return m_la_scores[m_node_la_states[node_idx]][word_class];
 }
 
 
@@ -130,7 +134,6 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
             }
 
             map<int, int> la_state_changes;
-            vector<bool> processed_nodes(decoder->m_nodes.size(), false);
             list<int> nodes_to_process;
             for (auto rait=reverse_arcs[nodeIdx].begin(); rait!=reverse_arcs[nodeIdx].end(); ++rait) {
                 if (rait->target_node == nodeIdx) continue;
@@ -141,7 +144,6 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
             while(nodes_to_process.size()) {
                 int node_idx = nodes_to_process.front();
                 nodes_to_process.pop_front();
-                processed_nodes[node_idx] = true;
                 if (class_propagated[node_idx]) continue;
                 class_propagated[node_idx] = true;
                 Decoder::Node &nd = decoder->m_nodes[node_idx];
@@ -159,7 +161,6 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
 
                 for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait) {
                     if (rait->target_node == node_idx) continue;
-                    if (processed_nodes[rait->target_node]) continue;
                     if (class_propagated[rait->target_node]) continue;
                     nodes_to_process.push_back(rait->target_node);
                 }
@@ -231,7 +232,7 @@ ClassBigramLookahead::init_la_scores()
             min_cmemp = std::min(min_cmemp, wit->second.second);
         m_min_la_score += min_cmemp;
 
-        m_quant_log_probs.setMinLogProb(m_min_la_score);
+        m_quant_log_probs.setMinLogProb(m_min_la_score * ln_to_log10);
 
         m_quant_bigram_lookup.resize(m_la_state_count);
         for (auto blsit = m_quant_bigram_lookup.begin(); blsit != m_quant_bigram_lookup.end(); ++blsit)
@@ -250,6 +251,7 @@ ClassBigramLookahead::set_la_score(
     int class_idx,
     float la_prob)
 {
+    la_prob *= ln_to_log10;
     if (m_quantization)
         m_quant_bigram_lookup[la_state][class_idx] = m_quant_log_probs.getQuantIndex(la_prob);
     else {
@@ -313,3 +315,47 @@ ClassBigramLookahead::set_la_scores()
         set_la_score(i, m_class_la.m_num_classes, best_la_prob);
     }
 }
+
+
+void
+ClassBigramLookahead::writeStates(string ofname) const
+{
+    ofstream laStateFile(ofname);
+    if (!laStateFile) throw string("Problem opening file: " + ofname);
+
+    laStateFile << m_node_la_states.size() << endl;
+    for (int i=0; i<(int)m_node_la_states.size(); i++)
+        laStateFile << i << " " << m_node_la_states[i] << endl;
+    laStateFile.close();
+}
+
+
+void
+ClassBigramLookahead::readStates(string ifname)
+{
+    ifstream laStateFile(ifname);
+    if (!laStateFile) throw string("Problem opening file: " + ifname);
+
+    string line;
+    string errString("Problem reading state file");
+
+    if (!getline(laStateFile, line)) throw errString;
+    stringstream ssline(line);
+    int nodeCount;
+    ssline >> nodeCount;
+    m_node_la_states.resize(nodeCount);
+
+    int maxLaStateIdx = 0;
+    for (int i=0; i<nodeCount; i++) {
+        if (!getline(laStateFile, line)) throw errString;
+        stringstream ssline(line);
+        int nodeIdx, stateIdx;
+        ssline >> nodeIdx >> stateIdx;
+        maxLaStateIdx = max(maxLaStateIdx, stateIdx);
+        if (ssline.fail()) throw errString;
+        if (i != nodeIdx) throw errString;
+        m_node_la_states[nodeIdx] = stateIdx;
+    }
+    m_la_state_count = maxLaStateIdx+1;
+}
+
