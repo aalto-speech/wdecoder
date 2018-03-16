@@ -10,6 +10,7 @@
 
 using namespace std;
 
+static float ln_to_log10 = 1.0 / log(10.0);
 
 DummyClassBigramLookahead::DummyClassBigramLookahead(Decoder &decoder,
                                                      string carpafname,
@@ -41,7 +42,6 @@ DummyClassBigramLookahead::get_lookahead_score(
         la_prob = max(la_prob, curr_prob);
     }
 
-    static float ln_to_log10 = 1.0 / log(10.0);
     return ln_to_log10 * la_prob;
 }
 
@@ -85,14 +85,12 @@ ClassBigramLookahead::ClassBigramLookahead(
 float
 ClassBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
-    static float ln_to_log10 = 1.0 / log(10.0);
     int word_class = m_class_la.m_class_membership_lookup[word_id].first;
     if (m_quantization) {
         unsigned short int qIdx = m_quant_bigram_lookup[m_node_la_states[node_idx]][word_class];
-        return ln_to_log10 * m_quant_log_probs.getQuantizedLogProb(qIdx);
-    } else {
-        return ln_to_log10 * m_la_scores[m_node_la_states[node_idx]][word_class];
-    }
+        return m_quant_log_probs.getQuantizedLogProb(qIdx);
+    } else
+        return m_la_scores[m_node_la_states[node_idx]][word_class];
 }
 
 
@@ -234,7 +232,7 @@ ClassBigramLookahead::init_la_scores()
             min_cmemp = std::min(min_cmemp, wit->second.second);
         m_min_la_score += min_cmemp;
 
-        m_quant_log_probs.setMinLogProb(m_min_la_score);
+        m_quant_log_probs.setMinLogProb(m_min_la_score * ln_to_log10);
 
         m_quant_bigram_lookup.resize(m_la_state_count);
         for (auto blsit = m_quant_bigram_lookup.begin(); blsit != m_quant_bigram_lookup.end(); ++blsit)
@@ -253,6 +251,7 @@ ClassBigramLookahead::set_la_score(
     int class_idx,
     float la_prob)
 {
+    la_prob *= ln_to_log10;
     if (m_quantization)
         m_quant_bigram_lookup[la_state][class_idx] = m_quant_log_probs.getQuantIndex(la_prob);
     else {
