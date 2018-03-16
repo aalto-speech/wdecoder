@@ -3,7 +3,9 @@
 
 #include "WordSubwordDecoder.hh"
 #include "Lookahead.hh"
+#include "ClassLookahead.hh"
 #include "conf.hh"
+#include "str.hh"
 
 using namespace std;
 
@@ -241,6 +243,13 @@ int main(int argc, char* argv[])
             bool quantization = config["quantized-lookahead"].specified;
             if (la_type == "unigram")
                 d.m_la = new UnigramLookahead(d, lalmfname);
+            else if (la_type == "class-bigram") {
+                vector<string> class_la_model = str::split(lalmfname, ",", false);
+                if (class_la_model.size() > 2)
+                    d.m_la = new ClassBigramLookahead(d, class_la_model[0], class_la_model[1], true, class_la_model[2]);
+                else
+                    d.m_la = new ClassBigramLookahead(d, class_la_model[0], class_la_model[1], true);
+            }
             else if (la_type == "bigram-full")
                 d.m_la = new FullTableBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-precomputed-full")

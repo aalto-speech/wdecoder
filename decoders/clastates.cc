@@ -1,4 +1,5 @@
-#include "Lookahead.hh"
+#include "NgramDecoder.hh"
+#include "ClassLookahead.hh"
 #include "conf.hh"
 
 using namespace std;
@@ -6,13 +7,13 @@ using namespace std;
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: lastates [OPTION...] PH LEXICON GRAPH LALM LASTATES\n")
+    config("usage: clastates [OPTION...] PH LEXICON GRAPH CLASS_ARPA CMEMPROBS LASTATES\n")
     ('h', "help", "", "", "display help");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 5) config.print_help(stderr, 1);
+    if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
     try {
-        Decoder d;
+        NgramDecoder d;
 
         string phfname = config.arguments[0];
         cerr << "Reading hmms: " << phfname << endl;
@@ -27,14 +28,15 @@ int main(int argc, char* argv[])
         d.read_dgraph(graphfname);
         cerr << "node count: " << d.m_nodes.size() << endl;
 
-        string lalmfname = config.arguments[3];
-        cerr << "Reading lookahead model: " << lalmfname << endl;
-        LargeBigramLookahead lbla(d, lalmfname);
+        string classArpa = config.arguments[3];
+        string cMemProbs = config.arguments[4];
+        cerr << "Reading class bigram lookahead model: "
+                << classArpa << "/" << cMemProbs << endl;
+        ClassBigramLookahead cbgla(d, classArpa, cMemProbs);
 
-        string lasfname = config.arguments[4];
+        string lasfname = config.arguments[5];
         cerr << "Writing lookahead states: " << lasfname << endl;
-        lbla.write(lasfname);
-
+        cbgla.writeStates(lasfname);
     } catch (string &e) {
         cerr << e << endl;
     }

@@ -50,7 +50,8 @@ ClassBigramLookahead::ClassBigramLookahead(
     Decoder &decoder,
     string carpafname,
     string cmempfname,
-    bool quantization)
+    bool quantization,
+    string stateFile)
     : m_class_la(carpafname,
                  cmempfname,
                  decoder.m_text_units,
@@ -60,18 +61,23 @@ ClassBigramLookahead::ClassBigramLookahead(
 {
     this->decoder = &decoder;
 
-    time_t t1,t2,t3;
+    time_t t1,t2;
+    if (stateFile.length() > 0) {
+        readStates(stateFile);
+    } else {
+        t1 = time(0);
+        cerr << "Setting look-ahead state indices" << endl;
+        m_node_la_states.resize(decoder.m_nodes.size(), -1);
+        m_la_state_count = set_la_state_indices_to_nodes();
+        t2 = time(0);
+        cerr << "elapsed time for setting indices: " << (t2-t1) << endl;
+        cerr << "Number of look-ahead states: " << m_la_state_count << endl;
+    }
     t1 = time(0);
-    cerr << "Setting look-ahead state indices" << endl;
-    m_node_la_states.resize(decoder.m_nodes.size(), -1);
-    m_la_state_count = set_la_state_indices_to_nodes();
-    t2 = time(0);
-    cerr << "elapsed time for setting indices: " << (t2-t1) << endl;
-    cerr << "Number of look-ahead states: " << m_la_state_count << endl;
     cerr << "Setting look-ahead scores" << endl;
     set_la_scores();
-    t3 = time(0);
-    cerr << "elapsed time for setting scores: " << (t3-t2) << endl;
+    t2 = time(0);
+    cerr << "elapsed time for setting scores: " << (t2-t1) << endl;
     set_arc_la_updates();
 }
 
@@ -310,3 +316,47 @@ ClassBigramLookahead::set_la_scores()
         set_la_score(i, m_class_la.m_num_classes, best_la_prob);
     }
 }
+
+
+void
+ClassBigramLookahead::writeStates(string ofname) const
+{
+    ofstream laStateFile(ofname);
+    if (!laStateFile) throw string("Problem opening file: " + ofname);
+
+    laStateFile << m_node_la_states.size() << endl;
+    for (int i=0; i<(int)m_node_la_states.size(); i++)
+        laStateFile << i << " " << m_node_la_states[i] << endl;
+    laStateFile.close();
+}
+
+
+void
+ClassBigramLookahead::readStates(string ifname)
+{
+    ifstream laStateFile(ifname);
+    if (!laStateFile) throw string("Problem opening file: " + ifname);
+
+    string line;
+    string errString("Problem reading state file");
+
+    if (!getline(laStateFile, line)) throw errString;
+    stringstream ssline(line);
+    int nodeCount;
+    ssline >> nodeCount;
+    m_node_la_states.resize(nodeCount);
+
+    int maxLaStateIdx = 0;
+    for (int i=0; i<nodeCount; i++) {
+        if (!getline(laStateFile, line)) throw errString;
+        stringstream ssline(line);
+        int nodeIdx, stateIdx;
+        ssline >> nodeIdx >> stateIdx;
+        maxLaStateIdx = max(maxLaStateIdx, stateIdx);
+        if (ssline.fail()) throw errString;
+        if (i != nodeIdx) throw errString;
+        m_node_la_states[nodeIdx] = stateIdx;
+    }
+    m_la_state_count = maxLaStateIdx+1;
+}
+
