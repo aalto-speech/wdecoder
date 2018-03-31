@@ -99,6 +99,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
 {
     vector<vector<Decoder::Arc> > reverse_arcs;
     decoder->get_reverse_arcs(reverse_arcs);
+    decoder->mark_tail_nodes(1000, reverse_arcs);
 
     vector<multimap<float, int> > words;
     words.resize(m_class_la.m_num_classes+2);
@@ -162,6 +163,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
                 for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait) {
                     if (rait->target_node == node_idx) continue;
                     if (class_propagated[rait->target_node]) continue;
+                    if (decoder->m_nodes[rait->target_node].flags & NODE_TAIL) continue;
                     nodes_to_process.push_back(rait->target_node);
                 }
             }
