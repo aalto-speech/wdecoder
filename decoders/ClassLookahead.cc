@@ -131,7 +131,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
             int nodeIdx = wit->second;
             int wordId = decoder->m_nodes[nodeIdx].word_id;
 
-            if (++wrdi % 100 == 0) {
+            if (++wrdi % 10000 == 0) {
                 set<int> distLaStates;
                 for (int i=0; i<(int)m_node_la_states.size(); i++)
                     distLaStates.insert(m_node_la_states[i]);
