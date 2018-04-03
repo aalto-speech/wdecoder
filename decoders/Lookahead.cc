@@ -1054,6 +1054,11 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
     cerr << "Tail nodes: " << tail_count << endl;
     cerr << "Initial nodes: " << initial_count << endl;
 
+    time_t rawtime;
+    time(&rawtime);
+    cerr << "time: " << ctime(&rawtime);
+    cerr << "Setting look-ahead states" << endl;
+
     m_node_la_states.resize(decoder.m_nodes.size(), -1);
     int la_count = set_la_state_indices_to_nodes();
     m_lookahead_states.resize(la_count);
@@ -1063,19 +1068,18 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
 
     set_arc_la_updates();
 
+    time(&rawtime);
+    cerr << "time: " << ctime(&rawtime);
     cerr << "Propagating unigram scores" << endl;
     set_unigram_la_scores();
 
-    cerr << "Propagating bigram scores" << endl;
-    time_t rawtime;
     time(&rawtime);
     cerr << "time: " << ctime(&rawtime);
-
+    cerr << "Propagating bigram scores" << endl;
     int bigram_score_count = set_bigram_la_scores_2();
 
     time(&rawtime);
     cerr << "time: " << ctime(&rawtime);
-
     cerr << "Bigram scores set: " << bigram_score_count << endl;
     int bigram_score_la_state_count = 0;
     for (unsigned int i=0; i<m_lookahead_states.size(); i++)

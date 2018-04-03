@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest2Quant)
 }
 
 
-BOOST_AUTO_TEST_CASE(BigramLookaheadTest3)
+BOOST_AUTO_TEST_CASE(LargeBigramLookaheadTest1)
 {
     cerr << endl;
     Decoder d;
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest3)
 }
 
 
-BOOST_AUTO_TEST_CASE(BigramLookaheadTest4)
+BOOST_AUTO_TEST_CASE(LargeBigramLookaheadTest2)
 {
     cerr << endl;
     Decoder d;
@@ -150,7 +150,61 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest4)
 }
 
 
-BOOST_AUTO_TEST_CASE(BigramLookaheadTest5)
+BOOST_AUTO_TEST_CASE(LargeBigramLookaheadTest3)
+{
+    cerr << endl;
+    Decoder d;
+    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    d.read_noway_lexicon("data/20k.words.lex");
+    d.read_dgraph("data/20k.words.graph");
+    DummyBigramLookahead refla(d, "data/20k.words.2g.D030E060.arpa.gz");
+    d.m_la = new LargeBigramLookahead(d, "data/20k.words.2g.D030E060.arpa.gz");
+
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
+
+    int idx=0;
+    for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : _ratio;
+        for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
+            if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+            if (w == sentence_end_symbol_idx) continue;
+            float ref = refla.get_lookahead_score(i, w);
+            float hyp = d.m_la->get_lookahead_score(i, w);
+            BOOST_CHECK_CLOSE( ref, hyp, tolerance );
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(LargeBigramLookaheadTest4)
+{
+    cerr << endl;
+    Decoder d;
+    d.read_phone_model("data/speecon_ml_gain3500_occ300_21.7.2011_22.ph");
+    d.read_noway_lexicon("data/100k.words.lex");
+    d.read_dgraph("data/100k.words.graph");
+    DummyBigramLookahead refla(d, "data/100k.words.2g.D030E060.arpa.gz");
+    d.m_la = new LargeBigramLookahead(d, "data/100k.words.2g.D030E060.arpa.gz");
+
+    int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
+    int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
+
+    int idx=0;
+    for (int i=0; i<(int)d.m_nodes.size(); i++) {
+        int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : _ratio;
+        for (int w=0; w<(int)d.m_la->m_text_unit_id_to_la_ngram_symbol.size(); w++) {
+            if ((++idx % curr_eval_ratio != 0) && (w != sentence_begin_symbol_idx)) continue;
+            if (w == sentence_end_symbol_idx) continue;
+            float ref = refla.get_lookahead_score(i, w);
+            float hyp = d.m_la->get_lookahead_score(i, w);
+            BOOST_CHECK_CLOSE( ref, hyp, tolerance );
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(HybridBigramLookaheadTest1)
 {
     cerr << endl;
     Decoder d;
@@ -194,7 +248,7 @@ BOOST_AUTO_TEST_CASE(BigramLookaheadTest5)
 }
 
 
-BOOST_AUTO_TEST_CASE(BigramLookaheadTest6)
+BOOST_AUTO_TEST_CASE(HybridBigramLookaheadTest2)
 {
     cerr << endl;
     Decoder d;
