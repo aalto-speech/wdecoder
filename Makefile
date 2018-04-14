@@ -37,20 +37,16 @@ decoder_srcs = decoders/Decoder.cc\
 	decoders/Lookahead.cc\
 	decoders/ClassLookahead.cc\
 	decoders/NgramDecoder.cc\
-	decoders/NgramDecoderRT.cc\
 	decoders/ClassDecoder.cc\
 	decoders/ClassIPDecoder.cc\
-	decoders/ClassIPDecoderRT.cc\
 	decoders/WordSubwordDecoder.cc\
 	decoders/Segmenter.cc
 
 decoder_objs = $(decoder_srcs:.cc=.o)
 
 decoder_progs = decode\
-	decode-rt\
 	class-decode\
 	class-ip-decode\
-	class-ip-decode-rt\
 	wsw-decode\
 	score\
 	segment\
