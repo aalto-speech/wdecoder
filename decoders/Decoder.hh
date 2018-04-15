@@ -116,17 +116,44 @@ public:
 class RecognitionResult {
 public:
     RecognitionResult();
+    void add_result(std::string result,
+                    double total_lp,
+                    double total_am_lp,
+                    double total_lm_lp);
+    std::string get_best_result();
     void print_file_stats(std::ostream &statsf);
-    void print_final_stats(std::ostream &statsf);
-    void accumulate(RecognitionResult &res);
 
-    std::string result;
+    class Result {
+    public:
+        Result() : result(""), total_lp(0.0), total_am_lp(0.0), total_lm_lp(0.0) { };
+        std::string result;
+        double total_lp;
+        double total_am_lp;
+        double total_lm_lp;
+    };
+
     long long int total_frames;
     double total_time;
+    double total_token_count;
+    std::multimap<double, Result> results;
+};
+
+class TotalRecognitionStats {
+public:
+    TotalRecognitionStats() :
+        num_files(0),
+        total_frames(0), total_time(0.0), total_token_count(0.0),
+        total_lp(0.0), total_am_lp(0.0), total_lm_lp(0.0) { };
+    void accumulate(RecognitionResult &res);
+    void print_stats(std::ostream &statsf);
+
+    int num_files;
+    long long int total_frames;
+    double total_time;
+    double total_token_count;
     double total_lp;
     double total_am_lp;
     double total_lm_lp;
-    double total_token_count;
 };
 
 class Recognition {

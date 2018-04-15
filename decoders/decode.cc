@@ -82,14 +82,14 @@ void join(vector<string> &lnafnames,
           vector<NgramRecognition*> &recognitions,
           vector<RecognitionResult*> &results,
           vector<thread*> &threads,
-          RecognitionResult &total,
+          TotalRecognitionStats &total,
           ostream &resultf,
           ostream &logf)
 {
     for (int i=0; i<(int)threads.size(); i += 1) {
         threads[i]->join();
         logf << endl << "recognizing: " << lnafnames[i] << endl;
-        resultf << lnafnames[i] << ":" << results[i]->result << endl;
+        resultf << lnafnames[i] << ":" << results[i]->get_best_result() << endl;
         results[i]->print_file_stats(logf);
         total.accumulate(*results[i]);
         delete recognitions[i];
@@ -112,11 +112,10 @@ recognize_lnas(NgramDecoder &d,
 {
     ifstream lnalistf(lnalistfname);
     string lnafname;
-    RecognitionResult total;
+    TotalRecognitionStats total;
 
     print_config(d, config, logf);
 
-    int file_count = 0;
     int num_threads = config["num-threads"].get_int();
     vector<string> lna_fnames;
     vector<NgramRecognition*> recognitions;
@@ -138,16 +137,10 @@ recognize_lnas(NgramDecoder &d,
 
         if ((int)recognitions.size() == num_threads)
             join(lna_fnames, recognitions, results, threads, total, resultf, logf);
-
-        file_count++;
     }
     lnalistf.close();
     join(lna_fnames, recognitions, results, threads, total, resultf, logf);
-    if (file_count > 1) {
-        logf << endl;
-        logf << file_count << " files recognized" << endl;
-        total.print_final_stats(logf);
-    }
+    if (total.num_files > 1) total.print_stats(logf);
 }
 
 
@@ -253,9 +246,7 @@ int main(int argc, char* argv[])
             ofstream logf(logfname);
             recognize_lnas(d, config, lnalistfname, resultf, logf);
         }
-        else {
-            recognize_lnas(d, config, lnalistfname, cout, cerr);
-        }
+        else recognize_lnas(d, config, lnalistfname, cout, cerr);
 
     } catch (string &e) {
         cerr << e << endl;

@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
         dg->read_phone_model(phfname);
         dg->read_noway_lexicon(lexfname);
 
-        RecognitionResult total;
+        TotalRecognitionStats total;
         while (getline(lnalistf, lnafname)) {
             getline(reslistf, resline);
             if (!lnafname.length()) continue;
@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
 
         cerr << endl;
         cerr << file_count << " files scored" << endl;
-        total.print_final_stats(cerr);
+        total.print_stats(cerr);
     } catch (string &e) {
         cerr << e << endl;
     }

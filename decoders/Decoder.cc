@@ -326,11 +326,12 @@ Recognition::recognize_lna_file(
 
     res.total_frames = m_frame_idx;
     res.total_time = difftime(end_time, start_time);
-    res.total_lp = best_token->total_log_prob;
-    res.total_am_lp = best_token->am_log_prob;
-    res.total_lm_lp = best_token->lm_log_prob;
     res.total_token_count = m_total_token_count;
-    res.result.assign(get_word_history(best_token->history));
+    res.add_result(
+            get_word_history(best_token->history),
+            best_token->total_log_prob,
+            best_token->am_log_prob,
+            best_token->lm_log_prob);
 
     clear_word_history();
     m_lna_reader.close();
@@ -502,28 +503,68 @@ RecognitionResult::RecognitionResult()
 {
     total_frames = 0;
     total_time = 0.0;
-    total_lp = 0.0;
-    total_am_lp = 0.0;
-    total_lm_lp = 0.0;
     total_token_count = 0.0;
+}
+
+
+void
+RecognitionResult::add_result(
+    std::string result,
+    double total_lp,
+    double total_am_lp,
+    double total_lm_lp)
+{
+    RecognitionResult::Result res;
+    res.result = result;
+    res.total_lp = total_lp;
+    res.total_am_lp = total_am_lp;
+    res.total_lm_lp = total_lm_lp;
+
+    results.insert(make_pair(total_lp, res));
+}
+
+
+string
+RecognitionResult::get_best_result()
+{
+    Result &best_result = results.rbegin()->second;
+    return best_result.result;
 }
 
 
 void
 RecognitionResult::print_file_stats(ostream &statsf)
 {
+    Result &best_result = results.rbegin()->second;
     statsf << "\trecognized " << total_frames << " frames in "
             << total_time << " seconds." << endl;
     statsf << "\tRTF: " << total_time / ((double)total_frames/125.0) << endl;
-    statsf << "\tLog prob: " << total_lp << "\tAM: " << total_am_lp << "\tLM: " << total_lm_lp << endl;
+    statsf << "\tLog prob: " << best_result.total_lp
+            << "\tAM: " << best_result.total_am_lp
+            << "\tLM: " << best_result.total_lm_lp << endl;
     statsf << "\tMean token count: " << total_token_count / (double)total_frames << endl;
-
 }
 
 
 void
-RecognitionResult::print_final_stats(ostream &statsf)
+TotalRecognitionStats::accumulate(RecognitionResult &acc)
 {
+    num_files++;
+    total_frames += acc.total_frames;
+    total_time += acc.total_time;
+    total_token_count += acc.total_token_count;
+    RecognitionResult::Result &best_result = acc.results.rbegin()->second;
+    total_lp += best_result.total_lp;
+    total_am_lp += best_result.total_am_lp;
+    total_lm_lp += best_result.total_lm_lp;
+}
+
+
+void
+TotalRecognitionStats::print_stats(ostream &statsf)
+{
+    statsf << endl;
+    statsf << "number of recognized files: " << num_files << endl;
     statsf << "total recognition time: " << total_time << endl;
     statsf << "total frame count: " << total_frames << endl;
     statsf << "total RTF: " << total_time/ ((double)total_frames/125.0) << endl;
@@ -532,16 +573,3 @@ RecognitionResult::print_final_stats(ostream &statsf)
     statsf << "total AM likelihood: " << total_am_lp << endl;
     statsf << "total mean token count: " << total_token_count / (double)total_frames << endl;
 }
-
-
-void
-RecognitionResult::accumulate(RecognitionResult &acc)
-{
-    total_frames += acc.total_frames;
-    total_time += acc.total_time;
-    total_lp += acc.total_lp;
-    total_am_lp += acc.total_am_lp;
-    total_lm_lp += acc.total_lm_lp;
-    total_token_count += acc.total_token_count;
-}
-
