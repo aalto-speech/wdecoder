@@ -13,8 +13,8 @@ using namespace std;
 static float ln_to_log10 = 1.0 / log(10.0);
 
 DummyClassBigramLookahead::DummyClassBigramLookahead(Decoder &decoder,
-                                                     string carpafname,
-                                                     string cmempfname)
+        string carpafname,
+        string cmempfname)
     : m_class_la(carpafname,
                  cmempfname,
                  decoder.m_text_units,
@@ -36,7 +36,7 @@ DummyClassBigramLookahead::get_lookahead_score(
     int la_node = m_class_la.advance(m_class_la.m_class_ngram.root_node, word_id);
     for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
         if ((*swit != decoder->m_sentence_end_symbol_idx)
-            && (m_class_la.m_class_membership_lookup[*swit].first == -1)) continue;
+                && (m_class_la.m_class_membership_lookup[*swit].first == -1)) continue;
         float curr_prob = 0.0;
         m_class_la.score(la_node, *swit, curr_prob);
         la_prob = max(la_prob, curr_prob);
@@ -56,8 +56,8 @@ ClassBigramLookahead::ClassBigramLookahead(
                  cmempfname,
                  decoder.m_text_units,
                  decoder.m_text_unit_map),
-      m_la_state_count(0),
-      m_quantization(quantization)
+    m_la_state_count(0),
+    m_quantization(quantization)
 {
     this->decoder = &decoder;
 
@@ -112,7 +112,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
         Decoder::Node &nd = decoder->m_nodes[i];
         // propagate also sentence end here
         if (nd.word_id != -1
-            && m_class_la.m_class_memberships.find(decoder->m_text_units[nd.word_id])
+                && m_class_la.m_class_memberships.find(decoder->m_text_units[nd.word_id])
                 != m_class_la.m_class_memberships.end())
         {
             int classIdx = m_class_la.m_class_membership_lookup[nd.word_id].first;
@@ -162,7 +162,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
                     m_node_la_states[node_idx] = la_state_change->second;
                 if (nd.word_id != -1) continue;
                 if (wordId != decoder->m_sentence_end_symbol_idx
-                    && node_idx == START_NODE) continue;
+                        && node_idx == START_NODE) continue;
 
                 for (auto rait=reverse_arcs[node_idx].begin(); rait!=reverse_arcs[node_idx].end(); ++rait) {
                     if (rait->target_node == node_idx) continue;
@@ -274,12 +274,12 @@ ClassBigramLookahead::set_la_scores()
     for (int i=0; i<(int)cbgProbs.size(); i++) {
         cbgProbs[i].resize(m_class_la.m_num_classes+1, 0.0);
         int cng_node = m_class_la.m_class_ngram.advance(
-                m_class_la.m_class_ngram.root_node, m_class_la.m_class_intmap[i]);
+                           m_class_la.m_class_ngram.root_node, m_class_la.m_class_intmap[i]);
         for (int j=0; j<(int)cbgProbs[i].size()-1; j++)
             m_class_la.m_class_ngram.score(cng_node, m_class_la.m_class_intmap[j],
-                    cbgProbs[i][j]);
+                                           cbgProbs[i][j]);
         m_class_la.m_class_ngram.score(cng_node, m_class_la.m_class_ngram.sentence_end_symbol_idx,
-                cbgProbs[i][cbgProbs[i].size()-1]);
+                                       cbgProbs[i][cbgProbs[i].size()-1]);
     }
 
     map<int,int> la_state_nodes;

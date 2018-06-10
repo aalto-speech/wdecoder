@@ -328,10 +328,10 @@ Recognition::recognize_lna_file(
     res.total_time = difftime(end_time, start_time);
     res.total_token_count = m_total_token_count;
     res.add_result(
-            get_word_history(best_token->history),
-            best_token->total_log_prob,
-            best_token->am_log_prob,
-            best_token->lm_log_prob);
+        get_word_history(best_token->history),
+        best_token->total_log_prob,
+        best_token->am_log_prob,
+        best_token->lm_log_prob);
 
     clear_word_history();
     m_lna_reader.close();
@@ -349,7 +349,7 @@ void
 Recognition::Token::apply_duration_model()
 {
     am_log_prob += d->m_duration_scale
-        * d->m_hmm_states[d->m_nodes[node_idx].hmm_state].duration.get_log_prob(dur);
+                   * d->m_hmm_states[d->m_nodes[node_idx].hmm_state].duration.get_log_prob(dur);
 }
 
 
@@ -537,11 +537,11 @@ RecognitionResult::print_file_stats(ostream &statsf)
 {
     Result &best_result = results.rbegin()->second;
     statsf << "\trecognized " << total_frames << " frames in "
-            << total_time << " seconds." << endl;
+           << total_time << " seconds." << endl;
     statsf << "\tRTF: " << total_time / ((double)total_frames/125.0) << endl;
     statsf << "\tLog prob: " << best_result.total_lp
-            << "\tAM: " << best_result.total_am_lp
-            << "\tLM: " << best_result.total_lm_lp << endl;
+           << "\tAM: " << best_result.total_am_lp
+           << "\tLM: " << best_result.total_lm_lp << endl;
     statsf << "\tMean token count: " << total_token_count / (double)total_frames << endl;
 }
 

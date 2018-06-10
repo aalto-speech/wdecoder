@@ -54,8 +54,12 @@ public:
                         bool successor_lists=false,
                         bool true_count=false);
     ~LookaheadStateCount() {};
-    float get_lookahead_score(int node_idx, int word_id) { throw std::string("Not a real lookahead."); }
-    int la_state_count() { return m_la_state_count; }
+    float get_lookahead_score(int node_idx, int word_id) {
+        throw std::string("Not a real lookahead.");
+    }
+    int la_state_count() {
+        return m_la_state_count;
+    }
 protected:
     int set_la_state_indices_to_nodes();
     void propagate_la_state_idx(int node_idx,
@@ -219,7 +223,7 @@ private:
     class LookaheadState {
     public:
         LookaheadState() : m_best_unigram_word_id(-1),
-                           m_best_unigram_score(-1e20) { }
+            m_best_unigram_score(-1e20) { }
         std::map<int, float> m_scores;
         int m_best_unigram_word_id;
         float m_best_unigram_score;

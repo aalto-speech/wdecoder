@@ -223,9 +223,9 @@ ClassRecognition::prune_tokens(bool collect_active_histories)
 
 void
 ClassRecognition::move_token_to_node(ClassToken token,
-                            int node_idx,
-                            float transition_score,
-                            bool update_lookahead)
+                                     int node_idx,
+                                     float transition_score,
+                                     bool update_lookahead)
 {
     token.am_log_prob += m_transition_scale * transition_score;
 
@@ -327,15 +327,15 @@ ClassRecognition::class_lm_score(ClassToken &token, int word_id)
     double ngram_prob = 0.0;
     if (word_id == m_sentence_end_symbol_idx) {
         token.class_lm_node = cld->m_class_lm.score(
-                token.class_lm_node,
-                cld->m_class_lm.sentence_end_symbol_idx,
-                ngram_prob);
+                                  token.class_lm_node,
+                                  cld->m_class_lm.sentence_end_symbol_idx,
+                                  ngram_prob);
     }
     else
         token.class_lm_node = cld->m_class_lm.score(
-                token.class_lm_node,
-                cld->m_class_intmap[cld->m_class_membership_lookup[word_id].first],
-                ngram_prob);
+                                  token.class_lm_node,
+                                  cld->m_class_intmap[cld->m_class_membership_lookup[word_id].first],
+                                  ngram_prob);
 
     return membership_prob + ngram_prob;
 }

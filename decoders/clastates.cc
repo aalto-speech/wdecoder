@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
         string classArpa = config.arguments[3];
         string cMemProbs = config.arguments[4];
         cerr << "Reading class bigram lookahead model: "
-                << classArpa << "/" << cMemProbs << endl;
+             << classArpa << "/" << cMemProbs << endl;
         ClassBigramLookahead cbgla(d, classArpa, cMemProbs);
 
         string lasfname = config.arguments[5];

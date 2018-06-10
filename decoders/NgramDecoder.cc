@@ -260,8 +260,8 @@ NgramRecognition::move_token_to_node(
     // Update history
     if (node.word_id != -1) {
         token.lm_node = ngd->m_lm.score(
-            token.lm_node,
-            ngd->m_text_unit_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
+                            token.lm_node,
+                            ngd->m_text_unit_id_to_ngram_symbol[node.word_id], token.lm_log_prob);
         token.last_word_id = node.word_id;
 
         if (update_lookahead) {
@@ -321,14 +321,14 @@ NgramRecognition::add_sentence_ends(vector<Token*> &tokens)
         if (token->lm_node == ngd->m_ngram_state_sentence_begin) continue;
         if (m_use_word_boundary_symbol && token->last_word_id != d->m_word_boundary_symbol_idx) {
             token->lm_node = ngd->m_lm.score(
-                token->lm_node,
-                ngd->m_text_unit_id_to_ngram_symbol[d->m_word_boundary_symbol_idx], token->lm_log_prob);
+                                 token->lm_node,
+                                 ngd->m_text_unit_id_to_ngram_symbol[d->m_word_boundary_symbol_idx], token->lm_log_prob);
             token->update_total_log_prob();
             advance_in_word_history(token, d->m_text_unit_map[d->m_word_boundary_symbol]);
         }
         token->lm_node = ngd->m_lm.score(
-            token->lm_node,
-            ngd->m_text_unit_id_to_ngram_symbol[d->m_sentence_end_symbol_idx], token->lm_log_prob);
+                             token->lm_node,
+                             ngd->m_text_unit_id_to_ngram_symbol[d->m_sentence_end_symbol_idx], token->lm_log_prob);
         token->update_total_log_prob();
         advance_in_word_history(token, m_sentence_end_symbol_idx);
     }

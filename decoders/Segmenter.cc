@@ -97,7 +97,7 @@ void
 Segmenter::apply_duration_model(Token &token, int node_idx)
 {
     token.log_prob += m_duration_scale
-                         * m_hmm_states[m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
+                      * m_hmm_states[m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
 }
 
 
@@ -163,7 +163,7 @@ Segmenter::recombine_tokens()
         }
 
         if (m_recombined_tokens.find(tit->node_idx) == m_recombined_tokens.end() ||
-            tit->log_prob > m_recombined_tokens[tit->node_idx].log_prob)
+                tit->log_prob > m_recombined_tokens[tit->node_idx].log_prob)
         {
             m_recombined_tokens[tit->node_idx] = *tit;
         }

@@ -119,7 +119,7 @@ WordSubwordDecoder::read_subword_lm(
     }
 
     bool wb_symbol_in_use =
-            (m_subword_lm.vocabulary_lookup.find("<w>") != m_subword_lm.vocabulary_lookup.end());
+        (m_subword_lm.vocabulary_lookup.find("<w>") != m_subword_lm.vocabulary_lookup.end());
     m_word_id_to_subword_ngram_symbols.resize(m_text_units.size());
     for (unsigned int i=0; i<m_text_units.size(); i++) {
         string wrd(m_text_units[i]);
@@ -309,9 +309,9 @@ WordSubwordRecognition::prune_tokens(bool collect_active_histories)
 
 void
 WordSubwordRecognition::move_token_to_node(WSWToken token,
-                            int node_idx,
-                            float transition_score,
-                            bool update_lookahead)
+        int node_idx,
+        float transition_score,
+        bool update_lookahead)
 {
     token.am_log_prob += m_transition_scale * transition_score;
 

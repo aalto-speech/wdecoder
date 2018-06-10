@@ -177,12 +177,12 @@ int main(int argc, char* argv[])
     ('f', "result-file=STRING", "arg", "", "Base filename for results (.rec and .log)")
     ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
     ('t', "lookahead-type=STRING", "arg", "", "Lookahead type\n"
-            "\tunigram\n"
-            "\tbigram-full\n"
-            "\tbigram-precomputed-full\n"
-            "\tbigram-hybrid\n"
-            "\tbigram-precomputed-hybrid\n"
-            "\tlarge-bigram")
+     "\tunigram\n"
+     "\tbigram-full\n"
+     "\tbigram-precomputed-full\n"
+     "\tbigram-hybrid\n"
+     "\tbigram-precomputed-hybrid\n"
+     "\tlarge-bigram")
     ('w', "write-la-states=STRING", "arg", "", "Writes lookahead model information to a file");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 10) config.print_help(stderr, 1);

@@ -61,7 +61,8 @@ create_forced_path(DecoderGraph &dg,
     tnodes.back().subword_id = wordIndices[wordPosition];
     tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
 
-    nodes.clear(); nodes.resize(1);
+    nodes.clear();
+    nodes.resize(1);
     node_labels.clear();
     int idx = 0;
     map<int, string> wordLabels;
@@ -78,7 +79,7 @@ create_forced_path(DecoderGraph &dg,
         int nc = nodes.size();
         for (int i=0; i<nc; i++) {
             if (node_labels.find(i) == node_labels.end()
-                || node_labels[i] != "_.0") continue;
+                    || node_labels[i] != "_.0") continue;
 
             string left_triphone = node_labels[i-1].substr(0, 5);
             left_triphone[4] = '_';
@@ -114,7 +115,8 @@ parse_transcript_phn(DecoderGraph &dg,
 {
     ifstream phnf(phnfname);
 
-    nodes.clear(); nodes.resize(1);
+    nodes.clear();
+    nodes.resize(1);
     node_labels.clear();
     int idx = 0;
 
@@ -264,8 +266,8 @@ int main(int argc, char* argv[])
         s.m_token_limit = config["max-tokens"].get_int();
 
         if (!config["text-field"].specified &&
-            (config["long-silence"].specified || config["short-silence"].specified))
-               throw string("Silence options are only usable with text-field switch");
+                (config["long-silence"].specified || config["short-silence"].specified))
+            throw string("Silence options are only usable with text-field switch");
 
         if (config["text-field"].specified && !config["lexicon"].specified)
             throw string("Lexicon needs to be set with -t option");
@@ -301,8 +303,8 @@ int main(int argc, char* argv[])
             parse_recipe_line(*rlit, recipe_fields);
 
             if (recipe_fields.find("lna") == recipe_fields.end() ||
-                recipe_fields.find("alignment") == recipe_fields.end())
-                    throw string("Error in recipe line " + *rlit);
+                    recipe_fields.find("alignment") == recipe_fields.end())
+                throw string("Error in recipe line " + *rlit);
 
             if (config["text-field"].specified) {
                 if (recipe_fields.find("text") == recipe_fields.end())

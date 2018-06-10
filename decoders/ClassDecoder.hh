@@ -19,11 +19,11 @@ public:
     ClassDecoder();
     ~ClassDecoder();
     void read_class_lm(
-            std::string ngramfname,
-            std::string wordpfname);
+        std::string ngramfname,
+        std::string wordpfname);
     int read_class_memberships(
-            std::string fname,
-            std::map<std::string, std::pair<int, float> > &class_memberships);
+        std::string fname,
+        std::map<std::string, std::pair<int, float> > &class_memberships);
 
     LNNgram m_class_lm;
     std::map<std::string, std::pair<int, float> > m_class_memberships;

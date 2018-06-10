@@ -42,8 +42,8 @@ ClassIPDecoder::set_text_unit_id_ngram_symbol_mapping()
 
 void
 ClassIPDecoder::read_class_lm(
-        string ngramfname,
-        string classmfname)
+    string ngramfname,
+    string classmfname)
 {
     cerr << "Reading class n-gram: " << ngramfname << endl;
     m_class_lm.read_arpa(ngramfname);
@@ -71,8 +71,8 @@ ClassIPDecoder::read_class_lm(
 
 int
 ClassIPDecoder::read_class_memberships(
-        string fname,
-        map<string, pair<int, float> > &class_memberships)
+    string fname,
+    map<string, pair<int, float> > &class_memberships)
 {
     SimpleFileInput wcf(fname);
 
@@ -250,9 +250,9 @@ ClassIPRecognition::prune_tokens(bool collect_active_histories)
 
 void
 ClassIPRecognition::move_token_to_node(ClassIPToken token,
-                            int node_idx,
-                            float transition_score,
-                            bool update_lookahead)
+                                       int node_idx,
+                                       float transition_score,
+                                       bool update_lookahead)
 {
     token.am_log_prob += m_transition_scale * transition_score;
 
@@ -357,18 +357,18 @@ ClassIPRecognition::class_lm_score(ClassIPToken &token, int word_id)
     double ngram_prob = 0.0;
     if (word_id == m_sentence_end_symbol_idx) {
         token.class_lm_node =
-                cid->m_class_lm.score(token.class_lm_node,
-                                      cid->m_class_lm.sentence_end_symbol_idx,
-                                      ngram_prob);
+            cid->m_class_lm.score(token.class_lm_node,
+                                  cid->m_class_lm.sentence_end_symbol_idx,
+                                  ngram_prob);
         return ngram_prob;
     }
     else {
         if (cid->m_class_membership_lookup[word_id].second == MIN_LOG_PROB) return MIN_LOG_PROB;
         double membership_prob = cid->m_class_membership_lookup[word_id].second;
         token.class_lm_node =
-                cid->m_class_lm.score(token.class_lm_node,
-                                      cid->m_class_intmap[cid->m_class_membership_lookup[word_id].first],
-                                      ngram_prob);
+            cid->m_class_lm.score(token.class_lm_node,
+                                  cid->m_class_intmap[cid->m_class_membership_lookup[word_id].first],
+                                  ngram_prob);
         return membership_prob + ngram_prob;
     }
 

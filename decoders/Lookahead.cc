@@ -24,7 +24,7 @@ Decoder::Lookahead::set_text_unit_id_la_ngram_symbol_mapping()
 
 void
 Decoder::Lookahead::find_successor_words(int node_idx,
-                                         vector<int> &word_ids)
+        vector<int> &word_ids)
 {
     set<int> successor_words;
     find_successor_words(node_idx, successor_words);
@@ -37,8 +37,8 @@ Decoder::Lookahead::find_successor_words(int node_idx,
 
 void
 Decoder::Lookahead::find_successor_words(int node_idx,
-                                         set<int> &word_ids,
-                                         bool start_node)
+        set<int> &word_ids,
+        bool start_node)
 {
     Decoder::Node &node = decoder->m_nodes[node_idx];
 
@@ -56,8 +56,8 @@ Decoder::Lookahead::find_successor_words(int node_idx,
 
 void
 Decoder::Lookahead::find_predecessor_words(int node_idx,
-                                           set<int> &word_ids,
-                                           const std::vector<std::vector<Decoder::Arc> > &reverse_arcs)
+        set<int> &word_ids,
+        const std::vector<std::vector<Decoder::Arc> > &reverse_arcs)
 {
     Node &node = decoder->m_nodes[node_idx];
 
@@ -76,8 +76,8 @@ Decoder::Lookahead::find_predecessor_words(int node_idx,
 
 bool
 Decoder::Lookahead::detect_one_predecessor_node(int node_idx,
-                                                int &predecessor_count,
-                                                const std::vector<std::vector<Decoder::Arc> > &reverse_arcs)
+        int &predecessor_count,
+        const std::vector<std::vector<Decoder::Arc> > &reverse_arcs)
 {
     Node &node = decoder->m_nodes[node_idx];
 
@@ -153,10 +153,10 @@ UnigramLookahead::set_unigram_la_scores()
 
 void
 UnigramLookahead::propagate_unigram_la_score(int node_idx,
-                                             float score,
-                                             vector<vector<Decoder::Arc> > &reverse_arcs,
-                                             int &la_score_set,
-                                             bool start_node)
+        float score,
+        vector<vector<Decoder::Arc> > &reverse_arcs,
+        int &la_score_set,
+        bool start_node)
 {
     Decoder::Node &node = decoder->m_nodes[node_idx];
     if (!start_node) {
@@ -204,7 +204,7 @@ UnigramLookahead::set_arc_la_updates()
 
 
 DummyBigramLookahead::DummyBigramLookahead(Decoder &decoder,
-                                           string lafname)
+        string lafname)
 {
     m_la_lm.read_arpa(lafname);
     this->decoder = &decoder;
@@ -275,8 +275,8 @@ BigramLookahead::convert_reverse_bigram_idxs(map<int, vector<int> > &reverse_big
 
 
 LookaheadStateCount::LookaheadStateCount(Decoder &decoder,
-                                         bool successor_lists,
-                                         bool true_count)
+        bool successor_lists,
+        bool true_count)
 {
     this->decoder = &decoder;
 
@@ -338,10 +338,10 @@ LookaheadStateCount::set_la_state_indices_to_nodes()
 
 void
 LookaheadStateCount::propagate_la_state_idx(int node_idx,
-                                            map<int, int> &la_state_changes,
-                                            long long int &max_state_idx,
-                                            vector<vector<Decoder::Arc> > &reverse_arcs,
-                                            bool first_node)
+        map<int, int> &la_state_changes,
+        long long int &max_state_idx,
+        vector<vector<Decoder::Arc> > &reverse_arcs,
+        bool first_node)
 {
     Decoder::Node &nd = decoder->m_nodes[node_idx];
 
@@ -410,9 +410,9 @@ LookaheadStateCount::set_arc_la_updates()
 
 
 FullTableBigramLookahead::FullTableBigramLookahead(Decoder &decoder,
-                                                   string lafname,
-                                                   bool successor_lists,
-                                                   bool quantization)
+        string lafname,
+        bool successor_lists,
+        bool quantization)
     : LookaheadStateCount(decoder,
                           successor_lists)
 {
@@ -450,9 +450,9 @@ FullTableBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 
 PrecomputedFullTableBigramLookahead
 ::PrecomputedFullTableBigramLookahead(
-        Decoder &decoder,
-        string lafname,
-        bool quantization)
+    Decoder &decoder,
+    string lafname,
+    bool quantization)
     : FullTableBigramLookahead(decoder, lafname, false, quantization)
 {
     m_quantization = quantization;
@@ -495,9 +495,9 @@ PrecomputedFullTableBigramLookahead::get_lookahead_score(int node_idx, int word_
 
 void
 PrecomputedFullTableBigramLookahead::set_lookahead_score(
-        int la_state_idx,
-        int word_id,
-        float la_score)
+    int la_state_idx,
+    int word_id,
+    float la_score)
 {
     if (m_quantization) {
         if (la_score < m_min_la_score) {
@@ -515,10 +515,10 @@ PrecomputedFullTableBigramLookahead::set_lookahead_score(
 
 void
 PrecomputedFullTableBigramLookahead::find_preceeding_la_states(int node_idx,
-                                                               set<int> &la_states,
-                                                               const vector<vector<Decoder::Arc> > &reverse_arcs,
-                                                               bool first_node,
-                                                               bool state_change)
+        set<int> &la_states,
+        const vector<vector<Decoder::Arc> > &reverse_arcs,
+        bool first_node,
+        bool state_change)
 {
     if (!first_node) {
         if (state_change) {
@@ -539,11 +539,11 @@ PrecomputedFullTableBigramLookahead::find_preceeding_la_states(int node_idx,
 
 void
 PrecomputedFullTableBigramLookahead::propagate_unigram_la_score(int node_idx,
-                                                                float score,
-                                                                int word_id,
-                                                                vector<vector<Decoder::Arc> > &reverse_arcs,
-                                                                vector<pair<int, float> > &unigram_la_scores,
-                                                                bool start_node)
+        float score,
+        int word_id,
+        vector<vector<Decoder::Arc> > &reverse_arcs,
+        vector<pair<int, float> > &unigram_la_scores,
+        bool start_node)
 {
     Decoder::Node &node = decoder->m_nodes[node_idx];
     if (!start_node) {
@@ -564,7 +564,7 @@ PrecomputedFullTableBigramLookahead::propagate_unigram_la_score(int node_idx,
 
 
 bool descending_node_unigram_la_lp_sort_5(const pair<int, pair<int, float> > &i,
-                                          const pair<int, pair<int, float> > &j)
+        const pair<int, pair<int, float> > &j)
 {
     return (i.second.second > j.second.second);
 }
@@ -636,7 +636,7 @@ PrecomputedFullTableBigramLookahead::set_bigram_la_scores()
 
 
 HybridBigramLookahead::HybridBigramLookahead(Decoder &decoder,
-                                             string lafname)
+        string lafname)
 {
     m_la_lm.read_arpa(lafname);
     this->decoder = &decoder;
@@ -668,7 +668,7 @@ HybridBigramLookahead::set_la_state_indices_to_nodes()
     for (unsigned int i=0; i<decoder->m_nodes.size(); i++) {
         Decoder::Node &nd = decoder->m_nodes[i];
         if ((i == START_NODE) || (i == END_NODE) || (nd.flags & NODE_SILENCE)
-            || (nd.flags & NODE_CW) || (nd.flags & NODE_INITIAL)) {
+                || (nd.flags & NODE_CW) || (nd.flags & NODE_INITIAL)) {
             nd.flags |= NODE_BIGRAM_LA_TABLE;
             la_state_nodes.insert(i);
         }
@@ -815,8 +815,8 @@ HybridBigramLookahead::set_arc_la_updates()
             int j = ait->target_node;
 
             if (m_bigram_la_maps[i].size() > 0 &&
-                m_bigram_la_maps[j].size() > 0 &&
-                m_bigram_la_maps[i] == m_bigram_la_maps[j])
+                    m_bigram_la_maps[j].size() > 0 &&
+                    m_bigram_la_maps[i] == m_bigram_la_maps[j])
                 no_update_count += 1.0;
             else if (m_node_la_states[i] != -1 &&
                      m_node_la_states[j] != -1 &&
@@ -863,10 +863,10 @@ PrecomputedHybridBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 
 void
 PrecomputedHybridBigramLookahead::find_preceeding_la_states(int node_idx,
-                                                            set<int> &la_states,
-                                                            const vector<vector<Decoder::Arc> > &reverse_arcs,
-                                                            bool first_node,
-                                                            bool state_change)
+        set<int> &la_states,
+        const vector<vector<Decoder::Arc> > &reverse_arcs,
+        bool first_node,
+        bool state_change)
 {
     Decoder::Node &node = decoder->m_nodes[node_idx];
 
@@ -889,7 +889,7 @@ PrecomputedHybridBigramLookahead::find_preceeding_la_states(int node_idx,
 
 void
 PrecomputedHybridBigramLookahead::find_first_lm_nodes(set<int> &lm_nodes,
-                                                      int node_idx)
+        int node_idx)
 {
     if (decoder->m_nodes[node_idx].word_id != -1) {
         lm_nodes.insert(node_idx);
@@ -931,11 +931,11 @@ PrecomputedHybridBigramLookahead::find_sentence_end_lm_node(set<int> &lm_nodes)
 
 void
 PrecomputedHybridBigramLookahead::propagate_unigram_la_score(int node_idx,
-                                                             float score,
-                                                             int word_id,
-                                                             vector<vector<Decoder::Arc> > &reverse_arcs,
-                                                             vector<pair<int, float> > &unigram_la_scores,
-                                                             bool start_node)
+        float score,
+        int word_id,
+        vector<vector<Decoder::Arc> > &reverse_arcs,
+        vector<pair<int, float> > &unigram_la_scores,
+        bool start_node)
 {
     Decoder::Node &node = decoder->m_nodes[node_idx];
 
@@ -1034,7 +1034,7 @@ PrecomputedHybridBigramLookahead::set_bigram_la_scores()
 
 
 LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
-                                           string lafname)
+        string lafname)
 {
     m_la_lm.read_arpa(lafname);
     this->decoder = &decoder;
@@ -1152,8 +1152,8 @@ LargeBigramLookahead::set_arc_la_updates()
             int j = ait->target_node;
 
             if (m_node_la_states[i] != -1 &&
-                m_node_la_states[j] != -1 &&
-                m_node_la_states[i] == m_node_la_states[j])
+                    m_node_la_states[j] != -1 &&
+                    m_node_la_states[i] == m_node_la_states[j])
             {
                 no_update_count += 1.0;
             }
@@ -1170,9 +1170,9 @@ LargeBigramLookahead::set_arc_la_updates()
 
 void
 LargeBigramLookahead::propagate_la_state_idx(int node_idx,
-                                             int la_state_idx,
-                                             int &max_state_idx,
-                                             bool first_node)
+        int la_state_idx,
+        int &max_state_idx,
+        bool first_node)
 {
     Decoder::Node &nd = decoder->m_nodes[node_idx];
     if (m_node_la_states[node_idx] != -1) return;
@@ -1206,10 +1206,10 @@ LargeBigramLookahead::propagate_la_state_idx(int node_idx,
 
 void
 LargeBigramLookahead::find_preceeding_la_states(int node_idx,
-                                                set<int> &la_states,
-                                                const vector<vector<Decoder::Arc> > &reverse_arcs,
-                                                bool first_node,
-                                                bool state_change)
+        set<int> &la_states,
+        const vector<vector<Decoder::Arc> > &reverse_arcs,
+        bool first_node,
+        bool state_change)
 {
     if (!first_node) {
         if (state_change) {
@@ -1230,10 +1230,10 @@ LargeBigramLookahead::find_preceeding_la_states(int node_idx,
 
 void
 LargeBigramLookahead::propagate_unigram_la_score(int node_idx,
-                                                 float score,
-                                                 int word_id,
-                                                 vector<vector<Decoder::Arc> > &reverse_arcs,
-                                                 bool start_node)
+        float score,
+        int word_id,
+        vector<vector<Decoder::Arc> > &reverse_arcs,
+        bool start_node)
 {
     Decoder::Node &node = decoder->m_nodes[node_idx];
     if (!start_node) {
@@ -1253,7 +1253,7 @@ LargeBigramLookahead::propagate_unigram_la_score(int node_idx,
 
 
 bool descending_node_unigram_la_lp_sort_2(const pair<int, pair<int, float> > &i,
-                                          const pair<int, pair<int, float> > &j)
+        const pair<int, pair<int, float> > &j)
 {
     return (i.second.second > j.second.second);
 }
@@ -1317,12 +1317,12 @@ LargeBigramLookahead::set_bigram_la_scores()
 
 void
 LargeBigramLookahead::propagate_bigram_la_scores(int node_idx,
-                                                 int word_id,
-                                                 vector<int> predecessor_words,
-                                                 vector<vector<Decoder::Arc> > &reverse_arcs,
-                                                 set<int> &processed_la_states,
-                                                 bool start_node,
-                                                 bool la_state_change)
+        int word_id,
+        vector<int> predecessor_words,
+        vector<vector<Decoder::Arc> > &reverse_arcs,
+        set<int> &processed_la_states,
+        bool start_node,
+        bool la_state_change)
 {
     int la_state = m_node_la_states[node_idx];
     if (!start_node && la_state_change)
@@ -1478,15 +1478,18 @@ LargeBigramLookahead::read(string ifname)
 
         LookaheadState &la_state = m_lookahead_states[i];
 
-        int idx; ssline >> idx;
+        int idx;
+        ssline >> idx;
         if (i != idx) throw string("Index problem");
 
         ssline >> la_state.m_best_unigram_word_id;
         ssline >> la_state.m_best_unigram_score;
 
-        int bigram_score_count; ssline >>bigram_score_count;
+        int bigram_score_count;
+        ssline >>bigram_score_count;
         for (int bsi=0; bsi<bigram_score_count; ++bsi) {
-            int id; float score;
+            int id;
+            float score;
             ssline >>id >>score;
             la_state.m_scores[id] = score;
         }
