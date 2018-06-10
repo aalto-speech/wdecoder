@@ -136,6 +136,8 @@ BOOST_AUTO_TEST_CASE(LargeBigramLookaheadTest2)
     int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
     int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
 
+    cerr << "node count: " << d.m_nodes.size() << endl;
+    cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : _ratio;
@@ -163,6 +165,8 @@ BOOST_AUTO_TEST_CASE(LargeBigramLookaheadTest3)
     int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
     int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
 
+    cerr << "node count: " << d.m_nodes.size() << endl;
+    cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : _ratio;
@@ -190,6 +194,8 @@ BOOST_AUTO_TEST_CASE(LargeBigramLookaheadTest4)
     int sentence_begin_symbol_idx = d.m_text_unit_map.at("<s>");
     int sentence_end_symbol_idx = d.m_text_unit_map.at("</s>");
 
+    cerr << "node count: " << d.m_nodes.size() << endl;
+    cerr << "evaluating.." << endl;
     int idx=0;
     for (int i=0; i<(int)d.m_nodes.size(); i++) {
         int curr_eval_ratio = d.m_nodes[i].flags & NODE_SILENCE ? 1 : _ratio;
