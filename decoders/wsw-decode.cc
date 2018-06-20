@@ -258,8 +258,13 @@ int main(int argc, char* argv[])
                 d.m_la = new HybridBigramLookahead(d, lalmfname);
             else if (la_type == "bigram-precomputed-hybrid")
                 d.m_la = new PrecomputedHybridBigramLookahead(d, lalmfname);
-            else if (la_type == "large-bigram")
-                d.m_la = new LargeBigramLookahead(d, lalmfname);
+            else if (la_type == "large-bigram") {
+                vector<string> bigram_la_model = str::split(lalmfname, ",", false);
+                if (bigram_la_model.size() > 2)
+                    d.m_la = new LargeBigramLookahead(d, bigram_la_model[0], bigram_la_model[1]);
+                else
+                    d.m_la = new LargeBigramLookahead(d, bigram_la_model[0]);
+            }
             else {
                 cerr << "unknown lookahead type: " << la_type << endl;
                 exit(1);
