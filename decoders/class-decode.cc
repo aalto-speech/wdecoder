@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
                 d.m_la = new PrecomputedHybridBigramLookahead(d, lalmfname);
             else if (la_type == "large-bigram") {
                 vector<string> bigram_la_model = str::split(lalmfname, ",", false);
-                if (bigram_la_model.size() > 2)
+                if (bigram_la_model.size() > 1)
                     d.m_la = new LargeBigramLookahead(d, bigram_la_model[0], bigram_la_model[1]);
                 else
                     d.m_la = new LargeBigramLookahead(d, bigram_la_model[0]);
