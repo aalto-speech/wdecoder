@@ -49,7 +49,7 @@ read_config(WordSubwordDecoder &d, string cfgfname)
         else throw string("Unknown parameter: ") + parameter;
     }
 
-    if ((d.m_word_iw+d.m_class_iw+d.m_subword_iw - 1.0) > 0.00001) {
+    if (fabs(d.m_word_iw+d.m_class_iw+d.m_subword_iw - 1.0) > 0.00001) {
         cerr << "Invalid interpolation weights," << endl;
         cerr << "word_iw: " << d.m_word_iw << endl;
         cerr << "class_iw: " << d.m_class_iw << endl;
