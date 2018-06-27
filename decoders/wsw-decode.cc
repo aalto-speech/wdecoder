@@ -70,16 +70,7 @@ print_config(WordSubwordDecoder &d,
              conf::Config &config,
              ostream &outf)
 {
-    outf << "PH: " << config.arguments[0] << endl;
-    outf << "LEXICON: " << config.arguments[1] << endl;
-    outf << "LM: " << config.arguments[2] << endl;
-    outf << "GRAPH: " << config.arguments[4] << endl;
-    if (config["lookahead-model"].specified) {
-        string lalmfname = config["lookahead-model"].get_str();
-        outf << "LOOKAHEAD LM: " << lalmfname << endl;
-    }
     outf << "number of threads: " << config["num-threads"].get_int() << endl;
-
     outf << std::boolalpha;
     outf << "lm scale: " << d.m_lm_scale << endl;
     outf << "token limit: " << d.m_token_limit << endl;
@@ -185,12 +176,12 @@ int main(int argc, char* argv[])
     ('l', "lookahead-model=STRING", "arg", "", "Lookahead language model")
     ('t', "lookahead-type=STRING", "arg", "", "Lookahead type\n"
             "\tunigram\n"
+            "\tclass-bigram\n"
             "\tbigram-full\n"
             "\tbigram-precomputed-full\n"
             "\tbigram-hybrid\n"
             "\tbigram-precomputed-hybrid\n"
-            "\tlarge-bigram")
-    ('w', "write-la-states=STRING", "arg", "", "Writes lookahead model information to a file");
+            "\tlarge-bigram");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 10) config.print_help(stderr, 1);
 
@@ -245,10 +236,7 @@ int main(int argc, char* argv[])
                 d.m_la = new UnigramLookahead(d, lalmfname);
             else if (la_type == "class-bigram") {
                 vector<string> class_la_model = str::split(lalmfname, ",", false);
-                if (class_la_model.size() > 2)
-                    d.m_la = new ClassBigramLookahead(d, class_la_model[0], class_la_model[1], quantization, class_la_model[2]);
-                else
-                    d.m_la = new ClassBigramLookahead(d, class_la_model[0], class_la_model[1], quantization);
+                d.m_la = new ClassBigramLookahead(d, class_la_model[0], class_la_model[1], quantization);
             }
             else if (la_type == "bigram-full")
                 d.m_la = new FullTableBigramLookahead(d, lalmfname);
@@ -269,12 +257,6 @@ int main(int argc, char* argv[])
                 cerr << "unknown lookahead type: " << la_type << endl;
                 exit(1);
             }
-        }
-
-        if (config["write-la-states"].specified) {
-            string lasfname = config["write-la-states"].get_str();
-            cerr << "Writing lookahead state information: " << lasfname << endl;
-            d.m_la->write(lasfname);
         }
 
         if (config["result-file"].specified) {

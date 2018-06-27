@@ -50,8 +50,7 @@ ClassBigramLookahead::ClassBigramLookahead(
     Decoder &decoder,
     string carpafname,
     string cmempfname,
-    bool quantization,
-    string stateFile)
+    bool quantization)
     : m_class_la(carpafname,
                  cmempfname,
                  decoder.m_text_units,
@@ -62,17 +61,13 @@ ClassBigramLookahead::ClassBigramLookahead(
     this->decoder = &decoder;
 
     time_t t1,t2;
-    if (stateFile.length() > 0) {
-        readStates(stateFile);
-    } else {
-        t1 = time(0);
-        cerr << "Setting look-ahead state indices" << endl;
-        m_node_la_states.resize(decoder.m_nodes.size(), -1);
-        m_la_state_count = set_la_state_indices_to_nodes();
-        t2 = time(0);
-        cerr << "elapsed time for setting indices: " << (t2-t1) << endl;
-        cerr << "Number of look-ahead states: " << m_la_state_count << endl;
-    }
+    t1 = time(0);
+    cerr << "Setting look-ahead state indices" << endl;
+    m_node_la_states.resize(decoder.m_nodes.size(), -1);
+    m_la_state_count = set_la_state_indices_to_nodes();
+    t2 = time(0);
+    cerr << "elapsed time for setting indices: " << (t2-t1) << endl;
+    cerr << "Number of look-ahead states: " << m_la_state_count << endl;
     t1 = time(0);
     cerr << "Setting look-ahead scores" << endl;
     set_la_scores();
@@ -131,7 +126,7 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
             int nodeIdx = wit->second;
             int wordId = decoder->m_nodes[nodeIdx].word_id;
 
-            if (++wrdi % 10000 == 0) {
+            if (++wrdi % 100000 == 0) {
                 set<int> distLaStates;
                 for (int i=0; i<(int)m_node_la_states.size(); i++)
                     distLaStates.insert(m_node_la_states[i]);
