@@ -1089,6 +1089,47 @@ LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
 }
 
 
+LargeBigramLookahead::LargeBigramLookahead(Decoder &decoder,
+        string lafname,
+        string statesfname)
+{
+    m_la_lm.read_arpa(lafname);
+    this->decoder = &decoder;
+    set_text_unit_id_la_ngram_symbol_mapping();
+
+    vector<vector<Decoder::Arc> > reverse_arcs;
+    decoder.get_reverse_arcs(reverse_arcs);
+    decoder.mark_initial_nodes(1000);
+    decoder.mark_tail_nodes(1000, reverse_arcs);
+
+    int tail_count = 0;
+    int initial_count = 0;
+    for (int i=0; i<(int)decoder.m_nodes.size(); i++) {
+        if (decoder.m_nodes[i].flags & NODE_TAIL) tail_count++;
+        if (decoder.m_nodes[i].flags & NODE_INITIAL) initial_count++;
+    }
+    cerr << "Tail nodes: " << tail_count << endl;
+    cerr << "Initial nodes: " << initial_count << endl;
+
+    time_t rawtime;
+    time(&rawtime);
+    cerr << "time: " << ctime(&rawtime);
+    cerr << "Setting look-ahead states" << endl;
+
+    m_node_la_states.resize(decoder.m_nodes.size(), -1);
+    int la_count = set_la_state_indices_to_nodes();
+    m_lookahead_states.resize(la_count);
+    cerr << "Number of lookahead states: " << la_count << endl;
+
+    set_word_id_la_states();
+
+    set_arc_la_updates();
+
+    cerr << "Reading look-ahead states from file: " << statesfname << endl;
+    read(statesfname);
+}
+
+
 int
 LargeBigramLookahead::set_la_state_indices_to_nodes()
 {
@@ -1461,7 +1502,7 @@ LargeBigramLookahead::read(string ifname)
     ifstream ilafile(ifname);
     if (!ilafile) throw string("Problem opening file: " + ifname);
 
-    string read_error("Problem reading ARPA file");
+    string read_error("Problem reading look-ahead states file");
     string line;
 
     if (!getline(ilafile, line)) throw read_error;
@@ -1469,6 +1510,7 @@ LargeBigramLookahead::read(string ifname)
 
     stringstream ssline(line);
     ssline >> la_state_count;
+    if (ssline.fail()) cerr << "Problem parsing header line: " + line;
     m_lookahead_states.resize(la_state_count);
 
     for (int i=0; i<la_state_count; i++) {
@@ -1493,5 +1535,7 @@ LargeBigramLookahead::read(string ifname)
             ssline >>id >>score;
             la_state.m_scores[id] = score;
         }
+
+        if (ssline.fail()) cerr << "Problem parsing line: " + line;
     }
 }

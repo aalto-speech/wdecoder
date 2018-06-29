@@ -26,8 +26,7 @@ public:
     ClassBigramLookahead(Decoder &decoder,
                          std::string carpafname,
                          std::string classmfname,
-                         bool quantization=false,
-                         std::string nodeStates="");
+                         bool quantization=false);
     ~ClassBigramLookahead() {};
     float get_lookahead_score(int node_idx, int word_id);
     void readStates(std::string ifname);

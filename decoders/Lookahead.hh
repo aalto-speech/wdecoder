@@ -185,6 +185,9 @@ class LargeBigramLookahead : public BigramLookahead {
 public:
     LargeBigramLookahead(Decoder &decoder,
                          std::string lafname);
+    LargeBigramLookahead(Decoder &decoder,
+                         std::string lafname,
+                         std::string statesfname);
     ~LargeBigramLookahead() {};
     float get_lookahead_score(int node_idx, int word_id);
     void write(std::string ofname);

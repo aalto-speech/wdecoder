@@ -52,8 +52,7 @@ decoder_progs = decode\
 	segment\
 	lastates\
 	cleanlex\
-	lasc\
-	clastates
+	lasc
 decoder_progs_srcs = $(addsuffix .cc,$(addprefix decoders/,$(decoder_progs)))
 
 test_srcs = test/wgraphtest.cc\
