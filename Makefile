@@ -41,8 +41,10 @@ decoder_srcs = decoders/Decoder.cc\
 	decoders/ClassIPDecoder.cc\
 	decoders/WordSubwordDecoder.cc\
 	decoders/Segmenter.cc
-
 decoder_objs = $(decoder_srcs:.cc=.o)
+
+decoder_helper_src = decoders/decoder-helpers.cc
+decoder_helper_obj = decoders/decoder-helpers.o
 
 decoder_progs = decode\
 	class-decode\
@@ -82,8 +84,8 @@ all: $(graph_progs) $(decoder_progs) $(test_progs)
 $(graph_progs): $(graph_progs_srcs) $(util_objs) $(graph_objs)
 	$(CXX) $(cxxflags) -o $@ graphs/$@.cc $(util_objs) $(graph_objs) -lz -I./graphs
 
-$(decoder_progs): $(decoder_progs_srcs) $(util_objs) $(graph_objs) $(decoder_objs)
-	$(CXX) $(cxxflags) -o $@ decoders/$@.cc $(util_objs) $(graph_objs) $(decoder_objs)\
+$(decoder_progs): $(decoder_progs_srcs) $(util_objs) $(graph_objs) $(decoder_objs) $(decoder_helper_obj)
+	$(CXX) $(cxxflags) -o $@ decoders/$@.cc $(util_objs) $(graph_objs) $(decoder_objs) $(decoder_helper_obj)\
 	 -lz -pthread -I./graphs -I./decoders
 
 $(test_objs): %.o: %.cc $(test_srcs) $(util_objs) $(graph_objs) $(decoder_objs)
@@ -97,7 +99,7 @@ $(test_progs): $(test_objs)
 clean:
 	rm -f $(util_objs)\
 	 $(graph_objs) $(graph_progs)\
-	 $(decoder_objs)  $(decoder_progs)\
+	 $(decoder_objs) $(decoder_helper_obj) $(decoder_progs)\
 	 $(test_progs) $(test_objs) .depend
 
 dep:

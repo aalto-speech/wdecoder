@@ -1,12 +1,11 @@
 #include <sstream>
-#include <thread>
-#include <cmath>
 
 #include "ClassDecoder.hh"
 #include "Lookahead.hh"
 #include "ClassLookahead.hh"
 #include "conf.hh"
 #include "str.hh"
+#include "decoder-helpers.hh"
 
 using namespace std;
 
@@ -43,95 +42,6 @@ read_config(ClassDecoder &d, string cfgfname)
     }
 
     cfgf.close();
-}
-
-
-void
-print_config(ClassDecoder &d,
-             conf::Config &config,
-             ostream &outf)
-{
-    outf << "number of threads: " << config["num-threads"].get_int() << endl;
-    outf << std::boolalpha;
-    outf << "lm scale: " << d.m_lm_scale << endl;
-    outf << "token limit: " << d.m_token_limit << endl;
-    outf << "duration scale: " << d.m_duration_scale << endl;
-    outf << "transition scale: " << d.m_transition_scale << endl;
-    outf << "force sentence end: " << d.m_force_sentence_end << endl;
-    outf << "use word boundary symbol: " << d.m_use_word_boundary_symbol << endl;
-    if (d.m_use_word_boundary_symbol)
-        outf << "word boundary symbol: " << d.m_word_boundary_symbol << endl;
-    outf << "global beam: " << d.m_global_beam << endl;
-    outf << "word end beam: " << d.m_word_end_beam << endl;
-    outf << "node beam: " << d.m_node_beam << endl;
-    outf << "history clean frame interval: " << d.m_history_clean_frame_interval << endl;
-}
-
-
-void join(vector<string> &lnafnames,
-          vector<ClassRecognition*> &recognitions,
-          vector<RecognitionResult*> &results,
-          vector<thread*> &threads,
-          TotalRecognitionStats &total,
-          ostream &resultf,
-          ostream &logf)
-{
-    for (int i=0; i<(int)threads.size(); i += 1) {
-        threads[i]->join();
-        logf << endl << "recognizing: " << lnafnames[i] << endl;
-        resultf << lnafnames[i] << ":" << results[i]->best_result.result << endl;
-        results[i]->print_file_stats(logf);
-        total.accumulate(*results[i]);
-        delete recognitions[i];
-        delete results[i];
-        delete threads[i];
-    }
-    lnafnames.clear();
-    recognitions.clear();
-    results.clear();
-    threads.clear();
-}
-
-
-void
-recognize_lnas(ClassDecoder &d,
-               conf::Config &config,
-               string lnalistfname,
-               ostream &resultf,
-               ostream &logf)
-{
-    ifstream lnalistf(lnalistfname);
-    string lnafname;
-    TotalRecognitionStats total;
-
-    print_config(d, config, logf);
-
-    int num_threads = config["num-threads"].get_int();
-    vector<string> lna_fnames;
-    vector<ClassRecognition*> recognitions;
-    vector<RecognitionResult*> results;
-    vector<std::thread*> threads;
-    while (getline(lnalistf, lnafname)) {
-        if (!lnafname.length()) continue;
-
-        if ((int)recognitions.size() < num_threads) {
-            lna_fnames.push_back(lnafname);
-            recognitions.push_back(new ClassRecognition(d));
-            results.push_back(new RecognitionResult());
-            thread *thr = new thread(&ClassRecognition::recognize_lna_file,
-                                     recognitions.back(),
-                                     lnafname,
-                                     std::ref(*results.back()),
-                                     config["nbest"].specified);
-            threads.push_back(thr);
-        }
-
-        if ((int)recognitions.size() == num_threads)
-            join(lna_fnames, recognitions, results, threads, total, resultf, logf);
-    }
-    lnalistf.close();
-    join(lna_fnames, recognitions, results, threads, total, resultf, logf);
-    if (total.num_files > 1) total.print_stats(logf);
 }
 
 
@@ -223,6 +133,7 @@ int main(int argc, char* argv[])
             }
         }
 
+        SimpleFileOutput *nbest = config["nbest"].specified ? new SimpleFileOutput(config["nbest"].get_str()) : nullptr;
         if (config["result-file"].specified) {
             string resultfname = config["result-file"].get_str();
             cerr << "Base filename for results: " << resultfname << endl;
@@ -230,9 +141,13 @@ int main(int argc, char* argv[])
             string logfname = resultfname + string(".log");
             ofstream resultf(resfname);
             ofstream logf(logfname);
-            recognize_lnas(d, config, lnalistfname, resultf, logf);
+            recognize_lnas(d, config, lnalistfname, resultf, logf, nbest);
         }
-        else recognize_lnas(d, config, lnalistfname, cout, cerr);
+        else recognize_lnas(d, config, lnalistfname, cout, cerr, nbest);
+        if (nbest != nullptr) {
+            nbest->close();
+            delete nbest;
+        }
 
     } catch (string &e) {
         cerr << e << endl;

@@ -266,6 +266,24 @@ Decoder::print_dot_digraph(vector<Node> &nodes,
 
 
 void
+Decoder::print_config(ostream &outf)
+{
+    outf << "lm scale: " << m_lm_scale << endl;
+    outf << "token limit: " << m_token_limit << endl;
+    outf << "duration scale: " << m_duration_scale << endl;
+    outf << "transition scale: " << m_transition_scale << endl;
+    outf << "force sentence end: " << m_force_sentence_end << endl;
+    outf << "use word boundary symbol: " << m_use_word_boundary_symbol << endl;
+    if (m_use_word_boundary_symbol)
+        outf << "word boundary symbol: " << m_word_boundary_symbol << endl;
+    outf << "global beam: " << m_global_beam << endl;
+    outf << "word end beam: " << m_word_end_beam << endl;
+    outf << "node beam: " << m_node_beam << endl;
+    outf << "history clean frame interval: " << m_history_clean_frame_interval << endl;
+}
+
+
+void
 Recognition::recognize_lna_file(
     string lnafname,
     RecognitionResult &res,
@@ -518,8 +536,8 @@ Recognition::get_best_hypo_tokens(vector<Token*> &tokens)
     for (int i=0; i<(int)tokens.size(); i++) {
         auto htit = best_hypo_tokens_map.find(tokens[i]->history);
         if (htit == best_hypo_tokens_map.end() ||
-            tokens[i]->total_log_prob > htit->second->total_log_prob)
-                best_hypo_tokens_map[tokens[i]->history] = tokens[i];
+                tokens[i]->total_log_prob > htit->second->total_log_prob)
+            best_hypo_tokens_map[tokens[i]->history] = tokens[i];
     }
 
     vector<Token*> best_hypo_tokens;

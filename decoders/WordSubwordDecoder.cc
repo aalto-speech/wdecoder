@@ -149,6 +149,16 @@ WordSubwordDecoder::read_subword_lm(
 }
 
 
+void
+WordSubwordDecoder::print_config(ostream &outf)
+{
+    Decoder::print_config(outf);
+    outf << "interpolation weight (word lm): " << exp(m_word_iw) << endl;
+    outf << "interpolation weight (class lm): " << exp(m_class_iw) << endl;
+    outf << "interpolation weight (subword lm): " << exp(m_subword_iw) << endl;
+}
+
+
 WordSubwordRecognition::WordSubwordRecognition(WordSubwordDecoder &decoder)
     : Recognition::Recognition(decoder)
 {

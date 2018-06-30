@@ -30,6 +30,7 @@ public:
     void read_subword_lm(
         std::string ngramfname,
         std::string segfname);
+    virtual void print_config(std::ostream &outf);
 
     // Language model
     LNNgram m_lm;

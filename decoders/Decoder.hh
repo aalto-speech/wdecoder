@@ -69,6 +69,7 @@ public:
                          int curr_depth=0,
                          int node=END_NODE);
     void print_dot_digraph(std::vector<Node> &nodes, std::ostream &fstr);
+    virtual void print_config(std::ostream &outf);
 
     // Words or subwords
     std::vector<std::string> m_text_units;

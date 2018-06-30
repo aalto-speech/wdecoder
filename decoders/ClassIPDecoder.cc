@@ -91,6 +91,14 @@ ClassIPDecoder::read_class_memberships(
 }
 
 
+void
+ClassIPDecoder::print_config(ostream &outf)
+{
+    Decoder::print_config(outf);
+    outf << "interpolation weight (word lm): " << m_iw << endl;
+}
+
+
 ClassIPRecognition::ClassIPRecognition(ClassIPDecoder &decoder)
     : Recognition::Recognition(decoder)
 {

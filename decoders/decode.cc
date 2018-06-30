@@ -6,6 +6,7 @@
 #include "ClassLookahead.hh"
 #include "conf.hh"
 #include "str.hh"
+#include "decoder-helpers.hh"
 
 using namespace std;
 
@@ -44,112 +45,6 @@ read_config(NgramDecoder &d, string cfgfname)
     }
 
     cfgf.close();
-}
-
-
-void
-print_config(NgramDecoder &d,
-             conf::Config &config,
-             ostream &outf)
-{
-    outf << "number of threads: " << config["num-threads"].get_int() << endl;
-    outf << std::boolalpha;
-    outf << "lm scale: " << d.m_lm_scale << endl;
-    outf << "token limit: " << d.m_token_limit << endl;
-    outf << "duration scale: " << d.m_duration_scale << endl;
-    outf << "transition scale: " << d.m_transition_scale << endl;
-    outf << "force sentence end: " << d.m_force_sentence_end << endl;
-    outf << "use word boundary symbol: " << d.m_use_word_boundary_symbol << endl;
-    if (d.m_use_word_boundary_symbol)
-        outf << "word boundary symbol: " << d.m_word_boundary_symbol << endl;
-    outf << "global beam: " << d.m_global_beam << endl;
-    outf << "word end beam: " << d.m_word_end_beam << endl;
-    outf << "node beam: " << d.m_node_beam << endl;
-    outf << "history clean frame interval: " << d.m_history_clean_frame_interval << endl;
-}
-
-
-void join(vector<string> &lnafnames,
-          vector<NgramRecognition*> &recognitions,
-          vector<RecognitionResult*> &results,
-          vector<thread*> &threads,
-          TotalRecognitionStats &total,
-          ostream &resultf,
-          ostream &logf,
-          SimpleFileOutput *nbest = nullptr,
-          int nbest_num_hypotheses = 10000)
-{
-    for (int i=0; i<(int)threads.size(); i += 1) {
-        threads[i]->join();
-        logf << endl << "recognizing: " << lnafnames[i] << endl;
-        resultf << lnafnames[i] << ":" << results[i]->best_result.result << endl;
-        results[i]->print_file_stats(logf);
-        total.accumulate(*results[i]);
-        if (nbest != nullptr) {
-            int hypotheses_written = 0;
-            auto hypoit = results[i]->nbest_results.rbegin();
-            while (hypoit != results[i]->nbest_results.rend()
-                    && hypotheses_written++ < nbest_num_hypotheses) {
-                *nbest << lnafnames[i]
-                       << ":" << hypoit->first
-                       << " " << hypoit->second.total_am_lp
-                       << " " << hypoit->second.total_lm_lp
-                       << " " << hypoit->second.result.length() - 2
-                       << " " << hypoit->second.result << "\n";
-                hypoit++;
-            }
-        }
-        delete recognitions[i];
-        delete results[i];
-        delete threads[i];
-    }
-    lnafnames.clear();
-    recognitions.clear();
-    results.clear();
-    threads.clear();
-}
-
-
-void
-recognize_lnas(NgramDecoder &d,
-               conf::Config &config,
-               string lnalistfname,
-               ostream &resultf,
-               ostream &logf,
-               SimpleFileOutput *nbest = nullptr)
-{
-    ifstream lnalistf(lnalistfname);
-    string lnafname;
-    TotalRecognitionStats total;
-
-    print_config(d, config, logf);
-
-    int num_threads = config["num-threads"].get_int();
-    vector<string> lna_fnames;
-    vector<NgramRecognition*> recognitions;
-    vector<RecognitionResult*> results;
-    vector<std::thread*> threads;
-    while (getline(lnalistf, lnafname)) {
-        if (!lnafname.length()) continue;
-
-        if ((int)recognitions.size() < num_threads) {
-            lna_fnames.push_back(lnafname);
-            recognitions.push_back(new NgramRecognition(d));
-            results.push_back(new RecognitionResult());
-            thread *thr = new thread(&NgramRecognition::recognize_lna_file,
-                                     recognitions.back(),
-                                     lnafname,
-                                     std::ref(*results.back()),
-                                     config["nbest"].specified);
-            threads.push_back(thr);
-        }
-
-        if ((int)recognitions.size() == num_threads)
-            join(lna_fnames, recognitions, results, threads, total, resultf, logf, nbest, config["nbest-num-hypotheses"].get_int());
-    }
-    lnalistf.close();
-    join(lna_fnames, recognitions, results, threads, total, resultf, logf, nbest, config["nbest-num-hypotheses"].get_int());
-    if (total.num_files > 1) total.print_stats(logf);
 }
 
 
