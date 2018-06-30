@@ -35,13 +35,8 @@ read_config(WordSubwordDecoder &d, string cfgfname)
             ss >> force_str;
             d.m_force_sentence_end = (force_str == "true");
         }
-        else if (parameter == "word_boundary_symbol") {
-            cerr << "FIXME, word boundary symbol" << endl;
-            exit(1);
-            d.m_use_word_boundary_symbol = true;
-            ss >> d.m_word_boundary_symbol;
-            //d.m_word_boundary_symbol_idx = d.m_word_map[d.m_word_boundary_symbol];
-        }
+        else if (parameter == "word_boundary_symbol")
+            throw string("Word boundary symbol not supported in wsw-decode.");
         else if (parameter == "stats") ss >> d.m_stats;
         else if (parameter == "word_iw") ss >> d.m_word_iw;
         else if (parameter == "class_iw") ss >> d.m_class_iw;
@@ -102,7 +97,7 @@ join(vector<string> &lnafnames,
     for (int i=0; i<(int)threads.size(); i += 1) {
         threads[i]->join();
         logf << endl << "recognizing: " << lnafnames[i] << endl;
-        resultf << lnafnames[i] << ":" << results[i]->get_best_result() << endl;
+        resultf << lnafnames[i] << ":" << results[i]->best_result.result << endl;
         results[i]->print_file_stats(logf);
         total.accumulate(*results[i]);
         delete recognitions[i];
@@ -144,7 +139,8 @@ recognize_lnas(WordSubwordDecoder &d,
             thread *thr = new thread(&WordSubwordRecognition::recognize_lna_file,
                                      recognitions.back(),
                                      lnafname,
-                                     std::ref(*results.back()));
+                                     std::ref(*results.back()),
+                                     config["nbest"].specified);
             threads.push_back(thr);
         }
 
@@ -174,7 +170,9 @@ int main(int argc, char* argv[])
      "\tbigram-precomputed-full\n"
      "\tbigram-hybrid\n"
      "\tbigram-precomputed-hybrid\n"
-     "\tlarge-bigram");
+     "\tlarge-bigram")
+    ('n', "nbest=STRING", "arg", "", "N-best list file (use .gz suffix for compression)")
+    ('y', "nbest-num-hypotheses", "arg", "10000", "Maximum number of hypotheses per file");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 10) config.print_help(stderr, 1);
 

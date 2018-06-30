@@ -268,7 +268,8 @@ Decoder::print_dot_digraph(vector<Node> &nodes,
 void
 Recognition::recognize_lna_file(
     string lnafname,
-    RecognitionResult &res)
+    RecognitionResult &res,
+    bool write_nbest)
 {
     m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
@@ -322,16 +323,25 @@ Recognition::recognize_lna_file(
     if (best_token == nullptr) {
         if (d->m_force_sentence_end) add_sentence_ends(tokens);
         best_token = get_best_token(tokens);
+    } else if (write_nbest && d->m_force_sentence_end) {
+        add_sentence_ends(tokens);
     }
 
     res.total_frames = m_frame_idx;
     res.total_time = difftime(end_time, start_time);
     res.total_token_count = m_total_token_count;
-    res.add_result(
+    res.set_best_result(
         get_word_history(best_token->history),
         best_token->total_log_prob,
         best_token->am_log_prob,
         best_token->lm_log_prob);
+    if (write_nbest)
+        for (int i=0; i<(int)tokens.size(); i++)
+            res.add_nbest_result(
+                get_word_history(tokens[i]->history),
+                tokens[i]->total_log_prob,
+                tokens[i]->am_log_prob,
+                tokens[i]->lm_log_prob);
 
     clear_word_history();
     m_lna_reader.close();
@@ -508,7 +518,7 @@ RecognitionResult::RecognitionResult()
 
 
 void
-RecognitionResult::add_result(
+RecognitionResult::add_nbest_result(
     std::string result,
     double total_lp,
     double total_am_lp,
@@ -520,22 +530,27 @@ RecognitionResult::add_result(
     res.total_am_lp = total_am_lp;
     res.total_lm_lp = total_lm_lp;
 
-    results.insert(make_pair(total_lp, res));
-}
-
-
-string
-RecognitionResult::get_best_result()
-{
-    Result &best_result = results.rbegin()->second;
-    return best_result.result;
+    nbest_results.insert(make_pair(total_lp, res));
 }
 
 
 void
-RecognitionResult::print_file_stats(ostream &statsf)
+RecognitionResult::set_best_result(
+    std::string result,
+    double total_lp,
+    double total_am_lp,
+    double total_lm_lp)
 {
-    Result &best_result = results.rbegin()->second;
+    best_result.result = result;
+    best_result.total_lp = total_lp;
+    best_result.total_am_lp = total_am_lp;
+    best_result.total_lm_lp = total_lm_lp;
+}
+
+
+void
+RecognitionResult::print_file_stats(ostream &statsf) const
+{
     statsf << "\trecognized " << total_frames << " frames in "
            << total_time << " seconds." << endl;
     statsf << "\tRTF: " << total_time / ((double)total_frames/125.0) << endl;
@@ -553,10 +568,9 @@ TotalRecognitionStats::accumulate(RecognitionResult &acc)
     total_frames += acc.total_frames;
     total_time += acc.total_time;
     total_token_count += acc.total_token_count;
-    RecognitionResult::Result &best_result = acc.results.rbegin()->second;
-    total_lp += best_result.total_lp;
-    total_am_lp += best_result.total_am_lp;
-    total_lm_lp += best_result.total_lm_lp;
+    total_lp += acc.best_result.total_lp;
+    total_am_lp += acc.best_result.total_am_lp;
+    total_lm_lp += acc.best_result.total_lm_lp;
 }
 
 

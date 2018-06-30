@@ -75,14 +75,30 @@ void join(vector<string> &lnafnames,
           vector<thread*> &threads,
           TotalRecognitionStats &total,
           ostream &resultf,
-          ostream &logf)
+          ostream &logf,
+          SimpleFileOutput *nbest = nullptr,
+          int nbest_num_hypotheses = 10000)
 {
     for (int i=0; i<(int)threads.size(); i += 1) {
         threads[i]->join();
         logf << endl << "recognizing: " << lnafnames[i] << endl;
-        resultf << lnafnames[i] << ":" << results[i]->get_best_result() << endl;
+        resultf << lnafnames[i] << ":" << results[i]->best_result.result << endl;
         results[i]->print_file_stats(logf);
         total.accumulate(*results[i]);
+        if (nbest != nullptr) {
+            int hypotheses_written = 0;
+            auto hypoit = results[i]->nbest_results.rbegin();
+            while (hypoit != results[i]->nbest_results.rend()
+                    && hypotheses_written++ < nbest_num_hypotheses) {
+                *nbest << lnafnames[i]
+                       << ":" << hypoit->first
+                       << " " << hypoit->second.total_am_lp
+                       << " " << hypoit->second.total_lm_lp
+                       << " " << hypoit->second.result.length() - 2
+                       << " " << hypoit->second.result << "\n";
+                hypoit++;
+            }
+        }
         delete recognitions[i];
         delete results[i];
         delete threads[i];
@@ -99,7 +115,8 @@ recognize_lnas(NgramDecoder &d,
                conf::Config &config,
                string lnalistfname,
                ostream &resultf,
-               ostream &logf)
+               ostream &logf,
+               SimpleFileOutput *nbest = nullptr)
 {
     ifstream lnalistf(lnalistfname);
     string lnafname;
@@ -122,15 +139,16 @@ recognize_lnas(NgramDecoder &d,
             thread *thr = new thread(&NgramRecognition::recognize_lna_file,
                                      recognitions.back(),
                                      lnafname,
-                                     std::ref(*results.back()));
+                                     std::ref(*results.back()),
+                                     config["nbest"].specified);
             threads.push_back(thr);
         }
 
         if ((int)recognitions.size() == num_threads)
-            join(lna_fnames, recognitions, results, threads, total, resultf, logf);
+            join(lna_fnames, recognitions, results, threads, total, resultf, logf, nbest, config["nbest-num-hypotheses"].get_int());
     }
     lnalistf.close();
-    join(lna_fnames, recognitions, results, threads, total, resultf, logf);
+    join(lna_fnames, recognitions, results, threads, total, resultf, logf, nbest, config["nbest-num-hypotheses"].get_int());
     if (total.num_files > 1) total.print_stats(logf);
 }
 
@@ -152,7 +170,9 @@ int main(int argc, char* argv[])
      "\tbigram-precomputed-full\n"
      "\tbigram-hybrid\n"
      "\tbigram-precomputed-hybrid\n"
-     "\tlarge-bigram");
+     "\tlarge-bigram")
+    ('n', "nbest=STRING", "arg", "", "N-best list file (use .gz suffix for compression)")
+    ('y', "nbest-num-hypotheses", "arg", "10000", "Maximum number of hypotheses per file");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 6) config.print_help(stderr, 1);
 
@@ -223,6 +243,7 @@ int main(int argc, char* argv[])
             }
         }
 
+        SimpleFileOutput *nbest = config["nbest"].specified ? new SimpleFileOutput(config["nbest"].get_str()) : nullptr;
         if (config["result-file"].specified) {
             string resultfname = config["result-file"].get_str();
             cerr << "Base filename for results: " << resultfname << endl;
@@ -230,9 +251,13 @@ int main(int argc, char* argv[])
             string logfname = resultfname + string(".log");
             ofstream resultf(resfname);
             ofstream logf(logfname);
-            recognize_lnas(d, config, lnalistfname, resultf, logf);
+            recognize_lnas(d, config, lnalistfname, resultf, logf, nbest);
         }
-        else recognize_lnas(d, config, lnalistfname, cout, cerr);
+        else recognize_lnas(d, config, lnalistfname, cout, cerr, nbest);
+        if (nbest != nullptr) {
+            nbest->close();
+            delete nbest;
+        }
 
     } catch (string &e) {
         cerr << e << endl;

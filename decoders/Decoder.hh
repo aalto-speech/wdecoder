@@ -116,12 +116,15 @@ public:
 class RecognitionResult {
 public:
     RecognitionResult();
-    void add_result(std::string result,
-                    double total_lp,
-                    double total_am_lp,
-                    double total_lm_lp);
-    std::string get_best_result();
-    void print_file_stats(std::ostream &statsf);
+    void add_nbest_result(std::string result,
+                          double total_lp,
+                          double total_am_lp,
+                          double total_lm_lp);
+    void set_best_result(std::string result,
+                         double total_lp,
+                         double total_am_lp,
+                         double total_lm_lp);
+    void print_file_stats(std::ostream &statsf) const;
 
     class Result {
     public:
@@ -135,7 +138,8 @@ public:
     long long int total_frames;
     double total_time;
     double total_token_count;
-    std::multimap<double, Result> results;
+    Result best_result;
+    std::multimap<double, Result> nbest_results;
 };
 
 class TotalRecognitionStats {
@@ -204,7 +208,8 @@ public:
     Recognition(Decoder &decoder);
     virtual ~Recognition() { };
     void recognize_lna_file(std::string lnafname,
-                            RecognitionResult &res);
+                            RecognitionResult &res,
+                            bool write_nbest=false);
     void prune_word_history();
     void clear_word_history();
     void print_certain_word_history(std::ostream &outf=std::cout);
