@@ -25,7 +25,7 @@ public:
                        std::string wordpfname);
     int read_class_memberships(std::string fname,
                                std::map<std::string, std::pair<int, float> > &class_memberships);
-    virtual void print_config(std::ostream &outf);
+    void print_config(std::ostream &outf);
 
     // N-gram language model
     LNNgram m_lm;

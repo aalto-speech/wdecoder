@@ -55,7 +55,7 @@ public:
     };
 
     Decoder();
-    ~Decoder();
+    virtual ~Decoder();
 
     void read_phone_model(std::string phnfname);
     void read_duration_model(std::string durfname);
