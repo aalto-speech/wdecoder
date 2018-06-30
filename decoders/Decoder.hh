@@ -218,6 +218,7 @@ public:
     virtual void add_sentence_ends(std::vector<Token*> &tokens) = 0;
     Token* get_best_token(std::vector<Token*> &tokens);
     Token* get_best_end_token(std::vector<Token*> &tokens);
+    std::vector<Token*> get_best_hypo_tokens(std::vector<Token*> &tokens);
 
 protected:
     virtual void reset_frame_variables() = 0;

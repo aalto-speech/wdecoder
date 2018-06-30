@@ -335,13 +335,15 @@ Recognition::recognize_lna_file(
         best_token->total_log_prob,
         best_token->am_log_prob,
         best_token->lm_log_prob);
-    if (write_nbest)
-        for (int i=0; i<(int)tokens.size(); i++)
+    if (write_nbest) {
+        vector<Token*> hypo_tokens = get_best_hypo_tokens(tokens);
+        for (int i=0; i<(int)hypo_tokens.size(); i++)
             res.add_nbest_result(
-                get_word_history(tokens[i]->history),
-                tokens[i]->total_log_prob,
-                tokens[i]->am_log_prob,
-                tokens[i]->lm_log_prob);
+                get_word_history(hypo_tokens[i]->history),
+                hypo_tokens[i]->total_log_prob,
+                hypo_tokens[i]->am_log_prob,
+                hypo_tokens[i]->lm_log_prob);
+    }
 
     clear_word_history();
     m_lna_reader.close();
@@ -506,6 +508,24 @@ Recognition::get_best_end_token(vector<Token*> &tokens)
         }
     }
     return best_token;
+}
+
+
+vector<Recognition::Token*>
+Recognition::get_best_hypo_tokens(vector<Token*> &tokens)
+{
+    map<WordHistory*, Token*> best_hypo_tokens_map;
+    for (int i=0; i<(int)tokens.size(); i++) {
+        auto htit = best_hypo_tokens_map.find(tokens[i]->history);
+        if (htit == best_hypo_tokens_map.end() ||
+            tokens[i]->total_log_prob > htit->second->total_log_prob)
+                best_hypo_tokens_map[tokens[i]->history] = tokens[i];
+    }
+
+    vector<Token*> best_hypo_tokens;
+    for (const auto &ht : best_hypo_tokens_map)
+        best_hypo_tokens.push_back(ht.second);
+    return best_hypo_tokens;
 }
 
 
