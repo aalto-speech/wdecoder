@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <list>
 #include <sstream>
 #include <ctime>
 
@@ -336,13 +337,12 @@ Recognition::recognize_lna_file(
         tok->update_total_log_prob();
     }
 
-    Token *best_token = nullptr;
-    best_token = get_best_end_token(tokens);
-    if (best_token == nullptr) {
+    Token *best_token = get_best_end_token(tokens);
+    if (best_token != nullptr) {
+        tokens = get_end_tokens(tokens);
+    } else {
         if (d->m_force_sentence_end) add_sentence_ends(tokens);
         best_token = get_best_token(tokens);
-    } else if (write_nbest && d->m_force_sentence_end) {
-        add_sentence_ends(tokens);
     }
 
     res.total_frames = m_frame_idx;
@@ -355,12 +355,19 @@ Recognition::recognize_lna_file(
         best_token->lm_log_prob);
     if (write_nbest) {
         vector<Token*> hypo_tokens = get_best_hypo_tokens(tokens);
-        for (int i=0; i<(int)hypo_tokens.size(); i++)
-            res.add_nbest_result(
-                get_result(hypo_tokens[i]->history),
-                hypo_tokens[i]->total_log_prob,
-                hypo_tokens[i]->am_log_prob,
-                hypo_tokens[i]->lm_log_prob);
+        cerr << "number of end hypotheses: " << hypo_tokens.size() << endl;
+        for (int i=0; i<(int)hypo_tokens.size(); i++) {
+            cerr << "parsing nbest for hypothesis:" << i << endl;
+            vector<pair<string, array<float,3> > > nbest_results = get_nbest_results(hypo_tokens[i]->history);
+            cerr << "number of results: " << nbest_results.size() << endl;
+            for (int n=0; n<(int)nbest_results.size(); n++) {
+                res.add_nbest_result(
+                    nbest_results[n].first,
+                    hypo_tokens[i]->total_log_prob + nbest_results[n].second[0],
+                    hypo_tokens[i]->am_log_prob + nbest_results[n].second[1],
+                    hypo_tokens[i]->lm_log_prob + nbest_results[n].second[2]);
+            }
+        }
     }
 
     clear_word_history();
@@ -517,18 +524,29 @@ Recognition::get_best_token(vector<Token*> &tokens)
 Recognition::Token*
 Recognition::get_best_end_token(vector<Token*> &tokens)
 {
+    vector<Token*> end_tokens = get_end_tokens(tokens);
+
     Token *best_token = nullptr;
+    for (auto tit = end_tokens.begin(); tit != end_tokens.end(); ++tit)
+        if (best_token == nullptr || ((*tit)->total_log_prob > best_token->total_log_prob))
+            best_token = *tit;
+
+    return best_token;
+}
+
+
+vector<Recognition::Token*>
+Recognition::get_end_tokens(vector<Token*> &tokens)
+{
+    vector<Token*> end_tokens;
     for (auto tit = tokens.begin(); tit != tokens.end(); ++tit) {
         //if (tit->lm_node != m_ngram_state_sentence_begin) continue;
         Decoder::Node &node = d->m_nodes[(*tit)->node_idx];
-        if (node.flags & NODE_SILENCE) {
-            if (best_token == nullptr)
-                best_token = *tit;
-            else if ((*tit)->total_log_prob > best_token->total_log_prob)
-                best_token = *tit;
-        }
+        if (node.flags & NODE_SILENCE)
+            end_tokens.push_back(*tit);
     }
-    return best_token;
+
+    return end_tokens;
 }
 
 
@@ -577,6 +595,82 @@ Recognition::get_result(WordHistory *history)
 }
 
 
+vector<pair<string, array<float,3> > >
+Recognition::get_nbest_results(WordHistory *history)
+{
+    map<vector<int>, array<float, 3> > result_map;
+
+    class PartialHypo {
+    public:
+        PartialHypo() {
+            history = nullptr;
+            weight = { 0.0, 0.0, 0.0};
+            last_step_was_recombination = false;
+        }
+        PartialHypo(const PartialHypo &hypo) {
+            history = hypo.history;
+            partial_result = hypo.partial_result;
+            weight = hypo.weight;
+            last_step_was_recombination = hypo.last_step_was_recombination;
+        }
+        WordHistory *history;
+        vector<int> partial_result;
+        array<float, 3> weight;
+        bool last_step_was_recombination;
+    };
+
+    PartialHypo initial_hypo;
+    initial_hypo.history = history;
+    list<PartialHypo> hypos_to_process;
+    hypos_to_process.push_back(initial_hypo);
+
+    int hidx = 0;
+    while (hypos_to_process.size()) {
+        cerr << "hypo processing: " << ++hidx
+                << ", num end hypos: " << result_map.size() << endl;
+        PartialHypo curr_hypo = hypos_to_process.front();
+        hypos_to_process.pop_front();
+
+        if (history->previous == nullptr) {
+            PartialHypo end_hypo(curr_hypo);
+            end_hypo.partial_result.push_back(history->word_id);
+            auto rmit = result_map.find(end_hypo.partial_result);
+            if (rmit == result_map.end() || end_hypo.weight[0] > rmit->second[0])
+                result_map[end_hypo.partial_result] = end_hypo.weight;
+        } else {
+            PartialHypo new_hypo(curr_hypo);
+            new_hypo.last_step_was_recombination = false;
+            new_hypo.partial_result.push_back(history->word_id);
+            new_hypo.history = history->previous;
+            hypos_to_process.push_back(new_hypo);
+        }
+
+        if (!curr_hypo.last_step_was_recombination) {
+            for (auto blit = history->recombination_links.begin(); blit != history->recombination_links.end(); ++blit) {
+                PartialHypo new_hypo(curr_hypo);
+                new_hypo.last_step_was_recombination = true;
+                new_hypo.weight[0] += blit->second[0];
+                new_hypo.weight[1] += blit->second[1];
+                new_hypo.weight[2] += blit->second[2];
+                new_hypo.history = blit->first;
+                hypos_to_process.push_back(new_hypo);
+            }
+        }
+    }
+
+    vector<pair<string, array<float,3> > > final_results;
+    for (auto rit = result_map.begin(); rit != result_map.end(); ++rit) {
+        const vector<int> &text_unit_ids = rit->first;
+        string result = "";
+        for (auto tuit = text_unit_ids.rbegin(); tuit != text_unit_ids.rend(); ++tuit)
+            if (*tuit >= 0) result += " " + m_text_units->at(*tuit);
+        final_results.push_back(make_pair(result, rit->second));
+    }
+
+    return final_results;
+}
+
+
 RecognitionResult::RecognitionResult()
 {
     total_frames = 0;
@@ -598,7 +692,7 @@ RecognitionResult::add_nbest_result(
     res.total_am_lp = total_am_lp;
     res.total_lm_lp = total_lm_lp;
 
-    nbest_results.insert(make_pair(total_lp, res));
+    nbest_results.push_back(res);
 }
 
 
@@ -613,6 +707,29 @@ RecognitionResult::set_best_result(
     best_result.total_lp = total_lp;
     best_result.total_am_lp = total_am_lp;
     best_result.total_lm_lp = total_lm_lp;
+}
+
+
+vector<RecognitionResult::Result>
+RecognitionResult::get_nbest_results() const
+{
+    map<string, Result> best_hypo_results;
+    for (int i=0; i<nbest_results.size(); i++) {
+        Result curr_result = nbest_results[i];
+        auto trit = best_hypo_results.find(curr_result.result);
+        if (trit == best_hypo_results.end()
+          || curr_result.total_lp > trit->second.total_lp)
+            best_hypo_results[curr_result.result] = curr_result;
+    }
+
+    multimap<float, Result> mm_sorted_results;
+    for (auto hit = best_hypo_results.begin(); hit != best_hypo_results.end(); ++hit)
+        mm_sorted_results.insert(make_pair(hit->second.total_lp, hit->second));
+    vector<RecognitionResult::Result> sorted_results;
+    for (auto srit = mm_sorted_results.rbegin(); srit != mm_sorted_results.rend(); ++srit)
+        sorted_results.push_back(srit->second);
+
+    return sorted_results;
 }
 
 

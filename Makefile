@@ -1,7 +1,7 @@
 -include Makefile.local
 
-cxxflags = -O3 -DNDEBUG -std=gnu++0x -Wall -Wno-unused-function -I./util $(LOCAL_CXXFLAGS)
-#cxxflags = -O0 -g -std=gnu++0x -Wall -Wno-unused-function -I./util $(LOCAL_CXXFLAGS)
+#cxxflags = -O3 -DNDEBUG -std=gnu++0x -Wall -Wno-unused-function -I./util $(LOCAL_CXXFLAGS)
+cxxflags = -O0 -g -std=gnu++0x -Wall -Wno-unused-function -I./util $(LOCAL_CXXFLAGS)
 
 ##################################################
 

@@ -117,6 +117,15 @@ public:
 
 class RecognitionResult {
 public:
+    class Result {
+    public:
+        Result() : result(""), total_lp(0.0), total_am_lp(0.0), total_lm_lp(0.0) { };
+        std::string result;
+        double total_lp;
+        double total_am_lp;
+        double total_lm_lp;
+    };
+
     RecognitionResult();
     void add_nbest_result(std::string result,
                           double total_lp,
@@ -127,21 +136,14 @@ public:
                          double total_am_lp,
                          double total_lm_lp);
     void print_file_stats(std::ostream &statsf) const;
-
-    class Result {
-    public:
-        Result() : result(""), total_lp(0.0), total_am_lp(0.0), total_lm_lp(0.0) { };
-        std::string result;
-        double total_lp;
-        double total_am_lp;
-        double total_lm_lp;
-    };
+    std::vector<Result> get_nbest_results() const;
 
     long long int total_frames;
     double total_time;
     double total_token_count;
     Result best_result;
-    std::multimap<double, Result> nbest_results;
+private:
+    std::vector<Result> nbest_results;
 };
 
 class TotalRecognitionStats {
@@ -177,7 +179,7 @@ public:
         // For backtracking recombined hypotheses
         // Value is the log prob penalty for traversing the path
         // <total log prob, am log prob, lm log prob>
-        std::map<WordHistory*, std::array<float,3> > backlinks;
+        std::map<WordHistory*, std::array<float,3> > recombination_links;
     };
 
     class Token {
@@ -225,6 +227,7 @@ public:
     virtual void add_sentence_ends(std::vector<Token*> &tokens) = 0;
     Token* get_best_token(std::vector<Token*> &tokens);
     Token* get_best_end_token(std::vector<Token*> &tokens);
+    std::vector<Token*> get_end_tokens(std::vector<Token*> &tokens);
     std::vector<Token*> get_best_hypo_tokens(std::vector<Token*> &tokens);
 
 protected:
@@ -232,6 +235,7 @@ protected:
     virtual void propagate_tokens() = 0;
     std::string get_best_result();
     virtual std::string get_result(WordHistory *history);
+    std::vector<std::pair<std::string, std::array<float,3> > > get_nbest_results(WordHistory *history);
     virtual void prune_tokens(bool collect_active_histories=false,
                               bool nbest=false) = 0;
 

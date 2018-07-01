@@ -186,12 +186,12 @@ NgramRecognition::prune_tokens(
                     WordHistory *previousBestHistory = bntit->second.history;
                     bntit->second = *tit;
 
-                    auto blit = bntit->second.history->backlinks.find(previousBestHistory);
-                    if (blit == bntit->second.history->backlinks.end()) {
-                        bntit->second.history->backlinks[previousBestHistory] = weights;
+                    auto blit = bntit->second.history->recombination_links.find(previousBestHistory);
+                    if (blit == bntit->second.history->recombination_links.end()) {
+                        bntit->second.history->recombination_links[previousBestHistory] = weights;
                         m_num_recombination_links++;
                     } else if (blit->second[0] < weights[0]) {
-                        bntit->second.history->backlinks[previousBestHistory] = weights;
+                        bntit->second.history->recombination_links[previousBestHistory] = weights;
                         m_num_recombination_link_updated++;
                     } else
                         m_num_recombination_link_not_updated++;

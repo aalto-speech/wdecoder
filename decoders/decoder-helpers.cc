@@ -28,18 +28,14 @@ void join(vector<string> &lnafnames,
         results[i]->print_file_stats(logf);
         total.accumulate(*results[i]);
         if (nbest != nullptr) {
-            int hypotheses_written = 0;
-            auto hypoit = results[i]->nbest_results.rbegin();
-            while (hypoit != results[i]->nbest_results.rend()
-                    && hypotheses_written++ < nbest_num_hypotheses) {
+            vector<RecognitionResult::Result> nbest_results = results[i]->get_nbest_results();
+            for (int h=0; h<(int)nbest_results.size() && h<nbest_num_hypotheses; h++)
                 *nbest << lnafnames[i]
-                       << ":" << hypoit->first
-                       << " " << hypoit->second.total_am_lp
-                       << " " << hypoit->second.total_lm_lp
-                       << " " << hypoit->second.result.length() - 2
-                       << " " << hypoit->second.result << "\n";
-                hypoit++;
-            }
+                       << ":" << nbest_results[i].total_lp
+                       << " " << nbest_results[i].total_am_lp
+                       << " " << nbest_results[i].total_lm_lp
+                       << " " << nbest_results[i].result.length() - 2
+                       << " " << nbest_results[i].result << "\n";
         }
         delete recognitions[i];
         delete results[i];
