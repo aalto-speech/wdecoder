@@ -239,7 +239,9 @@ WordSubwordRecognition::propagate_tokens()
 
 
 void
-WordSubwordRecognition::prune_tokens(bool collect_active_histories)
+WordSubwordRecognition::prune_tokens(
+    bool collect_active_histories,
+    bool write_nbest)
 {
     vector<WSWToken> pruned_tokens;
     pruned_tokens.reserve(50000);
@@ -475,31 +477,4 @@ WordSubwordRecognition::add_sentence_ends(vector<Token*> &tokens)
         token->update_total_log_prob();
         advance_in_word_history(token, m_sentence_end_symbol_idx);
     }
-}
-
-
-string
-WordSubwordRecognition::get_best_word_history()
-{
-    vector<Token*> tokens;
-    get_tokens(tokens);
-    return get_word_history(get_best_token(tokens)->history);
-}
-
-
-string
-WordSubwordRecognition::get_word_history(WordHistory *history)
-{
-    string result;
-    vector<int> text_units;
-    while (true) {
-        text_units.push_back(history->word_id);
-        if (history->previous == nullptr) break;
-        history = history->previous;
-    }
-
-    for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit)
-        if (*swit >= 0) result += " " + m_text_units->at(*swit);
-
-    return result;
 }

@@ -54,19 +54,18 @@ public:
 
     ClassIPRecognition(ClassIPDecoder &decoder);
 
-    virtual void reset_frame_variables();
-    virtual void propagate_tokens();
-    virtual void prune_tokens(bool collect_active_histories=false);
+    void reset_frame_variables() override;
+    void propagate_tokens() override;
+    void prune_tokens(bool collect_active_histories=false,
+                      bool write_nbest=false) override;
     void move_token_to_node(ClassIPToken token,
                             int node_idx,
                             float transition_score,
                             bool update_lookahead);
     bool update_lm_prob(ClassIPToken &token, int node_idx);
     double class_lm_score(ClassIPToken &token, int word_id);
-    virtual void get_tokens(std::vector<Token*> &tokens);
-    virtual void add_sentence_ends(std::vector<Token*> &tokens);
-    virtual std::string get_best_word_history();
-    virtual std::string get_word_history(WordHistory *history);
+    void get_tokens(std::vector<Token*> &tokens) override;
+    void add_sentence_ends(std::vector<Token*> &tokens) override;
 
     std::vector<ClassIPToken> m_raw_tokens;
     std::vector<std::map<std::pair<int, int>, ClassIPToken> > m_recombined_tokens;

@@ -1,3 +1,4 @@
+#include <array>
 #include <algorithm>
 #include <sstream>
 #include <ctime>
@@ -127,7 +128,9 @@ NgramRecognition::propagate_tokens()
 
 
 void
-NgramRecognition::prune_tokens(bool collect_active_histories)
+NgramRecognition::prune_tokens(
+    bool collect_active_histories,
+    bool write_nbest)
 {
     vector<NgramToken> pruned_tokens;
     pruned_tokens.reserve(50000);
@@ -173,7 +176,27 @@ NgramRecognition::prune_tokens(bool collect_active_histories)
             if (tit->total_log_prob > bntit->second.total_log_prob) {
                 histogram[bntit->second.histogram_bin]--;
                 histogram[tit->histogram_bin]++;
-                bntit->second = *tit;
+
+                if (write_nbest) {
+                    array<float,3> weights = {
+                        bntit->second.total_log_prob - tit->total_log_prob,
+                        bntit->second.am_log_prob - tit->am_log_prob,
+                        bntit->second.lm_log_prob - tit->lm_log_prob
+                    };
+                    WordHistory *previousBestHistory = bntit->second.history;
+                    bntit->second = *tit;
+
+                    auto blit = bntit->second.history->backlinks.find(previousBestHistory);
+                    if (blit == bntit->second.history->backlinks.end()) {
+                        bntit->second.history->backlinks[previousBestHistory] = weights;
+                        m_num_recombination_links++;
+                    } else if (blit->second[0] < weights[0]) {
+                        bntit->second.history->backlinks[previousBestHistory] = weights;
+                        m_num_recombination_link_updated++;
+                    } else
+                        m_num_recombination_link_not_updated++;
+
+                } else bntit->second = *tit;
             }
             m_dropped_count++;
         }
@@ -336,16 +359,7 @@ NgramRecognition::add_sentence_ends(vector<Token*> &tokens)
 
 
 string
-NgramRecognition::get_best_word_history()
-{
-    vector<Token*> tokens;
-    get_tokens(tokens);
-    return get_word_history(get_best_token(tokens)->history);
-}
-
-
-string
-NgramRecognition::get_word_history(WordHistory *history)
+NgramRecognition::get_result(WordHistory *history)
 {
     string result;
     vector<int> text_units;

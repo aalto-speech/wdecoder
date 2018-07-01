@@ -37,17 +37,17 @@ public:
     NgramRecognition(NgramDecoder &decoder);
 
 private:
-    virtual void reset_frame_variables();
-    virtual void propagate_tokens();
-    virtual void prune_tokens(bool collect_active_histories=false);
+    void reset_frame_variables() override;
+    void propagate_tokens() override;
+    void prune_tokens(bool collect_active_histories=false,
+                      bool write_nbest=false) override;
     void move_token_to_node(NgramToken token,
                             int node_idx,
                             float transition_score,
                             bool update_lookahead);
-    virtual void get_tokens(std::vector<Token*> &tokens);
-    virtual void add_sentence_ends(std::vector<Token*> &tokens);
-    virtual std::string get_best_word_history();
-    virtual std::string get_word_history(WordHistory *history);
+    void get_tokens(std::vector<Token*> &tokens) override;
+    void add_sentence_ends(std::vector<Token*> &tokens) override;
+    std::string get_result(WordHistory *history) override;
 
     int m_ngram_state_sentence_begin;
     std::vector<NgramToken> m_raw_tokens;

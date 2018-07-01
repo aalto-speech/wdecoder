@@ -1,6 +1,7 @@
 #ifndef DECODER_HH
 #define DECODER_HH
 
+#include <array>
 #include <map>
 #include <fstream>
 #include <vector>
@@ -172,6 +173,11 @@ public:
         int word_id;
         WordHistory *previous;
         std::map<int, WordHistory*> next;
+
+        // For backtracking recombined hypotheses
+        // Value is the log prob penalty for traversing the path
+        // <total log prob, am log prob, lm log prob>
+        std::map<WordHistory*, std::array<float,3> > backlinks;
     };
 
     class Token {
@@ -224,9 +230,10 @@ public:
 protected:
     virtual void reset_frame_variables() = 0;
     virtual void propagate_tokens() = 0;
-    virtual std::string get_best_word_history() = 0;
-    virtual std::string get_word_history(WordHistory *history) = 0;
-    virtual void prune_tokens(bool collect_active_histories=false) = 0;
+    std::string get_best_result();
+    virtual std::string get_result(WordHistory *history);
+    virtual void prune_tokens(bool collect_active_histories=false,
+                              bool nbest=false) = 0;
 
     LnaReaderCircular m_lna_reader;
     Acoustics *m_acoustics;
@@ -253,18 +260,21 @@ protected:
     int m_sentence_end_symbol_idx;
 
     // Only in recognition
-    int m_token_count;
-    int m_token_count_after_pruning;
+    long unsigned int m_token_count;
+    long unsigned int m_token_count_after_pruning;
     float m_best_log_prob;
     float m_best_word_end_prob;
     int m_histogram_bin_limit;
     double m_total_token_count;
-    int m_global_beam_pruned_count;
-    int m_word_end_beam_pruned_count;
-    int m_node_beam_pruned_count;
-    int m_max_state_duration_pruned_count;
-    int m_histogram_pruned_count;
-    int m_dropped_count;
+    long unsigned int m_global_beam_pruned_count;
+    long unsigned int m_word_end_beam_pruned_count;
+    long unsigned int m_node_beam_pruned_count;
+    long unsigned int m_max_state_duration_pruned_count;
+    long unsigned int m_histogram_pruned_count;
+    long unsigned int m_dropped_count;
+    long unsigned int m_num_recombination_links;
+    long unsigned int m_num_recombination_link_updated;
+    long unsigned int m_num_recombination_link_not_updated;
     int m_frame_idx;
 
     std::vector<std::string> *m_text_units;

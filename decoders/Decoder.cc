@@ -300,12 +300,12 @@ Recognition::recognize_lna_file(
         reset_frame_variables();
         propagate_tokens();
 
-        if (m_frame_idx % d->m_history_clean_frame_interval == 0) {
-            prune_tokens(true);
+        if (!write_nbest && m_frame_idx % d->m_history_clean_frame_interval == 0) {
+            prune_tokens(true, false);
             prune_word_history();
             //print_certain_word_history();
         }
-        else prune_tokens(false);
+        else prune_tokens(false, write_nbest);
 
         if (m_stats) {
             cerr << endl << "recognized frame: " << m_frame_idx << endl;
@@ -318,7 +318,7 @@ Recognition::recognize_lna_file(
             cerr << "tokens pruned by max state duration: " << m_max_state_duration_pruned_count << endl;
             cerr << "best log probability: " << m_best_log_prob << endl;
             cerr << "number of active nodes: " << m_active_nodes.size() << endl;
-            cerr << get_best_word_history() << endl;
+            cerr << get_best_result() << endl;
         }
 
         m_total_token_count += double(m_token_count);
@@ -349,7 +349,7 @@ Recognition::recognize_lna_file(
     res.total_time = difftime(end_time, start_time);
     res.total_token_count = m_total_token_count;
     res.set_best_result(
-        get_word_history(best_token->history),
+        get_result(best_token->history),
         best_token->total_log_prob,
         best_token->am_log_prob,
         best_token->lm_log_prob);
@@ -357,7 +357,7 @@ Recognition::recognize_lna_file(
         vector<Token*> hypo_tokens = get_best_hypo_tokens(tokens);
         for (int i=0; i<(int)hypo_tokens.size(); i++)
             res.add_nbest_result(
-                get_word_history(hypo_tokens[i]->history),
+                get_result(hypo_tokens[i]->history),
                 hypo_tokens[i]->total_log_prob,
                 hypo_tokens[i]->am_log_prob,
                 hypo_tokens[i]->lm_log_prob);
@@ -416,6 +416,9 @@ Recognition::Recognition(Decoder &decoder) :
     m_node_beam_pruned_count = 0;
     m_max_state_duration_pruned_count = 0;
     m_histogram_pruned_count = 0;
+    m_num_recombination_links = 0;
+    m_num_recombination_link_updated = 0;
+    m_num_recombination_link_not_updated = 0;
     m_best_log_prob = -1e20;
     m_best_word_end_prob = -1e20;
     m_histogram_bin_limit = 0;
@@ -544,6 +547,33 @@ Recognition::get_best_hypo_tokens(vector<Token*> &tokens)
     for (const auto &ht : best_hypo_tokens_map)
         best_hypo_tokens.push_back(ht.second);
     return best_hypo_tokens;
+}
+
+
+string
+Recognition::get_best_result()
+{
+    vector<Token*> tokens;
+    get_tokens(tokens);
+    return get_result(get_best_token(tokens)->history);
+}
+
+
+string
+Recognition::get_result(WordHistory *history)
+{
+    string result;
+    vector<int> text_units;
+    while (true) {
+        text_units.push_back(history->word_id);
+        if (history->previous == nullptr) break;
+        history = history->previous;
+    }
+
+    for (auto swit = text_units.rbegin(); swit != text_units.rend(); ++swit)
+        if (*swit >= 0) result += " " + m_text_units->at(*swit);
+
+    return result;
 }
 
 
