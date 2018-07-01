@@ -30,14 +30,15 @@ void join(vector<string> &lnafnames,
         if (nbest != nullptr) {
             vector<RecognitionResult::Result> nbest_results
                 = results[i]->get_nbest_results();
-            cerr << "\tNumber of n-best hypotheses: " << nbest_results.size() << endl;
-            for (int h=0; h<(int)nbest_results.size() && h<nbest_num_hypotheses; h++)
+            int hypos_to_write = std::min((int)nbest_results.size(), nbest_num_hypotheses);
+            cerr << "\tNumber of n-best hypotheses written: " << hypos_to_write << endl;
+            for (int h=0; h<hypos_to_write; h++)
                 *nbest << lnafnames[i]
                        << ":" << nbest_results[h].total_lp
                        << " " << nbest_results[h].total_am_lp
                        << " " << nbest_results[h].total_lm_lp
                        << " " << nbest_results[h].result.length() - 2
-                       << " " << nbest_results[h].result << "\n";
+                       << nbest_results[h].result << "\n";
         }
         delete recognitions[i];
         delete results[i];

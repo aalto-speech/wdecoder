@@ -723,7 +723,7 @@ RecognitionResult::get_nbest_results() const
         Result curr_result = nbest_results[i];
         auto trit = best_hypo_results.find(curr_result.result);
         if (trit == best_hypo_results.end()
-          || curr_result.total_lp > trit->second.total_lp)
+                || curr_result.total_lp > trit->second.total_lp)
             best_hypo_results[curr_result.result] = curr_result;
     }
 

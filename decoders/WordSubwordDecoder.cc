@@ -289,9 +289,12 @@ WordSubwordRecognition::prune_tokens(
                 histogram[bntit->second.histogram_bin]--;
                 histogram[tit->histogram_bin]++;
 
-                if (write_nbest && bntit->second.history != tit->history
-                        && bntit->second.history != tit->history->previous
-                        && bntit->second.history->previous != tit->history) {
+                if (write_nbest // && bntit->second.history != tit->history
+                    && bntit->second.history != tit->history->previous
+                    && bntit->second.history->previous != tit->history
+                    && (!bntit->second.history->previous ||
+                        bntit->second.history->previous->previous != tit->history))
+                {
                     array<float,3> weights = {
                         bntit->second.total_log_prob - tit->total_log_prob,
                         bntit->second.am_log_prob - tit->am_log_prob,
