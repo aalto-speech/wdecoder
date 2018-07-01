@@ -64,7 +64,8 @@ int main(int argc, char* argv[])
      "\tbigram-precomputed-hybrid\n"
      "\tlarge-bigram")
     ('n', "nbest=STRING", "arg", "", "N-best list file (use .gz suffix for compression)")
-    ('y', "nbest-num-hypotheses", "arg", "10000", "Maximum number of hypotheses per file");
+    ('y', "nbest-num-hypotheses", "arg", "10000", "Maximum number of hypotheses per file")
+    ('b', "nbest-beam", "arg", "1000.0", "Beam setting (total difference from the best hypothesis log prob)");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 7) config.print_help(stderr, 1);
 

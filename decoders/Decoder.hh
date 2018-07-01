@@ -218,7 +218,8 @@ public:
     virtual ~Recognition() { };
     void recognize_lna_file(std::string lnafname,
                             RecognitionResult &res,
-                            bool write_nbest=false);
+                            bool write_nbest=false,
+                            double nbest_beam=1000.0);
     void prune_word_history();
     void clear_word_history();
     void print_certain_word_history(std::ostream &outf=std::cout);
@@ -235,7 +236,9 @@ protected:
     virtual void propagate_tokens() = 0;
     std::string get_best_result();
     virtual std::string get_result(WordHistory *history);
-    std::vector<std::pair<std::string, std::array<float,3> > > get_nbest_results(WordHistory *history);
+    std::vector<std::pair<std::string, std::array<float,3> > > get_nbest_results(
+        WordHistory *history,
+        double beam);
     virtual void prune_tokens(bool collect_active_histories=false,
                               bool nbest=false) = 0;
 

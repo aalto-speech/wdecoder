@@ -28,14 +28,16 @@ void join(vector<string> &lnafnames,
         results[i]->print_file_stats(logf);
         total.accumulate(*results[i]);
         if (nbest != nullptr) {
-            vector<RecognitionResult::Result> nbest_results = results[i]->get_nbest_results();
+            vector<RecognitionResult::Result> nbest_results
+                = results[i]->get_nbest_results();
+            cerr << "\tNumber of n-best hypotheses: " << nbest_results.size() << endl;
             for (int h=0; h<(int)nbest_results.size() && h<nbest_num_hypotheses; h++)
                 *nbest << lnafnames[i]
-                       << ":" << nbest_results[i].total_lp
-                       << " " << nbest_results[i].total_am_lp
-                       << " " << nbest_results[i].total_lm_lp
-                       << " " << nbest_results[i].result.length() - 2
-                       << " " << nbest_results[i].result << "\n";
+                       << ":" << nbest_results[h].total_lp
+                       << " " << nbest_results[h].total_am_lp
+                       << " " << nbest_results[h].total_lm_lp
+                       << " " << nbest_results[h].result.length() - 2
+                       << " " << nbest_results[h].result << "\n";
         }
         delete recognitions[i];
         delete results[i];
@@ -97,7 +99,8 @@ recognize_lnas(Decoder &d,
                                      recognitions.back(),
                                      lnafname,
                                      std::ref(*results.back()),
-                                     config["nbest"].specified);
+                                     config["nbest"].specified,
+                                     config["nbest-beam"].get_double());
             threads.push_back(thr);
         }
 

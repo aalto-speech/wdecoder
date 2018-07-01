@@ -177,26 +177,26 @@ NgramRecognition::prune_tokens(
                 histogram[bntit->second.histogram_bin]--;
                 histogram[tit->histogram_bin]++;
 
-                if (write_nbest) {
+                if (write_nbest && bntit->second.history != tit->history) {
                     array<float,3> weights = {
                         bntit->second.total_log_prob - tit->total_log_prob,
                         bntit->second.am_log_prob - tit->am_log_prob,
                         bntit->second.lm_log_prob - tit->lm_log_prob
                     };
                     WordHistory *previousBestHistory = bntit->second.history;
-                    bntit->second = *tit;
 
-                    auto blit = bntit->second.history->recombination_links.find(previousBestHistory);
-                    if (blit == bntit->second.history->recombination_links.end()) {
-                        bntit->second.history->recombination_links[previousBestHistory] = weights;
+                    auto blit = tit->history->recombination_links.find(previousBestHistory);
+                    if (blit == tit->history->recombination_links.end()) {
+                        tit->history->recombination_links[previousBestHistory] = weights;
                         m_num_recombination_links++;
-                    } else if (blit->second[0] < weights[0]) {
-                        bntit->second.history->recombination_links[previousBestHistory] = weights;
+                    } else if (weights[0] > blit->second.at(0)) {
+                        tit->history->recombination_links[previousBestHistory] = weights;
                         m_num_recombination_link_updated++;
                     } else
                         m_num_recombination_link_not_updated++;
+                }
 
-                } else bntit->second = *tit;
+                bntit->second = *tit;
             }
             m_dropped_count++;
         }
