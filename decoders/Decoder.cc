@@ -356,13 +356,11 @@ Recognition::recognize_lna_file(
         best_token->lm_log_prob);
     if (write_nbest) {
         vector<Token*> hypo_tokens = get_best_hypo_tokens(tokens);
-        cerr << "number of end hypotheses: " << hypo_tokens.size() << endl;
         for (int i=0; i<(int)hypo_tokens.size(); i++) {
             Token *hypo_token = hypo_tokens[i];
             double diff_to_best
                 = best_token->total_log_prob - hypo_token->total_log_prob;
             double curr_hypo_beam = nbest_beam - diff_to_best;
-            cerr << "current hypo beam: " << curr_hypo_beam << endl;
             if (curr_hypo_beam > 0) {
                 vector<pair<string, array<float,3> > > nbest_results
                     = get_nbest_results(hypo_token->history, curr_hypo_beam);
@@ -651,10 +649,6 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
             if (!curr_hypo.last_step_was_recombination) {
                 for (auto blit = curr_hypo.history->recombination_links.begin();
                         blit != curr_hypo.history->recombination_links.end(); ++blit) {
-                    if (blit->first == curr_hypo.history) {
-                        cerr << "recombination link to the same history" << endl;
-                        continue;
-                    }
                     PartialHypo new_hypo(curr_hypo);
                     new_hypo.weight[0] += blit->second.at(0);
                     if (new_hypo.weight[0] > -beam) {
