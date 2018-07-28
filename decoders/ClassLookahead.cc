@@ -81,15 +81,13 @@ float
 ClassBigramLookahead::get_lookahead_score(int node_idx, int word_id)
 {
     int word_class = m_class_la.m_class_membership_lookup[word_id].first;
-    unsigned short int qIdx = m_quant_bigram_lookup[m_node_la_states[node_idx]][word_class];
-    return m_quant_log_probs.getQuantizedLogProb(qIdx);
-    /*
+    //unsigned short int qIdx = m_quant_bigram_lookup[m_node_la_states[node_idx]][word_class];
+    //return m_quant_log_probs.getQuantizedLogProb(qIdx);
     if (m_quantization) {
         unsigned short int qIdx = m_quant_bigram_lookup[m_node_la_states[node_idx]][word_class];
         return m_quant_log_probs.getQuantizedLogProb(qIdx);
     } else
         return m_la_scores[m_node_la_states[node_idx]][word_class];
-    */
 }
 
 
@@ -122,18 +120,14 @@ ClassBigramLookahead::set_la_state_indices_to_nodes()
     for (int classIdx = 0; classIdx < (int)words.size(); classIdx++) {
         vector<bool> class_propagated(decoder->m_nodes.size(), false);
         multimap<float, int> &cwords = words[classIdx];
+        map<int, int> la_state_changes;
+        float prev_word_prob = MIN_LOG_PROB;
         for (auto wit = cwords.rbegin(); wit != cwords.rend(); ++wit) {
             int nodeIdx = wit->second;
             int wordId = decoder->m_nodes[nodeIdx].word_id;
+            if (prev_word_prob != wit->first) la_state_changes.clear();
+            prev_word_prob = wit->first;
 
-            if (++wrdi % 100000 == 0) {
-                set<int> distLaStates;
-                for (int i=0; i<(int)m_node_la_states.size(); i++)
-                    distLaStates.insert(m_node_la_states[i]);
-                cerr << wrdi << "/" << word_count << "\t" << distLaStates.size() << endl;
-            }
-
-            map<int, int> la_state_changes;
             list<int> nodes_to_process;
             for (auto rait=reverse_arcs[nodeIdx].begin(); rait!=reverse_arcs[nodeIdx].end(); ++rait) {
                 if (rait->target_node == nodeIdx) continue;
