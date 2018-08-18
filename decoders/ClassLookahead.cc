@@ -282,21 +282,45 @@ ClassBigramLookahead::set_la_scores()
         vector<int> successor_words;
         find_successor_words(node_idx, successor_words);
 
-        for (int c=0; c<m_class_la.m_num_classes; c++) {
-            float best_la_prob = MIN_LOG_PROB;
-            for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
-            {
-                if (*swit == decoder->m_sentence_end_symbol_idx) {
-                    float curr_prob = cbgProbs[c].back();
-                    best_la_prob = max(best_la_prob, curr_prob);
-                } else {
+        if (successor_words.size() > 100) {
+            bool sentence_end_reachable = false;
+            vector<float> best_successor_class_probs(m_class_la.m_num_classes, MIN_LOG_PROB);
+            vector<bool> successor_classes(m_class_la.m_num_classes, false);
+            for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit) {
+                if (*swit != decoder->m_sentence_end_symbol_idx) {
                     pair<int, float> wordClassInfo = m_class_la.m_class_membership_lookup[*swit];
                     if (wordClassInfo.first == -1) continue;
-                    float curr_prob = cbgProbs[c][wordClassInfo.first] + wordClassInfo.second;
-                    best_la_prob = max(best_la_prob, curr_prob);
-                }
+                    successor_classes[wordClassInfo.first] = true;
+                    if (wordClassInfo.second > best_successor_class_probs[wordClassInfo.first])
+                        best_successor_class_probs[wordClassInfo.first] = wordClassInfo.second;
+                } else sentence_end_reachable = true;
             }
-            set_la_score(i, c, best_la_prob);
+
+            for (int c=0; c<m_class_la.m_num_classes; c++) {
+                float best_la_prob = sentence_end_reachable ? cbgProbs[c].back() : MIN_LOG_PROB;
+                for (int sc = 0; sc < m_class_la.m_num_classes; sc++)
+                    if (successor_classes[sc])
+                        best_la_prob = max(best_la_prob,
+                                cbgProbs[c][sc] + best_successor_class_probs[sc]);
+                set_la_score(i, c, best_la_prob);
+            }
+        } else {
+            for (int c=0; c<m_class_la.m_num_classes; c++) {
+                float best_la_prob = MIN_LOG_PROB;
+                for (auto swit = successor_words.begin(); swit != successor_words.end(); ++swit)
+                {
+                    if (*swit == decoder->m_sentence_end_symbol_idx) {
+                        float curr_prob = cbgProbs[c].back();
+                        best_la_prob = max(best_la_prob, curr_prob);
+                    } else {
+                        pair<int, float> wordClassInfo = m_class_la.m_class_membership_lookup[*swit];
+                        if (wordClassInfo.first == -1) continue;
+                        float curr_prob = cbgProbs[c][wordClassInfo.first] + wordClassInfo.second;
+                        best_la_prob = max(best_la_prob, curr_prob);
+                    }
+                }
+                set_la_score(i, c, best_la_prob);
+            }
         }
 
         // handle <s> as the context word
