@@ -1,4 +1,5 @@
-#!python
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
 import sys
 
@@ -13,4 +14,4 @@ letters[i+1]))
 for wrd in sys.argv[1:]:
     letters = list("_" + wrd + "_")
     triphones = triphonize(letters) 
-    print "%s(1.0) %s" % (wrd, " ".join(triphones))
+    print("%s(1.0) %s" % (wrd, " ".join(triphones)))

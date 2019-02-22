@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
 import subprocess
 import sys
 import os
-
 
 if len(sys.argv) != 2:
     print >>sys.stderr, "give .dot file as an argument"
@@ -20,4 +20,3 @@ os.remove(epsname)
 
 pdfname = basename + ".pdf"
 subprocess.Popen("evince %s" % pdfname, shell=True)
-
