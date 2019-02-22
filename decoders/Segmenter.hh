@@ -38,7 +38,7 @@ public:
     };
 
     void initialize();
-    bool segment_lna_file(std::string lnafname,
+    float segment_lna_file(std::string lnafname,
                           std::map<int, std::string> &node_labels,
                           std::ostream &outf=std::cout);
     void apply_duration_model(Token &token, int node_idx);

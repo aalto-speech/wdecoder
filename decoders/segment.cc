@@ -262,6 +262,7 @@ int main(int argc, char* argv[])
         Segmenter s;
         s.m_global_beam = config["global-beam"].get_float();
         s.m_token_limit = config["max-tokens"].get_int();
+        int info_level = config["info"].get_int();
 
         if (!config["text-field"].specified &&
             (config["long-silence"].specified || config["short-silence"].specified))
@@ -271,12 +272,12 @@ int main(int argc, char* argv[])
             throw string("Lexicon needs to be set with -t option");
 
         string phfname = config.arguments[0];
-        cerr << "Reading hmms: " << phfname << endl;
+        if (info_level > 0) cerr << "Reading hmms: " << phfname << endl;
         s.read_phone_model(phfname);
 
         if (config["duration-model"].specified) {
             string durfname = config["duration-model"].get_str();
-            cerr << "Reading duration model: " << durfname << endl;
+            if (info_level > 0) cerr << "Reading duration model: " << durfname << endl;
             s.read_duration_model(durfname);
         }
 
@@ -291,7 +292,7 @@ int main(int argc, char* argv[])
 
         if (config["lexicon"].specified) {
             string lexfname = config["lexicon"].get_str();
-            cerr << "Reading lexicon: " << lexfname << endl;
+            if (info_level > 0) cerr << "Reading lexicon: " << lexfname << endl;
             dg.read_noway_lexicon(lexfname);
         }
 
@@ -316,7 +317,7 @@ int main(int argc, char* argv[])
             string lna_file = recipe_fields["lna"];
             if (config["lna-dir"].specified) lna_file = config["lna-dir"].get_str() + "/" + lna_file;
 
-            cerr << "segmenting to: " << recipe_fields["alignment"] << endl;
+            if (info_level > 0) cerr << "segmenting to: " << recipe_fields["alignment"] << endl;
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
@@ -355,24 +356,24 @@ int main(int argc, char* argv[])
             */
 
             ofstream phnf(recipe_fields["alignment"]);
-            float curr_beam = config["global-beam"].get_float();
             int attempts = 0;
             while (true) {
-                bool seg_found = s.segment_lna_file(lna_file, node_labels, phnf);
+                float log_prob = s.segment_lna_file(lna_file, node_labels, phnf);
                 attempts++;
-                if (seg_found) {
-                    s.m_global_beam = config["global-beam"].get_float();
+                if (log_prob > float(TINY_FLOAT)) {
+                    if (info_level > 0) cerr << "log prob: " << log_prob << endl;
                     break;
-                }
-                else if (attempts == 5) {
-                    s.m_global_beam = config["global-beam"].get_float();
+                } else if (attempts >= 3) {
                     cerr << "giving up" << endl;
                     break;
                 }
-                curr_beam *= 2;
-                cerr << "doubling beam to " << curr_beam << endl;
-                s.m_global_beam = curr_beam;
+                s.m_global_beam *= 1.5;
+                s.m_token_limit *= 2;
+                cerr << "increasing beam to " << s.m_global_beam << endl;
+                cerr << "doubling maximum number of tokens to " << s.m_token_limit << endl;
             }
+            s.m_global_beam = config["global-beam"].get_float();
+            s.m_token_limit = config["max-tokens"].get_int();
             phnf.close();
         }
         recipef.close();

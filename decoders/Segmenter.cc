@@ -8,7 +8,7 @@ using namespace std;
 
 Segmenter::Segmenter()
 {
-    m_best_log_prob = -1e20;
+    m_best_log_prob = TINY_FLOAT;
     m_transition_scale = 1.0;
     m_duration_scale = 3.0;
     m_decode_end_node = -1;
@@ -61,7 +61,7 @@ Segmenter::print_phn_segmentation(Token &token,
 }
 
 
-bool
+float
 Segmenter::segment_lna_file(string lnafname,
                             map<int, string> &node_labels,
                             ostream &outf)
@@ -73,7 +73,7 @@ Segmenter::segment_lna_file(string lnafname,
 
     m_frame_idx = 0;
     while (m_lna_reader.go_to(m_frame_idx)) {
-        m_best_log_prob = -1e20;
+        m_best_log_prob = TINY_FLOAT;
         propagate_tokens();
         recombine_tokens();
         m_frame_idx++;
@@ -82,14 +82,14 @@ Segmenter::segment_lna_file(string lnafname,
     Token &best_token = m_recombined_tokens[m_decode_end_node];
     if (best_token.node_idx == -1) {
         cerr << "warning, no segmentation found" << endl;
-        return false;
+        return TINY_FLOAT;
     }
 
     advance_in_state_history(best_token);
     print_phn_segmentation(best_token, outf);
     m_lna_reader.close();
 
-    return true;
+    return best_token.log_prob;
 }
 
 
