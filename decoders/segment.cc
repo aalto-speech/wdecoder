@@ -248,9 +248,10 @@ int main(int argc, char* argv[])
     ('l', "long-silence", "", "", "Enable breaking long silence path between words")
     ('s', "short-silence", "", "", "Enable breaking short silence path between words")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
-    ('b', "global-beam=FLOAT", "arg", "100", "Global search beam, DEFAULT: 100")
+    ('b', "global-beam=FLOAT", "arg", "200", "Global search beam, DEFAULT: 200.0")
     ('m', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
     ('n', "lna-dir=STRING", "arg", "", "LNA directory")
+    ('o', "attempt-once", "", "", "Attempt segmentation only once without increasing beams")
     ('B', "batch=INT", "arg", "0", "number of batch processes with the same recipe")
     ('I', "bindex=INT", "arg", "0", "batch process index")
     ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
@@ -263,6 +264,7 @@ int main(int argc, char* argv[])
         s.m_global_beam = config["global-beam"].get_float();
         s.m_token_limit = config["max-tokens"].get_int();
         int info_level = config["info"].get_int();
+        bool attempt_once = config["attempt-once"].specified;
 
         if (!config["text-field"].specified &&
             (config["long-silence"].specified || config["short-silence"].specified))
@@ -363,7 +365,7 @@ int main(int argc, char* argv[])
                 if (log_prob > float(TINY_FLOAT)) {
                     if (info_level > 0) cerr << "log prob: " << log_prob << endl;
                     break;
-                } else if (attempts >= 3) {
+                } else if (attempts >= 3 || attempt_once) {
                     cerr << "giving up" << endl;
                     break;
                 }
