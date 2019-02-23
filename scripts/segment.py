@@ -14,29 +14,35 @@ segment_exe = 'segment'
 segment_beam = 500.0
 segment_num_tokens = 500
 
-def segment(model, recipe, lexicon, duration_model, lnadir, batches, bidx):
+def segment(model, recipe, lexicon, duration_model, lnadir, batches, batch_idxs):
 
-    work_dir = os.path.join(lnadir, "segment_temp_%i" % bidx)
-    if not os.path.exists(work_dir): os.makedirs(work_dir)
+    while len(batch_idxs):
+        try:
+            bidx = batch_idxs.pop(0)
+        except:
+            return
 
-    pp_cmd = "%s -b %s -c %s -r %s -o %s -C %s --eval-ming=0.15 -B %i -I %i -i 1" %\
-             (pp_exe, model, "%s.cfg" % model, recipe, work_dir, "%s.gcl" % model, batches, bidx)
-    p = subprocess.Popen(pp_cmd, shell=True)
-    p.wait()
+        work_dir = os.path.join(lnadir, "segment_temp_%i" % bidx)
+        if not os.path.exists(work_dir): os.makedirs(work_dir)
 
-    model_ph = "%s.ph" % model
-    model_dur = "%s.dur" % model
-    options = "-b %f -m %i -l -s -n %s -B %i -I %i" % (segment_beam, segment_num_tokens, work_dir, batches, bidx)
-    if lexicon:
-        options = "%s -t -x %s" % (options, lexicon)
-    if duration_model:
-        options = "%s -d %s" % (options, model_dur)
-    seg_cmd = "%s %s %s %s" % (segment_exe, options, model_ph, recipe)
+        pp_cmd = "%s -b %s -c %s -r %s -o %s -C %s --eval-ming=0.15 -B %i -I %i -i 1" %\
+                 (pp_exe, model, "%s.cfg" % model, recipe, work_dir, "%s.gcl" % model, batches, bidx)
+        p = subprocess.Popen(pp_cmd, shell=True)
+        p.wait()
 
-    p = subprocess.Popen(seg_cmd, shell=True)
-    p.wait()
+        model_ph = "%s.ph" % model
+        model_dur = "%s.dur" % model
+        options = "-o -b %f -m %i -l -s -n %s -B %i -I %i" % (segment_beam, segment_num_tokens, work_dir, batches, bidx)
+        if lexicon:
+            options = "%s -t -x %s" % (options, lexicon)
+        if duration_model:
+            options = "%s -d %s" % (options, model_dur)
+        seg_cmd = "%s %s %s %s" % (segment_exe, options, model_ph, recipe)
 
-    shutil.rmtree(work_dir)
+        p = subprocess.Popen(seg_cmd, shell=True)
+        p.wait()
+
+        shutil.rmtree(work_dir)
 
 
 def main():
@@ -75,14 +81,13 @@ def main():
         threads = []
         for t in range(args.NUM_THREADS):
             if not len(batch_idxs): break
-            bidx = batch_idxs.pop(0)
             t = threading.Thread(target=segment, args=[args.MODEL,
                                                        args.RECIPE,
                                                        args.lexicon,
                                                        args.duration_model,
                                                        lnadir,
                                                        args.NUM_BATCHES,
-                                                       bidx])
+                                                       batch_idxs])
             t.start()
             threads.append(t)
         for t in threads: t.join()
@@ -90,3 +95,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
