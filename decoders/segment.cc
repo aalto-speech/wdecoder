@@ -43,7 +43,7 @@ create_forced_path(DecoderGraph &dg,
     if (wordIndices.size() == 0) return -1;
 
     for (int i=1; i<(int)triphones.size()-1; i++) {
-        if (triphones[i] == "_") {
+        if (triphones[i] == SHORT_SIL) {
             triphones[i-1][4] = triphones[i+1][2];
             triphones[i+1][0] = triphones[i-1][2];
         }
@@ -52,14 +52,14 @@ create_forced_path(DecoderGraph &dg,
     // Create initial triphone graph only with crossword context
     vector<TriphoneNode> tnodes;
     int wordPosition = 0;
-    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
+    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[LONG_SIL]));
     for (auto tit=triphones.begin(); tit != triphones.end(); ++tit) {
-        if (*tit == "_")
+        if (*tit == SHORT_SIL)
             tnodes.back().subword_id = wordIndices[wordPosition++];
         tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[*tit]));
     }
     tnodes.back().subword_id = wordIndices[wordPosition];
-    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
+    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[LONG_SIL]));
 
     nodes.clear(); nodes.resize(1);
     node_labels.clear();
@@ -81,21 +81,21 @@ create_forced_path(DecoderGraph &dg,
                 || node_labels[i] != "_.0") continue;
 
             string left_triphone = node_labels[i-1].substr(0, 5);
-            left_triphone[4] = '_';
+            left_triphone[4] = SIL_CTXT;
             string right_triphone = node_labels[i+1].substr(0, 5);
-            right_triphone[0] = '_';
+            right_triphone[0] = SIL_CTXT;
 
             int left_idx = dg.connect_triphone(nodes, left_triphone, i-4, node_labels);
             if (wordLabels.find(i-1) != wordLabels.end())
                 node_labels[left_idx] += " " + wordLabels[i-1];
 
             if (breaking_short_silence) {
-                int idx = dg.connect_triphone(nodes, "_", left_idx, node_labels);
+                int idx = dg.connect_triphone(nodes, SHORT_SIL, left_idx, node_labels);
                 idx = dg.connect_triphone(nodes, right_triphone, idx, node_labels);
                 nodes[idx].arcs.insert(i+4);
             }
             if (breaking_long_silence) {
-                int idx = dg.connect_triphone(nodes, "__", left_idx, node_labels);
+                int idx = dg.connect_triphone(nodes, LONG_SIL, left_idx, node_labels);
                 idx = dg.connect_triphone(nodes, right_triphone, idx, node_labels);
                 nodes[idx].arcs.insert(i+4);
             }
@@ -142,10 +142,8 @@ void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
         dnodes[i].flags = nodes[i].flags;
         dnodes[i].arcs.resize(nodes[i].arcs.size());
         int apos=0;
-        for (auto ait=nodes[i].arcs.begin(); ait != nodes[i].arcs.end(); ++ait) {
-            dnodes[i].arcs[apos].target_node = (int)(*ait);
-            apos++;
-        }
+        for (auto ait=nodes[i].arcs.begin(); ait != nodes[i].arcs.end(); ++ait)
+            dnodes[i].arcs[apos++].target_node = (int)(*ait);
     }
 }
 
