@@ -40,7 +40,7 @@ read_config(ClassDecoder &d, string cfgfname)
             throw string("Word boundary symbol not supported in this branch.");
         }
         else if (parameter == "stats") ss >> d.m_stats;
-        else throw string("Unknown parameter: ") + parameter;
+        else cerr << "Ignored unknown parameter: " << parameter << endl;
     }
 
     cfgf.close();

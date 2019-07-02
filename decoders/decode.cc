@@ -40,7 +40,7 @@ read_config(NgramDecoder &d, string cfgfname)
             ss >> d.m_word_boundary_symbol;
         }
         else if (parameter == "stats") ss >> d.m_stats;
-        else throw string("Unknown parameter: ") + parameter;
+        else cerr << "Ignored unknown parameter: " << parameter << endl;
     }
 
     cfgf.close();
