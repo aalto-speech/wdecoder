@@ -1,14 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
+import argparse
 import os
 import re
 import sys
-import glob
-import tempfile
-import threading
-import subprocess
 from collections import OrderedDict
-from optparse import OptionParser
 
 
 def parse_recipe(recipefname):
@@ -55,7 +52,7 @@ def create_ptxts(lines, ptxtdir):
         ptxtfname = os.path.join(full_dir, ptxtfname)
 
         ptxtf = open(ptxtfname, 'w')
-        print >>ptxtf, " ".join(words)
+        print(" ".join(words), file=ptxtf)
         ptxtf.close()
 
         line['text'] = ptxtfname
@@ -63,23 +60,21 @@ def create_ptxts(lines, ptxtdir):
         new_line = list()
         for key,val in line.items():
             new_line.append("%s=%s" % (key,val))
-        print " ".join(new_line)
+        print(" ".join(new_line))
 
 
-def main(argv=None):
+def main():
 
-    usage = "usage: %prog [options] RECIPE TEXTDIR"
-    parser = OptionParser(usage=usage)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("RECIPE",
+                        help="Recipe file")
+    parser.add_argument("TEXTDIR",
+                        help="Directory for text files")
+    args = parser.parse_args()
 
-    (options, args) = parser.parse_args()
-    if len(args) != 2:
-        parser.print_help()
-        return
+    lines = parse_recipe(args.RECIPE)
 
-    recipe = args[0]
-    lines = parse_recipe(recipe)
-
-    ptxtdir = os.path.abspath(args[1])
+    ptxtdir = os.path.abspath(args.TEXTDIR)
     if not os.path.exists(ptxtdir):
         os.makedirs(ptxtdir)
 
@@ -88,5 +83,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main())
-
-

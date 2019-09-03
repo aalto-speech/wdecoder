@@ -43,7 +43,7 @@ create_forced_path(DecoderGraph &dg,
     if (wordIndices.size() == 0) return -1;
 
     for (int i=1; i<(int)triphones.size()-1; i++) {
-        if (triphones[i] == "_") {
+        if (triphones[i] == SHORT_SIL) {
             triphones[i-1][4] = triphones[i+1][2];
             triphones[i+1][0] = triphones[i-1][2];
         }
@@ -52,14 +52,14 @@ create_forced_path(DecoderGraph &dg,
     // Create initial triphone graph only with crossword context
     vector<TriphoneNode> tnodes;
     int wordPosition = 0;
-    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
+    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[LONG_SIL]));
     for (auto tit=triphones.begin(); tit != triphones.end(); ++tit) {
-        if (*tit == "_")
+        if (*tit == SHORT_SIL)
             tnodes.back().subword_id = wordIndices[wordPosition++];
         tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[*tit]));
     }
     tnodes.back().subword_id = wordIndices[wordPosition];
-    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map["__"]));
+    tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[LONG_SIL]));
 
     nodes.clear();
     nodes.resize(1);
@@ -82,21 +82,21 @@ create_forced_path(DecoderGraph &dg,
                     || node_labels[i] != "_.0") continue;
 
             string left_triphone = node_labels[i-1].substr(0, 5);
-            left_triphone[4] = '_';
+            left_triphone[4] = SIL_CTXT;
             string right_triphone = node_labels[i+1].substr(0, 5);
-            right_triphone[0] = '_';
+            right_triphone[0] = SIL_CTXT;
 
             int left_idx = dg.connect_triphone(nodes, left_triphone, i-4, node_labels);
             if (wordLabels.find(i-1) != wordLabels.end())
                 node_labels[left_idx] += " " + wordLabels[i-1];
 
             if (breaking_short_silence) {
-                int idx = dg.connect_triphone(nodes, "_", left_idx, node_labels);
+                int idx = dg.connect_triphone(nodes, SHORT_SIL, left_idx, node_labels);
                 idx = dg.connect_triphone(nodes, right_triphone, idx, node_labels);
                 nodes[idx].arcs.insert(i+4);
             }
             if (breaking_long_silence) {
-                int idx = dg.connect_triphone(nodes, "__", left_idx, node_labels);
+                int idx = dg.connect_triphone(nodes, LONG_SIL, left_idx, node_labels);
                 idx = dg.connect_triphone(nodes, right_triphone, idx, node_labels);
                 nodes[idx].arcs.insert(i+4);
             }
@@ -144,10 +144,8 @@ void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
         dnodes[i].flags = nodes[i].flags;
         dnodes[i].arcs.resize(nodes[i].arcs.size());
         int apos=0;
-        for (auto ait=nodes[i].arcs.begin(); ait != nodes[i].arcs.end(); ++ait) {
-            dnodes[i].arcs[apos].target_node = (int)(*ait);
-            apos++;
-        }
+        for (auto ait=nodes[i].arcs.begin(); ait != nodes[i].arcs.end(); ++ait)
+            dnodes[i].arcs[apos++].target_node = (int)(*ait);
     }
 }
 
@@ -250,9 +248,10 @@ int main(int argc, char* argv[])
     ('l', "long-silence", "", "", "Enable breaking long silence path between words")
     ('s', "short-silence", "", "", "Enable breaking short silence path between words")
     ('d', "duration-model=STRING", "arg", "", "Duration model")
-    ('b', "global-beam=FLOAT", "arg", "100", "Global search beam, DEFAULT: 100")
+    ('b', "global-beam=FLOAT", "arg", "200", "Global search beam, DEFAULT: 200.0")
     ('m', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
     ('n', "lna-dir=STRING", "arg", "", "LNA directory")
+    ('o', "attempt-once", "", "", "Attempt segmentation only once without increasing beams")
     ('B', "batch=INT", "arg", "0", "number of batch processes with the same recipe")
     ('I', "bindex=INT", "arg", "0", "batch process index")
     ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
@@ -264,6 +263,8 @@ int main(int argc, char* argv[])
         Segmenter s;
         s.m_global_beam = config["global-beam"].get_float();
         s.m_token_limit = config["max-tokens"].get_int();
+        int info_level = config["info"].get_int();
+        bool attempt_once = config["attempt-once"].specified;
 
         if (!config["text-field"].specified &&
                 (config["long-silence"].specified || config["short-silence"].specified))
@@ -273,12 +274,12 @@ int main(int argc, char* argv[])
             throw string("Lexicon needs to be set with -t option");
 
         string phfname = config.arguments[0];
-        cerr << "Reading hmms: " << phfname << endl;
+        if (info_level > 0) cerr << "Reading hmms: " << phfname << endl;
         s.read_phone_model(phfname);
 
         if (config["duration-model"].specified) {
             string durfname = config["duration-model"].get_str();
-            cerr << "Reading duration model: " << durfname << endl;
+            if (info_level > 0) cerr << "Reading duration model: " << durfname << endl;
             s.read_duration_model(durfname);
         }
 
@@ -293,7 +294,7 @@ int main(int argc, char* argv[])
 
         if (config["lexicon"].specified) {
             string lexfname = config["lexicon"].get_str();
-            cerr << "Reading lexicon: " << lexfname << endl;
+            if (info_level > 0) cerr << "Reading lexicon: " << lexfname << endl;
             dg.read_noway_lexicon(lexfname);
         }
 
@@ -318,7 +319,7 @@ int main(int argc, char* argv[])
             string lna_file = recipe_fields["lna"];
             if (config["lna-dir"].specified) lna_file = config["lna-dir"].get_str() + "/" + lna_file;
 
-            cerr << "segmenting to: " << recipe_fields["alignment"] << endl;
+            if (info_level > 0) cerr << "segmenting to: " << recipe_fields["alignment"] << endl;
 
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
@@ -357,24 +358,24 @@ int main(int argc, char* argv[])
             */
 
             ofstream phnf(recipe_fields["alignment"]);
-            float curr_beam = config["global-beam"].get_float();
             int attempts = 0;
             while (true) {
-                bool seg_found = s.segment_lna_file(lna_file, node_labels, phnf);
+                float log_prob = s.segment_lna_file(lna_file, node_labels, phnf);
                 attempts++;
-                if (seg_found) {
-                    s.m_global_beam = config["global-beam"].get_float();
+                if (log_prob > float(TINY_FLOAT)) {
+                    if (info_level > 0) cerr << "log prob: " << log_prob << endl;
                     break;
-                }
-                else if (attempts == 5) {
-                    s.m_global_beam = config["global-beam"].get_float();
+                } else if (attempts >= 3 || attempt_once) {
                     cerr << "giving up" << endl;
                     break;
                 }
-                curr_beam *= 2;
-                cerr << "doubling beam to " << curr_beam << endl;
-                s.m_global_beam = curr_beam;
+                s.m_global_beam *= 1.5;
+                s.m_token_limit *= 2;
+                cerr << "increasing beam to " << s.m_global_beam << endl;
+                cerr << "doubling maximum number of tokens to " << s.m_token_limit << endl;
             }
+            s.m_global_beam = config["global-beam"].get_float();
+            s.m_token_limit = config["max-tokens"].get_int();
             phnf.close();
         }
         recipef.close();

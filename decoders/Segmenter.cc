@@ -8,7 +8,7 @@ using namespace std;
 
 Segmenter::Segmenter()
 {
-    m_best_log_prob = -1e20;
+    m_best_log_prob = 0.0;
     m_transition_scale = 1.0;
     m_duration_scale = 3.0;
     m_decode_end_node = -1;
@@ -18,11 +18,9 @@ Segmenter::Segmenter()
 void
 Segmenter::initialize()
 {
-    m_raw_tokens.clear();
-    m_recombined_tokens.clear();
     Token tok;
     tok.node_idx = m_decode_start_node;
-    m_active_nodes.insert(m_decode_start_node);
+    m_recombined_tokens.clear();
     m_recombined_tokens[m_decode_start_node] = tok;
 }
 
@@ -61,7 +59,7 @@ Segmenter::print_phn_segmentation(Token &token,
 }
 
 
-bool
+float
 Segmenter::segment_lna_file(string lnafname,
                             map<int, string> &node_labels,
                             ostream &outf)
@@ -73,23 +71,23 @@ Segmenter::segment_lna_file(string lnafname,
 
     m_frame_idx = 0;
     while (m_lna_reader.go_to(m_frame_idx)) {
-        m_best_log_prob = -1e20;
-        propagate_tokens();
-        recombine_tokens();
+        float curr_prob_limit = m_best_log_prob - m_global_beam;
+        m_best_log_prob = TINY_FLOAT;
+        propagate_tokens(curr_prob_limit);
         m_frame_idx++;
     }
 
     Token &best_token = m_recombined_tokens[m_decode_end_node];
     if (best_token.node_idx == -1) {
         cerr << "warning, no segmentation found" << endl;
-        return false;
+        return TINY_FLOAT;
     }
 
     advance_in_state_history(best_token);
     print_phn_segmentation(best_token, outf);
     m_lna_reader.close();
 
-    return true;
+    return best_token.log_prob;
 }
 
 
@@ -97,7 +95,7 @@ void
 Segmenter::apply_duration_model(Token &token, int node_idx)
 {
     token.log_prob += m_duration_scale
-                      * m_hmm_states[m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
+                         * m_hmm_states[m_nodes[node_idx].hmm_state].duration.get_log_prob(token.dur);
 }
 
 
@@ -129,7 +127,9 @@ Segmenter::move_token_to_node(Token token,
             return;
         }
         m_best_log_prob = max(m_best_log_prob, token.log_prob);
-        m_raw_tokens.push_back(token);
+        if (m_recombined_tokens.find(node_idx) == m_recombined_tokens.end() ||
+            token.log_prob > m_recombined_tokens[node_idx].log_prob)
+                m_recombined_tokens[node_idx] = token;
         return;
     }
 
@@ -139,35 +139,15 @@ Segmenter::move_token_to_node(Token token,
 
 
 void
-Segmenter::propagate_tokens()
+Segmenter::propagate_tokens(float curr_prob_limit)
 {
-    for (auto rtit = m_recombined_tokens.begin(); rtit != m_recombined_tokens.end(); ++rtit)
+    m_previous_recombined_tokens.swap(m_recombined_tokens);
+    m_recombined_tokens.clear();
+    for (auto rtit = m_previous_recombined_tokens.begin(); rtit != m_previous_recombined_tokens.end(); ++rtit)
     {
+        if (rtit->second.log_prob < curr_prob_limit) continue;
         Node &node = m_nodes[rtit->second.node_idx];
         for (auto ait = node.arcs.begin(); ait != node.arcs.end(); ++ait)
             move_token_to_node(rtit->second, ait->target_node, ait->log_prob);
     }
-}
-
-
-void
-Segmenter::recombine_tokens()
-{
-    m_recombined_tokens.clear();
-
-    for (auto tit = m_raw_tokens.begin(); tit != m_raw_tokens.end(); tit++) {
-
-        if (tit->log_prob < (m_best_log_prob-m_global_beam)) {
-            m_global_beam_pruned_count++;
-            continue;
-        }
-
-        if (m_recombined_tokens.find(tit->node_idx) == m_recombined_tokens.end() ||
-                tit->log_prob > m_recombined_tokens[tit->node_idx].log_prob)
-        {
-            m_recombined_tokens[tit->node_idx] = *tit;
-        }
-    }
-
-    m_raw_tokens.clear();
 }
