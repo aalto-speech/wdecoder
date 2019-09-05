@@ -229,6 +229,7 @@ ClassIPRecognition::prune_tokens(
                 histogram[tit->histogram_bin]++;
 
                 if (write_nbest // && bntit->second.history != tit->history
+                    && bntit->second.history != tit->history
                     && bntit->second.history != tit->history->previous
                     && bntit->second.history->previous != tit->history
                     && (!bntit->second.history->previous ||

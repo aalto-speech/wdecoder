@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <thread>
 #include <vector>
 #include <typeinfo>
@@ -34,10 +35,10 @@ void join(vector<string> &lnafnames,
             cerr << "\tNumber of n-best hypotheses written: " << hypos_to_write << endl;
             for (int h=0; h<hypos_to_write; h++)
                 *nbest << lnafnames[i]
-                       << ":" << nbest_results[h].total_lp
+                       << " " << nbest_results[h].total_lp
                        << " " << nbest_results[h].total_am_lp
                        << " " << nbest_results[h].total_lm_lp
-                       << " " << nbest_results[h].result.length() - 2
+                       << " " << std::count(nbest_results[h].result.begin(), nbest_results[h].result.end(), ' ')
                        << nbest_results[h].result << "\n";
         }
         delete recognitions[i];

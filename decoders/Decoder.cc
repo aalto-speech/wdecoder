@@ -609,7 +609,7 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
     public:
         PartialHypo() {
             history = nullptr;
-            weight = { 0.0, 0.0, 0.0};
+            weight = { 0.0, 0.0, 0.0 };
             last_step_was_recombination = false;
         }
         PartialHypo(const PartialHypo &hypo) {
