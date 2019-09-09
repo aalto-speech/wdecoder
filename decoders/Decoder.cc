@@ -8,6 +8,7 @@
 
 using namespace std;
 
+int NBEST_MAX_NUM_RECOMBINATIONS = 4;
 
 Decoder::Decoder()
 {
@@ -611,17 +612,20 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
             history = nullptr;
             weight = { 0.0, 0.0, 0.0 };
             last_step_was_recombination = false;
+            num_recombinations = 0;
         }
         PartialHypo(const PartialHypo &hypo) {
             history = hypo.history;
             partial_result = hypo.partial_result;
             weight = hypo.weight;
             last_step_was_recombination = hypo.last_step_was_recombination;
+            num_recombinations = hypo.num_recombinations;
         }
         WordHistory *history;
         vector<int> partial_result;
         array<float, 3> weight;
         bool last_step_was_recombination;
+        int num_recombinations;
     };
 
     PartialHypo initial_hypo;
@@ -646,13 +650,14 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
             new_hypo.history = curr_hypo.history->previous;
             hypos_to_process.push_back(new_hypo);
 
-            if (!curr_hypo.last_step_was_recombination) {
+            if (!curr_hypo.last_step_was_recombination && curr_hypo.num_recombinations < NBEST_MAX_NUM_RECOMBINATIONS) {
                 for (auto blit = curr_hypo.history->recombination_links.begin();
                         blit != curr_hypo.history->recombination_links.end(); ++blit) {
                     PartialHypo new_hypo(curr_hypo);
                     new_hypo.weight[0] += blit->second.at(0);
                     if (new_hypo.weight[0] > -beam) {
                         new_hypo.last_step_was_recombination = true;
+                        new_hypo.num_recombinations += 1;
                         new_hypo.weight[1] += blit->second.at(1);
                         new_hypo.weight[2] += blit->second.at(2);
                         new_hypo.history = blit->first;

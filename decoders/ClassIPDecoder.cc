@@ -232,8 +232,13 @@ ClassIPRecognition::prune_tokens(
                     && bntit->second.history != tit->history
                     && bntit->second.history != tit->history->previous
                     && bntit->second.history->previous != tit->history
+                    && bntit->second.history->previous != tit->history->previous
                     && (!bntit->second.history->previous ||
-                        bntit->second.history->previous->previous != tit->history))
+                        (bntit->second.history->previous->previous != tit->history
+                            && bntit->second.history->previous->previous != tit->history->previous))
+                    && (!tit->history->previous ||
+                        (tit->history->previous->previous != bntit->second.history
+                         && tit->history->previous->previous != bntit->second.history->previous)))
                 {
                     array<float,3> weights = {
                         bntit->second.total_log_prob - tit->total_log_prob,
