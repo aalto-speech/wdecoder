@@ -8,7 +8,7 @@
 
 using namespace std;
 
-int NBEST_MAX_NUM_RECOMBINATIONS = 4;
+int NBEST_MAX_NUM_RECOMBINATIONS = 3;
 
 Decoder::Decoder()
 {
@@ -612,6 +612,7 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
             history = nullptr;
             weight = { 0.0, 0.0, 0.0 };
             last_step_was_recombination = false;
+            last_recombination_frame_idx = 1000000;
             num_recombinations = 0;
         }
         PartialHypo(const PartialHypo &hypo) {
@@ -619,6 +620,7 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
             partial_result = hypo.partial_result;
             weight = hypo.weight;
             last_step_was_recombination = hypo.last_step_was_recombination;
+            last_recombination_frame_idx = hypo.last_recombination_frame_idx;
             num_recombinations = hypo.num_recombinations;
         }
         WordHistory *history;
@@ -626,6 +628,7 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
         array<float, 3> weight;
         bool last_step_was_recombination;
         int num_recombinations;
+        int last_recombination_frame_idx;
     };
 
     PartialHypo initial_hypo;
@@ -652,14 +655,17 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
 
             if (!curr_hypo.last_step_was_recombination && curr_hypo.num_recombinations < NBEST_MAX_NUM_RECOMBINATIONS) {
                 for (auto blit = curr_hypo.history->recombination_links.begin();
-                        blit != curr_hypo.history->recombination_links.end(); ++blit) {
+                        blit != curr_hypo.history->recombination_links.end(); ++blit)
+                {
+                    if (blit->second.m_frame_idx >= curr_hypo.last_recombination_frame_idx) continue;
                     PartialHypo new_hypo(curr_hypo);
-                    new_hypo.weight[0] += blit->second.at(0);
+                    new_hypo.weight[0] += blit->second.m_lp_penalty;
                     if (new_hypo.weight[0] > -beam) {
                         new_hypo.last_step_was_recombination = true;
                         new_hypo.num_recombinations += 1;
-                        new_hypo.weight[1] += blit->second.at(1);
-                        new_hypo.weight[2] += blit->second.at(2);
+                        new_hypo.last_recombination_frame_idx = blit->second.m_frame_idx;
+                        new_hypo.weight[1] += blit->second.m_am_lp_penalty;
+                        new_hypo.weight[2] += blit->second.m_lm_lp_penalty;
                         new_hypo.history = blit->first;
                         hypos_to_process.push_back(new_hypo);
                     }

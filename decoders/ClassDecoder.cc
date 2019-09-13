@@ -200,19 +200,19 @@ ClassRecognition::prune_tokens(
                     && (!bntit->second.history->previous ||
                         bntit->second.history->previous->previous != tit->history))
                 {
-                    array<float,3> weights = {
-                        bntit->second.total_log_prob - tit->total_log_prob,
-                        bntit->second.am_log_prob - tit->am_log_prob,
-                        bntit->second.lm_log_prob - tit->lm_log_prob
-                    };
+                    RecombinationLink link(
+                            bntit->second.total_log_prob - tit->total_log_prob,
+                            bntit->second.am_log_prob - tit->am_log_prob,
+                            bntit->second.lm_log_prob - tit->lm_log_prob,
+                            m_frame_idx);
                     WordHistory *previousBestHistory = bntit->second.history;
 
                     auto blit = tit->history->recombination_links.find(previousBestHistory);
                     if (blit == tit->history->recombination_links.end()) {
-                        tit->history->recombination_links[previousBestHistory] = weights;
+                        tit->history->recombination_links[previousBestHistory] = link;
                         m_num_recombination_links++;
-                    } else if (weights[0] > blit->second.at(0)) {
-                        tit->history->recombination_links[previousBestHistory] = weights;
+                    } else if (link.m_lp_penalty > blit->second.m_lp_penalty) {
+                        tit->history->recombination_links[previousBestHistory] = link;
                         m_num_recombination_link_updated++;
                     } else
                         m_num_recombination_link_not_updated++;

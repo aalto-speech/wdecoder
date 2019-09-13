@@ -164,6 +164,22 @@ public:
     double total_lm_lp;
 };
 
+// For backtracking recombined hypotheses
+class RecombinationLink {
+public:
+    RecombinationLink() {};
+    RecombinationLink(float lp_penalty, float am_lp_penalty, float lm_lp_penalty, int frame_idx) {
+        m_lp_penalty = lp_penalty;
+        m_am_lp_penalty = am_lp_penalty;
+        m_lm_lp_penalty = lm_lp_penalty;
+        m_frame_idx = frame_idx;
+    };
+    float m_lp_penalty;
+    float m_am_lp_penalty;
+    float m_lm_lp_penalty;
+    int m_frame_idx;
+};
+
 class Recognition {
 public:
     class WordHistory {
@@ -175,11 +191,7 @@ public:
         int word_id;
         WordHistory *previous;
         std::map<int, WordHistory*> next;
-
-        // For backtracking recombined hypotheses
-        // Value is the log prob penalty for traversing the path
-        // <total log prob, am log prob, lm log prob>
-        std::map<WordHistory*, std::array<float,3> > recombination_links;
+        std::map<WordHistory*, RecombinationLink> recombination_links;
     };
 
     class Token {
