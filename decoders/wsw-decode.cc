@@ -41,7 +41,7 @@ read_config(WordSubwordDecoder &d, string cfgfname)
         else if (parameter == "word_iw") ss >> d.m_word_iw;
         else if (parameter == "class_iw") ss >> d.m_class_iw;
         else if (parameter == "subword_iw") ss >> d.m_subword_iw;
-        else throw string("Unknown parameter: ") + parameter;
+        else cerr << "Ignored unknown parameter: " << parameter << endl;
     }
 
     if (fabs(d.m_word_iw+d.m_class_iw+d.m_subword_iw - 1.0) > 0.00001) {

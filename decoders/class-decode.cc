@@ -38,7 +38,7 @@ read_config(ClassDecoder &d, string cfgfname)
         else if (parameter == "word_boundary_symbol")
             throw string("Word boundary symbol not supported in class-decode.");
         else if (parameter == "stats") ss >> d.m_stats;
-        else throw string("Unknown parameter: ") + parameter;
+        else cerr << "Ignored unknown parameter: " << parameter << endl;
     }
 
     cfgf.close();

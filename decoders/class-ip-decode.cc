@@ -39,7 +39,7 @@ read_config(ClassIPDecoder &d, string cfgfname)
             throw string("Word boundary symbol not supported in class-ip-decode.");
         else if (parameter == "stats") ss >> d.m_stats;
         else if (parameter == "interpolation_weight") ss >> d.m_iw;
-        else throw string("Unknown parameter: ") + parameter;
+        else cerr << "Ignored unknown parameter: " << parameter << endl;
     }
 
     cfgf.close();
