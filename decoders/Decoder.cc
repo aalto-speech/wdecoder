@@ -290,7 +290,8 @@ Recognition::recognize_lna_file(
     string lnafname,
     RecognitionResult &res,
     bool write_nbest,
-    double nbest_beam)
+    double nbest_beam,
+    int nbest_max_num_hypotheses)
 {
     m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
@@ -355,24 +356,32 @@ Recognition::recognize_lna_file(
         best_token->total_log_prob,
         best_token->am_log_prob,
         best_token->lm_log_prob);
+
     if (write_nbest) {
         vector<Token*> hypo_tokens = get_best_hypo_tokens(tokens);
+        if (find(hypo_tokens.begin(), hypo_tokens.end(), best_token) == hypo_tokens.end()) {
+            hypo_tokens.insert(hypo_tokens.begin(), best_token);
+        }
+
+        NbestStorage nbest_storage(nbest_max_num_hypotheses, nbest_beam);
         for (int i=0; i<(int)hypo_tokens.size(); i++) {
             Token *hypo_token = hypo_tokens[i];
-            double diff_to_best
-                = best_token->total_log_prob - hypo_token->total_log_prob;
-            double curr_hypo_beam = nbest_beam - diff_to_best;
-            if (curr_hypo_beam > 0) {
-                vector<pair<string, array<float,3> > > nbest_results
-                    = get_nbest_results(hypo_token->history, curr_hypo_beam);
-                for (int n=0; n<(int)nbest_results.size(); n++) {
-                    res.add_nbest_result(
-                        nbest_results[n].first,
-                        hypo_token->total_log_prob + nbest_results[n].second[0],
-                        hypo_token->am_log_prob + nbest_results[n].second[1],
-                        hypo_token->lm_log_prob + nbest_results[n].second[2]);
-                }
-            }
+            if (hypo_token->total_log_prob >= (best_token->total_log_prob-nbest_beam))
+                get_nbest_results(
+                        hypo_token->history,
+                        {hypo_token->total_log_prob, hypo_token->am_log_prob, hypo_token->lm_log_prob},
+                        best_token->total_log_prob,
+                        nbest_beam,
+                        nbest_storage);
+        }
+
+        vector<pair<string, array<float, 3> > > nbest_results = nbest_storage.get_results(m_text_units);
+        for (int n=0; n<(int)nbest_results.size(); n++) {
+            res.add_nbest_result(
+                nbest_results[n].first,
+                nbest_results[n].second[0],
+                nbest_results[n].second[1],
+                nbest_results[n].second[2]);
         }
     }
 
@@ -601,11 +610,74 @@ Recognition::get_result(WordHistory *history)
 }
 
 
-vector<pair<string, array<float,3> > >
-Recognition::get_nbest_results(WordHistory *history, double beam)
-{
-    map<vector<int>, array<float, 3> > result_map;
+NbestStorage::NbestStorage(int max_num_hypotheses, float beam) {
+    m_max_num_hypotheses = max_num_hypotheses;
+    m_beam = beam;
+    m_best_prob = TINY_FLOAT;
+};
 
+
+void
+NbestStorage::add_hypothesis(array<float, 3> probs, vector<int> words) {
+    if (probs[0] < (m_best_prob-m_beam)) return;
+
+    pair<float, vector<int> > curr_pair = make_pair(probs[0], words);
+    auto hypo_it = m_hypotheses.find(words);
+    if (hypo_it != m_hypotheses.end() && hypo_it->second[0] < probs[0]) {
+        remove_hypothesis(probs[0], words);
+        m_hypotheses_by_prob.insert(curr_pair);
+        m_hypotheses[words] = probs;
+        m_best_prob = max(m_best_prob, probs[0]);
+    }
+    else if (hypo_it == m_hypotheses.end() && m_hypotheses.size() < m_max_num_hypotheses) {
+        m_hypotheses[words] = probs;
+        m_hypotheses_by_prob.insert(curr_pair);
+        m_best_prob = max(m_best_prob, probs[0]);
+    }
+    else if (hypo_it == m_hypotheses.end() && probs[0] > m_hypotheses_by_prob.begin()->first) {
+        remove_hypothesis(m_hypotheses_by_prob.begin()->first, m_hypotheses_by_prob.begin()->second);
+        m_hypotheses_by_prob.insert(curr_pair);
+        m_hypotheses[words] = probs;
+        m_best_prob = max(m_best_prob, probs[0]);
+    }
+}
+
+
+void
+NbestStorage::remove_hypothesis(float prob, vector<int> words) {
+    auto equal_probs = m_hypotheses_by_prob.equal_range(prob);
+    for (auto mit = equal_probs.first; mit != equal_probs.second; mit++) {
+        if (mit->second == words) {
+            m_hypotheses_by_prob.erase(mit);
+            break;
+        }
+    }
+    m_hypotheses.erase(words);
+}
+
+
+vector<pair<string, array<float, 3> > >
+NbestStorage::get_results(const vector<string> *text_units) {
+    vector<pair<string, array<float, 3> > > results;
+    for (auto hypo_it = m_hypotheses.begin(); hypo_it != m_hypotheses.end(); ++hypo_it) {
+        const vector<int> &word_ids = hypo_it->first;
+        string result = "";
+        for (auto word_it = word_ids.rbegin(); word_it != word_ids.rend(); ++word_it)
+            if (*word_it >= 0) result += " " + text_units->at(*word_it);
+        results.push_back(make_pair(result, hypo_it->second));
+    }
+    return results;
+}
+
+
+void
+Recognition::get_nbest_results(
+    WordHistory *history,
+    array<float, 3> curr_hypo_probs,
+    float best_hypo_log_prob,
+    float beam,
+    NbestStorage &nbest_storage)
+{
     class PartialHypo {
     public:
         PartialHypo() {
@@ -633,19 +705,17 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
 
     PartialHypo initial_hypo;
     initial_hypo.history = history;
+    initial_hypo.weight = curr_hypo_probs;
     list<PartialHypo> hypos_to_process;
     hypos_to_process.push_back(initial_hypo);
+    beam = best_hypo_log_prob - beam;
 
     while (hypos_to_process.size()) {
         PartialHypo curr_hypo = hypos_to_process.front();
         hypos_to_process.pop_front();
 
         if (curr_hypo.history->previous == nullptr) {
-            vector<int> complete_result = curr_hypo.partial_result;
-            complete_result.push_back(curr_hypo.history->word_id);
-            auto rmit = result_map.find(complete_result);
-            if (rmit == result_map.end() || curr_hypo.weight[0] > rmit->second.at(0))
-                result_map[complete_result] = curr_hypo.weight;
+            nbest_storage.add_hypothesis(curr_hypo.weight, curr_hypo.partial_result);
         } else {
             PartialHypo new_hypo(curr_hypo);
             new_hypo.last_step_was_recombination = false;
@@ -654,13 +724,14 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
             hypos_to_process.push_back(new_hypo);
 
             if (!curr_hypo.last_step_was_recombination && curr_hypo.num_recombinations < NBEST_MAX_NUM_RECOMBINATIONS) {
+//            if (curr_hypo.num_recombinations < NBEST_MAX_NUM_RECOMBINATIONS) {
                 for (auto blit = curr_hypo.history->recombination_links.begin();
                         blit != curr_hypo.history->recombination_links.end(); ++blit)
                 {
-                    if (blit->second.m_frame_idx >= curr_hypo.last_recombination_frame_idx) continue;
+                    if (blit->second.m_frame_idx > curr_hypo.last_recombination_frame_idx) continue;
                     PartialHypo new_hypo(curr_hypo);
                     new_hypo.weight[0] += blit->second.m_lp_penalty;
-                    if (new_hypo.weight[0] > -beam) {
+                    if (new_hypo.weight[0] > beam) {
                         new_hypo.last_step_was_recombination = true;
                         new_hypo.num_recombinations += 1;
                         new_hypo.last_recombination_frame_idx = blit->second.m_frame_idx;
@@ -673,17 +744,6 @@ Recognition::get_nbest_results(WordHistory *history, double beam)
             }
         }
     }
-
-    vector<pair<string, array<float,3> > > final_results;
-    for (auto rit = result_map.begin(); rit != result_map.end(); ++rit) {
-        const vector<int> &text_unit_ids = rit->first;
-        string result;
-        for (auto tuit = text_unit_ids.rbegin(); tuit != text_unit_ids.rend(); ++tuit)
-            if (*tuit >= 0) result += " " + m_text_units->at(*tuit);
-        final_results.push_back(make_pair(result, rit->second));
-    }
-
-    return final_results;
 }
 
 

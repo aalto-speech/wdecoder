@@ -115,6 +115,23 @@ public:
     int m_last_sil_idx;
 };
 
+
+class NbestStorage {
+public:
+    NbestStorage(int max_num_hypotheses, float beam);
+    void add_hypothesis(std::array<float, 3> probs, std::vector<int> words);
+    std::vector<std::pair<std::string, std::array<float, 3> > > get_results(const std::vector<std::string> *m_text_units);
+private:
+    void remove_hypothesis(float prob, std::vector<int> words);
+
+    int m_max_num_hypotheses;
+    float m_beam;
+    float m_best_prob;
+    std::multimap<float, std::vector<int> > m_hypotheses_by_prob;
+    std::map<std::vector<int>, std::array<float, 3> > m_hypotheses;
+};
+
+
 class RecognitionResult {
 public:
     class Result {
@@ -231,7 +248,8 @@ public:
     void recognize_lna_file(std::string lnafname,
                             RecognitionResult &res,
                             bool write_nbest=false,
-                            double nbest_beam=1000.0);
+                            double nbest_beam=1000.0,
+                            int nbest_max_num_hypotheses=20000);
     void prune_word_history();
     void clear_word_history();
     void print_certain_word_history(std::ostream &outf=std::cout);
@@ -248,9 +266,12 @@ protected:
     virtual void propagate_tokens() = 0;
     std::string get_best_result();
     virtual std::string get_result(WordHistory *history);
-    std::vector<std::pair<std::string, std::array<float,3> > > get_nbest_results(
-        WordHistory *history,
-        double beam);
+    void get_nbest_results(
+            WordHistory *history,
+            std::array<float, 3> curr_hypo_probs,
+            float best_hypo_log_prob,
+            float beam,
+            NbestStorage &nbest_storage);
     virtual void prune_tokens(bool collect_active_histories=false,
                               bool nbest=false) = 0;
 

@@ -102,7 +102,8 @@ recognize_lnas(Decoder &d,
                                      lnafname,
                                      std::ref(*results.back()),
                                      config["nbest"].specified,
-                                     config["nbest-beam"].get_double());
+                                     config["nbest-beam"].get_double(),
+                                     config["nbest-num-hypotheses"].get_int());
             threads.push_back(thr);
         }
 
