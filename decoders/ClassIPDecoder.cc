@@ -228,7 +228,6 @@ ClassIPRecognition::prune_tokens(
             bool create_recombination_link = (write_nbest && bntit->second.history != tit->history);
 
             if (tit->total_log_prob > bntit->second.total_log_prob) {
-
                 if (create_recombination_link)
                 {
                     RecombinationLink link(
@@ -246,6 +245,18 @@ ClassIPRecognition::prune_tokens(
                 histogram[bntit->second.histogram_bin]--;
                 histogram[tit->histogram_bin]++;
                 bntit->second = *tit;
+            }
+            else if (create_recombination_link) {
+                RecombinationLink link(
+                        tit->total_log_prob - bntit->second.total_log_prob,
+                        tit->am_log_prob - bntit->second.am_log_prob,
+                        tit->lm_log_prob - bntit->second.lm_log_prob,
+                        m_frame_idx);
+                WordHistory *previousBestHistory = tit->history;
+                auto blit = bntit->second.history->recombination_links.find(previousBestHistory);
+                if (blit == bntit->second.history->recombination_links.end()
+                    || link.m_lp_penalty > blit->second.m_lp_penalty)
+                    bntit->second.history->recombination_links[previousBestHistory] = link;
             }
 
             m_dropped_count++;

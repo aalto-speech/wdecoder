@@ -173,36 +173,39 @@ NgramRecognition::prune_tokens(
         map<int, NgramToken> &node_tokens = m_recombined_tokens[tit->node_idx];
         auto bntit = node_tokens.find(tit->lm_node);
         if (bntit != node_tokens.end()) {
+
+            bool create_recombination_link = (write_nbest && bntit->second.history != tit->history);
+
             if (tit->total_log_prob > bntit->second.total_log_prob) {
-                histogram[bntit->second.histogram_bin]--;
-                histogram[tit->histogram_bin]++;
-
-                if (write_nbest // && bntit->second.history != tit->history
-                    && bntit->second.history != tit->history
-                    && bntit->second.history != tit->history->previous
-                    && bntit->second.history->previous != tit->history
-                    && (!bntit->second.history->previous ||
-                        bntit->second.history->previous->previous != tit->history))
+                if (create_recombination_link)
                 {
-                        RecombinationLink link(
-                                bntit->second.total_log_prob - tit->total_log_prob,
-                                bntit->second.am_log_prob - tit->am_log_prob,
-                                bntit->second.lm_log_prob - tit->lm_log_prob,
-                                m_frame_idx);
-                        WordHistory *previousBestHistory = bntit->second.history;
-
-                        auto blit = tit->history->recombination_links.find(previousBestHistory);
-                        if (blit == tit->history->recombination_links.end()) {
-                            tit->history->recombination_links[previousBestHistory] = link;
-                            m_num_recombination_links++;
-                        } else if (link.m_lp_penalty > blit->second.m_lp_penalty) {
-                            tit->history->recombination_links[previousBestHistory] = link;
-                            m_num_recombination_link_updated++;
-                        } else
-                            m_num_recombination_link_not_updated++;
+                    RecombinationLink link(
+                            bntit->second.total_log_prob - tit->total_log_prob,
+                            bntit->second.am_log_prob - tit->am_log_prob,
+                            bntit->second.lm_log_prob - tit->lm_log_prob,
+                            m_frame_idx);
+                    WordHistory *previousBestHistory = bntit->second.history;
+                    auto blit = tit->history->recombination_links.find(previousBestHistory);
+                    if (blit == tit->history->recombination_links.end()
+                        || link.m_lp_penalty > blit->second.m_lp_penalty)
+                        tit->history->recombination_links[previousBestHistory] = link;
                 }
 
+                histogram[bntit->second.histogram_bin]--;
+                histogram[tit->histogram_bin]++;
                 bntit->second = *tit;
+            }
+            else if (create_recombination_link) {
+                RecombinationLink link(
+                        tit->total_log_prob - bntit->second.total_log_prob,
+                        tit->am_log_prob - bntit->second.am_log_prob,
+                        tit->lm_log_prob - bntit->second.lm_log_prob,
+                        m_frame_idx);
+                WordHistory *previousBestHistory = tit->history;
+                auto blit = bntit->second.history->recombination_links.find(previousBestHistory);
+                if (blit == bntit->second.history->recombination_links.end()
+                    || link.m_lp_penalty > blit->second.m_lp_penalty)
+                    bntit->second.history->recombination_links[previousBestHistory] = link;
             }
             m_dropped_count++;
         }
