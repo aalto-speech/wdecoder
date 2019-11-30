@@ -89,7 +89,7 @@ create_forced_path(DecoderGraph &dg,
         int nc = nodes.size();
         for (int i=word_start_idx; i<word_end_idx; i++) {
             if (node_labels.find(i) == node_labels.end()
-                    || node_labels[i] != "_.0") continue;
+                || node_labels[i] != "_.0") continue;
 
             string left_triphone = node_labels[i-1].substr(0, 5);
             left_triphone[4] = SIL_CTXT;
@@ -117,33 +117,6 @@ create_forced_path(DecoderGraph &dg,
 }
 
 
-int
-parse_transcript_phn(DecoderGraph &dg,
-                     vector<DecoderGraph::Node> &nodes,
-                     string phnfname,
-                     map<int, string> &node_labels)
-{
-    ifstream phnf(phnfname);
-
-    nodes.clear();
-    nodes.resize(1);
-    node_labels.clear();
-    int idx = 0;
-
-    string phn_line;
-    while (getline(phnf, phn_line)) {
-        phn_line = str::cleaned(phn_line);
-        vector<string> parts = str::split(phn_line, " \t", true);
-        if (parts.size() != 3) throw string("Invalid phn line: ") + phn_line;
-        if (parts[2].find(".0") == string::npos) continue;
-        string phone = parts[2].substr(0, parts[2].size()-2);
-        idx = dg.connect_triphone(nodes, phone, idx, node_labels);
-    }
-
-    return idx;
-}
-
-
 void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
                                vector<Decoder::Node> &dnodes)
 {
@@ -156,58 +129,6 @@ void convert_nodes_for_decoder(vector<DecoderGraph::Node> &nodes,
         int apos=0;
         for (auto ait=nodes[i].arcs.begin(); ait != nodes[i].arcs.end(); ++ait)
             dnodes[i].arcs[apos++].target_node = (int)(*ait);
-    }
-}
-
-
-void parse_recipe_line(string recipe_line,
-                       map<string, string> &recipe_vals)
-{
-    recipe_line = str::cleaned(recipe_line);
-    vector<string> recipe_fields = str::split(recipe_line, " \t", true);
-    for (auto rfit = recipe_fields.begin(); rfit != recipe_fields.end(); ++rfit) {
-        vector<string> line_vals = str::split(*rfit, "=", true);
-        recipe_vals[line_vals[0]] = line_vals[1];
-    }
-}
-
-
-void
-get_recipe_lines(string recipe_fname,
-                 int num_batches,
-                 int batch_index,
-                 vector<string> &recipe_lines)
-{
-    ifstream recipef(recipe_fname);
-    string recipe_line;
-
-    int line_count = 0;
-    while (getline(recipef, recipe_line)) {
-        recipe_line = str::cleaned(recipe_line);
-        if (!recipe_line.length()) continue;
-        line_count++;
-    }
-
-    int line_idx = 0;
-    int start_idx = 0;
-    int end_idx = line_count;
-    if (num_batches > 0 && batch_index > 0) {
-        start_idx = (batch_index-1) * (line_count / num_batches);
-        end_idx = (batch_index) * (line_count / num_batches);
-        if (num_batches == batch_index) end_idx = line_count;
-
-        int remainder = line_count % num_batches;
-        start_idx += min(batch_index-1, remainder);
-        end_idx += min(batch_index, remainder);
-    }
-
-    ifstream recipef2(recipe_fname);
-    while (getline(recipef2, recipe_line)) {
-        recipe_line = str::cleaned(recipe_line);
-        if (!recipe_line.length()) continue;
-        if (line_idx >= start_idx && line_idx < end_idx)
-            recipe_lines.push_back(recipe_line);
-        line_idx++;
     }
 }
 
@@ -251,22 +172,17 @@ print_dot_digraph(vector<Decoder::Node> &nodes,
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: nbest-rescore-am [OPTION...] PH RECIPE\n")
-    ('h', "help", "", "", "display help")
-    ('t', "text-field", "", "", "Create alignment from text field, -x must be defined as well")
-    ('x', "lexicon=STRING", "arg", "", "Lexicon file to be used with -t")
-    ('l', "long-silence", "", "", "Enable breaking long silence path between words")
-    ('s', "short-silence", "", "", "Enable breaking short silence path between words")
-    ('d', "duration-model=STRING", "arg", "", "Duration model")
-    ('b', "global-beam=FLOAT", "arg", "200", "Global search beam, DEFAULT: 200.0")
-    ('m', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
-    ('n', "lna-dir=STRING", "arg", "", "LNA directory")
-    ('o', "attempt-once", "", "", "Attempt segmentation only once without increasing beams")
-    ('B', "batch=INT", "arg", "0", "number of batch processes with the same recipe")
-    ('I', "bindex=INT", "arg", "0", "batch process index")
-    ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
+    config("usage: nbest-rescore-am [OPTION...] PH LEXICON NBEST RESCORED_NBEST\n")
+            ('h', "help", "", "", "display help")
+            ('l', "long-silence", "", "", "Enable breaking long silence path between words")
+            ('s', "short-silence", "", "", "Enable breaking short silence path between words")
+            ('d', "duration-model=STRING", "arg", "", "Duration model")
+            ('b', "global-beam=FLOAT", "arg", "200", "Global search beam, DEFAULT: 200.0")
+            ('m', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
+            ('o', "attempt-once", "", "", "Attempt segmentation only once without increasing beams")
+            ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
     config.default_parse(argc, argv);
-    if (config.arguments.size() != 2) config.print_help(stderr, 1);
+    if (config.arguments.size() != 4) config.print_help(stderr, 1);
 
     try {
 
@@ -276,16 +192,12 @@ int main(int argc, char* argv[])
         int info_level = config["info"].get_int();
         bool attempt_once = config["attempt-once"].specified;
 
-        if (!config["text-field"].specified &&
-                (config["long-silence"].specified || config["short-silence"].specified))
-            throw string("Silence options are only usable with text-field switch");
-
-        if (config["text-field"].specified && !config["lexicon"].specified)
-            throw string("Lexicon needs to be set with -t option");
-
-        string phfname = config.arguments[0];
-        if (info_level > 0) cerr << "Reading hmms: " << phfname << endl;
-        s.read_phone_model(phfname);
+        string ph_fname = config.arguments[0];
+        string lex_fname = config.arguments[1];
+        string nbest_fname = config.arguments[2];
+        string rescored_nbest_fname = config.arguments[3];
+        if (info_level > 0) cerr << "Reading hmms: " << ph_fname << endl;
+        s.read_phone_model(ph_fname);
 
         if (config["duration-model"].specified) {
             string durfname = config["duration-model"].get_str();
@@ -293,66 +205,59 @@ int main(int argc, char* argv[])
             s.read_duration_model(durfname);
         }
 
-        string recipefname = config.arguments[1];
-        vector<string> recipe_lines;
-        get_recipe_lines(recipefname, config["batch"].get_int(), config["bindex"].get_int(), recipe_lines);
-
-        ifstream recipef(recipefname);
-
         DecoderGraph dg;
-        dg.read_phone_model(phfname);
+        dg.read_phone_model(ph_fname);
+        if (info_level > 0) cerr << "Reading lexicon: " << lex_fname << endl;
+        dg.read_noway_lexicon(lex_fname);
 
-        if (config["lexicon"].specified) {
-            string lexfname = config["lexicon"].get_str();
-            if (info_level > 0) cerr << "Reading lexicon: " << lexfname << endl;
-            dg.read_noway_lexicon(lexfname);
-        }
+        SimpleFileInput nbest_file(nbest_fname);
+        SimpleFileOutput rescored_nbest_file(rescored_nbest_fname);
+        string nbest_line;
+        int linei = 0;
+        double lm_scale = 0.0;
+        while (nbest_file.getline(nbest_line)) {
 
-        for (auto rlit = recipe_lines.begin(); rlit != recipe_lines.end(); ++rlit) {
+            string lna_fname;
+            double original_log_prob;
+            double original_am_prob;
+            double original_lm_prob;
+            int num_words;
+            string nbest_hypo_text, nbest_hypo_text_cleaned;
 
-            map<string, string> recipe_fields;
-            parse_recipe_line(*rlit, recipe_fields);
-
-            if (recipe_fields.find("lna") == recipe_fields.end() ||
-                    recipe_fields.find("alignment") == recipe_fields.end())
-                throw string("Error in recipe line " + *rlit);
-
-            if (config["text-field"].specified) {
-                if (recipe_fields.find("text") == recipe_fields.end())
-                    throw string("Error in recipe line " + *rlit);
+            stringstream nbest_line_ss(nbest_line);
+            nbest_line_ss
+                >>lna_fname
+                >>original_log_prob
+                >>original_am_prob
+                >>original_lm_prob
+                >>num_words
+                >>std::ws;
+            getline(nbest_line_ss, nbest_hypo_text);
+            if (nbest_line_ss.fail()) {
+                cerr << "Problem parsing line: " << nbest_line << endl;
+                exit(EXIT_FAILURE);
             }
-            else {
-                if (recipe_fields.find("transcript") == recipe_fields.end())
-                    throw string("Error in recipe line " + *rlit);
-            }
 
-            string lna_file = recipe_fields["lna"];
-            if (config["lna-dir"].specified) lna_file = config["lna-dir"].get_str() + "/" + lna_file;
+            if (linei++ == 0)
+                lm_scale = (original_log_prob - original_am_prob) /  original_lm_prob;
 
-            if (info_level > 0) cerr << "segmenting to: " << recipe_fields["alignment"] << endl;
-
+            //cerr << lna_fname << " " << original_log_prob << " " << original_am_prob
+            //     << " " << original_lm_prob << " " << num_words << " " << nbest_hypo_text << endl;
             vector<DecoderGraph::Node> nodes;
             map<int, string> node_labels;
             vector<int> end_node_idxs;
 
-            if (config["text-field"].specified) {
-                ifstream textf(recipe_fields["text"]);
-                string resline;
-                string fileline;
-                while (getline(textf, fileline)) {
-                    resline += fileline;
-                    resline += "\n";
-                }
-                end_node_idxs = create_forced_path(dg, nodes, resline, node_labels,
-                                                   config["short-silence"].specified,
-                                                   config["long-silence"].specified);
-                if (end_node_idxs.size() == 0) continue;
-            }
-            else {
-                int end_node_idx = parse_transcript_phn(dg, nodes,
-                                                        recipe_fields["transcript"],
-                                                        node_labels);
-                end_node_idxs.push_back(end_node_idx);
+            nbest_hypo_text_cleaned.assign(nbest_hypo_text);
+            string se_symbol(" </s>");
+            while(nbest_hypo_text_cleaned.find(se_symbol) != std::string::npos)
+                nbest_hypo_text_cleaned.replace(nbest_hypo_text_cleaned.find(se_symbol), se_symbol.size(), "");
+
+            end_node_idxs = create_forced_path(dg, nodes, nbest_hypo_text_cleaned, node_labels,
+                                               config["short-silence"].specified,
+                                               config["long-silence"].specified);
+            if (end_node_idxs.size() == 0) {
+                cerr << "Problem creating forced path for line: " << nbest_line << endl;
+                exit(EXIT_FAILURE);
             }
 
             dg.add_hmm_self_transitions(nodes);
@@ -368,15 +273,15 @@ int main(int argc, char* argv[])
             exit(0);
             */
 
-            ofstream phnf(recipe_fields["alignment"]);
             int attempts = 0;
+            float rescored_am_log_prob;
             while (true) {
-                float log_prob = s.segment_lna_file(lna_file, node_labels, phnf);
+                rescored_am_log_prob = s.segment_lna_file(lna_fname, node_labels, nullptr);
                 attempts++;
-                if (log_prob > float(TINY_FLOAT)) {
-                    if (info_level > 0) cerr << "log prob: " << log_prob << endl;
+                if (rescored_am_log_prob > float(TINY_FLOAT)) {
+                    if (info_level > 0) cerr << "log prob: " << rescored_am_log_prob << endl;
                     break;
-                } else if (attempts >= 3 || attempt_once) {
+                } else if (attempts >= 5 || attempt_once) {
                     cerr << "giving up" << endl;
                     break;
                 }
@@ -387,9 +292,21 @@ int main(int argc, char* argv[])
             }
             s.m_global_beam = config["global-beam"].get_float();
             s.m_token_limit = config["max-tokens"].get_int();
-            phnf.close();
+
+            if (rescored_am_log_prob > float(TINY_FLOAT)) {
+                rescored_nbest_file << lna_fname
+                    << " " << (rescored_am_log_prob + lm_scale * original_lm_prob)
+                    << " " << rescored_am_log_prob
+                    << " " << original_lm_prob
+                    << " " << num_words
+                    << " " << nbest_hypo_text
+                    << "\n";
+            } else {
+                cerr << "warning, could not find segmentation for line: " << nbest_line << endl;
+            }
+
         }
-        recipef.close();
+        rescored_nbest_file.close();
 
     } catch (string &e) {
         cerr << e << endl;

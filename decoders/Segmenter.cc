@@ -61,8 +61,7 @@ Segmenter::print_phn_segmentation(Token &token,
 float
 Segmenter::segment_lna_file(string lnafname,
                             map<int, string> &node_labels,
-                            ostream &outf)
-{
+                            ostream *outf) {
     m_state_history_labels = node_labels;
     m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
@@ -75,6 +74,7 @@ Segmenter::segment_lna_file(string lnafname,
         propagate_tokens(curr_prob_limit);
         m_frame_idx++;
     }
+    m_lna_reader.close();
 
     Token *best_token = nullptr;
     for (auto enit = m_decode_end_nodes.begin(); enit != m_decode_end_nodes.end(); ++enit) {
@@ -88,9 +88,10 @@ Segmenter::segment_lna_file(string lnafname,
         return TINY_FLOAT;
     }
 
-    advance_in_state_history(*best_token);
-    print_phn_segmentation(*best_token, outf);
-    m_lna_reader.close();
+    if (outf != nullptr) {
+        advance_in_state_history(*best_token);
+        print_phn_segmentation(*best_token, *outf);
+    }
 
     return best_token->log_prob;
 }

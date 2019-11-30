@@ -371,7 +371,7 @@ int main(int argc, char* argv[])
             ofstream phnf(recipe_fields["alignment"]);
             int attempts = 0;
             while (true) {
-                float log_prob = s.segment_lna_file(lna_file, node_labels, phnf);
+                float log_prob = s.segment_lna_file(lna_file, node_labels, &phnf);
                 attempts++;
                 if (log_prob > float(TINY_FLOAT)) {
                     if (info_level > 0) cerr << "log prob: " << log_prob << endl;

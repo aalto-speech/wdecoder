@@ -16,6 +16,7 @@ runtests
 cleanlex
 clastates
 segment
+nbest-rescore-am
 .project
 .cproject
 .settings
