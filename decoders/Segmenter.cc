@@ -11,7 +11,6 @@ Segmenter::Segmenter()
     m_best_log_prob = 0.0;
     m_transition_scale = 1.0;
     m_duration_scale = 3.0;
-    m_decode_end_node = -1;
 }
 
 
@@ -77,17 +76,23 @@ Segmenter::segment_lna_file(string lnafname,
         m_frame_idx++;
     }
 
-    Token &best_token = m_recombined_tokens[m_decode_end_node];
-    if (best_token.node_idx == -1) {
+    Token *best_token = nullptr;
+    for (auto enit = m_decode_end_nodes.begin(); enit != m_decode_end_nodes.end(); ++enit) {
+        Token *curr_tok = &(m_recombined_tokens[*enit]);
+        if (best_token == nullptr || curr_tok->log_prob > best_token->log_prob)
+            best_token = curr_tok;
+    }
+
+    if (best_token->node_idx == -1) {
         cerr << "warning, no segmentation found" << endl;
         return TINY_FLOAT;
     }
 
-    advance_in_state_history(best_token);
-    print_phn_segmentation(best_token, outf);
+    advance_in_state_history(*best_token);
+    print_phn_segmentation(*best_token, outf);
     m_lna_reader.close();
 
-    return best_token.log_prob;
+    return best_token->log_prob;
 }
 
 

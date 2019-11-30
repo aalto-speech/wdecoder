@@ -238,7 +238,7 @@ ClassIPRecognition::prune_tokens(
                     WordHistory *previousBestHistory = bntit->second.history;
                     auto blit = tit->history->recombination_links.find(previousBestHistory);
                     if (blit == tit->history->recombination_links.end()
-                        || link.m_lp_penalty > blit->second.m_lp_penalty)
+                        || link.m_am_lp_penalty > blit->second.m_am_lp_penalty)
                             tit->history->recombination_links[previousBestHistory] = link;
                 }
 
@@ -255,7 +255,7 @@ ClassIPRecognition::prune_tokens(
                 WordHistory *previousBestHistory = tit->history;
                 auto blit = bntit->second.history->recombination_links.find(previousBestHistory);
                 if (blit == bntit->second.history->recombination_links.end()
-                    || link.m_lp_penalty > blit->second.m_lp_penalty)
+                    || link.m_am_lp_penalty > blit->second.m_am_lp_penalty)
                     bntit->second.history->recombination_links[previousBestHistory] = link;
             }
 

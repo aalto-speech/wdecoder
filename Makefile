@@ -52,6 +52,7 @@ decoder_progs = decode\
 	wsw-decode\
 	score\
 	segment\
+	nbest-rescore-am\
 	lastates\
 	cleanlex\
 	lasc

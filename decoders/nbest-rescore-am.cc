@@ -251,7 +251,7 @@ print_dot_digraph(vector<Decoder::Node> &nodes,
 int main(int argc, char* argv[])
 {
     conf::Config config;
-    config("usage: segment [OPTION...] PH RECIPE\n")
+    config("usage: nbest-rescore-am [OPTION...] PH RECIPE\n")
     ('h', "help", "", "", "display help")
     ('t', "text-field", "", "", "Create alignment from text field, -x must be defined as well")
     ('x', "lexicon=STRING", "arg", "", "Lexicon file to be used with -t")

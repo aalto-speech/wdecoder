@@ -723,8 +723,8 @@ Recognition::get_nbest_results(
             new_hypo.history = curr_hypo.history->previous;
             hypos_to_process.push_back(new_hypo);
 
-            if (!curr_hypo.last_step_was_recombination && curr_hypo.num_recombinations < NBEST_MAX_NUM_RECOMBINATIONS) {
-//            if (curr_hypo.num_recombinations < NBEST_MAX_NUM_RECOMBINATIONS) {
+//            if (!curr_hypo.last_step_was_recombination && curr_hypo.num_recombinations < NBEST_MAX_NUM_RECOMBINATIONS) {
+            if (curr_hypo.num_recombinations < NBEST_MAX_NUM_RECOMBINATIONS) {
                 for (auto blit = curr_hypo.history->recombination_links.begin();
                         blit != curr_hypo.history->recombination_links.end(); ++blit)
                 {

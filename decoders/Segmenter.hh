@@ -55,7 +55,7 @@ public:
     std::map<int, Token> m_recombined_tokens;
     std::map<int, Token> m_previous_recombined_tokens;
 
-    int m_decode_end_node;
+    std::vector<int> m_decode_end_nodes;
     int m_frame_idx;
     int m_global_beam_pruned_count;
     float m_best_log_prob;
