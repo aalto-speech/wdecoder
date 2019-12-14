@@ -10,12 +10,35 @@ using namespace std;
 
 
 struct NbestFileEntry {
+public:
+    NbestFileEntry() {
+        rescored = false;
+        rescore_success = true;
+        printed = false;
+    };
+
+    void print_rescored_entry(SimpleFileOutput &output, double lm_scale) {
+        output << lna_fname
+               << " " << (rescored_am_prob + lm_scale * original_lm_prob)
+               << " " << rescored_am_prob
+               << " " << original_lm_prob
+               << " " << num_words
+               << " " << nbest_hypo_text
+               << "\n";
+    }
+
     string lna_fname;
     double original_log_prob;
     double original_am_prob;
     double original_lm_prob;
+    double rescored_am_prob;
     int num_words;
-    string original_line, nbest_hypo_text, nbest_hypo_text_cleaned;
+    string original_line;
+    string nbest_hypo_text;
+    string nbest_hypo_text_cleaned;
+    bool rescored;
+    bool rescore_success;
+    bool printed;
 };
 
 
@@ -178,18 +201,18 @@ print_dot_digraph(vector<Decoder::Node> &nodes,
 
 
 void
-rescore_nbest_entry(const DecoderGraph &dg,
-                    Segmenter &s,
+rescore_nbest_entry(Segmenter &s,
+                    const DecoderGraph &dg,
                     const conf::Config &config,
-                    double lm_scale,
-                    NbestFileEntry &curr_entry,
-                    SimpleFileOutput &rescored_nbest_file,
-                    int info_level)
+                    NbestFileEntry &curr_entry)
 {
+    int info_level = config["info"].get_int();
     bool attempt_once = config["attempt-once"].specified;
+
     vector<DecoderGraph::Node> nodes;
     map<int, string> node_labels;
-    vector <int> end_node_idxs = create_forced_path(dg, nodes, curr_entry.nbest_hypo_text_cleaned, node_labels,
+    vector <int> end_node_idxs = create_forced_path(
+                                       dg, nodes, curr_entry.nbest_hypo_text_cleaned, node_labels,
                                        config["short-silence"].specified,
                                        config["long-silence"].specified);
     if (end_node_idxs.size() == 0) {
@@ -230,15 +253,15 @@ rescore_nbest_entry(const DecoderGraph &dg,
     s.m_token_limit = config["max-tokens"].get_int();
 
     if (rescored_am_log_prob > float(TINY_FLOAT)) {
-        rescored_nbest_file << curr_entry.lna_fname
-                            << " " << (rescored_am_log_prob + lm_scale * curr_entry.original_lm_prob)
-                            << " " << rescored_am_log_prob
-                            << " " << curr_entry.original_lm_prob
-                            << " " << curr_entry.num_words
-                            << " " << curr_entry.nbest_hypo_text
-                            << "\n";
-    } else if (info_level > 0)
-        cerr << "warning, could not find segmentation for line: " << curr_entry.original_line << endl;
+        curr_entry.rescored_am_prob = rescored_am_log_prob;
+        curr_entry.rescored = true;
+        curr_entry.rescore_success = true;
+    } else {
+        if (info_level > 0)
+            cerr << "warning, could not find segmentation for line: " << curr_entry.original_line << endl;
+        curr_entry.rescored = true;
+        curr_entry.rescore_success = false;
+    }
 }
 
 
@@ -259,16 +282,15 @@ int main(int argc, char* argv[])
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
 
     try {
-
         Segmenter s;
         s.m_global_beam = config["global-beam"].get_float();
         s.m_token_limit = config["max-tokens"].get_int();
-        int info_level = config["info"].get_int();
 
         string ph_fname = config.arguments[0];
         string lex_fname = config.arguments[1];
         string nbest_fname = config.arguments[2];
         string rescored_nbest_fname = config.arguments[3];
+        int info_level = config["info"].get_int();
         if (info_level > 0) cerr << "Reading hmms: " << ph_fname << endl;
         s.read_phone_model(ph_fname);
 
@@ -323,13 +345,15 @@ int main(int argc, char* argv[])
         }
 
         SimpleFileOutput rescored_nbest_file(rescored_nbest_fname);
-        for (auto nbest_entry = nbest_entries.begin(); nbest_entry != nbest_entries.end(); nbest_entry++)
-            rescore_nbest_entry(dg, s, config, lm_scale, *nbest_entry, rescored_nbest_file, info_level);
+        for (auto nbest_entry = nbest_entries.begin(); nbest_entry != nbest_entries.end(); nbest_entry++) {
+            rescore_nbest_entry(s, dg, config, *nbest_entry);
+            if (nbest_entry->rescore_success) nbest_entry->print_rescored_entry(rescored_nbest_file, lm_scale);
+        }
         rescored_nbest_file.close();
 
     } catch (string &e) {
         cerr << e << endl;
     }
 
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
