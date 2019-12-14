@@ -261,32 +261,32 @@ public:
     int connect_triphone(std::vector<DecoderGraph::Node> &nodes,
                          std::string triphone,
                          node_idx_t node_idx,
-                         int flag_mask=0);
+                         int flag_mask=0) const;
     int connect_triphone(std::vector<DecoderGraph::Node> &nodes,
                          int triphone_idx,
                          node_idx_t node_idx,
-                         int flag_mask=0);
+                         int flag_mask=0) const;
     int connect_triphone(std::vector<DecoderGraph::Node> &nodes,
                          std::string triphone,
                          node_idx_t node_idx,
                          std::map<int, std::string> &node_labels,
-                         int flag_mask=0);
+                         int flag_mask=0) const;
     int connect_triphone(std::vector<DecoderGraph::Node> &nodes,
                          int triphone_idx,
                          node_idx_t node_idx,
                          std::map<int, std::string> &node_labels,
-                         int flag_mask=0);
+                         int flag_mask=0) const;
     int connect_word(std::vector<DecoderGraph::Node> &nodes,
                      std::string word,
                      node_idx_t node_idx,
-                     int flag_mask=0);
+                     int flag_mask=0) const;
     int connect_word(std::vector<DecoderGraph::Node> &nodes,
                      int word_id,
                      node_idx_t node_idx,
-                     int flag_mask=0);
+                     int flag_mask=0) const;
     int connect_dummy(std::vector<DecoderGraph::Node> &nodes,
                       node_idx_t node_idx,
-                      int flag_mask=0);
+                      int flag_mask=0) const;
 
     static int reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes);
     static void reachable_graph_nodes(std::vector<DecoderGraph::Node> &nodes,

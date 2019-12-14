@@ -39,8 +39,9 @@ public:
 
     void initialize();
     float segment_lna_file(std::string lnafname,
-                          std::map<int, std::string> &node_labels,
-                          std::ostream *outf=nullptr);
+                           std::map<int, std::string> &node_labels,
+                           std::ostream *outf=nullptr,
+                           int info_level=1);
     void apply_duration_model(Token &token, int node_idx);
     void print_phn_segmentation(Token &token,
                                 std::ostream &outf=std::cout);

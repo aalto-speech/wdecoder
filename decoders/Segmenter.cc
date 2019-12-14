@@ -61,7 +61,8 @@ Segmenter::print_phn_segmentation(Token &token,
 float
 Segmenter::segment_lna_file(string lnafname,
                             map<int, string> &node_labels,
-                            ostream *outf) {
+                            ostream *outf,
+                            int info_level) {
     m_state_history_labels = node_labels;
     m_lna_reader.open_file(lnafname, 1024);
     m_acoustics = &m_lna_reader;
@@ -84,7 +85,7 @@ Segmenter::segment_lna_file(string lnafname,
     }
 
     if (best_token->node_idx == -1) {
-        cerr << "warning, no segmentation found" << endl;
+        if (info_level > 0) cerr << "warning, no segmentation found" << endl;
         return TINY_FLOAT;
     }
 

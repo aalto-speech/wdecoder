@@ -86,7 +86,6 @@ create_forced_path(DecoderGraph &dg,
     end_nodes.push_back(end_ls_idx);
 
     if (breaking_short_silence || breaking_long_silence) {
-        int nc = nodes.size();
         for (int i=word_start_idx; i<word_end_idx; i++) {
             if (node_labels.find(i) == node_labels.end()
                     || node_labels[i] != "_.0") continue;

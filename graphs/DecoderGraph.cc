@@ -1535,9 +1535,9 @@ int
 DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
                                string triphone,
                                node_idx_t node_idx,
-                               int flag_mask)
+                               int flag_mask) const
 {
-    int hmm_index = m_hmm_map[triphone];
+    int hmm_index = m_hmm_map.at(triphone);
     return connect_triphone(nodes, hmm_index, node_idx, flag_mask);
 }
 
@@ -1545,9 +1545,9 @@ int
 DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
                                int hmm_index,
                                node_idx_t node_idx,
-                               int flag_mask)
+                               int flag_mask) const
 {
-    Hmm &hmm = m_hmms[hmm_index];
+    const Hmm &hmm = m_hmms.at(hmm_index);
 
     for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
         nodes.resize(nodes.size() + 1);
@@ -1565,9 +1565,9 @@ DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
                                string triphone,
                                node_idx_t node_idx,
                                map<int, string> &node_labels,
-                               int flag_mask)
+                               int flag_mask) const
 {
-    int hmm_index = m_hmm_map[triphone];
+    int hmm_index = m_hmm_map.at(triphone);
     return connect_triphone(nodes, hmm_index, node_idx, node_labels, flag_mask);
 }
 
@@ -1576,9 +1576,9 @@ DecoderGraph::connect_triphone(vector<DecoderGraph::Node> &nodes,
                                int hmm_index,
                                node_idx_t node_idx,
                                map<int, string> &node_labels,
-                               int flag_mask)
+                               int flag_mask) const
 {
-    Hmm &hmm = m_hmms[hmm_index];
+    const Hmm &hmm = m_hmms.at(hmm_index);
 
     for (unsigned int sidx = 2; sidx < hmm.states.size(); ++sidx) {
         nodes.resize(nodes.size() + 1);
@@ -1597,10 +1597,10 @@ int
 DecoderGraph::connect_word(vector<DecoderGraph::Node> &nodes,
                            string word,
                            node_idx_t node_idx,
-                           int flag_mask)
+                           int flag_mask) const
 {
     nodes.resize(nodes.size() + 1);
-    nodes.back().word_id = m_subword_map[word];
+    nodes.back().word_id = m_subword_map.at(word);
     nodes.back().flags |= flag_mask;
     nodes[node_idx].arcs.insert(nodes.size()-1);
     return nodes.size()-1;
@@ -1610,7 +1610,7 @@ int
 DecoderGraph::connect_word(vector<DecoderGraph::Node> &nodes,
                            int word_id,
                            node_idx_t node_idx,
-                           int flag_mask)
+                           int flag_mask) const
 {
     nodes.resize(nodes.size()+1);
     nodes.back().word_id = word_id;
@@ -1622,7 +1622,7 @@ DecoderGraph::connect_word(vector<DecoderGraph::Node> &nodes,
 int
 DecoderGraph::connect_dummy(vector<DecoderGraph::Node> &nodes,
                             node_idx_t node_idx,
-                            int flag_mask)
+                            int flag_mask) const
 {
     nodes.resize(nodes.size() + 1);
     nodes.back().flags |= flag_mask;

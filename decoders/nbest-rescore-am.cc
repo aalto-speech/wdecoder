@@ -10,7 +10,7 @@ using namespace std;
 
 
 vector<int>
-create_forced_path(DecoderGraph &dg,
+create_forced_path(const DecoderGraph &dg,
                    vector<DecoderGraph::Node> &nodes,
                    string &sentstr,
                    map<int, string> &node_labels,
@@ -25,7 +25,7 @@ create_forced_path(DecoderGraph &dg,
 
     while (fls >> wrd) {
         if (dg.m_lexicon.find(wrd) != dg.m_lexicon.end()) {
-            vector<string> &wt = dg.m_lexicon.at(wrd);
+            const vector<string> &wt = dg.m_lexicon.at(wrd);
             if (wt.size() == 1) {
                 cerr << "error: one phone word " << wrd << endl;
                 return end_nodes;
@@ -56,7 +56,7 @@ create_forced_path(DecoderGraph &dg,
     for (auto tit=triphones.begin(); tit != triphones.end(); ++tit) {
         if (*tit == SHORT_SIL)
             tnodes.back().subword_id = wordIndices[wordPosition++];
-        tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map[*tit]));
+        tnodes.push_back(TriphoneNode(-1, dg.m_hmm_map.at(*tit)));
     }
     tnodes.back().subword_id = wordIndices[wordPosition];
 
@@ -64,8 +64,8 @@ create_forced_path(DecoderGraph &dg,
     nodes.resize(1);
     node_labels.clear();
     int start_idx = 0;
-    int initial_ss_idx = dg.connect_triphone(nodes, dg.m_hmm_map[SHORT_SIL], start_idx, node_labels);
-    int initial_ls_idx = dg.connect_triphone(nodes, dg.m_hmm_map[LONG_SIL], start_idx, node_labels);
+    int initial_ss_idx = dg.connect_triphone(nodes, dg.m_hmm_map.at(SHORT_SIL), start_idx, node_labels);
+    int initial_ls_idx = dg.connect_triphone(nodes, dg.m_hmm_map.at(LONG_SIL), start_idx, node_labels);
     int word_start_idx = dg.connect_dummy(nodes, initial_ss_idx);
     int idx = word_start_idx;
     nodes[initial_ls_idx].arcs.insert(word_start_idx);
@@ -80,13 +80,12 @@ create_forced_path(DecoderGraph &dg,
     }
 
     int word_end_idx = idx;
-    int end_ss_idx = dg.connect_triphone(nodes, dg.m_hmm_map[SHORT_SIL], word_end_idx, node_labels);
-    int end_ls_idx = dg.connect_triphone(nodes, dg.m_hmm_map[LONG_SIL], word_end_idx, node_labels);
+    int end_ss_idx = dg.connect_triphone(nodes, dg.m_hmm_map.at(SHORT_SIL), word_end_idx, node_labels);
+    int end_ls_idx = dg.connect_triphone(nodes, dg.m_hmm_map.at(LONG_SIL), word_end_idx, node_labels);
     end_nodes.push_back(end_ss_idx);
     end_nodes.push_back(end_ls_idx);
 
     if (breaking_short_silence || breaking_long_silence) {
-        int nc = nodes.size();
         for (int i=word_start_idx; i<word_end_idx; i++) {
             if (node_labels.find(i) == node_labels.end()
                 || node_labels[i] != "_.0") continue;
@@ -282,19 +281,18 @@ int main(int argc, char* argv[])
             int attempts = 0;
             float rescored_am_log_prob;
             while (true) {
-                rescored_am_log_prob = s.segment_lna_file(lna_fname, node_labels, nullptr);
+                rescored_am_log_prob = s.segment_lna_file(lna_fname, node_labels, nullptr, 0);
                 attempts++;
                 if (rescored_am_log_prob > float(TINY_FLOAT)) {
                     if (info_level > 0) cerr << "log prob: " << rescored_am_log_prob << endl;
                     break;
                 } else if (attempts >= 5 || attempt_once) {
-                    cerr << "giving up" << endl;
                     break;
                 }
                 s.m_global_beam *= 2.0;
                 s.m_token_limit *= 2;
-                cerr << "increasing beam to " << s.m_global_beam << endl;
-                cerr << "doubling maximum number of tokens to " << s.m_token_limit << endl;
+                if (info_level > 1)
+                    cerr << "trying beam " << s.m_global_beam << " and maximum tokens " << s.m_token_limit << endl;
             }
             s.m_global_beam = config["global-beam"].get_float();
             s.m_token_limit = config["max-tokens"].get_int();
@@ -308,7 +306,7 @@ int main(int argc, char* argv[])
                     << " " << nbest_hypo_text
                     << "\n";
             } else {
-                cerr << "warning, could not find segmentation for line: " << nbest_line << endl;
+                if (info_level > 0) cerr << "warning, could not find segmentation for line: " << nbest_line << endl;
             }
 
         }
