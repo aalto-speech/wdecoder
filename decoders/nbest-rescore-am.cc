@@ -9,6 +9,16 @@
 using namespace std;
 
 
+struct NbestFileEntry {
+    string lna_fname;
+    double original_log_prob;
+    double original_am_prob;
+    double original_lm_prob;
+    int num_words;
+    string original_line, nbest_hypo_text, nbest_hypo_text_cleaned;
+};
+
+
 vector<int>
 create_forced_path(const DecoderGraph &dg,
                    vector<DecoderGraph::Node> &nodes,
@@ -167,6 +177,71 @@ print_dot_digraph(vector<Decoder::Node> &nodes,
 }
 
 
+void
+rescore_nbest_entry(const DecoderGraph &dg,
+                    Segmenter &s,
+                    const conf::Config &config,
+                    double lm_scale,
+                    NbestFileEntry &curr_entry,
+                    SimpleFileOutput &rescored_nbest_file,
+                    int info_level)
+{
+    bool attempt_once = config["attempt-once"].specified;
+    vector<DecoderGraph::Node> nodes;
+    map<int, string> node_labels;
+    vector <int> end_node_idxs = create_forced_path(dg, nodes, curr_entry.nbest_hypo_text_cleaned, node_labels,
+                                       config["short-silence"].specified,
+                                       config["long-silence"].specified);
+    if (end_node_idxs.size() == 0) {
+        cerr << "Problem creating forced path for line: " << curr_entry.original_line << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    dg.add_hmm_self_transitions(nodes);
+    convert_nodes_for_decoder(nodes, s.m_nodes);
+    s.set_hmm_transition_probs();
+    s.m_decode_start_node = 0;
+    s.m_decode_end_nodes = end_node_idxs;
+
+    /*
+    ofstream dotf("graph.dot");
+    print_dot_digraph(s.m_nodes, dotf, node_labels);
+    dotf.close();
+    exit(0);
+    */
+
+    int attempts = 0;
+    float rescored_am_log_prob;
+    while (true) {
+        rescored_am_log_prob = s.segment_lna_file(curr_entry.lna_fname, node_labels, nullptr, 0);
+        attempts++;
+        if (rescored_am_log_prob > float(TINY_FLOAT)) {
+            if (info_level > 0) cerr << "log prob: " << rescored_am_log_prob << endl;
+            break;
+        } else if (attempts >= 5 || attempt_once) {
+            break;
+        }
+        s.m_global_beam *= 2.0;
+        s.m_token_limit *= 2;
+        if (info_level > 1)
+            cerr << "trying beam " << s.m_global_beam << " and maximum tokens " << s.m_token_limit << endl;
+    }
+    s.m_global_beam = config["global-beam"].get_float();
+    s.m_token_limit = config["max-tokens"].get_int();
+
+    if (rescored_am_log_prob > float(TINY_FLOAT)) {
+        rescored_nbest_file << curr_entry.lna_fname
+                            << " " << (rescored_am_log_prob + lm_scale * curr_entry.original_lm_prob)
+                            << " " << rescored_am_log_prob
+                            << " " << curr_entry.original_lm_prob
+                            << " " << curr_entry.num_words
+                            << " " << curr_entry.nbest_hypo_text
+                            << "\n";
+    } else if (info_level > 0)
+        cerr << "warning, could not find segmentation for line: " << curr_entry.original_line << endl;
+}
+
+
 
 int main(int argc, char* argv[])
 {
@@ -189,7 +264,6 @@ int main(int argc, char* argv[])
         s.m_global_beam = config["global-beam"].get_float();
         s.m_token_limit = config["max-tokens"].get_int();
         int info_level = config["info"].get_int();
-        bool attempt_once = config["attempt-once"].specified;
 
         string ph_fname = config.arguments[0];
         string lex_fname = config.arguments[1];
@@ -210,106 +284,47 @@ int main(int argc, char* argv[])
         dg.read_noway_lexicon(lex_fname);
 
         SimpleFileInput nbest_file(nbest_fname);
-        SimpleFileOutput rescored_nbest_file(rescored_nbest_fname);
         string nbest_line;
-        int linei = 0;
         double lm_scale = 0.0;
+        vector<NbestFileEntry> nbest_entries;
         while (nbest_file.getline(nbest_line)) {
-
-            string lna_fname;
-            double original_log_prob;
-            double original_am_prob;
-            double original_lm_prob;
-            int num_words;
-            string nbest_hypo_text, nbest_hypo_text_cleaned;
-
+            NbestFileEntry curr_entry;
+            curr_entry.original_line.assign(nbest_line);
             stringstream nbest_line_ss(nbest_line);
             nbest_line_ss
-                >>lna_fname
-                >>original_log_prob
-                >>original_am_prob
-                >>original_lm_prob
-                >>num_words
-                >>std::ws;
+                    >> curr_entry.lna_fname
+                    >> curr_entry.original_log_prob
+                    >> curr_entry.original_am_prob
+                    >> curr_entry.original_lm_prob
+                    >> curr_entry.num_words
+                    >> std::ws;
 
-            if (num_words == 0) {
+            if (curr_entry.num_words == 0) {
                 cerr << "Skipping empty hypothesis: " << nbest_line << endl;
                 continue;
             }
 
-            getline(nbest_line_ss, nbest_hypo_text);
+            getline(nbest_line_ss, curr_entry.nbest_hypo_text);
             if (nbest_line_ss.fail()) {
                 cerr << "Problem parsing line: " << nbest_line << endl;
                 exit(EXIT_FAILURE);
             }
 
-            if (linei++ == 0)
-                lm_scale = (original_log_prob - original_am_prob) /  original_lm_prob;
-
-            //cerr << lna_fname << " " << original_log_prob << " " << original_am_prob
-            //     << " " << original_lm_prob << " " << num_words << " " << nbest_hypo_text << endl;
-            vector<DecoderGraph::Node> nodes;
-            map<int, string> node_labels;
-            vector<int> end_node_idxs;
-
-            nbest_hypo_text_cleaned.assign(nbest_hypo_text);
+            curr_entry.nbest_hypo_text_cleaned.assign(curr_entry.nbest_hypo_text);
             string se_symbol(" </s>");
-            while(nbest_hypo_text_cleaned.find(se_symbol) != std::string::npos)
-                nbest_hypo_text_cleaned.replace(nbest_hypo_text_cleaned.find(se_symbol), se_symbol.size(), "");
+            while(curr_entry.nbest_hypo_text_cleaned.find(se_symbol) != std::string::npos)
+                curr_entry.nbest_hypo_text_cleaned.replace(curr_entry.nbest_hypo_text_cleaned.find(se_symbol),
+                                                           se_symbol.size(), "");
 
-            end_node_idxs = create_forced_path(dg, nodes, nbest_hypo_text_cleaned, node_labels,
-                                               config["short-silence"].specified,
-                                               config["long-silence"].specified);
-            if (end_node_idxs.size() == 0) {
-                cerr << "Problem creating forced path for line: " << nbest_line << endl;
-                exit(EXIT_FAILURE);
-            }
-
-            dg.add_hmm_self_transitions(nodes);
-            convert_nodes_for_decoder(nodes, s.m_nodes);
-            s.set_hmm_transition_probs();
-            s.m_decode_start_node = 0;
-            s.m_decode_end_nodes = end_node_idxs;
-
-            /*
-            ofstream dotf("graph.dot");
-            print_dot_digraph(s.m_nodes, dotf, node_labels);
-            dotf.close();
-            exit(0);
-            */
-
-            int attempts = 0;
-            float rescored_am_log_prob;
-            while (true) {
-                rescored_am_log_prob = s.segment_lna_file(lna_fname, node_labels, nullptr, 0);
-                attempts++;
-                if (rescored_am_log_prob > float(TINY_FLOAT)) {
-                    if (info_level > 0) cerr << "log prob: " << rescored_am_log_prob << endl;
-                    break;
-                } else if (attempts >= 5 || attempt_once) {
-                    break;
-                }
-                s.m_global_beam *= 2.0;
-                s.m_token_limit *= 2;
-                if (info_level > 1)
-                    cerr << "trying beam " << s.m_global_beam << " and maximum tokens " << s.m_token_limit << endl;
-            }
-            s.m_global_beam = config["global-beam"].get_float();
-            s.m_token_limit = config["max-tokens"].get_int();
-
-            if (rescored_am_log_prob > float(TINY_FLOAT)) {
-                rescored_nbest_file << lna_fname
-                    << " " << (rescored_am_log_prob + lm_scale * original_lm_prob)
-                    << " " << rescored_am_log_prob
-                    << " " << original_lm_prob
-                    << " " << num_words
-                    << " " << nbest_hypo_text
-                    << "\n";
-            } else {
-                if (info_level > 0) cerr << "warning, could not find segmentation for line: " << nbest_line << endl;
-            }
-
+            if (nbest_entries.size() == 0)
+                lm_scale = (curr_entry.original_log_prob - curr_entry.original_am_prob)
+                           / curr_entry.original_lm_prob;
+            nbest_entries.push_back(curr_entry);
         }
+
+        SimpleFileOutput rescored_nbest_file(rescored_nbest_fname);
+        for (auto nbest_entry = nbest_entries.begin(); nbest_entry != nbest_entries.end(); nbest_entry++)
+            rescore_nbest_entry(dg, s, config, lm_scale, *nbest_entry, rescored_nbest_file, info_level);
         rescored_nbest_file.close();
 
     } catch (string &e) {

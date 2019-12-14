@@ -62,5 +62,4 @@ public:
     float m_best_log_prob;
     LnaReaderCircular m_lna_reader;
     Acoustics *m_acoustics;
-
 };

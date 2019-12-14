@@ -1732,7 +1732,7 @@ DecoderGraph::add_hmm_self_transitions()
 }
 
 void
-DecoderGraph::add_hmm_self_transitions(vector<DecoderGraph::Node> &nodes)
+DecoderGraph::add_hmm_self_transitions(vector<DecoderGraph::Node> &nodes) const
 {
     for (unsigned int i=0; i<nodes.size(); i++) {
         DecoderGraph::Node &node = nodes[i];

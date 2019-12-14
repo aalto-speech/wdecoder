@@ -321,7 +321,7 @@ public:
     static int num_triphones(std::vector<TriphoneNode> &nodes);
 
     void add_hmm_self_transitions();
-    void add_hmm_self_transitions(std::vector<DecoderGraph::Node> &nodes);
+    void add_hmm_self_transitions(std::vector<DecoderGraph::Node> &nodes) const;
     void add_silence_loop(bool sentence_end_symbol=true);
     void write_graph(std::string fname,
                      bool lm_labels=false);
