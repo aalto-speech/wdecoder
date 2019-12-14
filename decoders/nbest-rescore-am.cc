@@ -232,6 +232,12 @@ int main(int argc, char* argv[])
                 >>original_lm_prob
                 >>num_words
                 >>std::ws;
+
+            if (num_words == 0) {
+                cerr << "Skipping empty hypothesis: " << nbest_line << endl;
+                continue;
+            }
+
             getline(nbest_line_ss, nbest_hypo_text);
             if (nbest_line_ss.fail()) {
                 cerr << "Problem parsing line: " << nbest_line << endl;
@@ -285,7 +291,7 @@ int main(int argc, char* argv[])
                     cerr << "giving up" << endl;
                     break;
                 }
-                s.m_global_beam *= 1.5;
+                s.m_global_beam *= 2.0;
                 s.m_token_limit *= 2;
                 cerr << "increasing beam to " << s.m_global_beam << endl;
                 cerr << "doubling maximum number of tokens to " << s.m_token_limit << endl;
