@@ -1,5 +1,6 @@
 #include <sstream>
 #include <string>
+#include <thread>
 
 #include "DecoderGraph.hh"
 #include "Segmenter.hh"
@@ -14,7 +15,6 @@ public:
     NbestFileEntry() {
         rescored = false;
         rescore_success = true;
-        printed = false;
     };
 
     void print_rescored_entry(SimpleFileOutput &output, double lm_scale) {
@@ -38,7 +38,6 @@ public:
     string nbest_hypo_text_cleaned;
     bool rescored;
     bool rescore_success;
-    bool printed;
 };
 
 
@@ -265,6 +264,23 @@ rescore_nbest_entry(Segmenter &s,
 }
 
 
+void
+start_rescore_worker(
+    Segmenter &s,
+    vector<NbestFileEntry> &nbest_entries,
+    const DecoderGraph &dg,
+    const conf::Config &config,
+    int thread_idx,
+    int num_threads)
+{
+    for (int i=0; i<(int)nbest_entries.size(); i++) {
+        if (i % num_threads == thread_idx) {
+            cerr << i + 1 << "/" << nbest_entries.size() << " ";
+            rescore_nbest_entry(s, dg, config, nbest_entries[i]);
+        }
+    }
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -277,33 +293,33 @@ int main(int argc, char* argv[])
             ('b', "global-beam=FLOAT", "arg", "200", "Global search beam, DEFAULT: 200.0")
             ('m', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
             ('o', "attempt-once", "", "", "Attempt segmentation only once without increasing beams")
+            ('t', "num-threads", "arg", "1", "Number of threads")
             ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
 
     try {
-        Segmenter s;
-        s.m_global_beam = config["global-beam"].get_float();
-        s.m_token_limit = config["max-tokens"].get_int();
-
         string ph_fname = config.arguments[0];
         string lex_fname = config.arguments[1];
         string nbest_fname = config.arguments[2];
         string rescored_nbest_fname = config.arguments[3];
         int info_level = config["info"].get_int();
-        if (info_level > 0) cerr << "Reading hmms: " << ph_fname << endl;
-        s.read_phone_model(ph_fname);
-
-        if (config["duration-model"].specified) {
-            string durfname = config["duration-model"].get_str();
-            if (info_level > 0) cerr << "Reading duration model: " << durfname << endl;
-            s.read_duration_model(durfname);
-        }
+        int num_threads = config["num-threads"].get_int();
 
         DecoderGraph dg;
         dg.read_phone_model(ph_fname);
         if (info_level > 0) cerr << "Reading lexicon: " << lex_fname << endl;
         dg.read_noway_lexicon(lex_fname);
+
+        vector<Segmenter> segmenters(num_threads);
+        for (int t=0; t<num_threads; t++) {
+            if (info_level > 0) cerr << "Initializing segmenter " << t << endl;
+            segmenters[t].m_global_beam = config["global-beam"].get_float();
+            segmenters[t].m_token_limit = config["max-tokens"].get_int();
+            segmenters[t].read_phone_model(ph_fname);
+            if (config["duration-model"].specified)
+                segmenters[t].read_duration_model(config["duration-model"].get_str());
+        }
 
         SimpleFileInput nbest_file(nbest_fname);
         string nbest_line;
@@ -344,12 +360,33 @@ int main(int argc, char* argv[])
             nbest_entries.push_back(curr_entry);
         }
 
+        vector<std::thread*> threads;
+        for (int t=0; t<num_threads; t++) {
+            thread *thr = new std::thread(&start_rescore_worker,
+                                          std::ref(segmenters[t]),
+                                          std::ref(nbest_entries),
+                                          std::cref(dg),
+                                          std::cref(config),
+                                          t,
+                                          num_threads);
+            threads.push_back(thr);
+        }
+
+        int curr_line_idx = 0;
         SimpleFileOutput rescored_nbest_file(rescored_nbest_fname);
-        for (auto nbest_entry = nbest_entries.begin(); nbest_entry != nbest_entries.end(); nbest_entry++) {
-            rescore_nbest_entry(s, dg, config, *nbest_entry);
-            if (nbest_entry->rescore_success) nbest_entry->print_rescored_entry(rescored_nbest_file, lm_scale);
+        while (curr_line_idx < (int)nbest_entries.size()) {
+            if (nbest_entries[curr_line_idx].rescored) {
+                if (nbest_entries[curr_line_idx].rescore_success)
+                    nbest_entries[curr_line_idx].print_rescored_entry(rescored_nbest_file, lm_scale);
+                curr_line_idx++;
+            }
+            else sleep(2);
         }
         rescored_nbest_file.close();
+
+        for (int t=0; t<num_threads; t++)
+            threads[t]->join();
+
 
     } catch (string &e) {
         cerr << e << endl;
