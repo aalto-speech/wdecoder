@@ -47,30 +47,67 @@ create_forced_path(const DecoderGraph &dg,
                    string &sentstr,
                    map<int, string> &node_labels,
                    bool breaking_short_silence,
-                   bool breaking_long_silence)
+                   bool breaking_long_silence,
+                   bool subwords_with_word_boundary)
 {
     vector<int> end_nodes;
     vector<string> triphones;
     vector<int> wordIndices;
     stringstream fls(sentstr);
-    string wrd;
 
-    while (fls >> wrd) {
-        if (dg.m_lexicon.find(wrd) != dg.m_lexicon.end()) {
-            const vector<string> &wt = dg.m_lexicon.at(wrd);
+    if (subwords_with_word_boundary) {
+        string subword;
+        vector<string> curr_word_triphones;
+        while (fls >> subword) {
+            if (dg.m_lexicon.find(subword) == dg.m_lexicon.end()) {
+                cerr << "error: " << subword << " was not found in the lexicon" << endl;
+                return end_nodes;
+            }
+
+            if (subword == "<w>") {
+                if (curr_word_triphones.size() == 1) {
+                    cerr << "error: one phone word " << curr_word_triphones[0] << endl;
+                    return end_nodes;
+                }
+
+                if (curr_word_triphones.size() > 0) {
+                    for (int i = 1; i < (int)curr_word_triphones.size(); i++)
+                        if (curr_word_triphones[i][0] == '_')
+                            curr_word_triphones[i][0] = curr_word_triphones[i-1][2];
+                    for (int i = 0; i < (int)curr_word_triphones.size()-1; i++)
+                        if (curr_word_triphones[i][4] == '_')
+                            curr_word_triphones[i][4] = curr_word_triphones[i+1][2];
+
+                    if (triphones.size()) triphones.push_back(SHORT_SIL);
+                    for (int i = 0; i < (int)curr_word_triphones.size(); i++)
+                        triphones.push_back(curr_word_triphones[i]);
+                    curr_word_triphones.clear();
+                }
+            } else {
+                const vector<string> &swt = dg.m_lexicon.at(subword);
+                for (int tr = 0; tr < (int)swt.size(); tr++)
+                    curr_word_triphones.push_back(swt[tr]);
+            }
+            wordIndices.push_back(dg.m_subword_map.at(subword));
+        }
+    } else {
+        string wrd;
+        while (fls >> wrd) {
+            if (dg.m_lexicon.find(wrd) == dg.m_lexicon.end()) {
+                cerr << "error: " << wrd << " was not found in the lexicon" << endl;
+                return end_nodes;
+            }
+
+            const vector <string> &wt = dg.m_lexicon.at(wrd);
             if (wt.size() == 1) {
                 cerr << "error: one phone word " << wrd << endl;
                 return end_nodes;
             }
             if (triphones.size())
-                triphones.push_back("_");
-            for (int tr = 0; tr < (int)wt.size(); tr++)
+                triphones.push_back(SHORT_SIL);
+            for (int tr = 0; tr < (int) wt.size(); tr++)
                 triphones.push_back(wt[tr]);
             wordIndices.push_back(dg.m_subword_map.at(wrd));
-        }
-        else {
-            cerr << "error: " << wrd << " was not found in the lexicon" << endl;
-            return end_nodes;
         }
     }
     if (wordIndices.size() == 0) return end_nodes;
@@ -213,7 +250,8 @@ rescore_nbest_entry(Segmenter &s,
     vector <int> end_node_idxs = create_forced_path(
                                        dg, nodes, curr_entry.nbest_hypo_text_cleaned, node_labels,
                                        config["short-silence"].specified,
-                                       config["long-silence"].specified);
+                                       config["long-silence"].specified,
+                                       config["subwords-with-word-boundary"].specified);
     if (end_node_idxs.size() == 0) {
         cerr << "Problem creating forced path for line: " << curr_entry.original_line << endl;
         exit(EXIT_FAILURE);
@@ -294,6 +332,8 @@ int main(int argc, char* argv[])
             ('m', "max-tokens=INT", "arg", "500", "Maximum number of active tokens, DEFAULT: 500")
             ('o', "attempt-once", "", "", "Attempt segmentation only once without increasing beams")
             ('t', "num-threads", "arg", "1", "Number of threads")
+            ('w', "subwords-with-word-boundary", "", "",
+                    "Subword lexicon with the word boundary symbol <w>, otherwise a word lexicon is assumed")
             ('i', "info=INT", "arg", "0", "Info level, DEFAULT: 0");
     config.default_parse(argc, argv);
     if (config.arguments.size() != 4) config.print_help(stderr, 1);
